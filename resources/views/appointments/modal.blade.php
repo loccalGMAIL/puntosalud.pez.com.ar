@@ -60,6 +60,7 @@
                     <input x-model="form.appointment_date" 
                            type="date" 
                            :min="new Date().toISOString().split('T')[0]"
+                           @change="validateDateTime()"
                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500 dark:bg-gray-700 dark:text-white"
                            required>
                 </div>
@@ -87,8 +88,10 @@
                        min="08:00" 
                        max="18:00"
                        step="900"
+                       @change="validateDateTime()"
                        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500 dark:bg-gray-700 dark:text-white"
                        required>
+                <div x-show="pastTimeError" class="mt-1 text-sm text-red-600 dark:text-red-400" x-text="pastTimeError"></div>
             </div>
 
             <!-- Consultorio y Monto -->

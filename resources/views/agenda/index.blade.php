@@ -1,0 +1,584 @@
+@extends('layouts.app')
+
+@section('title', 'Agenda')
+@section('mobileTitle', 'Agenda')
+
+@section('content')
+<div class="p-6" x-data="appointmentModal()" x-init="init()">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Agenda</h1>
+        
+        <div class="flex flex-col sm:flex-row gap-3">
+            <!-- Professional Selector -->
+            <form method="GET" action="{{ route('agenda.index') }}" class="flex gap-2">
+                <input type="hidden" name="month" value="{{ $currentMonth }}">
+                <select name="professional_id" 
+                        onchange="this.form.submit()"
+                        class="rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-blue-500 focus:ring-blue-500">
+                    <option value="">Seleccionar profesional</option>
+                    @foreach($professionals as $professional)
+                        <option value="{{ $professional->id }}" 
+                                {{ $selectedProfessional == $professional->id ? 'selected' : '' }}>
+                            {{ $professional->full_name }}
+                        </option>
+                    @endforeach
+                </select>
+            </form>
+
+            <!-- Month Navigation -->
+            <div class="flex items-center gap-2">
+                <a href="{{ route('agenda.index', ['month' => $date->copy()->subMonth()->format('Y-m'), 'professional_id' => $selectedProfessional]) }}" 
+                   class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+                    </svg>
+                </a>
+                
+                <h2 class="text-lg font-semibold text-gray-900 dark:text-white min-w-[180px] text-center">
+                    {{ $date->locale('es')->isoFormat('MMMM YYYY') }}
+                </h2>
+                
+                <a href="{{ route('agenda.index', ['month' => $date->copy()->addMonth()->format('Y-m'), 'professional_id' => $selectedProfessional]) }}" 
+                   class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                    </svg>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    @if(!$selectedProfessional)
+        <!-- No Professional Selected -->
+        <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6 text-center">
+            <svg class="w-12 h-12 mx-auto mb-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5a2.25 2.25 0 002.25-2.25m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5a2.25 2.25 0 012.25 2.25v7.5" />
+            </svg>
+            <h3 class="text-lg font-semibold text-blue-900 dark:text-blue-200 mb-2">Selecciona un profesional</h3>
+            <p class="text-blue-700 dark:text-blue-300">Elige un profesional del selector superior para ver su agenda mensual.</p>
+        </div>
+    @else
+        <!-- Calendar Grid -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden">
+            <!-- Calendar Header -->
+            <div class="grid grid-cols-7 bg-gray-50 dark:bg-gray-700">
+                @foreach(['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'] as $dayName)
+                    <div class="p-4 text-center font-semibold text-gray-700 dark:text-gray-300 border-r border-gray-200 dark:border-gray-600 last:border-r-0">
+                        {{ $dayName }}
+                    </div>
+                @endforeach
+            </div>
+
+            <!-- Calendar Days -->
+            <div class="grid grid-cols-7">
+                @php
+                    $currentDay = $startOfCalendar->copy();
+                @endphp
+                
+                @while($currentDay->lte($endOfCalendar))
+                    @php
+                        $dayKey = $currentDay->format('Y-m-d');
+                        $dayAppointments = $appointments[$dayKey] ?? collect();
+                        $isCurrentMonth = $currentDay->month === $date->month;
+                        $isToday = $currentDay->isToday();
+                        $dayOfWeek = $currentDay->dayOfWeek === 0 ? 7 : $currentDay->dayOfWeek; // Convert Sunday from 0 to 7
+                        $hasSchedule = $professionalSchedules->has($dayOfWeek);
+                        $isPast = $currentDay->isPast();
+                    @endphp
+                    
+                    <div class="min-h-[120px] p-2 border-r border-b border-gray-200 dark:border-gray-600 last:border-r-0 
+                                {{ !$isCurrentMonth ? 'bg-gray-50 dark:bg-gray-900' : 
+                                   (!$hasSchedule ? 'bg-gray-300 dark:bg-gray-600' : 'bg-white dark:bg-gray-800') }}">
+                        
+                        <!-- Day Number and Add Button -->
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-sm font-medium 
+                                        {{ !$isCurrentMonth ? 'text-gray-400 dark:text-gray-600' : 
+                                           (!$hasSchedule ? 'text-gray-500 dark:text-gray-400' : 'text-gray-900 dark:text-white') }}
+                                        {{ $isToday ? 'bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs' : '' }}">
+                                {{ $currentDay->day }}
+                            </span>
+                            
+                            <!-- Add Button (only for enabled days and not past days) -->
+                            @if($hasSchedule && $isCurrentMonth && !$isPast)
+                                <button onclick="openAppointmentModal('{{ $currentDay->format('Y-m-d') }}', {{ $selectedProfessional }})" 
+                                        class="flex items-center justify-center w-5 h-5 text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors"
+                                        title="Agregar turno">
+                                    <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                                    </svg>
+                                </button>
+                            @endif
+                        </div>
+
+                        <!-- Appointments -->
+                        @if($hasSchedule && $dayAppointments->count() > 0)
+                            <div class="space-y-1 overflow-hidden">
+                                @php
+                                    $maxVisible = 2; // Reducido para dejar espacio al botón
+                                    $visibleAppointments = $dayAppointments->take($maxVisible);
+                                    $remainingCount = $dayAppointments->count() - $maxVisible;
+                                @endphp
+                                
+                                @foreach($visibleAppointments as $appointment)
+                                    @php
+                                        $statusColors = [
+                                            'scheduled' => 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 hover:bg-blue-200 dark:hover:bg-blue-900/50',
+                                            'attended' => 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/50',
+                                            'absent' => 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/50',
+                                        ];
+                                        $statusColor = $statusColors[$appointment->status] ?? 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600';
+                                        $appointmentIsPast = $appointment->appointment_date->isPast();
+                                    @endphp
+                                    
+                                    @if($appointmentIsPast)
+                                        <div class="w-full text-left text-xs rounded px-2 py-1 {{ $statusColor }} truncate opacity-75"
+                                             title="Turno pasado - No editable">
+                                            <div class="font-medium">{{ $appointment->appointment_date->format('H:i') }}</div>
+                                            <div class="truncate">{{ $appointment->patient->full_name }}</div>
+                                        </div>
+                                    @else
+                                        <button onclick="openEditAppointmentModal({{ $appointment->id }})" 
+                                                class="w-full text-left text-xs rounded px-2 py-1 {{ $statusColor }} truncate cursor-pointer transition-colors"
+                                                title="Editar turno">
+                                            <div class="font-medium">{{ $appointment->appointment_date->format('H:i') }}</div>
+                                            <div class="truncate">{{ $appointment->patient->full_name }}</div>
+                                        </button>
+                                    @endif
+                                @endforeach
+                                
+                                @if($remainingCount > 0)
+                                    @if($isPast)
+                                        <div class="w-full text-xs text-gray-400 dark:text-gray-600 text-center py-1 bg-gray-50 dark:bg-gray-700/50 rounded"
+                                             title="Día pasado">
+                                            +{{ $remainingCount }} más
+                                        </div>
+                                    @else
+                                        <button onclick="openDayModal('{{ $currentDay->format('Y-m-d') }}', {{ $selectedProfessional }})" 
+                                                class="w-full text-xs text-gray-500 dark:text-gray-400 text-center py-1 bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 rounded cursor-pointer transition-colors"
+                                                title="Ver todos los turnos del día">
+                                            +{{ $remainingCount }} más
+                                        </button>
+                                    @endif
+                                @endif
+                            </div>
+                        @endif
+                    </div>
+                    
+                    @php
+                        $currentDay->addDay();
+                    @endphp
+                @endwhile
+            </div>
+        </div>
+
+        <!-- Legend -->
+        <div class="mt-6 flex flex-wrap gap-4 text-sm">
+            <div class="flex items-center gap-2">
+                <div class="w-3 h-3 bg-blue-100 dark:bg-blue-900/30 rounded"></div>
+                <span class="text-gray-700 dark:text-gray-300">Programado</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <div class="w-3 h-3 bg-green-100 dark:bg-green-900/30 rounded"></div>
+                <span class="text-gray-700 dark:text-gray-300">Atendido</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <div class="w-3 h-3 bg-red-100 dark:bg-red-900/30 rounded"></div>
+                <span class="text-gray-700 dark:text-gray-300">Ausente</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <div class="w-3 h-3 bg-gray-300 dark:bg-gray-600 rounded"></div>
+                <span class="text-gray-700 dark:text-gray-300">Día sin atención</span>
+            </div>
+        </div>
+    @endif
+
+    <!-- Include Appointment Modal -->
+    @include('appointments.modal')
+
+    <!-- Day Details Modal -->
+    <div x-show="dayModalOpen" 
+         x-cloak
+         class="fixed inset-0 z-50 overflow-y-auto bg-black bg-opacity-50 flex items-center justify-center p-4">
+        
+        <!-- Modal Content -->
+        <div @click.away="dayModalOpen = false" 
+             class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+            
+            <!-- Header -->
+            <div class="bg-white dark:bg-gray-800 px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                        <svg class="w-5 h-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5a2.25 2.25 0 002.25-2.25m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5a2.25 2.25 0 012.25 2.25v7.5" />
+                        </svg>
+                        <span x-text="'Turnos del ' + formatDateSpanish(selectedDayDate)"></span>
+                    </h3>
+                    <button @click="dayModalOpen = false" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+                <p class="mt-1 text-sm text-gray-600 dark:text-gray-400" x-text="'Profesional: Dr. ' + selectedProfessionalName"></p>
+            </div>
+
+            <!-- Body -->
+            <div class="p-6">
+                <!-- Add New Appointment Button -->
+                <div class="mb-4">
+                    <button @click="openCreateModal(selectedDayDate, selectedProfessionalId); dayModalOpen = false;" 
+                            class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg shadow-sm transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                        <svg class="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                        </svg>
+                        Nuevo Turno
+                    </button>
+                </div>
+
+                <!-- Appointments List -->
+                <div class="space-y-3" x-show="dayAppointments.length > 0">
+                    <template x-for="appointment in dayAppointments" :key="appointment.id">
+                        <div class="border border-gray-200 dark:border-gray-600 rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                            <div class="flex items-center justify-between">
+                                <div class="flex-1">
+                                    <div class="flex items-center gap-3">
+                                        <span class="font-medium text-gray-900 dark:text-white" x-text="formatTime(appointment.appointment_date)"></span>
+                                        <span :class="getStatusBadgeClass(appointment.status)" 
+                                              class="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full" 
+                                              x-text="getStatusText(appointment.status)">
+                                        </span>
+                                    </div>
+                                    <div class="mt-1">
+                                        <p class="text-sm font-medium text-gray-900 dark:text-white" x-text="appointment.patient.first_name + ' ' + appointment.patient.last_name"></p>
+                                        <p class="text-sm text-gray-500 dark:text-gray-400" x-text="'DNI: ' + appointment.patient.dni"></p>
+                                    </div>
+                                    <div class="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                                        <span x-text="'Duración: ' + appointment.duration + ' min'"></span>
+                                        <span x-show="appointment.estimated_amount" x-text="' • Monto: $' + appointment.estimated_amount"></span>
+                                        <span x-show="appointment.office" x-text="' • Consultorio: ' + appointment.office.name"></span>
+                                    </div>
+                                    <div x-show="appointment.notes" class="mt-2 text-xs text-gray-600 dark:text-gray-300" x-text="'Notas: ' + appointment.notes"></div>
+                                </div>
+                                
+                                <div class="flex items-center gap-2">
+                                    <button @click="openEditModal(appointment); dayModalOpen = false;" 
+                                            class="p-2 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                                            title="Editar turno">
+                                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+                
+                <!-- Empty State -->
+                <div x-show="dayAppointments.length === 0" class="text-center py-8">
+                    <svg class="w-12 h-12 mx-auto mb-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5a2.25 2.25 0 002.25-2.25m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5a2.25 2.25 0 012.25 2.25v7.5" />
+                    </svg>
+                    <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">No hay turnos</h3>
+                    <p class="text-gray-500 dark:text-gray-400 mb-4">No hay turnos programados para este día.</p>
+                    <button @click="openCreateModal(selectedDayDate, selectedProfessionalId); dayModalOpen = false;" 
+                            class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg">
+                        <svg class="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                        </svg>
+                        Agregar Primer Turno
+                    </button>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="bg-gray-50 dark:bg-gray-700 px-6 py-4 flex justify-end border-t border-gray-200 dark:border-gray-600">
+                <button @click="dayModalOpen = false"
+                        class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                    Cerrar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function openAppointmentModal(date, professionalId) {
+    // Dispatch event to Alpine.js component
+    document.dispatchEvent(new CustomEvent('open-appointment-modal', {
+        detail: {
+            date: date,
+            professionalId: professionalId
+        }
+    }));
+}
+
+function openEditAppointmentModal(appointmentId) {
+    // Dispatch event to Alpine.js component
+    document.dispatchEvent(new CustomEvent('open-edit-appointment-modal', {
+        detail: {
+            appointmentId: appointmentId
+        }
+    }));
+}
+
+function openDayModal(date, professionalId) {
+    // Dispatch event to Alpine.js component
+    document.dispatchEvent(new CustomEvent('open-day-modal', {
+        detail: {
+            date: date,
+            professionalId: professionalId
+        }
+    }));
+}
+
+// Initialize Alpine.js component for the modal
+document.addEventListener('alpine:init', () => {
+    Alpine.data('appointmentModal', () => ({
+        modalOpen: false,
+        dayModalOpen: false,
+        editingAppointment: null,
+        loading: false,
+        professionals: @json($professionals),
+        patients: @json($patients),
+        offices: @json($offices),
+        allAppointments: @json($appointments),
+        
+        // Error state for past datetime validation
+        pastTimeError: '',
+        
+        // Day modal data
+        selectedDayDate: '',
+        selectedProfessionalId: null,
+        selectedProfessionalName: '',
+        dayAppointments: [],
+        
+        form: {
+            professional_id: '',
+            patient_id: '',
+            appointment_date: '',
+            appointment_time: '',
+            duration: 30,
+            office_id: '',
+            notes: '',
+            estimated_amount: '',
+            status: 'scheduled'
+        },
+
+        init() {
+            // Listen for modal open events
+            document.addEventListener('open-appointment-modal', (event) => {
+                this.openCreateModal(event.detail.date, event.detail.professionalId);
+            });
+            
+            document.addEventListener('open-edit-appointment-modal', (event) => {
+                this.openEditModalById(event.detail.appointmentId);
+            });
+            
+            document.addEventListener('open-day-modal', (event) => {
+                this.openDayModal(event.detail.date, event.detail.professionalId);
+            });
+        },
+
+        openCreateModal(date = null, professionalId = null) {
+            this.editingAppointment = null;
+            this.resetForm();
+            
+            if (date) {
+                this.form.appointment_date = date;
+            }
+            if (professionalId) {
+                this.form.professional_id = professionalId.toString();
+            }
+            
+            this.modalOpen = true;
+        },
+
+        resetForm() {
+            this.form = {
+                professional_id: '',
+                patient_id: '',
+                appointment_date: new Date().toISOString().split('T')[0],
+                appointment_time: '',
+                duration: 30,
+                office_id: '',
+                notes: '',
+                estimated_amount: '',
+                status: 'scheduled'
+            };
+        },
+
+        validateDateTime() {
+            this.pastTimeError = '';
+            
+            if (this.form.appointment_date && this.form.appointment_time) {
+                const appointmentDateTime = new Date(this.form.appointment_date + 'T' + this.form.appointment_time);
+                const now = new Date();
+                
+                if (appointmentDateTime <= now) {
+                    this.pastTimeError = 'No se pueden programar turnos en fechas y horarios pasados.';
+                    return false;
+                }
+            }
+            return true;
+        },
+
+        async submitForm() {
+            // Validate datetime before submitting
+            if (!this.validateDateTime()) {
+                return;
+            }
+            
+            this.loading = true;
+            
+            try {
+                const url = this.editingAppointment ? 
+                    `/appointments/${this.editingAppointment.id}` : 
+                    '/appointments';
+                const method = this.editingAppointment ? 'PUT' : 'POST';
+                
+                const formData = new FormData();
+                Object.keys(this.form).forEach(key => {
+                    const value = this.form[key];
+                    if (value !== '' && value !== null && value !== undefined) {
+                        formData.append(key, value);
+                    } else if (key === 'status' || key === 'notes' || key === 'office_id' || key === 'estimated_amount') {
+                        formData.append(key, value || '');
+                    }
+                });
+                
+                if (this.editingAppointment) {
+                    formData.append('_method', 'PUT');
+                }
+                formData.append('_token', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
+                
+                const response = await fetch(url, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok && result.success) {
+                    this.modalOpen = false;
+                    this.showNotification(result.message, 'success');
+                    // Reload page to show changes
+                    setTimeout(() => window.location.reload(), 1000);
+                } else {
+                    if (response.status === 422 && result.errors) {
+                        const errorMessages = Object.values(result.errors).flat().join('\n');
+                        this.showNotification('Errores de validación:\n' + errorMessages, 'error');
+                    } else {
+                        this.showNotification(result.message || 'Error al guardar el turno', 'error');
+                    }
+                }
+            } catch (error) {
+                this.showNotification('Error al guardar el turno', 'error');
+            } finally {
+                this.loading = false;
+            }
+        },
+
+        openDayModal(date, professionalId) {
+            this.selectedDayDate = date;
+            this.selectedProfessionalId = professionalId;
+            
+            // Find professional name
+            const professional = this.professionals.find(p => p.id == professionalId);
+            this.selectedProfessionalName = professional ? professional.first_name + ' ' + professional.last_name : '';
+            
+            // Get appointments for this day
+            this.dayAppointments = this.allAppointments[date] || [];
+            
+            this.dayModalOpen = true;
+        },
+
+        openEditModalById(appointmentId) {
+            // Find appointment in all appointments data
+            let appointment = null;
+            Object.values(this.allAppointments).forEach(dayApps => {
+                if (Array.isArray(dayApps)) {
+                    const found = dayApps.find(app => app.id == appointmentId);
+                    if (found) {
+                        appointment = found;
+                    }
+                }
+            });
+            
+            if (appointment) {
+                this.openEditModal(appointment);
+            }
+        },
+
+        openEditModal(appointment) {
+            this.editingAppointment = appointment;
+            const appointmentDate = new Date(appointment.appointment_date);
+            
+            this.form = {
+                professional_id: appointment.professional.id.toString(),
+                patient_id: appointment.patient.id.toString(),
+                appointment_date: appointmentDate.toISOString().split('T')[0],
+                appointment_time: appointmentDate.toTimeString().slice(0, 5),
+                duration: appointment.duration,
+                office_id: appointment.office?.id.toString() || '',
+                notes: appointment.notes || '',
+                estimated_amount: appointment.estimated_amount || '',
+                status: appointment.status || 'scheduled'
+            };
+            this.modalOpen = true;
+        },
+
+        formatDateSpanish(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('es-ES', {
+                weekday: 'long',
+                day: 'numeric',
+                month: 'long'
+            });
+        },
+
+        formatTime(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleTimeString('es-ES', {
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false
+            });
+        },
+
+        getStatusBadgeClass(status) {
+            const classes = {
+                scheduled: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
+                attended: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
+                cancelled: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
+                absent: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400'
+            };
+            return classes[status] || 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400';
+        },
+
+        getStatusText(status) {
+            const texts = {
+                scheduled: 'Programado',
+                attended: 'Atendido',
+                cancelled: 'Cancelado',
+                absent: 'Ausente'
+            };
+            return texts[status] || status;
+        },
+
+        showNotification(message, type = 'info') {
+            alert(message);
+        }
+    }))
+});
+</script>
+
+@push('styles')
+<meta name="csrf-token" content="{{ csrf_token() }}">
+@endpush
+@endsection

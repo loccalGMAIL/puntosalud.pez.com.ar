@@ -108,6 +108,18 @@ class AppointmentController extends Controller
             // Crear fecha y hora completa
             $appointmentDateTime = Carbon::parse($validated['appointment_date'] . ' ' . $validated['appointment_time']);
 
+            // Validar que la fecha y hora no sea en el pasado
+            if ($appointmentDateTime->isPast()) {
+                if ($request->ajax()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Error de validación',
+                        'errors' => ['appointment_time' => ['No se pueden crear turnos en fechas y horarios pasados.']]
+                    ], 422);
+                }
+                return redirect()->back()->withErrors(['appointment_time' => 'No se pueden crear turnos en fechas y horarios pasados.']);
+            }
+
             // Validación básica de disponibilidad
             $existingAppointment = Appointment::where('professional_id', $validated['professional_id'])
                 ->where('appointment_date', $appointmentDateTime)
@@ -213,6 +225,20 @@ class AppointmentController extends Controller
             }
 
             $appointmentDateTime = Carbon::parse($validated['appointment_date'] . ' ' . $validated['appointment_time']);
+
+            // Validar que la fecha y hora no sea en el pasado (solo si cambió la fecha/hora)
+            if ($appointment->appointment_date->format('Y-m-d H:i') !== $appointmentDateTime->format('Y-m-d H:i')) {
+                if ($appointmentDateTime->isPast()) {
+                    if ($request->ajax()) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Error de validación',
+                            'errors' => ['appointment_time' => ['No se pueden programar turnos en fechas y horarios pasados.']]
+                        ], 422);
+                    }
+                    return redirect()->back()->withErrors(['appointment_time' => 'No se pueden programar turnos en fechas y horarios pasados.']);
+                }
+            }
 
             // Validación básica de disponibilidad (si cambió la fecha/hora)
             if ($appointment->appointment_date->format('Y-m-d H:i') !== $appointmentDateTime->format('Y-m-d H:i')) {

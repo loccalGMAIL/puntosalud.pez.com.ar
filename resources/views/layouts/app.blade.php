@@ -35,6 +35,11 @@
                 'title' => 'Turnos',
                 'href' => '/appointments',
                 'icon' => '<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5a2.25 2.25 0 002.25-2.25m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5a2.25 2.25 0 012.25 2.25v7.5M8.25 12h.008v.008H8.25V12zm4.5 0h.008v.008H12.75V12zm4.5 0h.008v.008H17.25V12z" /></svg>'
+            ],
+            [
+                'title' => 'Agenda',
+                'href' => '/agenda',
+                'icon' => '<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5a2.25 2.25 0 002.25-2.25m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5a2.25 2.25 0 012.25 2.25v7.5m-6 -7.5h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H18m-1.5 3H18m-1.5 3H18M9 7.5h1.5m-1.5 3h1.5m-1.5 3h1.5M6 7.5h1.5m-1.5 3h1.5m-1.5 3h1.5" /></svg>'
             ]
         ];
     @endphp
