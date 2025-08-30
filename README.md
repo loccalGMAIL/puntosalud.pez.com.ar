@@ -2,7 +2,7 @@
 
 [![Laravel](https://img.shields.io/badge/Laravel-12.x-red?style=flat&logo=laravel)](https://laravel.com)
 [![PHP](https://img.shields.io/badge/PHP-8.2-blue?style=flat&logo=php)](https://php.net)
-[![Version](https://img.shields.io/badge/Version-2.1.0-green?style=flat)](#changelog)
+[![Version](https://img.shields.io/badge/Version-2.2.0-green?style=flat)](#changelog)
 [![License](https://img.shields.io/badge/License-MIT-yellow?style=flat)](#license)
 
 Sistema integral de gestión médica para clínicas y consultorios, desarrollado con Laravel 12 y tecnologías modernas.
@@ -55,6 +55,13 @@ Sistema integral de gestión médica para clínicas y consultorios, desarrollado
 - Controles dinámicos de estado de turnos
 - Resumen de ingresos por profesional y método de pago
 - Interfaz responsiva con componentes reutilizables
+
+### 📋 **Sistema de Reportes** *(v2.2.0)*
+- **Listado de Pacientes a Atender**: Reporte diario para profesionales al llegar
+- **Liquidación Diaria de Profesionales**: Reporte de cierre con comisiones calculadas
+- Diferenciación de pagos anticipados vs. cobros del día
+- Vista previa web y versión optimizada para impresión
+- Auto-cierre de ventanas de impresión
 
 ## 🚀 Instalación
 
@@ -152,6 +159,29 @@ php artisan config:clear
 - Índices para consultas eficientes
 
 ## 📝 Changelog
+
+### v2.2.0 (2025-08-30) - Sistema de Reportes para Profesionales
+**🆕 Nuevas Funcionalidades:**
+- **Listado de Pacientes a Atender**: Reporte diario imprimible para profesionales
+  - Filtrado automático por profesional y fecha
+  - Vista de selección con accesos directos
+  - Información completa: horarios, pacientes, montos, estado de pagos
+- **Liquidación Diaria de Profesionales**: Reporte de cierre con cálculos de comisiones
+  - Separación de turnos por tipo de pago (anticipado, del día, pendiente)
+  - Cálculo automático de comisiones por profesional
+  - Resumen detallado de ingresos y liquidación
+- **Sistema de impresión optimizado**: Auto-cierre de ventanas tras imprimir
+- **Vistas de preview**: Visualización web antes de imprimir
+
+**🔧 Mejoras:**
+- Nuevos métodos en ReportController para manejo de reportes
+- Vistas Blade optimizadas para impresión con CSS específico
+- JavaScript para manejo automático de ventanas de impresión
+- Integración completa con el dashboard principal
+
+**🎯 Casos de Uso:**
+- Profesional llega → imprime listado de pacientes del día
+- Profesional se retira → imprime liquidación con sus comisiones
 
 ### v2.1.0 (2025-08-30) - Sistema Dual de Pagos Anticipados
 **🆕 Nuevas Funcionalidades:**
