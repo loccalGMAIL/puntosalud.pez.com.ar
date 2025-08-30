@@ -1,11 +1,17 @@
 {
     "$schema": "https://getcomposer.org/schema.json",
-    "name": "laravel/laravel",
+    "name": "puntosalud/sistema-medico",
     "type": "project",
-    "description": "The skeleton application for the Laravel framework.",
+    "version": "2.1.0",
+    "description": "Sistema integral de gestión médica para clínicas y consultorios - Laravel 12",
     "keywords": [
         "laravel",
-        "framework"
+        "medical",
+        "healthcare",
+        "clinic",
+        "appointments",
+        "payments",
+        "cash-management"
     ],
     "license": "MIT",
     "require": {

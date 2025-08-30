@@ -5,11 +5,20 @@ namespace App\Http\Controllers;
 use App\Models\Appointment;
 use App\Models\Payment;
 use App\Models\Professional;
+use App\Models\CashMovement;
+use App\Services\PaymentAllocationService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
+    protected $paymentAllocationService;
+    
+    public function __construct(PaymentAllocationService $paymentAllocationService)
+    {
+        $this->paymentAllocationService = $paymentAllocationService;
+    }
     public function index()
     {
         $today = Carbon::today();
@@ -62,6 +71,9 @@ class DashboardController extends Controller
                     'monto' => $appointment->final_amount ?? $appointment->estimated_amount ?? 0,
                     'status' => $appointment->status,
                     'statusLabel' => $this->getStatusLabel($appointment->status),
+                    'isPaid' => $appointment->paymentAppointments()->exists(),
+                    'canMarkAttended' => $appointment->status === 'scheduled',
+                    'canMarkCompleted' => $appointment->status === 'attended' && !$appointment->paymentAppointments()->exists(),
                 ];
             });
         
@@ -103,6 +115,207 @@ class DashboardController extends Controller
         ];
         
         return view('dashboard', compact('dashboardData'));
+    }
+    
+    public function markAttended(Request $request, Appointment $appointment)
+    {
+        try {
+            DB::beginTransaction();
+            
+            if ($appointment->status !== 'scheduled') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Solo se pueden marcar como atendidos los turnos programados.'
+                ], 400);
+            }
+            
+            $appointment->update([
+                'status' => 'attended'
+            ]);
+            
+            // Intentar asignación automática de pago
+            $this->paymentAllocationService->checkAndAllocatePayment($appointment->id);
+            
+            DB::commit();
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Turno marcado como atendido exitosamente.',
+                'appointment' => [
+                    'id' => $appointment->id,
+                    'status' => 'attended',
+                    'statusLabel' => 'Atendido',
+                    'isPaid' => $appointment->fresh()->paymentAppointments()->exists(),
+                    'canMarkAttended' => false,
+                    'canMarkCompleted' => !$appointment->fresh()->paymentAppointments()->exists(),
+                ]
+            ]);
+            
+        } catch (\Exception $e) {
+            DB::rollBack();
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al marcar el turno: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+    
+    public function markCompletedAndPaid(Request $request, Appointment $appointment)
+    {
+        $validated = $request->validate([
+            'final_amount' => 'required|numeric|min:0',
+            'payment_method' => 'required|in:cash,transfer,card',
+            'concept' => 'nullable|string|max:500'
+        ]);
+        
+        try {
+            DB::beginTransaction();
+            
+            if ($appointment->status !== 'attended') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Solo se pueden cobrar turnos que han sido atendidos.'
+                ], 400);
+            }
+            
+            if ($appointment->paymentAppointments()->exists()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Este turno ya tiene un pago registrado.'
+                ], 400);
+            }
+            
+            // Actualizar monto final del turno
+            $appointment->update([
+                'final_amount' => $validated['final_amount']
+            ]);
+            
+            // Generar número de recibo
+            $receiptNumber = $this->generateReceiptNumber();
+            
+            // Crear el pago individual
+            $payment = Payment::create([
+                'patient_id' => $appointment->patient_id,
+                'payment_date' => now(),
+                'payment_type' => 'single',
+                'payment_method' => $validated['payment_method'],
+                'amount' => $validated['final_amount'],
+                'sessions_included' => 1,
+                'sessions_used' => 0, // El servicio lo marcará como usado después
+                'liquidation_status' => 'pending',
+                'concept' => $validated['concept'] ?: 'Pago de consulta - ' . $appointment->patient->full_name,
+                'receipt_number' => $receiptNumber,
+            ]);
+            
+            // Asignar pago al turno usando el servicio
+            $this->paymentAllocationService->allocateSinglePayment($payment->id, $appointment->id);
+            
+            // Registrar movimiento de caja
+            $this->createCashMovement($payment);
+            
+            DB::commit();
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Turno marcado como finalizado y cobrado exitosamente.',
+                'appointment' => [
+                    'id' => $appointment->id,
+                    'status' => 'attended',
+                    'statusLabel' => 'Atendido',
+                    'isPaid' => true,
+                    'canMarkAttended' => false,
+                    'canMarkCompleted' => false,
+                    'monto' => $validated['final_amount']
+                ],
+                'payment' => $payment,
+                'receipt_number' => $receiptNumber
+            ]);
+            
+        } catch (\Exception $e) {
+            DB::rollBack();
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al procesar el pago: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+    
+    public function markAbsent(Request $request, Appointment $appointment)
+    {
+        try {
+            if (!in_array($appointment->status, ['scheduled', 'attended'])) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Este turno no se puede marcar como ausente.'
+                ], 400);
+            }
+            
+            $appointment->update([
+                'status' => 'absent'
+            ]);
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Turno marcado como ausente.',
+                'appointment' => [
+                    'id' => $appointment->id,
+                    'status' => 'absent',
+                    'statusLabel' => 'Ausente',
+                    'isPaid' => $appointment->paymentAppointments()->exists(),
+                    'canMarkAttended' => false,
+                    'canMarkCompleted' => false,
+                ]
+            ]);
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al marcar como ausente: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+    
+    private function generateReceiptNumber()
+    {
+        $year = date('Y');
+        $month = date('m');
+        
+        $lastPayment = Payment::whereYear('payment_date', $year)
+            ->whereMonth('payment_date', $month)
+            ->orderBy('receipt_number', 'desc')
+            ->first();
+        
+        if ($lastPayment && $lastPayment->receipt_number) {
+            $lastNumber = intval(substr($lastPayment->receipt_number, -4));
+            $newNumber = $lastNumber + 1;
+        } else {
+            $newNumber = 1;
+        }
+        
+        return $year . $month . str_pad($newNumber, 4, '0', STR_PAD_LEFT);
+    }
+    
+    private function createCashMovement(Payment $payment)
+    {
+        $lastMovement = CashMovement::orderBy('movement_date', 'desc')
+            ->orderBy('created_at', 'desc')
+            ->first();
+        
+        $currentBalance = $lastMovement ? $lastMovement->balance_after : 0;
+        $newBalance = $currentBalance + $payment->amount;
+        
+        CashMovement::create([
+            'movement_date' => $payment->payment_date,
+            'type' => 'patient_payment',
+            'amount' => $payment->amount,
+            'description' => $payment->concept ?: 'Pago de paciente - ' . $payment->patient->full_name,
+            'reference_type' => 'payment',
+            'reference_id' => $payment->id,
+            'balance_after' => $newBalance,
+            'user_id' => auth()->id(),
+        ]);
     }
     
     private function getStatusLabel($status)

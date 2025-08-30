@@ -1,61 +1,210 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# 🏥 PuntoSalud - Sistema de Gestión Médica
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+[![Laravel](https://img.shields.io/badge/Laravel-12.x-red?style=flat&logo=laravel)](https://laravel.com)
+[![PHP](https://img.shields.io/badge/PHP-8.2-blue?style=flat&logo=php)](https://php.net)
+[![Version](https://img.shields.io/badge/Version-2.1.0-green?style=flat)](#changelog)
+[![License](https://img.shields.io/badge/License-MIT-yellow?style=flat)](#license)
 
-## About Laravel
+Sistema integral de gestión médica para clínicas y consultorios, desarrollado con Laravel 12 y tecnologías modernas.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## 📋 Tabla de Contenidos
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+- [Características](#características)
+- [Instalación](#instalación)
+- [Tecnologías](#tecnologías)
+- [Comandos de Desarrollo](#comandos-de-desarrollo)
+- [Arquitectura del Sistema](#arquitectura-del-sistema)
+- [Changelog](#changelog)
+- [Contribución](#contribución)
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## ✨ Características
 
-## Learning Laravel
+### 🎯 **Gestión de Turnos**
+- Programación de citas médicas con validación de disponibilidad
+- **Sistema dual de pagos anticipados** (individual y paquetes)
+- Control de estados: programado → atendido → cobrado
+- Asignación automática de pagos a turnos
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+### 💰 **Módulo de Pagos Avanzado** *(v2.1.0)*
+- **Pagos individuales**: Un turno, un pago, ingreso inmediato
+- **Paquetes de tratamiento**: Múltiples sesiones, un pago grupal  
+- Métodos de pago: efectivo, transferencia, tarjeta
+- Generación automática de números de recibo
+- Trazabilidad completa de transacciones
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+### 🏦 **Gestión de Caja Integral** *(v2.1.0)*
+- Registro automático de todos los movimientos financieros
+- Balance en tiempo real con trazabilidad por usuario
+- Tipos de movimiento extendidos: apertura, cierre, control de turno
+- Preparado para gestión multi-usuario y cambios de turno
+- Reportes diarios y por períodos
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+### 👨‍⚕️ **Administración de Profesionales**
+- Gestión de especialidades médicas
+- Configuración de comisiones por profesional
+- Horarios de trabajo y excepciones
+- Sistema de liquidaciones automático
 
-## Laravel Sponsors
+### 👥 **Gestión de Pacientes**
+- Registro completo de información personal y médica
+- Historial de citas y tratamientos
+- Seguimiento de pagos y saldos
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+### 📊 **Dashboard Optimizado** *(v2.0.0)*
+- Vista en tiempo real del día actual
+- Controles dinámicos de estado de turnos
+- Resumen de ingresos por profesional y método de pago
+- Interfaz responsiva con componentes reutilizables
 
-### Premium Partners
+## 🚀 Instalación
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+### Prerrequisitos
+- PHP 8.2+
+- Composer
+- Node.js 18+ & npm
+- MySQL/MariaDB
 
-## Contributing
+### Pasos de Instalación
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+```bash
+# 1. Clonar el repositorio
+git clone <repository-url>
+cd puntosalud
 
-## Code of Conduct
+# 2. Instalar dependencias PHP
+composer install
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+# 3. Instalar dependencias frontend
+npm install
 
-## Security Vulnerabilities
+# 4. Configurar entorno
+cp .env.example .env
+php artisan key:generate
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+# 5. Configurar base de datos en .env
+DB_DATABASE=puntosalud
+DB_USERNAME=tu_usuario
+DB_PASSWORD=tu_contraseña
 
-## License
+# 6. Migrar y seedear base de datos
+php artisan migrate:fresh --seed
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+# 7. Construir assets
+npm run build
+```
+
+## 🛠 Tecnologías
+
+### Backend
+- **Laravel 12** - Framework PHP
+- **PHP 8.2** - Lenguaje de programación
+- **MySQL** - Base de datos
+- **Eloquent ORM** - Manejo de datos
+
+### Frontend
+- **Vite** - Build tool moderno
+- **TailwindCSS 4.0** - Framework de CSS
+- **Alpine.js** - Framework JavaScript reactivo
+- **Blade** - Motor de plantillas
+
+## ⚡ Comandos de Desarrollo
+
+```bash
+# Desarrollo completo (servidor + queue + vite)
+composer dev
+
+# Solo servidor Laravel
+php artisan serve
+
+# Solo desarrollo frontend
+npm run dev
+
+# Construir para producción
+npm run build
+
+# Ejecutar tests
+composer test
+php artisan test
+
+# Formatear código
+./vendor/bin/pint
+
+# Limpiar caché
+php artisan config:clear
+```
+
+## 🏗 Arquitectura del Sistema
+
+### Modelos Principales
+- **Appointment**: Gestión de citas médicas
+- **Payment**: Sistema de pagos individual y paquetes
+- **Professional**: Información y configuración de médicos
+- **Patient**: Datos de pacientes
+- **CashMovement**: Trazabilidad completa de caja
+
+### Servicios
+- **PaymentAllocationService**: Asignación automática de pagos a turnos
+- Lógica de negocio centralizada para pagos y liquidaciones
+
+### Base de Datos
+- Migraciones con versionado temporal
+- Relaciones Eloquent optimizadas
+- Índices para consultas eficientes
+
+## 📝 Changelog
+
+### v2.1.0 (2025-08-30) - Sistema Dual de Pagos Anticipados
+**🆕 Nuevas Funcionalidades:**
+- Sistema dual de pagos: individual y paquetes de tratamiento
+- Pago anticipado al crear turnos con ingreso inmediato a caja
+- Cálculo automático de totales para paquetes
+- Modal mejorado con opciones flexibles de pago
+- Extensión de tipos de movimientos de caja
+
+**🔧 Mejoras:**
+- Validaciones completas en frontend y backend
+- JavaScript modernizado con ES6+ y async/await
+- Componentes Blade reutilizables
+- Manejo de errores robusto con transacciones DB
+
+**🐛 Correcciones:**
+- Fix en PaymentAllocationService para sesiones de paquetes
+- Corrección de paths SVG malformados en dashboard
+- Mejora en modal positioning y funcionalidad
+
+### v2.0.0 (2025-08-28) - Dashboard y Módulo de Pagos
+**🆕 Funcionalidades:**
+- Dashboard completo para recepcionistas
+- Módulo de pagos con liquidaciones automáticas
+- Gestión de movimientos de caja
+- Sistema de estados de turnos dinámico
+
+### v1.0.0 (2025-07-03) - Versión Base
+**🆕 Funcionalidades:**
+- Gestión básica de turnos médicos
+- CRUD de pacientes y profesionales
+- Sistema de horarios y disponibilidad
+- Interfaz base con Laravel 12
+
+## 🤝 Contribución
+
+1. Fork el proyecto
+2. Crea una rama para tu feature (`git checkout -b feature/AmazingFeature`)
+3. Commit tus cambios (`git commit -m 'Add some AmazingFeature'`)
+4. Push a la rama (`git push origin feature/AmazingFeature`)
+5. Abre un Pull Request
+
+### Convenciones
+- Usar Laravel Pint para formateo de código
+- Escribir tests para nuevas funcionalidades
+- Documentar cambios en el changelog
+
+## 📄 License
+
+Este proyecto está bajo la licencia MIT. Ver [LICENSE](LICENSE) para más detalles.
+
+---
+
+**Desarrollado con ❤️ para el sector salud**
+
+*Sistema en desarrollo activo - Contribuciones bienvenidas*
