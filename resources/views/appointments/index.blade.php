@@ -447,7 +447,16 @@ function appointmentsPage() {
             office_id: '',
             notes: '',
             estimated_amount: '',
-            status: 'scheduled'
+            status: 'scheduled',
+            // Campos de pago
+            pay_now: false,
+            payment_type: 'single', // 'single' o 'package'
+            payment_amount: '',
+            payment_method: '',
+            payment_concept: '',
+            // Campos específicos de paquete
+            package_sessions: 6,
+            session_price: ''
         },
         
         // Computed
@@ -520,11 +529,31 @@ function appointmentsPage() {
                 office_id: '',
                 notes: '',
                 estimated_amount: '',
-                status: 'scheduled'
+                status: 'scheduled',
+                // Resetear campos de pago
+                pay_now: false,
+                payment_type: 'single',
+                payment_amount: '',
+                payment_method: '',
+                payment_concept: '',
+                package_sessions: 6,
+                session_price: ''
             };
         },
         
         async submitForm() {
+            // Validar pago si está activado
+            if (this.form.pay_now) {
+                if (this.form.payment_type === 'single' && (!this.form.payment_amount || !this.form.payment_method)) {
+                    alert('Por favor complete el monto y método de pago.');
+                    return;
+                }
+                if (this.form.payment_type === 'package' && (!this.form.package_sessions || !this.form.session_price || !this.form.payment_method)) {
+                    alert('Por favor complete las sesiones, precio por sesión y método de pago.');
+                    return;
+                }
+            }
+            
             this.loading = true;
             
             try {
@@ -536,12 +565,19 @@ function appointmentsPage() {
                 const formData = new FormData();
                 Object.keys(this.form).forEach(key => {
                     const value = this.form[key];
-                    // Siempre incluir campos requeridos, opcional vacíos se incluyen como cadena vacía
+                    
+                    // Campos opcionales que pueden estar vacíos
+                    const optionalFields = ['notes', 'office_id', 'estimated_amount', 'payment_concept', 'package_sessions', 'session_price'];
+                    
                     if (value !== '' && value !== null && value !== undefined) {
                         formData.append(key, value);
-                    } else if (key === 'status' || key === 'notes' || key === 'office_id' || key === 'estimated_amount') {
-                        // Para campos opcionales, enviar cadena vacía si están vacíos
+                    } else if (optionalFields.includes(key) || key === 'status') {
                         formData.append(key, value || '');
+                    }
+                    
+                    // Para boolean pay_now, asegurar que se envíe correctamente
+                    if (key === 'pay_now') {
+                        formData.append(key, value ? '1' : '0');
                     }
                 });
                 
@@ -680,6 +716,13 @@ function appointmentsPage() {
             } catch (error) {
                 this.showNotification('Error al cancelar el turno', 'error');
             }
+        },
+        
+        // Función para calcular el total del paquete
+        calculatePackageTotal() {
+            const sessions = parseInt(this.form.package_sessions) || 0;
+            const price = parseFloat(this.form.session_price) || 0;
+            this.form.payment_amount = (sessions * price).toFixed(2);
         },
         
         // Utility functions

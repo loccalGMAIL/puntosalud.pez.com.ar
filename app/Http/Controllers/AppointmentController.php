@@ -6,11 +6,21 @@ use App\Models\Appointment;
 use App\Models\Professional;
 use App\Models\Patient;
 use App\Models\Office;
+use App\Models\Payment;
+use App\Models\CashMovement;
+use App\Services\PaymentAllocationService;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class AppointmentController extends Controller
 {
+    protected $paymentAllocationService;
+    
+    public function __construct(PaymentAllocationService $paymentAllocationService)
+    {
+        $this->paymentAllocationService = $paymentAllocationService;
+    }
     /**
      * Display a listing of the resource.
      */
@@ -92,6 +102,15 @@ class AppointmentController extends Controller
                 'office_id' => 'nullable|exists:offices,id',
                 'notes' => 'nullable|string|max:500',
                 'estimated_amount' => 'nullable|numeric|min:0',
+                // Campos de pago
+                'pay_now' => 'boolean',
+                'payment_type' => 'nullable|in:single,package',
+                'payment_amount' => 'nullable|numeric|min:0',
+                'payment_method' => 'nullable|in:cash,transfer,card',
+                'payment_concept' => 'nullable|string|max:500',
+                // Campos de paquete
+                'package_sessions' => 'nullable|integer|min:2|max:20',
+                'session_price' => 'nullable|numeric|min:0',
             ]);
 
             // Limpiar campos opcionales vacíos
@@ -137,8 +156,10 @@ class AppointmentController extends Controller
                 return redirect()->back()->withErrors(['appointment_time' => 'El profesional ya tiene un turno en ese horario.']);
             }
 
+            DB::beginTransaction();
+            
             // Crear turno
-            Appointment::create([
+            $appointment = Appointment::create([
                 'professional_id' => $validated['professional_id'],
                 'patient_id' => $validated['patient_id'],
                 'appointment_date' => $appointmentDateTime,
@@ -148,22 +169,53 @@ class AppointmentController extends Controller
                 'estimated_amount' => $validated['estimated_amount'],
                 'status' => 'scheduled',
             ]);
+            
+            // Si se paga ahora, crear el pago
+            if ($request->boolean('pay_now') && $validated['payment_amount'] > 0) {
+                $paymentType = $validated['payment_type'] ?? 'single';
+                
+                if ($paymentType === 'package') {
+                    $this->createPackagePayment($appointment, $validated);
+                } else {
+                    $this->createPrepayment($appointment, $validated);
+                }
+            }
+            
+            DB::commit();
 
+            $message = 'Turno creado exitosamente.';
+            if ($request->boolean('pay_now')) {
+                $message .= ' Pago registrado correctamente.';
+            }
+            
             if ($request->ajax()) {
-                return response()->json(['success' => true, 'message' => 'Turno creado exitosamente.']);
+                return response()->json(['success' => true, 'message' => $message]);
             }
 
-            return redirect()->route('appointments.index')->with('success', 'Turno creado exitosamente.');
+            return redirect()->route('appointments.index')->with('success', $message);
                 
-        } catch (\Illuminate\Validation\ValidationException $e) {
+        } catch (\Exception $e) {
+            DB::rollBack();
+            
+            if ($e instanceof \Illuminate\Validation\ValidationException) {
+                if ($request->ajax()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Error de validación',
+                        'errors' => $e->errors()
+                    ], 422);
+                }
+                throw $e;
+            }
+            
             if ($request->ajax()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Error de validación',
-                    'errors' => $e->errors()
-                ], 422);
+                    'message' => 'Error al crear el turno: ' . $e->getMessage()
+                ], 500);
             }
-            throw $e;
+            
+            return redirect()->back()->withErrors(['error' => 'Error al crear el turno: ' . $e->getMessage()]);
         }
     }
 
@@ -369,5 +421,112 @@ class AppointmentController extends Controller
         }
 
         return response()->json($slots);
+    }
+    
+    /**
+     * Crear pago de paquete/tratamiento
+     */
+    private function createPackagePayment(Appointment $appointment, array $validated)
+    {
+        // Generar número de recibo
+        $receiptNumber = $this->generateReceiptNumber();
+        
+        // Crear el pago de paquete
+        $payment = Payment::create([
+            'patient_id' => $appointment->patient_id,
+            'payment_date' => now(),
+            'payment_type' => 'package', // ← Tipo paquete
+            'payment_method' => $validated['payment_method'],
+            'amount' => $validated['payment_amount'],
+            'sessions_included' => $validated['package_sessions'], // ← Sesiones del paquete
+            'sessions_used' => 0, // ← Se irá incrementando con cada turno
+            'liquidation_status' => 'pending',
+            'concept' => $validated['payment_concept'] ?: 'Paquete ' . $validated['package_sessions'] . ' sesiones - ' . $appointment->patient->full_name,
+            'receipt_number' => $receiptNumber,
+            'created_by' => auth()->id(),
+        ]);
+        
+        // Asignar la primera sesión al turno actual
+        $this->paymentAllocationService->allocatePackageSession($payment->id, $appointment->id);
+        
+        // Registrar movimiento de caja - TODO EL PAQUETE INGRESA HOY
+        $this->createCashMovement($payment);
+    }
+    
+    /**
+     * Crear prepago para un turno individual
+     */
+    private function createPrepayment(Appointment $appointment, array $validated)
+    {
+        // Generar número de recibo
+        $receiptNumber = $this->generateReceiptNumber();
+        
+        // Crear el pago
+        $payment = Payment::create([
+            'patient_id' => $appointment->patient_id,
+            'payment_date' => now(),
+            'payment_type' => 'single',
+            'payment_method' => $validated['payment_method'],
+            'amount' => $validated['payment_amount'],
+            'sessions_included' => 1,
+            'sessions_used' => 0,
+            'liquidation_status' => 'pending',
+            'concept' => $validated['payment_concept'] ?: 'Pago anticipado - ' . $appointment->patient->full_name,
+            'receipt_number' => $receiptNumber,
+            'created_by' => auth()->id(),
+        ]);
+        
+        // Asignar pago al turno
+        $this->paymentAllocationService->allocateSinglePayment($payment->id, $appointment->id);
+        
+        // Registrar movimiento de caja - INGRESA INMEDIATAMENTE
+        $this->createCashMovement($payment);
+    }
+    
+    /**
+     * Generar número de recibo
+     */
+    private function generateReceiptNumber()
+    {
+        $year = date('Y');
+        $month = date('m');
+        
+        $lastPayment = Payment::whereYear('payment_date', $year)
+            ->whereMonth('payment_date', $month)
+            ->orderBy('receipt_number', 'desc')
+            ->first();
+        
+        if ($lastPayment && $lastPayment->receipt_number) {
+            $lastNumber = intval(substr($lastPayment->receipt_number, -4));
+            $newNumber = $lastNumber + 1;
+        } else {
+            $newNumber = 1;
+        }
+        
+        return $year . $month . str_pad($newNumber, 4, '0', STR_PAD_LEFT);
+    }
+    
+    /**
+     * Crear movimiento de caja
+     */
+    private function createCashMovement(Payment $payment)
+    {
+        $lastMovement = CashMovement::orderBy('movement_date', 'desc')
+            ->orderBy('created_at', 'desc')
+            ->first();
+        
+        $currentBalance = $lastMovement ? $lastMovement->balance_after : 0;
+        $newBalance = $currentBalance + $payment->amount;
+        
+        CashMovement::create([
+            'movement_date' => $payment->payment_date,
+            'type' => 'patient_payment',
+            'amount' => $payment->amount,
+            'description' => $payment->concept ?: 'Pago anticipado - ' . $payment->patient->full_name,
+            'reference_type' => 'payment',
+            'reference_id' => $payment->id,
+            'balance_after' => $newBalance,
+            'user_id' => auth()->id(),
+        ]);
     }
 }

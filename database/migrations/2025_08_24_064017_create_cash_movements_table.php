@@ -19,7 +19,12 @@ return new class extends Migration
                 'professional_payment', 
                 'expense', 
                 'refund', 
-                'other'
+                'other',
+                'cash_opening',
+                'cash_closing', 
+                'cash_control',
+                'shift_handover',
+                'shift_receive'
             ]);
             $table->decimal('amount', 10, 2)->comment('Positivo=ingreso, Negativo=egreso');
             $table->text('description')->nullable();
