@@ -84,7 +84,7 @@
                         $isToday = $currentDay->isToday();
                         $dayOfWeek = $currentDay->dayOfWeek === 0 ? 7 : $currentDay->dayOfWeek; // Convert Sunday from 0 to 7
                         $hasSchedule = $professionalSchedules->has($dayOfWeek);
-                        $isPast = $currentDay->isPast();
+                        $isPast = $currentDay->isBefore(today());
                     @endphp
                     
                     <div class="min-h-[120px] p-2 border-r border-b border-gray-200 dark:border-gray-600 last:border-r-0 

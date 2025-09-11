@@ -2,7 +2,7 @@
 
 [![Laravel](https://img.shields.io/badge/Laravel-12.x-red?style=flat&logo=laravel)](https://laravel.com)
 [![PHP](https://img.shields.io/badge/PHP-8.2-blue?style=flat&logo=php)](https://php.net)
-[![Version](https://img.shields.io/badge/Version-2.2.0-green?style=flat)](#changelog)
+[![Version](https://img.shields.io/badge/Version-2.2.2-green?style=flat)](#changelog)
 [![License](https://img.shields.io/badge/License-MIT-yellow?style=flat)](#license)
 
 Sistema integral de gestión médica para clínicas y consultorios, desarrollado con Laravel 12 y tecnologías modernas.
@@ -10,7 +10,6 @@ Sistema integral de gestión médica para clínicas y consultorios, desarrollado
 ## 📋 Tabla de Contenidos
 
 - [Características](#características)
-- [Instalación](#instalación)
 - [Tecnologías](#tecnologías)
 - [Comandos de Desarrollo](#comandos-de-desarrollo)
 - [Arquitectura del Sistema](#arquitectura-del-sistema)
@@ -62,43 +61,6 @@ Sistema integral de gestión médica para clínicas y consultorios, desarrollado
 - Diferenciación de pagos anticipados vs. cobros del día
 - Vista previa web y versión optimizada para impresión
 - Auto-cierre de ventanas de impresión
-
-## 🚀 Instalación
-
-### Prerrequisitos
-- PHP 8.2+
-- Composer
-- Node.js 18+ & npm
-- MySQL/MariaDB
-
-### Pasos de Instalación
-
-```bash
-# 1. Clonar el repositorio
-git clone <repository-url>
-cd puntosalud
-
-# 2. Instalar dependencias PHP
-composer install
-
-# 3. Instalar dependencias frontend
-npm install
-
-# 4. Configurar entorno
-cp .env.example .env
-php artisan key:generate
-
-# 5. Configurar base de datos en .env
-DB_DATABASE=puntosalud
-DB_USERNAME=tu_usuario
-DB_PASSWORD=tu_contraseña
-
-# 6. Migrar y seedear base de datos
-php artisan migrate:fresh --seed
-
-# 7. Construir assets
-npm run build
-```
 
 ## 🛠 Tecnologías
 
@@ -159,6 +121,29 @@ php artisan config:clear
 - Índices para consultas eficientes
 
 ## 📝 Changelog
+
+### v2.2.2 (2025-09-11) - Corrección Sistema de Turnos
+**🐛 Correcciones Críticas:**
+- **Fix creación de turnos del mismo día**: Sistema ahora permite crear turnos para hoy con validación de horarios
+  - Corrección en lógica de fechas pasadas: `isPast()` → `isBefore(today())`
+  - Botón "+" aparece correctamente en el día actual
+- **Validación completa de disponibilidad**: Sistema robusto que verifica:
+  - Horarios laborales del profesional por día de semana
+  - Conflictos con turnos existentes considerando duración
+  - Días feriados y excepciones de horario
+  - Fines de semana automáticamente bloqueados
+- **Fix error 500 en creación de turnos**: Corrección de tipos de datos para Carbon
+  - Conversión de `$duration` string a entero para `addMinutes()`
+  - Aplicado en `store()`, `update()` y `availableSlots()`
+- **Mejores mensajes de validación**: Mensajes personalizados en español
+  - "Debe seleccionar un paciente" en lugar de mensajes genéricos
+  - Información detallada de horarios disponibles vs solicitados
+
+**🔧 Mejoras Técnicas:**
+- Importación de modelos `ProfessionalSchedule` y `ScheduleException`
+- Validación de horarios usando formato correcto (`H:i` vs objetos DateTime)
+- Soporte para edición de turnos con exclusión del turno actual en validaciones
+- Mensajes de error específicos con rangos horarios y motivos de rechazo
 
 ### v2.2.1 (2025-09-11) - Mejoras en Gestión de Pacientes
 **🆕 Nuevas Funcionalidades:**
