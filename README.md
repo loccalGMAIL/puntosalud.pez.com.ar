@@ -2,7 +2,7 @@
 
 [![Laravel](https://img.shields.io/badge/Laravel-12.x-red?style=flat&logo=laravel)](https://laravel.com)
 [![PHP](https://img.shields.io/badge/PHP-8.2-blue?style=flat&logo=php)](https://php.net)
-[![Version](https://img.shields.io/badge/Version-2.2.2-green?style=flat)](#changelog)
+[![Version](https://img.shields.io/badge/Version-2.2.3-green?style=flat)](#changelog)
 [![License](https://img.shields.io/badge/License-MIT-yellow?style=flat)](#license)
 
 Sistema integral de gestión médica para clínicas y consultorios, desarrollado con Laravel 12 y tecnologías modernas.
@@ -121,6 +121,22 @@ php artisan config:clear
 - Índices para consultas eficientes
 
 ## 📝 Changelog
+
+### v2.2.3 (2025-09-11) - Mejoras de UI y Experiencia de Usuario
+**🎨 Mejoras de Interfaz:**
+- **Dashboard optimizado**: Cards superiores reducidas para mejor aprovechamiento del espacio
+  - Elementos más compactos sin perder legibilidad
+  - Botones de reportes reubicados en línea con métricas principales
+- **Favicon personalizado**: Nuevo diseño SVG representativo de PuntoSalud
+  - Cruz médica con punto dorado distintivo y línea de pulso
+- **Navegación breadcrumb**: Implementada en todas las vistas principales
+  - Patrón consistente para mejor orientación del usuario
+- **Títulos estandarizados**: Formato unificado "Sección - PuntoSalud"
+
+**🔧 Mejoras de Contenido:**
+- **Menú lateral**: "Pagos" → "Cobro Pacientes" (mayor claridad)
+- **Estados de liquidación**: "Pendiente" → "Para liquidar" en vista de pagos
+- **Eliminación de card innecesaria**: Removida "Profesionales Activos" del dashboard
 
 ### v2.2.2 (2025-09-11) - Corrección Sistema de Turnos
 **🐛 Correcciones Críticas:**

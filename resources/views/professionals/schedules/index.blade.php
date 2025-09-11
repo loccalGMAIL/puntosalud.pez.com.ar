@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Horarios - ' . $professional->full_name)
+@section('title', 'Horarios - ' . $professional->full_name . ' - ' . config('app.name'))
 @section('mobileTitle', 'Horarios')
 
 @section('content')

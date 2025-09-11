@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Reportes de Caja')
+@section('title', 'Reportes de Caja - ' . config('app.name'))
 @section('mobileTitle', 'Reportes de Caja')
 
 @section('content')
