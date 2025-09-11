@@ -20,20 +20,20 @@ class DatabaseSeeder extends Seeder
             PatientsSeeder::class,
             
             // 3. Configuraciones que dependen de profesionales
-            ProfessionalScheduleSeeder::class,
-            AppointmentSettingSeeder::class,
+            // ProfessionalScheduleSeeder::class,
+            // AppointmentSettingSeeder::class,
             
-            // 4. Excepciones de horario
-            ScheduleExceptionSeeder::class,
+            // // 4. Excepciones de horario
+            // ScheduleExceptionSeeder::class,
             
-            // 5. Citas que dependen de profesionales, pacientes y horarios
-            AppointmentSeeder::class,
+            // // 5. Citas que dependen de profesionales, pacientes y horarios
+            // AppointmentSeeder::class,
             
-            // 6. Pagos que dependen de pacientes
-            PaymentSeeder::class,
+            // // 6. Pagos que dependen de pacientes
+            // PaymentSeeder::class,
             
-            // 7. Movimientos de caja que dependen de pagos
-            CashMovementSeeder::class,
+            // // 7. Movimientos de caja que dependen de pagos
+            // CashMovementSeeder::class,
         ]);
     }
 }

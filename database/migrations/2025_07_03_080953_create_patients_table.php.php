@@ -22,6 +22,7 @@ return new class extends Migration
             $table->string('health_insurance_number', 100)->nullable();
             $table->date('birth_date')->nullable();
             $table->text('address')->nullable();
+            $table->boolean('activo')->default(true);
             $table->timestamps();
             
             // Índices

@@ -11,9 +11,7 @@ use App\Http\Controllers\AgendaController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ReportController;
 
-Route::get('/', function () {
-    return view('dashboard');
-});
+Route::get('/', [DashboardController::class, 'index']);
 
 Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 

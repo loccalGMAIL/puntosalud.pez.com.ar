@@ -19,10 +19,16 @@ class Patient extends Model
         'health_insurance_number',
         'birth_date',
         'address',
+        'activo',
     ];
 
     protected $casts = [
         'birth_date' => 'date',
+        'activo' => 'boolean',
+    ];
+
+    protected $appends = [
+        'is_active',
     ];
 
     /**
@@ -73,6 +79,11 @@ class Patient extends Model
     public function getAgeAttribute()
     {
         return $this->birth_date ? $this->birth_date->age : null;
+    }
+
+    public function getIsActiveAttribute()
+    {
+        return $this->activo;
     }
 
     /**
