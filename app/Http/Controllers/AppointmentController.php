@@ -8,6 +8,8 @@ use App\Models\Patient;
 use App\Models\Office;
 use App\Models\Payment;
 use App\Models\CashMovement;
+use App\Models\ProfessionalSchedule;
+use App\Models\ScheduleException;
 use App\Services\PaymentAllocationService;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
@@ -111,6 +113,14 @@ class AppointmentController extends Controller
                 // Campos de paquete
                 'package_sessions' => 'nullable|integer|min:2|max:20',
                 'session_price' => 'nullable|numeric|min:0',
+            ], [
+                'professional_id.required' => 'Debe seleccionar un profesional.',
+                'professional_id.exists' => 'El profesional seleccionado no existe.',
+                'patient_id.required' => 'Debe seleccionar un paciente.',
+                'patient_id.exists' => 'El paciente seleccionado no existe.',
+                'appointment_date.required' => 'La fecha es obligatoria.',
+                'appointment_time.required' => 'La hora es obligatoria.',
+                'duration.required' => 'La duración es obligatoria.',
             ]);
 
             // Limpiar campos opcionales vacíos
@@ -127,33 +137,22 @@ class AppointmentController extends Controller
             // Crear fecha y hora completa
             $appointmentDateTime = Carbon::parse($validated['appointment_date'] . ' ' . $validated['appointment_time']);
 
-            // Validar que la fecha y hora no sea en el pasado
-            if ($appointmentDateTime->isPast()) {
+            // Validar disponibilidad del profesional (incluyendo horarios de trabajo)
+            $availabilityCheck = $this->checkProfessionalAvailability(
+                $validated['professional_id'], 
+                $appointmentDateTime, 
+                $validated['duration']
+            );
+            
+            if (!$availabilityCheck['available']) {
                 if ($request->ajax()) {
                     return response()->json([
                         'success' => false,
                         'message' => 'Error de validación',
-                        'errors' => ['appointment_time' => ['No se pueden crear turnos en fechas y horarios pasados.']]
+                        'errors' => ['appointment_time' => [$availabilityCheck['reason']]]
                     ], 422);
                 }
-                return redirect()->back()->withErrors(['appointment_time' => 'No se pueden crear turnos en fechas y horarios pasados.']);
-            }
-
-            // Validación básica de disponibilidad
-            $existingAppointment = Appointment::where('professional_id', $validated['professional_id'])
-                ->where('appointment_date', $appointmentDateTime)
-                ->where('status', 'scheduled')
-                ->first();
-
-            if ($existingAppointment) {
-                if ($request->ajax()) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Error de validación',
-                        'errors' => ['appointment_time' => ['El profesional ya tiene un turno en ese horario.']]
-                    ], 422);
-                }
-                return redirect()->back()->withErrors(['appointment_time' => 'El profesional ya tiene un turno en ese horario.']);
+                return redirect()->back()->withErrors(['appointment_time' => $availabilityCheck['reason']]);
             }
 
             DB::beginTransaction();
@@ -278,37 +277,26 @@ class AppointmentController extends Controller
 
             $appointmentDateTime = Carbon::parse($validated['appointment_date'] . ' ' . $validated['appointment_time']);
 
-            // Validar que la fecha y hora no sea en el pasado (solo si cambió la fecha/hora)
-            if ($appointment->appointment_date->format('Y-m-d H:i') !== $appointmentDateTime->format('Y-m-d H:i')) {
-                if ($appointmentDateTime->isPast()) {
+            // Validar disponibilidad si cambió la fecha/hora o profesional
+            if ($appointment->appointment_date->format('Y-m-d H:i') !== $appointmentDateTime->format('Y-m-d H:i') || 
+                $appointment->professional_id != $validated['professional_id']) {
+                
+                $availabilityCheck = $this->checkProfessionalAvailability(
+                    $validated['professional_id'], 
+                    $appointmentDateTime, 
+                    $validated['duration'],
+                    $appointment->id
+                );
+                
+                if (!$availabilityCheck['available']) {
                     if ($request->ajax()) {
                         return response()->json([
                             'success' => false,
                             'message' => 'Error de validación',
-                            'errors' => ['appointment_time' => ['No se pueden programar turnos en fechas y horarios pasados.']]
+                            'errors' => ['appointment_time' => [$availabilityCheck['reason']]]
                         ], 422);
                     }
-                    return redirect()->back()->withErrors(['appointment_time' => 'No se pueden programar turnos en fechas y horarios pasados.']);
-                }
-            }
-
-            // Validación básica de disponibilidad (si cambió la fecha/hora)
-            if ($appointment->appointment_date->format('Y-m-d H:i') !== $appointmentDateTime->format('Y-m-d H:i')) {
-                $existingAppointment = Appointment::where('professional_id', $validated['professional_id'])
-                    ->where('appointment_date', $appointmentDateTime)
-                    ->where('status', 'scheduled')
-                    ->where('id', '!=', $appointment->id)
-                    ->first();
-
-                if ($existingAppointment) {
-                    if ($request->ajax()) {
-                        return response()->json([
-                            'success' => false,
-                            'message' => 'Error de validación',
-                            'errors' => ['appointment_time' => ['El profesional ya tiene un turno en ese horario.']]
-                        ], 422);
-                    }
-                    return redirect()->back()->withErrors(['appointment_time' => 'El profesional ya tiene un turno en ese horario.']);
+                    return redirect()->back()->withErrors(['appointment_time' => $availabilityCheck['reason']]);
                 }
             }
 
@@ -396,7 +384,7 @@ class AppointmentController extends Controller
         // Generar slots de 8:00 a 18:00 cada 30 minutos
         $currentTime = $date->copy()->setTime(8, 0);
         $endTime = $date->copy()->setTime(18, 0);
-        $duration = $validated['duration'];
+        $duration = (int) $validated['duration'];
 
         while ($currentTime->copy()->addMinutes($duration)->lte($endTime)) {
             $slotEnd = $currentTime->copy()->addMinutes($duration);
@@ -528,5 +516,105 @@ class AppointmentController extends Controller
             'balance_after' => $newBalance,
             'user_id' => auth()->id(),
         ]);
+    }
+    
+    /**
+     * Verificar disponibilidad del profesional considerando horarios y turnos existentes
+     */
+    private function checkProfessionalAvailability($professionalId, $appointmentDateTime, $duration, $editingAppointmentId = null)
+    {
+        // Convertir duración a entero para evitar errores con addMinutes
+        $duration = (int) $duration;
+        // 1. Verificar que no sea una fecha/hora pasada
+        if ($appointmentDateTime->isPast()) {
+            return [
+                'available' => false,
+                'reason' => 'No se pueden crear turnos en fechas y horarios pasados.'
+            ];
+        }
+        
+        // 2. Verificar que no sea fin de semana
+        if ($appointmentDateTime->isWeekend()) {
+            return [
+                'available' => false,
+                'reason' => 'No se pueden crear turnos los fines de semana.'
+            ];
+        }
+        
+        // 3. Verificar excepciones de horario (días feriados/no laborables)
+        $exception = ScheduleException::where('exception_date', $appointmentDateTime->toDateString())
+            ->where(function($query) {
+                $query->where('affects_all', true);
+            })
+            ->first();
+            
+        if ($exception) {
+            return [
+                'available' => false,
+                'reason' => 'Día no laborable: ' . $exception->reason
+            ];
+        }
+        
+        // 4. Verificar horarios del profesional
+        $dayOfWeek = $appointmentDateTime->dayOfWeek;
+        if ($dayOfWeek == 0) $dayOfWeek = 7; // Domingo = 7
+        
+        $schedule = ProfessionalSchedule::where('professional_id', $professionalId)
+            ->where('day_of_week', $dayOfWeek)
+            ->where('is_active', true)
+            ->first();
+            
+        if (!$schedule) {
+            return [
+                'available' => false,
+                'reason' => 'El profesional no trabaja este día de la semana.'
+            ];
+        }
+        
+        // 5. Verificar que la hora esté dentro del horario laboral
+        $appointmentTime = $appointmentDateTime->format('H:i');
+        $appointmentEndTime = $appointmentDateTime->copy()->addMinutes($duration)->format('H:i');
+        $scheduleStart = $schedule->start_time->format('H:i');
+        $scheduleEnd = $schedule->end_time->format('H:i');
+        
+        if ($appointmentTime < $scheduleStart || $appointmentEndTime > $scheduleEnd) {
+            return [
+                'available' => false,
+                'reason' => 'El horario debe estar entre ' . $scheduleStart . ' y ' . $scheduleEnd . '. ' .
+                    'Solicitado: ' . $appointmentTime . ' - ' . $appointmentEndTime
+            ];
+        }
+        
+        // 6. Verificar conflictos con turnos existentes
+        $query = Appointment::where('professional_id', $professionalId)
+            ->where('status', 'scheduled')
+            ->where(function($q) use ($appointmentDateTime, $duration) {
+                $endDateTime = $appointmentDateTime->copy()->addMinutes($duration);
+                
+                $q->where(function($subQuery) use ($appointmentDateTime, $endDateTime) {
+                    // El nuevo turno empieza antes de que termine uno existente
+                    $subQuery->where('appointment_date', '<', $endDateTime)
+                             ->whereRaw('DATE_ADD(appointment_date, INTERVAL duration MINUTE) > ?', [$appointmentDateTime]);
+                });
+            });
+            
+        // Si estamos editando un turno, excluirlo de la verificación
+        if ($editingAppointmentId) {
+            $query->where('id', '!=', $editingAppointmentId);
+        }
+        
+        $existingAppointment = $query->first();
+            
+        if ($existingAppointment) {
+            return [
+                'available' => false,
+                'reason' => 'El profesional ya tiene un turno en ese horario.'
+            ];
+        }
+        
+        return [
+            'available' => true,
+            'reason' => null
+        ];
     }
 }
