@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Pago #' . $payment->receipt_number)
+@section('title', 'Pago #' . $payment->receipt_number . ' - ' . config('app.name'))
 @section('mobileTitle', 'Detalle Pago')
 
 @section('content')

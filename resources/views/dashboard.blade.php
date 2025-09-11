@@ -14,14 +14,14 @@
         <div class="grid auto-rows-min gap-4 md:grid-cols-3">
             
             <!-- Card 1: Consultas del día -->
-            <div class="group relative overflow-hidden rounded-xl border border-emerald-200/50 bg-gradient-to-br from-white to-emerald-50/50 p-6 shadow-sm transition-all duration-300 hover:shadow-lg hover:shadow-emerald-100/50 dark:border-emerald-800/30 dark:from-gray-900 dark:to-emerald-950/20 dark:hover:shadow-emerald-900/20">
+            <div class="group relative overflow-hidden rounded-xl border border-emerald-200/50 bg-gradient-to-br from-white to-emerald-50/50 p-4 shadow-sm transition-all duration-300 hover:shadow-lg hover:shadow-emerald-100/50 dark:border-emerald-800/30 dark:from-gray-900 dark:to-emerald-950/20 dark:hover:shadow-emerald-900/20">
                 <div class="flex items-start justify-between">
                     <div>
                         <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Consultas del Día</p>
-                        <div class="mt-2 flex items-baseline gap-2">
-                            <p class="text-3xl font-bold text-gray-900 dark:text-white transition-all duration-300 group-hover:scale-105">{{ $dashboardData['consultasHoy']['total'] }}</p>
+                        <div class="mt-1 flex items-baseline gap-2">
+                            <p class="text-2xl font-bold text-gray-900 dark:text-white transition-all duration-300 group-hover:scale-105">{{ $dashboardData['consultasHoy']['total'] }}</p>
                         </div>
-                        <div class="mt-3 flex gap-4 text-xs">
+                        <div class="mt-2 flex gap-4 text-xs">
                             <div class="flex items-center gap-1">
                                 <svg class="h-3 w-3 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -36,8 +36,8 @@
                             </div>
                         </div>
                     </div>
-                    <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-emerald-100 transition-all duration-300 group-hover:bg-emerald-200 group-hover:scale-110 dark:bg-emerald-900/30">
-                        <svg class="h-6 w-6 text-emerald-700 dark:text-emerald-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                    <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-100 transition-all duration-300 group-hover:bg-emerald-200 group-hover:scale-110 dark:bg-emerald-900/30">
+                        <svg class="h-5 w-5 text-emerald-700 dark:text-emerald-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M3 13l4 4L21 3" />
                         </svg>
                     </div>
@@ -46,14 +46,14 @@
             </div>
 
             <!-- Card 2: Ingresos del día -->
-            <div class="group relative overflow-hidden rounded-xl border border-emerald-200/50 bg-gradient-to-br from-white to-emerald-50/30 p-6 shadow-sm transition-all duration-300 hover:shadow-lg hover:shadow-emerald-100/50 dark:border-emerald-800/30 dark:from-gray-900 dark:to-emerald-950/10 dark:hover:shadow-emerald-900/20">
+            <div class="group relative overflow-hidden rounded-xl border border-emerald-200/50 bg-gradient-to-br from-white to-emerald-50/30 p-4 shadow-sm transition-all duration-300 hover:shadow-lg hover:shadow-emerald-100/50 dark:border-emerald-800/30 dark:from-gray-900 dark:to-emerald-950/10 dark:hover:shadow-emerald-900/20">
                 <div class="flex items-start justify-between">
                     <div>
                         <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Ingresos del Día</p>
-                        <div class="mt-2 flex items-baseline gap-2">
-                            <p class="text-3xl font-bold text-gray-900 dark:text-white transition-all duration-300 group-hover:scale-105">${{ number_format($dashboardData['ingresosHoy']['total'], 0, ',', '.') }}</p>
+                        <div class="mt-1 flex items-baseline gap-2">
+                            <p class="text-2xl font-bold text-gray-900 dark:text-white transition-all duration-300 group-hover:scale-105">${{ number_format($dashboardData['ingresosHoy']['total'], 0, ',', '.') }}</p>
                         </div>
-                        <div class="mt-3 space-y-1 text-xs">
+                        <div class="mt-2 space-y-1 text-xs">
                             <div class="flex justify-between text-gray-600 dark:text-gray-400">
                                 <span>Efectivo:</span>
                                 <span class="font-medium text-emerald-700 dark:text-emerald-400">${{ number_format($dashboardData['ingresosHoy']['efectivo'], 0, ',', '.') }}</span>
@@ -68,9 +68,9 @@
                             </div>
                         </div>
                     </div>
-                    <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-emerald-100 transition-all duration-300 group-hover:bg-emerald-200 group-hover:scale-110 dark:bg-emerald-900/30">
+                    <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-100 transition-all duration-300 group-hover:bg-emerald-200 group-hover:scale-110 dark:bg-emerald-900/30">
                         <!-- Dollar Sign Icon -->
-                        <svg class="h-6 w-6 text-emerald-700 dark:text-emerald-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                        <svg class="h-5 w-5 text-emerald-700 dark:text-emerald-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.897-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                     </div>
@@ -79,35 +79,47 @@
                 <div class="absolute inset-0 bg-gradient-to-r from-emerald-600/5 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100"></div>
             </div>
 
-            <!-- Card 3: Profesionales activos -->
-            <div class="group relative overflow-hidden rounded-xl border border-emerald-200/50 bg-gradient-to-br from-white to-emerald-50/30 p-6 shadow-sm transition-all duration-300 hover:shadow-lg hover:shadow-emerald-100/50 dark:border-emerald-800/30 dark:from-gray-900 dark:to-emerald-950/10 dark:hover:shadow-emerald-900/20">
-                <div class="flex items-start justify-between">
-                    <div>
-                        <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Profesionales Activos</p>
-                        <div class="mt-2 flex items-baseline gap-2">
-                            <p class="text-3xl font-bold text-gray-900 dark:text-white transition-all duration-300 group-hover:scale-105">{{ $dashboardData['profesionalesActivos']['total'] }}</p>
-                        </div>
-                        <div class="mt-3 flex gap-4 text-xs">
-                            <div class="flex items-center gap-1">
-                                <div class="h-2 w-2 rounded-full bg-red-500 animate-pulse"></div>
-                                <span class="text-gray-600 dark:text-gray-400">{{ $dashboardData['profesionalesActivos']['enConsulta'] }} en consulta</span>
+            <!-- Card 3: Acceso Rápido a Reportes -->
+            <div class="bg-white dark:bg-gray-800 rounded-xl border border-emerald-200/50 p-4 shadow-sm dark:border-emerald-800/30">
+                <div class="space-y-3">
+                    <a href="{{ route('reports.daily-schedule') }}" 
+                       class="flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-blue-50 to-blue-100 hover:from-blue-100 hover:to-blue-200 border border-blue-200 dark:from-blue-900/20 dark:to-blue-800/20 dark:border-blue-700 transition-all duration-200 group">
+                        <div class="flex items-center gap-3">
+                            <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-500 text-white">
+                                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25" />
+                                </svg>
                             </div>
-                            <div class="flex items-center gap-1">
-                                <div class="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></div>
-                                <span class="text-gray-600 dark:text-gray-400">{{ $dashboardData['profesionalesActivos']['disponibles'] }} disponibles</span>
+                            <div>
+                                <div class="text-sm font-medium text-blue-900 dark:text-blue-100">Pacientes a Atender</div>
+                                <div class="text-xs text-blue-700 dark:text-blue-300">Lista para imprimir</div>
                             </div>
                         </div>
-                    </div>
-                    <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-emerald-100 transition-all duration-300 group-hover:bg-emerald-200 group-hover:scale-110 dark:bg-emerald-900/30">
-                        <!-- Heart Icon -->
-                        <svg class="h-6 w-6 text-emerald-700 dark:text-emerald-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733 -0.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
+                        <svg class="h-4 w-4 text-blue-600 dark:text-blue-400 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
                         </svg>
-                    </div>
+                    </a>
+                    
+                    <a href="{{ route('reports.professional-liquidation') }}" 
+                       class="flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-amber-50 to-amber-100 hover:from-amber-100 hover:to-amber-200 border border-amber-200 dark:from-amber-900/20 dark:to-amber-800/20 dark:border-amber-700 transition-all duration-200 group">
+                        <div class="flex items-center gap-3">
+                            <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-500 text-white">
+                                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.897-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            </div>
+                            <div>
+                                <div class="text-sm font-medium text-amber-900 dark:text-amber-100">Liquidación</div>
+                                <div class="text-xs text-amber-700 dark:text-amber-300">Reporte para profesional</div>
+                            </div>
+                        </div>
+                        <svg class="h-4 w-4 text-amber-600 dark:text-amber-400 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                        </svg>
+                    </a>
                 </div>
-                <!-- Decorative gradient -->
-                <div class="absolute inset-0 bg-gradient-to-r from-emerald-600/5 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100"></div>
             </div>
+
         </div>
 
         <!-- Área principal dividida -->
@@ -317,53 +329,6 @@
                     </div>
                 </div>
 
-                <!-- Acceso Rápido a Reportes -->
-                <div class="mt-6 pt-6 border-t border-emerald-100 dark:border-emerald-800">
-                    <h3 class="text-sm font-medium text-emerald-700 dark:text-emerald-300 uppercase tracking-wide mb-4 flex items-center gap-2">
-                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c-.621 0-1.125-.504-1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
-                        </svg>
-                        Reportes
-                    </h3>
-                    
-                    <div class="space-y-2">
-                        <a href="{{ route('reports.daily-schedule') }}" 
-                           class="flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-blue-50 to-blue-100 hover:from-blue-100 hover:to-blue-200 border border-blue-200 dark:from-blue-900/20 dark:to-blue-800/20 dark:border-blue-700 transition-all duration-200 group">
-                            <div class="flex items-center gap-3">
-                                <div class="flex h-6 w-6 items-center justify-center rounded-lg bg-blue-500 text-white">
-                                    <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25" />
-                                    </svg>
-                                </div>
-                                <div>
-                                    <div class="text-sm font-medium text-blue-900 dark:text-blue-100">Pacientes a Atender</div>
-                                    <div class="text-xs text-blue-700 dark:text-blue-300">Lista para imprimir</div>
-                                </div>
-                            </div>
-                            <svg class="h-3 w-3 text-blue-600 dark:text-blue-400 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-                            </svg>
-                        </a>
-                        
-                        <a href="{{ route('reports.professional-liquidation') }}" 
-                           class="flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-amber-50 to-amber-100 hover:from-amber-100 hover:to-amber-200 border border-amber-200 dark:from-amber-900/20 dark:to-amber-800/20 dark:border-amber-700 transition-all duration-200 group">
-                            <div class="flex items-center gap-3">
-                                <div class="flex h-6 w-6 items-center justify-center rounded-lg bg-amber-500 text-white">
-                                    <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.897-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                    </svg>
-                                </div>
-                                <div>
-                                    <div class="text-sm font-medium text-amber-900 dark:text-amber-100">Liquidación</div>
-                                    <div class="text-xs text-amber-700 dark:text-amber-300">Reporte para profesional</div>
-                                </div>
-                            </div>
-                            <svg class="h-3 w-3 text-amber-600 dark:text-amber-400 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-                            </svg>
-                        </a>
-                    </div>
-                </div>
                 
                 <!-- Botón de acción -->
                 <button class="w-full mt-6 bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 transform hover:scale-105 shadow-md hover:shadow-lg">

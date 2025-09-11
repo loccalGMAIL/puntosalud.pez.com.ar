@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Registrar Gasto')
+@section('title', 'Registrar Gasto - ' . config('app.name'))
 @section('mobileTitle', 'Registrar Gasto')
 
 @section('content')

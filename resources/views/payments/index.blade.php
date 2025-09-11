@@ -8,6 +8,13 @@
     <!-- Header -->
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
+            <nav class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 mb-2">
+                <a href="{{ route('dashboard') }}" class="hover:text-gray-700 dark:hover:text-gray-200">Dashboard</a>
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                </svg>
+                <span>Pagos</span>
+            </nav>
             <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Gestión de Pagos</h1>
             <p class="text-gray-600 dark:text-gray-400">Administra los pagos de pacientes y liquidaciones</p>
         </div>
@@ -150,7 +157,7 @@
                     <select x-model="filters.liquidation_status" 
                             class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white">
                         <option value="">Todos</option>
-                        <option value="pending">Pendiente</option>
+                        <option value="pending">A liquidar</option>
                         <option value="liquidated">Liquidado</option>
                         <option value="cancelled">Cancelado</option>
                     </select>
@@ -264,7 +271,7 @@
                                                 'cancelled' => 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
                                             ];
                                             $statusLabels = [
-                                                'pending' => 'Pendiente',
+                                                'pending' => 'Para liquidar',
                                                 'liquidated' => 'Liquidado',
                                                 'cancelled' => 'Cancelado'
                                             ];

@@ -1,13 +1,22 @@
 @extends('layouts.app')
 
-@section('title', 'Agenda')
+@section('title', 'Agenda - ' . config('app.name'))
 @section('mobileTitle', 'Agenda')
 
 @section('content')
 <div class="p-6" x-data="appointmentModal()" x-init="init()">
     <!-- Header -->
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Agenda</h1>
+        <div>
+            <nav class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 mb-2">
+                <a href="{{ route('dashboard') }}" class="hover:text-gray-700 dark:hover:text-gray-200">Dashboard</a>
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                </svg>
+                <span>Agenda</span>
+            </nav>
+            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Agenda</h1>
+        </div>
         
         <div class="flex flex-col sm:flex-row gap-3">
             <!-- Professional Selector -->

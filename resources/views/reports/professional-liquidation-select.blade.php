@@ -1,5 +1,7 @@
 @extends('layouts.app')
 
+@section('title', 'Seleccionar Liquidación Profesional - ' . config('app.name'))
+
 @section('content')
 <div class="container mx-auto px-4 py-6">
     <div class="mb-6">

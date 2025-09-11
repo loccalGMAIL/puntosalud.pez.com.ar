@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Turnos')
+@section('title', 'Turnos - ' . config('app.name'))
 @section('mobileTitle', 'Turnos')
 
 @section('content')
@@ -10,6 +10,13 @@
     <div class="flex flex-col gap-4">
         <div class="flex items-center justify-between">
             <div>
+                <nav class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 mb-2">
+                    <a href="{{ route('dashboard') }}" class="hover:text-gray-700 dark:hover:text-gray-200">Dashboard</a>
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                    </svg>
+                    <span>Turnos</span>
+                </nav>
                 <h1 class="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
                     Agenda de Turnos
                 </h1>
