@@ -160,6 +160,28 @@ php artisan config:clear
 
 ## 📝 Changelog
 
+### v2.2.1 (2025-09-11) - Mejoras en Gestión de Pacientes
+**🆕 Nuevas Funcionalidades:**
+- **Sistema de activación/desactivación de pacientes**: Control completo del estado de pacientes
+  - Campo `activo` en base de datos con valor por defecto `true`
+  - Interfaz visual con botones de toggle activo/inactivo
+  - Filtros por estado en la vista de pacientes
+
+**🔧 Mejoras:**
+- **Formateo automático de DNI**: Los DNI se formatean automáticamente con puntos
+  - Entrada: `25678910` → Guardado: `25.678.910`
+  - Manejo de DNI de 7 y 8 dígitos
+  - Limpieza automática de espacios y puntos existentes
+- **Corrección de fechas en edición**: Fix del formato de fecha de nacimiento en modal de edición
+- **Corrección de estadísticas**: Arreglo en el conteo de pacientes sin obra social
+  - Lógica simplificada: Total - Con obra social = Sin obra social
+
+**🐛 Correcciones:**
+- Fix en accessor `is_active` para compatibilidad entre frontend y backend
+- Corrección en validación de campos `activo` vs `is_active`
+- Mejora en la lógica de conteo de estadísticas de pacientes
+- Formato correcto de fechas ISO para inputs HTML tipo date
+
 ### v2.2.0 (2025-08-30) - Sistema de Reportes para Profesionales
 **🆕 Nuevas Funcionalidades:**
 - **Listado de Pacientes a Atender**: Reporte diario imprimible para profesionales

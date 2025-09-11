@@ -35,10 +35,14 @@ class PatientController extends Controller
 
         // Estadísticas
         $allPatients = Patient::all();
+        $withInsurance = $allPatients->filter(function($patient) {
+            return !empty($patient->health_insurance);
+        })->count();
+        
         $stats = [
             'total' => $allPatients->count(),
-            'with_insurance' => $allPatients->where('health_insurance', '!=', null)->where('health_insurance', '!=', '')->count(),
-            'without_insurance' => $allPatients->where('health_insurance', null)->count() + $allPatients->where('health_insurance', '')->count(),
+            'with_insurance' => $withInsurance,
+            'without_insurance' => $allPatients->count() - $withInsurance,
             'this_month' => $allPatients->where('created_at', '>=', now()->startOfMonth())->count(),
         ];
 
@@ -70,6 +74,9 @@ class PatientController extends Controller
                 'health_insurance' => 'nullable|string|max:255',
                 'health_insurance_number' => 'nullable|string|max:255',
             ]);
+
+            // Formatear DNI con puntos
+            $validated['dni'] = $this->formatDni($validated['dni']);
 
             Patient::create($validated);
 
@@ -117,9 +124,9 @@ class PatientController extends Controller
     public function update(Request $request, Patient $patient)
     {
         // Si solo se está actualizando el estado
-        if ($request->has('is_active') && !$request->has('first_name')) {
+        if ($request->has('activo') && !$request->has('first_name')) {
             $patient->update([
-                'is_active' => $request->get('is_active') === '1'
+                'activo' => $request->get('activo') === '1'
             ]);
 
             if ($request->ajax()) {
@@ -142,6 +149,9 @@ class PatientController extends Controller
                 'health_insurance' => 'nullable|string|max:255',
                 'health_insurance_number' => 'nullable|string|max:255',
             ]);
+
+            // Formatear DNI con puntos
+            $validated['dni'] = $this->formatDni($validated['dni']);
 
             $patient->update($validated);
 
@@ -190,5 +200,34 @@ class PatientController extends Controller
         }
 
         return back()->with('success', 'Paciente eliminado exitosamente.');
+    }
+
+    /**
+     * Formatear DNI agregando puntos si no los tiene
+     */
+    private function formatDni($dni)
+    {
+        if (empty($dni)) {
+            return $dni;
+        }
+
+        // Remover todos los puntos y espacios existentes
+        $cleanDni = preg_replace('/[.\s]/', '', $dni);
+
+        // Verificar que solo contenga números
+        if (!preg_match('/^\d{7,8}$/', $cleanDni)) {
+            return $dni; // Devolver original si no es válido
+        }
+
+        // Formatear según la longitud
+        if (strlen($cleanDni) === 7) {
+            // 7 dígitos: X.XXX.XXX
+            return substr($cleanDni, 0, 1) . '.' . substr($cleanDni, 1, 3) . '.' . substr($cleanDni, 4, 3);
+        } elseif (strlen($cleanDni) === 8) {
+            // 8 dígitos: XX.XXX.XXX
+            return substr($cleanDni, 0, 2) . '.' . substr($cleanDni, 2, 3) . '.' . substr($cleanDni, 5, 3);
+        }
+
+        return $dni; // Devolver original si no coincide con formatos esperados
     }
 }

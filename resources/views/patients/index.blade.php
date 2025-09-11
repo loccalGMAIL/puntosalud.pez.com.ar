@@ -369,7 +369,7 @@ function patientsPage() {
                 first_name: patient.first_name,
                 last_name: patient.last_name,
                 dni: patient.dni,
-                birth_date: patient.birth_date,
+                birth_date: this.formatDateForInput(patient.birth_date),
                 email: patient.email || '',
                 phone: patient.phone,
                 address: patient.address || '',
@@ -485,7 +485,7 @@ function patientsPage() {
             
             try {
                 const formData = new FormData();
-                formData.append('is_active', patient.is_active ? '0' : '1');
+                formData.append('activo', patient.is_active ? '0' : '1');
                 formData.append('_method', 'PUT');
                 formData.append('_token', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
                 
@@ -516,6 +516,13 @@ function patientsPage() {
 
         getMaxDate() {
             return new Date().toISOString().split('T')[0];
+        },
+
+        formatDateForInput(dateString) {
+            if (!dateString) return '';
+            // Convertir fecha ISO (1980-01-01T03:00:00.000000Z) a formato yyyy-MM-dd
+            const date = new Date(dateString);
+            return date.toISOString().split('T')[0];
         }
     }
 }
