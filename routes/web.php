@@ -10,8 +10,20 @@ use App\Http\Controllers\AppointmentController;
 use App\Http\Controllers\AgendaController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\UserController;
 
-Route::get('/', [DashboardController::class, 'index']);
+// Authentication routes
+Route::get('/', function() {
+    return redirect()->route('login');
+});
+
+Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
+Route::post('/login', [AuthController::class, 'login']);
+Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+
+// Protected routes
+Route::middleware(['auth'])->group(function () {
 
 Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
@@ -60,3 +72,15 @@ Route::get('/cash/report', [App\Http\Controllers\CashController::class, 'cashRep
 Route::get('/cash/expense', [App\Http\Controllers\CashController::class, 'addExpense'])->name('cash.expense-form');
 Route::post('/cash/expense', [App\Http\Controllers\CashController::class, 'addExpense'])->name('cash.expense.store');
 Route::get('/cash/movements/{cashMovement}', [App\Http\Controllers\CashController::class, 'getCashMovementDetails'])->name('cash.movement-details');
+
+// User management routes (Admin only)
+Route::middleware(['can:viewAny,App\Models\User'])->group(function () {
+    Route::resource('users', UserController::class);
+    Route::patch('/users/{user}/toggle-status', [UserController::class, 'toggleStatus'])->name('users.toggle-status');
+});
+
+// User profile routes
+Route::get('/profile', [UserController::class, 'profile'])->name('profile');
+Route::post('/change-password', [UserController::class, 'changePassword'])->name('change-password');
+
+}); // End of auth middleware group
