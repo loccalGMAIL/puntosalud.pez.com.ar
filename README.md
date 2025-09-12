@@ -2,7 +2,7 @@
 
 [![Laravel](https://img.shields.io/badge/Laravel-12.x-red?style=flat&logo=laravel)](https://laravel.com)
 [![PHP](https://img.shields.io/badge/PHP-8.2-blue?style=flat&logo=php)](https://php.net)
-[![Version](https://img.shields.io/badge/Version-2.2.3-green?style=flat)](#changelog)
+[![Version](https://img.shields.io/badge/Version-2.3.0-green?style=flat)](#changelog)
 [![License](https://img.shields.io/badge/License-MIT-yellow?style=flat)](#license)
 
 Sistema integral de gestión médica para clínicas y consultorios, desarrollado con Laravel 12 y tecnologías modernas.
@@ -121,6 +121,46 @@ php artisan config:clear
 - Índices para consultas eficientes
 
 ## 📝 Changelog
+
+### v2.3.0 (2025-09-11) - Sistema de Autenticación y Control de Usuarios
+**🔐 Nuevas Funcionalidades:**
+- **Sistema de Autenticación Completo**: Login/logout con validación de credenciales
+  - Pantalla de login moderna con imagen de fondo personalizada
+  - Validación de usuarios activos y manejo de sesiones
+  - Redirección automática según estado de autenticación
+- **Gestión de Usuarios**: CRUD completo con control de permisos
+  - Roles diferenciados: Administrador y Recepcionista
+  - Activación/desactivación de usuarios
+  - Políticas de autorización (UserPolicy)
+- **Control de Acceso por Roles**: Sistema de permisos granular
+  - Solo administradores pueden gestionar usuarios
+  - Acceso diferenciado al menú de navegación
+  - Protección de rutas sensibles
+- **Middleware de Seguridad**: Verificación automática de usuarios activos
+  - CheckUserActive middleware personalizado
+  - Logout automático de usuarios desactivados
+  - Protección de todas las rutas con middleware auth
+
+**🎨 Mejoras de Interfaz:**
+- **Pantalla de Login Rediseñada**: Diseño moderno de dos columnas
+  - Panel izquierdo con imagen de fondo difuminada (back_login.png)
+  - Gradientes verdes coherentes con la identidad visual
+  - Información de marca y características del sistema
+- **Menú de Usuario**: Dropdown con perfil y logout
+  - Enlace a gestión de usuarios (solo admin)
+  - Vista de perfil personal con cambio de contraseña
+  - Navegación mejorada con breadcrumbs
+
+**🏗️ Arquitectura y Seguridad:**
+- **Modelos Expandidos**: User model con métodos de rol y scopes
+- **Controladores Nuevos**: AuthController y UserController
+- **Vistas Adicionales**: Login, gestión de usuarios, perfil
+- **Seeders**: Usuarios por defecto (admin y recepcionista)
+- **Rutas Protegidas**: Todas las rutas existentes requieren autenticación
+
+**👤 Usuarios por Defecto:**
+- Administrador: `admin@puntosalud.com` / `password123`
+- Recepcionista: `recepcion@puntosalud.com` / `password123`
 
 ### v2.2.3 (2025-09-11) - Mejoras de UI y Experiencia de Usuario
 **🎨 Mejoras de Interfaz:**
