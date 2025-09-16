@@ -16,6 +16,11 @@ class CheckUserActive
      */
     public function handle(Request $request, Closure $next): Response
     {
+        // Excluir rutas de autenticación del middleware
+        if ($request->routeIs('login') || $request->routeIs('logout')) {
+            return $next($request);
+        }
+
         if (Auth::check()) {
             $user = Auth::user();
             
