@@ -136,7 +136,8 @@
                     <!-- Footer -->
                     <div class="mt-8 text-center">
                         <p class="text-xs text-gray-500">
-                            PuntoSalud v{{ config('app.version', '2.2.3') }} - Sistema de Gestión Médica
+                            PuntoSalud v{{ config('app.version', '2.2.3') }} - &copy; {{ date('Y') }}
+                    - Designed by <a target="_blank" href="https://pez.com.ar">Pez</a>
                         </p>
                     </div>
                 </div>
