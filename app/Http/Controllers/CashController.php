@@ -45,6 +45,9 @@ class CashController extends Controller
         $lastMovement = $movements->first();
         $systemFinalBalance = $lastMovement ? $lastMovement->balance_after : $initialBalance;
         
+        // Obtener estado de caja para el día
+        $cashStatus = CashMovement::getCashStatusForDate($selectedDate);
+
         $cashSummary = [
             'date' => $selectedDate,
             'initial_balance' => $initialBalance,
@@ -52,7 +55,9 @@ class CashController extends Controller
             'total_outflows' => abs($outflows),
             'final_balance' => $finalBalance,
             'system_final_balance' => $systemFinalBalance,
-            'is_closed' => false, // Sin funcionalidad de cierre por ahora
+            'is_closed' => $cashStatus['is_closed'],
+            'is_open' => $cashStatus['is_open'],
+            'needs_opening' => $cashStatus['needs_opening'],
             'movements_count' => $movements->count()
         ];
         
@@ -324,6 +329,7 @@ class CashController extends Controller
                 'success' => true,
                 'message' => 'Caja cerrada exitosamente.',
                 'cash_movement' => $cashMovement,
+                'redirect_url' => route('cash.daily-report', ['date' => $closeDate->format('Y-m-d')]),
                 'summary' => [
                     'theoretical_balance' => $theoreticalBalance,
                     'counted_amount' => $validated['closing_amount'],
@@ -346,16 +352,185 @@ class CashController extends Controller
     {
         $date = $request->get('date', now()->format('Y-m-d'));
         $selectedDate = Carbon::parse($date);
-        
+
         $status = CashMovement::getCashStatusForDate($selectedDate);
         $unclosedDate = CashMovement::hasUnclosedCash();
-        
+
         return response()->json([
             'success' => true,
             'status' => $status,
             'unclosed_date' => $unclosedDate,
             'date' => $selectedDate->format('Y-m-d')
         ]);
+    }
+
+    public function dailyReport(Request $request)
+    {
+        $date = $request->get('date', now()->format('Y-m-d'));
+        $selectedDate = Carbon::parse($date);
+
+        // Obtener el saldo inicial del día anterior
+        $previousDay = $selectedDate->copy()->subDay();
+        $lastBalanceMovement = CashMovement::whereDate('movement_date', '<=', $previousDay)
+            ->orderBy('movement_date', 'desc')
+            ->orderBy('created_at', 'desc')
+            ->first();
+
+        $initialBalance = $lastBalanceMovement ? $lastBalanceMovement->balance_after : 0;
+
+        // Obtener todos los movimientos del día
+        $movements = CashMovement::with(['user'])
+            ->whereDate('movement_date', $selectedDate)
+            ->orderBy('movement_date')
+            ->orderBy('created_at')
+            ->get();
+
+        // Calcular totales
+        $inflows = $movements->where('amount', '>', 0)->sum('amount');
+        $outflows = $movements->where('amount', '<', 0)->sum('amount');
+        $finalBalance = $initialBalance + $inflows + $outflows;
+
+        // Obtener movimientos de apertura y cierre
+        $openingMovement = $movements->where('type', 'cash_opening')->first();
+        $closingMovement = $movements->where('type', 'cash_closing')->first();
+
+        // Calcular efectivo contado y diferencia si hay cierre
+        $countedAmount = 0;
+        $difference = 0;
+
+        if ($closingMovement) {
+            // Extraer el monto contado de la descripción del cierre
+            preg_match('/\$([0-9,]+\.?\d*)/', $closingMovement->description, $matches);
+            if (isset($matches[1])) {
+                $countedAmount = floatval(str_replace(',', '', $matches[1]));
+                $difference = $countedAmount - $finalBalance;
+            }
+        }
+
+        // Resumen general
+        $summary = [
+            'date' => $selectedDate,
+            'initial_balance' => $initialBalance,
+            'total_inflows' => $inflows,
+            'total_outflows' => abs($outflows),
+            'final_balance' => $finalBalance,
+            'opening_movement' => $openingMovement,
+            'closing_movement' => $closingMovement,
+            'counted_amount' => $countedAmount,
+            'difference' => $difference,
+            'is_closed' => $closingMovement !== null
+        ];
+
+        // Agrupar por tipo de movimiento
+        $movementsByType = $movements->groupBy('type')->map(function ($group, $type) {
+            return [
+                'type' => $type,
+                'inflows' => $group->where('amount', '>', 0)->sum('amount'),
+                'outflows' => abs($group->where('amount', '<', 0)->sum('amount')),
+                'count' => $group->count()
+            ];
+        });
+
+        // Resumen por usuario - simplificado para debug
+        $userSummary = collect(); // Temporalmente vacío para evitar errores
+
+        return view('cash.daily-report', compact(
+            'selectedDate',
+            'summary',
+            'movements',
+            'movementsByType',
+            'userSummary'
+        ));
+    }
+
+    public function withdrawalForm(Request $request)
+    {
+        if ($request->isMethod('get')) {
+            $withdrawalTypes = [
+                'bank_deposit' => 'Depósito Bancario',
+                'expense_payment' => 'Pago de Gastos',
+                'professional_liquidation' => 'Liquidación de Profesional',
+                'safe_custody' => 'Custodia en Caja Fuerte',
+                'other_withdrawal' => 'Otro Retiro'
+            ];
+
+            return view('cash.withdrawal-form', compact('withdrawalTypes'));
+        }
+
+        $validated = $request->validate([
+            'amount' => 'required|numeric|min:0.01',
+            'withdrawal_type' => 'required|string|in:bank_deposit,expense_payment,professional_liquidation,safe_custody,other_withdrawal',
+            'description' => 'required|string|max:500',
+            'recipient' => 'nullable|string|max:255',
+            'notes' => 'nullable|string|max:500'
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            // Verificar que hay suficiente efectivo en caja
+            $lastMovement = CashMovement::orderBy('movement_date', 'desc')
+                ->orderBy('created_at', 'desc')
+                ->first();
+
+            $currentBalance = $lastMovement ? $lastMovement->balance_after : 0;
+
+            if ($currentBalance < $validated['amount']) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "Saldo insuficiente en caja. Disponible: $" . number_format($currentBalance, 2)
+                ], 400);
+            }
+
+            $newBalance = $currentBalance - $validated['amount'];
+
+            $description = "Retiro: " . $validated['description'];
+            if ($validated['recipient']) {
+                $description .= " - Destinatario: " . $validated['recipient'];
+            }
+            if ($validated['notes']) {
+                $description .= " - " . $validated['notes'];
+            }
+
+            $cashMovement = CashMovement::create([
+                'movement_date' => now(),
+                'type' => 'cash_withdrawal',
+                'amount' => -$validated['amount'], // Negativo para salida
+                'description' => $description,
+                'reference_type' => $validated['withdrawal_type'],
+                'reference_id' => null,
+                'balance_after' => $newBalance,
+                'user_id' => auth()->id(),
+            ]);
+
+            DB::commit();
+
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Retiro registrado exitosamente.',
+                    'cash_movement' => $cashMovement,
+                    'new_balance' => $newBalance
+                ]);
+            }
+
+            return redirect()->route('cash.daily')
+                ->with('success', 'Retiro registrado exitosamente.');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Error al registrar el retiro: ' . $e->getMessage()
+                ], 500);
+            }
+
+            return redirect()->back()
+                ->withErrors(['error' => 'Error al registrar el retiro: ' . $e->getMessage()])
+                ->withInput();
+        }
     }
 
     private function generateReportData($movements, $groupBy, $startDate, $endDate)

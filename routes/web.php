@@ -68,9 +68,12 @@ Route::get('/reports/professional-liquidation', [ReportController::class, 'profe
 
 // Cash management routes
 Route::get('/cash/daily', [App\Http\Controllers\CashController::class, 'dailyCash'])->name('cash.daily');
+Route::get('/cash/daily-report', [App\Http\Controllers\CashController::class, 'dailyReport'])->name('cash.daily-report');
 Route::get('/cash/report', [App\Http\Controllers\CashController::class, 'cashReport'])->name('cash.report');
 Route::get('/cash/expense', [App\Http\Controllers\CashController::class, 'addExpense'])->name('cash.expense-form');
 Route::post('/cash/expense', [App\Http\Controllers\CashController::class, 'addExpense'])->name('cash.expense.store');
+Route::get('/cash/withdrawal', [App\Http\Controllers\CashController::class, 'withdrawalForm'])->name('cash.withdrawal-form');
+Route::post('/cash/withdrawal', [App\Http\Controllers\CashController::class, 'withdrawalForm'])->name('cash.withdrawal.store');
 Route::get('/cash/movements/{cashMovement}', [App\Http\Controllers\CashController::class, 'getCashMovementDetails'])->name('cash.movement-details');
 
 // Cash opening/closing routes

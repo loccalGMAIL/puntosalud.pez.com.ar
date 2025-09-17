@@ -7,6 +7,7 @@ use App\Models\Appointment;
 use App\Models\ProfessionalSchedule;
 use App\Models\Patient;
 use App\Models\Office;
+use App\Models\CashMovement;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 
@@ -42,7 +43,11 @@ class AgendaController extends Controller
                 ->get()
                 ->keyBy('day_of_week');
         }
-        
+
+        // Estado de caja para alertas
+        $today = Carbon::today();
+        $cashStatus = CashMovement::getCashStatusForDate($today);
+
         return view('agenda.index', compact(
             'professionals',
             'patients', 
@@ -53,7 +58,8 @@ class AgendaController extends Controller
             'appointments',
             'professionalSchedules',
             'startOfCalendar',
-            'endOfCalendar'
+            'endOfCalendar',
+            'cashStatus'
         ));
     }
 }

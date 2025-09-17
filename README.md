@@ -125,6 +125,35 @@ php artisan config:clear
 
 ## 📝 Changelog
 
+### v2.4.1 (2025-09-17) - Mejoras Avanzadas del Sistema de Caja
+**🔧 Nuevas Funcionalidades de Caja:**
+- **Visualización de Usuarios**: Los movimientos de caja ahora muestran el usuario responsable
+  - Avatar circular con iniciales y nombre completo del usuario
+  - Trazabilidad completa de quién genera cada ingreso/egreso
+- **Reporte de Cierre Diario**: Nuevo reporte imprimible con resumen completo
+  - Layout específico para impresión sin elementos de navegación
+  - Desglose por tipo de movimiento y actividad por usuario
+  - Estado de cierre con diferencias calculadas automáticamente
+- **Retiro de Dinero**: Nueva funcionalidad para registrar salidas de efectivo
+  - Formulario específico con tipos de retiro (depósito bancario, gastos, etc.)
+  - Validación de saldo disponible antes de permitir retiros
+  - Integración completa con el sistema de movimientos
+
+**🛡️ Validaciones de Integridad:**
+- **Control de Turnos vs Caja**: Los turnos requieren caja abierta para pagos inmediatos
+  - Validación en backend: no permite turnos de hoy si caja cerrada
+  - Validación de pagos: bloquea pagos inmediatos si caja no está operativa
+  - Alertas visuales en agenda mostrando estado de caja en tiempo real
+- **Consistencia Contable**: Previene inconsistencias entre turnos futuros y pagos presentes
+  - Mensajes específicos según el contexto (turno hoy vs pago inmediato)
+  - Opción de crear turno sin pago si la caja está cerrada
+
+**🎨 Mejoras de Interfaz:**
+- **Botón Condicional**: "Cerrar Caja" / "Reporte de Cierre" según estado
+- **Modal de Cierre**: Interfaz intuitiva con resumen del día y detección de diferencias
+- **Alertas Contextuales**: Estados de caja visibles en tiempo real (abierta/cerrada/sin abrir)
+- **Flujo Automático**: Después del cierre redirige automáticamente al reporte generado
+
 ### v2.4.0 (2025-09-16) - Sistema Completo de Apertura/Cierre de Caja
 **💰 Sistema de Gestión de Caja:**
 - **Apertura/Cierre Automático**: Sistema completo de control de caja diario

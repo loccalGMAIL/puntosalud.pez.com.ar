@@ -24,13 +24,19 @@ class DashboardController extends Controller
         $today = Carbon::today();
         
         // Verificar estado de caja para recepcionistas
-        $cashStatus = null;
-        if (auth()->user()->role === 'receptionist') {
-            $cashStatus = [
+        // $cashStatus = null;
+        // if (auth()->user()->role === 'receptionist') {
+        //     $cashStatus = [
+        //         'today' => CashMovement::getCashStatusForDate($today),
+        //         'unclosed_date' => CashMovement::hasUnclosedCash()
+        //     ];
+        // }
+
+        $cashStatus = [
                 'today' => CashMovement::getCashStatusForDate($today),
                 'unclosed_date' => CashMovement::hasUnclosedCash()
             ];
-        }
+
         
         // Consultas del día
         $consultasHoy = [

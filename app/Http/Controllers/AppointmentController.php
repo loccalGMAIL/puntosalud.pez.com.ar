@@ -127,6 +127,41 @@ class AppointmentController extends Controller
                 'duration.required' => 'La duración es obligatoria.',
             ]);
 
+            // Validar que la caja esté abierta para pagos inmediatos o turnos de hoy
+            $appointmentDate = Carbon::parse($validated['appointment_date']);
+            $today = Carbon::today();
+            $hasImmediatePayment = !empty($validated['pay_now']) &&
+                                 in_array($validated['pay_now'], ['true', 'True', '1', 1, true], true);
+
+            // Validar si el turno es para hoy O si tiene pago inmediato (que afecta la caja de hoy)
+            if ($appointmentDate->isSameDay($today) || $hasImmediatePayment) {
+                $cashStatus = CashMovement::getCashStatusForDate($today);
+
+                if ($cashStatus['is_closed']) {
+                    $message = $hasImmediatePayment && !$appointmentDate->isSameDay($today)
+                        ? 'No se pueden procesar pagos cuando la caja del día está cerrada. El turno puede crearse sin pago o debe abrir la caja.'
+                        : 'No se pueden crear turnos cuando la caja del día está cerrada. Debe abrir la caja para continuar.';
+
+                    return response()->json([
+                        'success' => false,
+                        'message' => $message,
+                        'error_type' => 'cash_closed'
+                    ], 422);
+                }
+
+                if ($cashStatus['needs_opening']) {
+                    $message = $hasImmediatePayment && !$appointmentDate->isSameDay($today)
+                        ? 'No se pueden procesar pagos sin haber abierto la caja del día. El turno puede crearse sin pago o debe abrir la caja primero.'
+                        : 'No se pueden crear turnos sin haber abierto la caja del día. Por favor, abra la caja primero.';
+
+                    return response()->json([
+                        'success' => false,
+                        'message' => $message,
+                        'error_type' => 'cash_not_opened'
+                    ], 422);
+                }
+            }
+
             // Limpiar campos opcionales vacíos
             if (empty($validated['office_id'])) {
                 $validated['office_id'] = null;

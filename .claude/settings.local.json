@@ -3,7 +3,8 @@
     "allow": [
       "Read(/C:\\xampp\\htdocs\\PuntoSalud\\main - copia\\PuntoSalud\\resources\\js\\pages\\professionals/**)",
       "Read(/C:\\xampp\\htdocs\\PuntoSalud\\main - copia\\PuntoSalud\\app\\Http\\Controllers/**)",
-      "Read(/C:\\xampp\\htdocs\\PuntoSalud\\main - copia\\PuntoSalud\\app\\Http\\Controllers/**)"
+      "Read(/C:\\xampp\\htdocs\\PuntoSalud\\main - copia\\PuntoSalud\\app\\Http\\Controllers/**)",
+      "Bash(git add:*)"
     ],
     "deny": [],
     "ask": []
