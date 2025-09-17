@@ -217,6 +217,147 @@ class CashController extends Controller
         ]);
     }
     
+    public function openCash(Request $request)
+    {
+        $validated = $request->validate([
+            'opening_amount' => 'required|numeric|min:0',
+            'notes' => 'nullable|string|max:500'
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            $today = now()->startOfDay();
+            
+            // Verificar que no exista ya una apertura para hoy
+            $existingOpening = CashMovement::forDate($today)->openingMovements()->first();
+            if ($existingOpening) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Ya existe una apertura de caja para el día de hoy.'
+                ], 400);
+            }
+
+            // Crear movimiento de apertura
+            $cashMovement = CashMovement::create([
+                'movement_date' => now(),
+                'type' => 'cash_opening',
+                'amount' => $validated['opening_amount'],
+                'description' => 'Apertura de caja - ' . ($validated['notes'] ?: 'Apertura del día'),
+                'reference_type' => 'cash_opening',
+                'reference_id' => null,
+                'balance_after' => $validated['opening_amount'],
+                'user_id' => auth()->id(),
+            ]);
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Caja abierta exitosamente.',
+                'cash_movement' => $cashMovement
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al abrir la caja: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function closeCash(Request $request)
+    {
+        $validated = $request->validate([
+            'closing_amount' => 'required|numeric|min:0',
+            'notes' => 'nullable|string|max:500',
+            'close_date' => 'nullable|date'
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            $closeDate = $validated['close_date'] ? Carbon::parse($validated['close_date']) : now()->startOfDay();
+            
+            // Verificar que exista apertura para esa fecha
+            $opening = CashMovement::forDate($closeDate)->openingMovements()->first();
+            if (!$opening) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No se encontró apertura de caja para la fecha especificada.'
+                ], 400);
+            }
+
+            // Verificar que no exista ya un cierre
+            $existingClosing = CashMovement::forDate($closeDate)->closingMovements()->first();
+            if ($existingClosing) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Ya existe un cierre de caja para esa fecha.'
+                ], 400);
+            }
+
+            // Calcular el balance teórico del día
+            $dayMovements = CashMovement::forDate($closeDate)->get();
+            $theoreticalBalance = $dayMovements->sum('amount');
+
+            // Crear movimiento de cierre
+            $cashMovement = CashMovement::create([
+                'movement_date' => $closeDate->endOfDay(),
+                'type' => 'cash_closing',
+                'amount' => 0, // El cierre no suma/resta, solo registra
+                'description' => 'Cierre de caja - Efectivo contado: $' . number_format($validated['closing_amount'], 2) . 
+                               ($validated['notes'] ? ' - ' . $validated['notes'] : ''),
+                'reference_type' => 'cash_closing',
+                'reference_id' => null,
+                'balance_after' => $theoreticalBalance,
+                'user_id' => auth()->id(),
+            ]);
+
+            $difference = $validated['closing_amount'] - $theoreticalBalance;
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Caja cerrada exitosamente.',
+                'cash_movement' => $cashMovement,
+                'summary' => [
+                    'theoretical_balance' => $theoreticalBalance,
+                    'counted_amount' => $validated['closing_amount'],
+                    'difference' => $difference,
+                    'date' => $closeDate->format('d/m/Y')
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al cerrar la caja: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function getCashStatus(Request $request)
+    {
+        $date = $request->get('date', now()->format('Y-m-d'));
+        $selectedDate = Carbon::parse($date);
+        
+        $status = CashMovement::getCashStatusForDate($selectedDate);
+        $unclosedDate = CashMovement::hasUnclosedCash();
+        
+        return response()->json([
+            'success' => true,
+            'status' => $status,
+            'unclosed_date' => $unclosedDate,
+            'date' => $selectedDate->format('Y-m-d')
+        ]);
+    }
+
     private function generateReportData($movements, $groupBy, $startDate, $endDate)
     {
         $data = collect();

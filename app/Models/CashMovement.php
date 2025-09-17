@@ -68,4 +68,60 @@ class CashMovement extends Model
     {
         return $this->amount < 0;
     }
+
+    public function scopeOpeningMovements($query)
+    {
+        return $query->where('type', 'cash_opening');
+    }
+
+    public function scopeClosingMovements($query)
+    {
+        return $query->where('type', 'cash_closing');
+    }
+
+    public function scopeForDate($query, $date)
+    {
+        return $query->whereDate('movement_date', $date);
+    }
+
+    public function isOpening()
+    {
+        return $this->type === 'cash_opening';
+    }
+
+    public function isClosing()
+    {
+        return $this->type === 'cash_closing';
+    }
+
+    public static function getCashStatusForDate($date)
+    {
+        $opening = static::forDate($date)->openingMovements()->first();
+        $closing = static::forDate($date)->closingMovements()->first();
+        
+        return [
+            'is_open' => $opening && !$closing,
+            'is_closed' => $opening && $closing,
+            'needs_opening' => !$opening,
+            'opening_movement' => $opening,
+            'closing_movement' => $closing
+        ];
+    }
+
+    public static function hasUnclosedCash()
+    {
+        // Buscar días con apertura pero sin cierre
+        $unclosedDates = static::openingMovements()
+            ->whereNotExists(function ($query) {
+                $query->select('id')
+                    ->from('cash_movements as cm2')
+                    ->whereColumn('cm2.movement_date', 'cash_movements.movement_date')
+                    ->where('cm2.type', 'cash_closing');
+            })
+            ->where('movement_date', '<', now()->startOfDay())
+            ->orderBy('movement_date', 'desc')
+            ->first();
+            
+        return $unclosedDates ? $unclosedDates->movement_date->format('Y-m-d') : null;
+    }
 }

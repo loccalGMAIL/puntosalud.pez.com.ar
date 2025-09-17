@@ -95,17 +95,21 @@ class AppointmentController extends Controller
     public function store(Request $request)
     {
         try {
+            // Log temporal para debug
+            \Log::info('Appointment creation attempt', $request->all());
+            
             $validated = $request->validate([
                 'professional_id' => 'required|exists:professionals,id',
                 'patient_id' => 'required|exists:patients,id',
-                'appointment_date' => 'required|date|after_or_equal:today',
-                'appointment_time' => 'required|string',
+                'appointment_date' => 'required|date',
+                'appointment_time' => 'required|date_format:H:i',
                 'duration' => 'required|integer|min:15|max:120',
                 'office_id' => 'nullable|exists:offices,id',
                 'notes' => 'nullable|string|max:500',
                 'estimated_amount' => 'nullable|numeric|min:0',
+                'status' => 'nullable|in:scheduled,attended,cancelled,absent',
                 // Campos de pago
-                'pay_now' => 'boolean',
+                'pay_now' => 'nullable|in:true,false,1,0,"true","false","1","0"',
                 'payment_type' => 'nullable|in:single,package',
                 'payment_amount' => 'nullable|numeric|min:0',
                 'payment_method' => 'nullable|in:cash,transfer,card',
@@ -132,6 +136,20 @@ class AppointmentController extends Controller
             }
             if (empty($validated['estimated_amount'])) {
                 $validated['estimated_amount'] = null;
+            }
+            
+            // Limpiar campos de pago opcionales
+            if (!isset($validated['payment_concept']) || empty($validated['payment_concept'])) {
+                $validated['payment_concept'] = null;
+            }
+            if (!isset($validated['payment_amount']) || empty($validated['payment_amount'])) {
+                $validated['payment_amount'] = null;
+            }
+            if (!isset($validated['package_sessions']) || empty($validated['package_sessions'])) {
+                $validated['package_sessions'] = null;
+            }
+            if (!isset($validated['session_price']) || empty($validated['session_price'])) {
+                $validated['session_price'] = null;
             }
 
             // Crear fecha y hora completa
@@ -169,14 +187,14 @@ class AppointmentController extends Controller
                 'status' => 'scheduled',
             ]);
             
-            // Si se paga ahora, crear el pago
+            // Si se paga ahora, crear el pago (pero no asignarlo hasta que se atienda)
             if ($request->boolean('pay_now') && $validated['payment_amount'] > 0) {
                 $paymentType = $validated['payment_type'] ?? 'single';
                 
                 if ($paymentType === 'package') {
-                    $this->createPackagePayment($appointment, $validated);
+                    $this->createPackagePayment($appointment, $validated, false); // false = no asignar aún
                 } else {
-                    $this->createPrepayment($appointment, $validated);
+                    $this->createPrepayment($appointment, $validated, false); // false = no asignar aún
                 }
             }
             
@@ -414,7 +432,7 @@ class AppointmentController extends Controller
     /**
      * Crear pago de paquete/tratamiento
      */
-    private function createPackagePayment(Appointment $appointment, array $validated)
+    private function createPackagePayment(Appointment $appointment, array $validated, bool $assignImmediately = true)
     {
         // Generar número de recibo
         $receiptNumber = $this->generateReceiptNumber();
@@ -429,13 +447,15 @@ class AppointmentController extends Controller
             'sessions_included' => $validated['package_sessions'], // ← Sesiones del paquete
             'sessions_used' => 0, // ← Se irá incrementando con cada turno
             'liquidation_status' => 'pending',
-            'concept' => $validated['payment_concept'] ?: 'Paquete ' . $validated['package_sessions'] . ' sesiones - ' . $appointment->patient->full_name,
+            'concept' => ($validated['payment_concept'] ?? '') ?: 'Paquete ' . $validated['package_sessions'] . ' sesiones - ' . $appointment->patient->full_name,
             'receipt_number' => $receiptNumber,
             'created_by' => auth()->id(),
         ]);
         
-        // Asignar la primera sesión al turno actual
-        $this->paymentAllocationService->allocatePackageSession($payment->id, $appointment->id);
+        // Asignar la primera sesión al turno actual solo si se debe hacer inmediatamente
+        if ($assignImmediately) {
+            $this->paymentAllocationService->allocatePackageSession($payment->id, $appointment->id);
+        }
         
         // Registrar movimiento de caja - TODO EL PAQUETE INGRESA HOY
         $this->createCashMovement($payment);
@@ -444,7 +464,7 @@ class AppointmentController extends Controller
     /**
      * Crear prepago para un turno individual
      */
-    private function createPrepayment(Appointment $appointment, array $validated)
+    private function createPrepayment(Appointment $appointment, array $validated, bool $assignImmediately = true)
     {
         // Generar número de recibo
         $receiptNumber = $this->generateReceiptNumber();
@@ -459,13 +479,15 @@ class AppointmentController extends Controller
             'sessions_included' => 1,
             'sessions_used' => 0,
             'liquidation_status' => 'pending',
-            'concept' => $validated['payment_concept'] ?: 'Pago anticipado - ' . $appointment->patient->full_name,
+            'concept' => ($validated['payment_concept'] ?? '') ?: 'Pago anticipado - ' . $appointment->patient->full_name,
             'receipt_number' => $receiptNumber,
             'created_by' => auth()->id(),
         ]);
         
-        // Asignar pago al turno
-        $this->paymentAllocationService->allocateSinglePayment($payment->id, $appointment->id);
+        // Asignar pago al turno solo si se debe hacer inmediatamente
+        if ($assignImmediately) {
+            $this->paymentAllocationService->allocateSinglePayment($payment->id, $appointment->id);
+        }
         
         // Registrar movimiento de caja - INGRESA INMEDIATAMENTE
         $this->createCashMovement($payment);

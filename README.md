@@ -2,7 +2,7 @@
 
 [![Laravel](https://img.shields.io/badge/Laravel-12.x-red?style=flat&logo=laravel)](https://laravel.com)
 [![PHP](https://img.shields.io/badge/PHP-8.2-blue?style=flat&logo=php)](https://php.net)
-[![Version](https://img.shields.io/badge/Version-2.3.0-green?style=flat)](#changelog)
+[![Version](https://img.shields.io/badge/Version-2.4.0-green?style=flat)](#changelog)
 [![License](https://img.shields.io/badge/License-MIT-yellow?style=flat)](#license)
 
 Sistema integral de gestión médica para clínicas y consultorios, desarrollado con Laravel 12 y tecnologías modernas.
@@ -31,12 +31,15 @@ Sistema integral de gestión médica para clínicas y consultorios, desarrollado
 - Generación automática de números de recibo
 - Trazabilidad completa de transacciones
 
-### 🏦 **Gestión de Caja Integral** *(v2.1.0)*
-- Registro automático de todos los movimientos financieros
-- Balance en tiempo real con trazabilidad por usuario
-- Tipos de movimiento extendidos: apertura, cierre, control de turno
-- Preparado para gestión multi-usuario y cambios de turno
-- Reportes diarios y por períodos
+### 🏦 **Gestión de Caja Integral** *(v2.4.0)*
+- **Sistema completo de apertura/cierre de caja** con validaciones automáticas
+- **Alertas inteligentes** para recepcionistas: caja sin cerrar, apertura pendiente
+- **Trazabilidad completa** de todos los movimientos financieros por usuario
+- **Control de estados**: verificación automática al login de recepcionistas
+- **Traducción completa** de tipos de movimiento al español con iconos
+- **Balance en tiempo real** con diferencias entre efectivo contado vs teórico
+- Tipos de movimiento: apertura, cierre, pagos, gastos, entrega/recibo de turno
+- Reportes diarios y por períodos personalizables
 
 ### 👨‍⚕️ **Administración de Profesionales**
 - Gestión de especialidades médicas
@@ -121,6 +124,49 @@ php artisan config:clear
 - Índices para consultas eficientes
 
 ## 📝 Changelog
+
+### v2.4.0 (2025-09-16) - Sistema Completo de Apertura/Cierre de Caja
+**💰 Sistema de Gestión de Caja:**
+- **Apertura/Cierre Automático**: Sistema completo de control de caja diario
+  - Validación automática al login para recepcionistas
+  - Alertas inteligentes: caja sin cerrar de día anterior, apertura pendiente
+  - Registro del monto inicial y efectivo contado con diferencias
+- **Trazabilidad por Usuario**: Seguimiento completo de quién abre/cierra la caja
+  - Timestamps precisos y registro del usuario responsable
+  - Control de estados: abierta, cerrada, necesita apertura
+- **Modelos y Validaciones**: Lógica de negocio robusta
+  - Nuevos scopes en CashMovement: `openingMovements()`, `closingMovements()`, `forDate()`
+  - Métodos estáticos: `getCashStatusForDate()`, `hasUnclosedCash()`
+  - Validaciones para prevenir múltiples aperturas/cierres del mismo día
+
+**🎨 Interfaz de Usuario:**
+- **Alertas Contextuales**: Banners informativos según estado de caja
+  - 🔴 Rojo: Caja sin cerrar de día anterior (acción requerida)
+  - 🟡 Amarillo: Necesita apertura del día actual
+  - 🟢 Verde: Caja abierta correctamente con información del responsable
+- **Modales Funcionales**: Formularios intuitivos para apertura/cierre
+  - Validación de montos y campos opcionales para notas
+  - Resumen automático con diferencias entre teórico vs contado
+- **Traducción Completa**: Todos los tipos de movimiento en español
+  - Iconos diferenciados por tipo: 🔓 Apertura, 🔒 Cierre, 💰 Pagos, etc.
+  - Colores distintivos para identificación visual rápida
+
+**🔧 Correcciones y Mejoras:**
+- **Gestión de Pagos Anticipados**: Flujo corregido para evitar doble cobro
+  - Pagos se crean al momento pero se asignan al atender el turno
+  - Asignación automática de pagos al marcar turnos como atendidos
+  - Actualización correcta de `final_amount` para dashboard y liquidaciones
+- **Cálculo de Ingresos**: Dashboard corregido para mostrar ingresos reales del día
+  - Basado en asignaciones de pago de turnos atendidos (no solo pagos creados)
+  - Separación correcta por métodos de pago
+- **Validaciones de Formularios**: Corrección de errores 422 en creación de turnos
+  - Validación flexible de campos boolean y opcionales
+  - Manejo mejorado de errores con logging para debug
+
+**🚀 Nuevas Rutas y Controllers:**
+- `GET /cash/status` - Verificar estado actual de caja
+- `POST /cash/open` - Abrir caja con monto inicial
+- `POST /cash/close` - Cerrar caja con conteo final
 
 ### v2.3.0 (2025-09-11) - Sistema de Autenticación y Control de Usuarios
 **🔐 Nuevas Funcionalidades:**

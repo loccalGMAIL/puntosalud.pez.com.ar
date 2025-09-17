@@ -76,6 +76,7 @@ class PaymentAllocationService
             return null;
         }
         
+        // Buscar paquetes disponibles para este paciente
         $availablePackage = Payment::where('patient_id', $appointment->patient_id)
             ->where('payment_type', 'package')
             ->where('liquidation_status', '!=', 'cancelled')
@@ -85,6 +86,19 @@ class PaymentAllocationService
         
         if ($availablePackage) {
             return $this->allocatePackageSession($availablePackage->id, $appointmentId);
+        }
+        
+        // Si no hay paquetes, buscar pagos individuales sin asignar
+        $availableSinglePayment = Payment::where('patient_id', $appointment->patient_id)
+            ->where('payment_type', 'single')
+            ->where('liquidation_status', '!=', 'cancelled')
+            ->where('sessions_used', 0) // No usado aún
+            ->whereDoesntHave('paymentAppointments') // No asignado a ningún turno
+            ->orderBy('created_at', 'asc')
+            ->first();
+            
+        if ($availableSinglePayment) {
+            return $this->allocateSinglePayment($availableSinglePayment->id, $appointmentId);
         }
         
         return null;

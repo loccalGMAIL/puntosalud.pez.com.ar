@@ -10,6 +10,189 @@
             <div class="text-sm text-gray-500 dark:text-gray-400">{{ $dashboardData['fecha'] }}</div>
         </div>
 
+        <!-- Alertas de caja (solo para recepcionistas) -->
+        @if($dashboardData['cashStatus'])
+            <div id="cash-alerts" x-data="cashAlerts()" x-init="init()">
+                <!-- Alerta de caja sin cerrar de día anterior -->
+                @if($dashboardData['cashStatus']['unclosed_date'])
+                <div class="mb-4 rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-800 dark:bg-red-900/20">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <svg class="h-5 w-5 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.75 0h15.06m-12.06-3.75H12m0 0v3.75m9.75-3.75v3.75" />
+                            </svg>
+                            <div class="ml-3">
+                                <h3 class="text-sm font-medium text-red-800 dark:text-red-200">Caja sin cerrar</h3>
+                                <p class="text-sm text-red-700 dark:text-red-300">
+                                    La caja del {{ \Carbon\Carbon::parse($dashboardData['cashStatus']['unclosed_date'])->format('d/m/Y') }} no fue cerrada.
+                                </p>
+                            </div>
+                        </div>
+                        <button @click="openCloseCashModal('{{ $dashboardData['cashStatus']['unclosed_date'] }}')" 
+                                class="rounded-lg bg-red-600 px-3 py-2 text-sm font-medium text-white hover:bg-red-700 transition-colors">
+                            Cerrar Caja
+                        </button>
+                    </div>
+                </div>
+                @endif
+
+                <!-- Alerta de apertura de caja del día actual -->
+                @if($dashboardData['cashStatus']['today']['needs_opening'])
+                <div class="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-900/20">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <svg class="h-5 w-5 text-amber-600 dark:text-amber-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.119-1.243l1.263-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
+                            </svg>
+                            <div class="ml-3">
+                                <h3 class="text-sm font-medium text-amber-800 dark:text-amber-200">Abrir caja del día</h3>
+                                <p class="text-sm text-amber-700 dark:text-amber-300">
+                                    La caja del día de hoy no ha sido abierta aún.
+                                </p>
+                            </div>
+                        </div>
+                        <button @click="openOpenCashModal()" 
+                                class="rounded-lg bg-amber-600 px-3 py-2 text-sm font-medium text-white hover:bg-amber-700 transition-colors">
+                            Abrir Caja
+                        </button>
+                    </div>
+                </div>
+                @endif
+
+                <!-- Estado normal de caja abierta -->
+                @if($dashboardData['cashStatus']['today']['is_open'])
+                <div class="mb-4 rounded-lg border border-green-200 bg-green-50 p-4 dark:border-green-800 dark:bg-green-900/20">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <svg class="h-5 w-5 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <div class="ml-3">
+                                <h3 class="text-sm font-medium text-green-800 dark:text-green-200">Caja abierta</h3>
+                                <p class="text-sm text-green-700 dark:text-green-300">
+                                    Caja del día abierta por {{ $dashboardData['cashStatus']['today']['opening_movement']->user->name ?? 'Usuario' }} 
+                                    a las {{ $dashboardData['cashStatus']['today']['opening_movement']->movement_date->format('H:i') }}.
+                                </p>
+                            </div>
+                        </div>
+                        <button @click="openCloseCashModal()" 
+                                class="rounded-lg bg-green-600 px-3 py-2 text-sm font-medium text-white hover:bg-green-700 transition-colors">
+                            Cerrar Caja
+                        </button>
+                    </div>
+                </div>
+                @endif
+
+                <!-- Modal para abrir caja -->
+                <div x-show="openCashModalVisible" 
+                     x-cloak 
+                     class="modal-overlay fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4"
+                     @click.self="closeOpenCashModal()">
+                    <div class="modal-content bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full">
+                        <div class="p-6">
+                            <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Abrir Caja del Día</h2>
+                            
+                            <form @submit.prevent="submitOpenCash()">
+                                <div class="space-y-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                            Monto inicial de caja *
+                                        </label>
+                                        <input type="number" 
+                                               x-model="openCashForm.opening_amount"
+                                               step="0.01" 
+                                               min="0"
+                                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                                               placeholder="0.00"
+                                               required>
+                                    </div>
+                                    
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                            Notas (opcional)
+                                        </label>
+                                        <textarea x-model="openCashForm.notes"
+                                                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                                                  rows="2"
+                                                  placeholder="Observaciones sobre la apertura..."></textarea>
+                                    </div>
+                                </div>
+                                
+                                <div class="flex gap-3 mt-6">
+                                    <button type="button" 
+                                            @click="closeOpenCashModal()"
+                                            class="flex-1 px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">
+                                        Cancelar
+                                    </button>
+                                    <button type="submit" 
+                                            :disabled="openCashLoading"
+                                            class="flex-1 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-400 text-white rounded-lg transition-colors">
+                                        <span x-show="!openCashLoading">Abrir Caja</span>
+                                        <span x-show="openCashLoading">Abriendo...</span>
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Modal para cerrar caja -->
+                <div x-show="closeCashModalVisible" 
+                     x-cloak 
+                     class="modal-overlay fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4"
+                     @click.self="closeCloseCashModal()">
+                    <div class="modal-content bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full">
+                        <div class="p-6">
+                            <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                                Cerrar Caja <span x-text="closeCashDate ? '- ' + closeCashDate : ''"></span>
+                            </h2>
+                            
+                            <form @submit.prevent="submitCloseCash()">
+                                <div class="space-y-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                            Efectivo contado en caja *
+                                        </label>
+                                        <input type="number" 
+                                               x-model="closeCashForm.closing_amount"
+                                               step="0.01" 
+                                               min="0"
+                                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                                               placeholder="0.00"
+                                               required>
+                                    </div>
+                                    
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                            Notas (opcional)
+                                        </label>
+                                        <textarea x-model="closeCashForm.notes"
+                                                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                                                  rows="2"
+                                                  placeholder="Observaciones sobre el cierre..."></textarea>
+                                    </div>
+                                </div>
+                                
+                                <div class="flex gap-3 mt-6">
+                                    <button type="button" 
+                                            @click="closeCloseCashModal()"
+                                            class="flex-1 px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">
+                                        Cancelar
+                                    </button>
+                                    <button type="submit" 
+                                            :disabled="closeCashLoading"
+                                            class="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white rounded-lg transition-colors">
+                                        <span x-show="!closeCashLoading">Cerrar Caja</span>
+                                        <span x-show="closeCashLoading">Cerrando...</span>
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @endif
+
         <!-- Métricas principales -->
         <div class="grid auto-rows-min gap-4 md:grid-cols-3">
             
@@ -482,6 +665,123 @@
                 } catch (error) {
                     DashboardAPI.showNotification(error.message, 'error');
                     this.loading = false;
+                }
+            }
+        };
+    }
+
+    // Alpine.js cash alerts component
+    function cashAlerts() {
+        return {
+            openCashModalVisible: false,
+            closeCashModalVisible: false,
+            openCashLoading: false,
+            closeCashLoading: false,
+            closeCashDate: null,
+            
+            openCashForm: {
+                opening_amount: '',
+                notes: ''
+            },
+            
+            closeCashForm: {
+                closing_amount: '',
+                notes: '',
+                close_date: null
+            },
+            
+            init() {
+                // Component initialized
+            },
+            
+            openOpenCashModal() {
+                this.openCashForm = { opening_amount: '', notes: '' };
+                this.openCashModalVisible = true;
+            },
+            
+            closeOpenCashModal() {
+                this.openCashModalVisible = false;
+                this.openCashLoading = false;
+            },
+            
+            openCloseCashModal(date = null) {
+                this.closeCashDate = date;
+                this.closeCashForm = { 
+                    closing_amount: '', 
+                    notes: '', 
+                    close_date: date 
+                };
+                this.closeCashModalVisible = true;
+            },
+            
+            closeCloseCashModal() {
+                this.closeCashModalVisible = false;
+                this.closeCashLoading = false;
+                this.closeCashDate = null;
+            },
+            
+            async submitOpenCash() {
+                if (this.openCashLoading) return;
+                
+                if (!this.openCashForm.opening_amount) {
+                    DashboardAPI.showNotification('Complete el monto inicial', 'error');
+                    return;
+                }
+                
+                this.openCashLoading = true;
+                
+                try {
+                    await DashboardAPI.makeRequest('/cash/open', {
+                        method: 'POST',
+                        body: JSON.stringify(this.openCashForm)
+                    });
+                    
+                    this.closeOpenCashModal();
+                    DashboardAPI.showNotification('Caja abierta exitosamente', 'success');
+                    DashboardAPI.reloadPage();
+                } catch (error) {
+                    DashboardAPI.showNotification(error.message, 'error');
+                    this.openCashLoading = false;
+                }
+            },
+            
+            async submitCloseCash() {
+                if (this.closeCashLoading) return;
+                
+                if (!this.closeCashForm.closing_amount) {
+                    DashboardAPI.showNotification('Complete el monto contado', 'error');
+                    return;
+                }
+                
+                this.closeCashLoading = true;
+                
+                try {
+                    const result = await DashboardAPI.makeRequest('/cash/close', {
+                        method: 'POST',
+                        body: JSON.stringify(this.closeCashForm)
+                    });
+                    
+                    this.closeCloseCashModal();
+                    
+                    // Mostrar resumen del cierre
+                    const summary = result.summary;
+                    const theoreticalBalance = parseFloat(summary.theoretical_balance) || 0;
+                    const countedAmount = parseFloat(summary.counted_amount) || 0;
+                    const difference = parseFloat(summary.difference) || 0;
+                    
+                    let message = `Caja cerrada para el ${summary.date}. `;
+                    message += `Teórico: $${theoreticalBalance.toFixed(2)}, `;
+                    message += `Contado: $${countedAmount.toFixed(2)}`;
+                    
+                    if (Math.abs(difference) > 0.01) {
+                        message += `. Diferencia: $${difference.toFixed(2)}`;
+                    }
+                    
+                    DashboardAPI.showNotification(message, 'success');
+                    DashboardAPI.reloadPage();
+                } catch (error) {
+                    DashboardAPI.showNotification(error.message, 'error');
+                    this.closeCashLoading = false;
                 }
             }
         };

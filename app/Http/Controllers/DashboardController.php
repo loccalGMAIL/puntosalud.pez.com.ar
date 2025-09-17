@@ -23,6 +23,15 @@ class DashboardController extends Controller
     {
         $today = Carbon::today();
         
+        // Verificar estado de caja para recepcionistas
+        $cashStatus = null;
+        if (auth()->user()->role === 'receptionist') {
+            $cashStatus = [
+                'today' => CashMovement::getCashStatusForDate($today),
+                'unclosed_date' => CashMovement::hasUnclosedCash()
+            ];
+        }
+        
         // Consultas del día
         $consultasHoy = [
             'total' => Appointment::forDate($today)->count(),
@@ -31,13 +40,31 @@ class DashboardController extends Controller
             'canceladas' => Appointment::forDate($today)->cancelled()->count(),
         ];
         
-        // Ingresos del día (basado en payments de hoy)
-        $paymentsHoy = Payment::whereDate('created_at', $today)->get();
+        // Ingresos del día (basado en asignaciones de pago de turnos atendidos hoy)
+        $appointmentsHoy = Appointment::with(['paymentAppointments.payment'])
+            ->forDate($today)
+            ->attended()
+            ->get();
+            
         $ingresosHoy = [
-            'total' => $paymentsHoy->sum('amount'),
-            'efectivo' => $paymentsHoy->where('payment_method', 'cash')->sum('amount'),
-            'transferencia' => $paymentsHoy->where('payment_method', 'transfer')->sum('amount'),
-            'tarjeta' => $paymentsHoy->where('payment_method', 'card')->sum('amount'),
+            'total' => $appointmentsHoy->sum(function ($apt) {
+                return $apt->paymentAppointments->sum('allocated_amount');
+            }),
+            'efectivo' => $appointmentsHoy->sum(function ($apt) {
+                return $apt->paymentAppointments->filter(function ($pa) {
+                    return $pa->payment->payment_method === 'cash';
+                })->sum('allocated_amount');
+            }),
+            'transferencia' => $appointmentsHoy->sum(function ($apt) {
+                return $apt->paymentAppointments->filter(function ($pa) {
+                    return $pa->payment->payment_method === 'transfer';
+                })->sum('allocated_amount');
+            }),
+            'tarjeta' => $appointmentsHoy->sum(function ($apt) {
+                return $apt->paymentAppointments->filter(function ($pa) {
+                    return $pa->payment->payment_method === 'card';
+                })->sum('allocated_amount');
+            }),
         ];
         
         // Profesionales activos
@@ -112,6 +139,7 @@ class DashboardController extends Controller
             'consultasDetalle' => $consultasDetalle->values(),
             'resumenCaja' => $resumenCaja,
             'fecha' => $today->format('d/m/Y'),
+            'cashStatus' => $cashStatus,
         ];
         
         return view('dashboard', compact('dashboardData'));
@@ -134,7 +162,14 @@ class DashboardController extends Controller
             ]);
             
             // Intentar asignación automática de pago
-            $this->paymentAllocationService->checkAndAllocatePayment($appointment->id);
+            $paymentAssignment = $this->paymentAllocationService->checkAndAllocatePayment($appointment->id);
+            
+            // Si se asignó un pago automáticamente, actualizar el final_amount
+            if ($paymentAssignment) {
+                $appointment->update([
+                    'final_amount' => $paymentAssignment->allocated_amount
+                ]);
+            }
             
             DB::commit();
             
