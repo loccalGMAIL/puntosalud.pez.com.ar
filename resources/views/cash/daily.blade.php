@@ -154,11 +154,26 @@
                                 @case('refund')
                                     🔄 Reembolsos
                                     @break
+                                @case('cash_opening')
+                                    🔓 Apertura de Caja
+                                    @break
+                                @case('cash_closing')
+                                    🔒 Cierre de Caja
+                                    @break
+                                @case('cash_control')
+                                    🔍 Control de Caja
+                                    @break
+                                @case('shift_handover')
+                                    🔄 Entrega de Turno
+                                    @break
+                                @case('shift_receive')
+                                    📥 Recibo de Turno
+                                    @break
                                 @case('other')
                                     📋 Otros
                                     @break
                                 @default
-                                    {{ ucfirst($type) }}
+                                    {{ ucfirst(str_replace('_', ' ', $type)) }}
                             @endswitch
                         </h3>
                         <span class="text-sm text-gray-500 dark:text-gray-400">{{ $data['count'] }} movimientos</span>
@@ -274,6 +289,31 @@
                                     @case('other')
                                         <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200">
                                             📋 Otro
+                                        </span>
+                                        @break
+                                    @case('cash_opening')
+                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200">
+                                            🔓 Apertura de Caja
+                                        </span>
+                                        @break
+                                    @case('cash_closing')
+                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200">
+                                            🔒 Cierre de Caja
+                                        </span>
+                                        @break
+                                    @case('cash_control')
+                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200">
+                                            🔍 Control de Caja
+                                        </span>
+                                        @break
+                                    @case('shift_handover')
+                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200">
+                                            🔄 Entrega de Turno
+                                        </span>
+                                        @break
+                                    @case('shift_receive')
+                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-teal-100 text-teal-800 dark:bg-teal-900 dark:text-teal-200">
+                                            📥 Recibo de Turno
                                         </span>
                                         @break
                                     @default

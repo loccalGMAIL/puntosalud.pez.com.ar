@@ -73,6 +73,11 @@ Route::get('/cash/expense', [App\Http\Controllers\CashController::class, 'addExp
 Route::post('/cash/expense', [App\Http\Controllers\CashController::class, 'addExpense'])->name('cash.expense.store');
 Route::get('/cash/movements/{cashMovement}', [App\Http\Controllers\CashController::class, 'getCashMovementDetails'])->name('cash.movement-details');
 
+// Cash opening/closing routes
+Route::get('/cash/status', [App\Http\Controllers\CashController::class, 'getCashStatus'])->name('cash.status');
+Route::post('/cash/open', [App\Http\Controllers\CashController::class, 'openCash'])->name('cash.open');
+Route::post('/cash/close', [App\Http\Controllers\CashController::class, 'closeCash'])->name('cash.close');
+
 // User management routes (Admin only)
 Route::middleware(['can:viewAny,App\Models\User'])->group(function () {
     Route::resource('users', UserController::class);

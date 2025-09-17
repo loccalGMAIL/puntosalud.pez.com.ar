@@ -183,7 +183,7 @@
                 <div class="flex justify-between items-center mb-3">
                     <h3 class="font-medium text-gray-900 dark:text-white">
                         @switch($type)
-                            @case('payment')
+                            @case('patient_payment')
                                 💰 Pagos de Pacientes
                                 @break
                             @case('expense')
@@ -195,8 +195,26 @@
                             @case('professional_payment')
                                 👩‍⚕️ Pagos a Profesionales
                                 @break
+                            @case('cash_opening')
+                                🔓 Apertura de Caja
+                                @break
+                            @case('cash_closing')
+                                🔒 Cierre de Caja
+                                @break
+                            @case('cash_control')
+                                🔍 Control de Caja
+                                @break
+                            @case('shift_handover')
+                                🔄 Entrega de Turno
+                                @break
+                            @case('shift_receive')
+                                📥 Recibo de Turno
+                                @break
+                            @case('other')
+                                📋 Otro
+                                @break
                             @default
-                                {{ ucfirst($type) }}
+                                {{ ucfirst(str_replace('_', ' ', $type)) }}
                         @endswitch
                     </h3>
                     <span class="text-sm text-gray-500 dark:text-gray-400">{{ $data['count'] }}</span>

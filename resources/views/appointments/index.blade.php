@@ -430,6 +430,7 @@ function appointmentsPage() {
         modalOpen: false,
         editingAppointment: null,
         loading: false,
+        pastTimeError: '',
         
         init() {
             console.log('AppointmentsPage initialized');
@@ -620,6 +621,21 @@ function appointmentsPage() {
             } finally {
                 this.loading = false;
             }
+        },
+
+        validateDateTime() {
+            this.pastTimeError = '';
+            
+            if (this.form.appointment_date && this.form.appointment_time) {
+                const appointmentDateTime = new Date(this.form.appointment_date + 'T' + this.form.appointment_time);
+                const now = new Date();
+                
+                if (appointmentDateTime <= now) {
+                    this.pastTimeError = 'No se pueden programar turnos en fechas y horarios pasados.';
+                    return false;
+                }
+            }
+            return true;
         },
         
         async refreshData() {
