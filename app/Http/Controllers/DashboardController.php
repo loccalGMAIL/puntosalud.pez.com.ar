@@ -119,6 +119,7 @@ class DashboardController extends Controller
             $clinicaAmount = $prof->getClinicAmount($total);
             
             return [
+                'id' => $prof->id,
                 'nombre' => $prof->full_name,
                 'total' => $total,
                 'profesional' => $profesionalAmount,

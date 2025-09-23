@@ -89,20 +89,6 @@
                 </div>
             </div>
         </div>
-    @elseif($cashStatus['is_open'])
-        <div class="mb-6 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
-            <div class="flex items-center">
-                <svg class="w-5 h-5 text-green-600 dark:text-green-400 mr-3" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <div>
-                    <h3 class="text-sm font-medium text-green-800 dark:text-green-200">Caja Abierta</h3>
-                    <p class="text-sm text-green-700 dark:text-green-300 mt-1">
-                        La caja está abierta y lista para operar. Puede crear turnos normalmente.
-                    </p>
-                </div>
-            </div>
-        </div>
     @endif
 
     @if(!$selectedProfessional)

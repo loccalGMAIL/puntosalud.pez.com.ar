@@ -81,6 +81,9 @@ Route::get('/cash/status', [App\Http\Controllers\CashController::class, 'getCash
 Route::post('/cash/open', [App\Http\Controllers\CashController::class, 'openCash'])->name('cash.open');
 Route::post('/cash/close', [App\Http\Controllers\CashController::class, 'closeCash'])->name('cash.close');
 
+// Professional liquidation processing
+Route::post('/liquidation/process', [App\Http\Controllers\LiquidationController::class, 'processLiquidation'])->name('liquidation.process');
+
 // User management routes (Admin only)
 Route::middleware(['can:viewAny,App\Models\User'])->group(function () {
     Route::resource('users', UserController::class);
