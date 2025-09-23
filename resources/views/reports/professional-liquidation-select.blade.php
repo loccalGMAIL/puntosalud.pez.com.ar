@@ -4,13 +4,52 @@
 
 @section('content')
 <div class="container mx-auto px-4 py-6">
-    <div class="mb-6">
-        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
-            💰 Liquidación de Profesionales
-        </h1>
-        <p class="text-gray-600 dark:text-gray-400">
-            Generar reporte de liquidación para entregar al profesional al final del día
-        </p>
+    <!-- Breadcrumbs -->
+    <nav class="flex mb-4" aria-label="Breadcrumb">
+        <ol class="inline-flex items-center space-x-1 md:space-x-3">
+            <li class="inline-flex items-center">
+                <a href="{{ route('dashboard') }}" class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-blue-600 dark:text-gray-400 dark:hover:text-white">
+                    <svg class="w-3 h-3 mr-2.5" aria-hidden="true" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="m19.707 9.293-2-2-7-7a1 1 0 0 0-1.414 0l-7 7-2 2a1 1 0 0 0 1.414 1.414L2 10.414V18a2 2 0 0 0 2 2h3a1 1 0 0 0 1-1v-4a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v4a1 1 0 0 0 1 1h3a2 2 0 0 0 2-2v-7.586l.293.293a1 1 0 0 0 1.414-1.414Z"/>
+                    </svg>
+                    Dashboard
+                </a>
+            </li>
+            <li>
+                <div class="flex items-center">
+                    <svg class="w-3 h-3 text-gray-400 mx-1" aria-hidden="true" fill="none" viewBox="0 0 6 10">
+                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 9 4-4-4-4"/>
+                    </svg>
+                    <span class="ml-1 text-sm font-medium text-gray-500 md:ml-2 dark:text-gray-400">Reportes</span>
+                </div>
+            </li>
+            <li aria-current="page">
+                <div class="flex items-center">
+                    <svg class="w-3 h-3 text-gray-400 mx-1" aria-hidden="true" fill="none" viewBox="0 0 6 10">
+                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 9 4-4-4-4"/>
+                    </svg>
+                    <span class="ml-1 text-sm font-medium text-gray-500 md:ml-2 dark:text-gray-400">Liquidación Profesionales</span>
+                </div>
+            </li>
+        </ol>
+    </nav>
+
+    <div class="mb-6 flex items-center justify-between">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
+                💰 Liquidación de Profesionales
+            </h1>
+            <p class="text-gray-600 dark:text-gray-400">
+                Generar reporte de liquidación para entregar al profesional al final del día
+            </p>
+        </div>
+        <a href="{{ route('dashboard') }}"
+           class="inline-flex items-center px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white text-sm font-medium rounded-lg shadow-sm transition-colors">
+            <svg class="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 15 3 9m0 0 6-6M3 9h12a6 6 0 0 1 0 12h-3" />
+            </svg>
+            Volver al Dashboard
+        </a>
     </div>
 
     <!-- Selector de Fecha -->
@@ -81,6 +120,15 @@
                                     </svg>
                                     Imprimir
                                 </a>
+                                @if($professional['professional_amount'] > 0)
+                                <button onclick="liquidarProfesional({{ $professional['id'] }}, '{{ $professional['full_name'] }}', {{ $professional['professional_amount'] }}, '{{ $selectedDate->format('Y-m-d') }}')"
+                                        class="inline-flex items-center px-3 py-1 bg-orange-100 hover:bg-orange-200 text-orange-800 text-xs font-medium rounded transition-colors">
+                                    <svg class="w-3 h-3 mr-1" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H4.5m-1.125 3.75c0-.621.504-1.125 1.125-1.125h1.5v1.5h-1.5A1.125 1.125 0 013.375 8.25zM6 21V3.75h.75A1.875 1.875 0 018.625 2.25H12m0 0h3.375c1.035 0 1.875.84 1.875 1.875v16.5h-6" />
+                                    </svg>
+                                    Liquidar
+                                </button>
+                                @endif
                             </div>
                         </div>
                     </div>
@@ -120,7 +168,7 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('.print-link').forEach(link => {
         link.addEventListener('click', function(e) {
             const printWindow = window.open(this.href, '_blank');
-            
+
             if (printWindow) {
                 printWindow.addEventListener('load', function() {
                     setTimeout(function() {
@@ -133,5 +181,61 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 });
+
+// Función para liquidar profesional
+async function liquidarProfesional(professionalId, professionalName, amount, date) {
+    // Mostrar modal de confirmación
+    const confirmed = await SystemModal.confirm(
+        'Confirmar Liquidación',
+        `¿Confirmar liquidación de <strong>Dr. ${professionalName}</strong> por <strong>$${amount.toLocaleString()}</strong>?<br><br>Esto registrará el pago en caja y descontará el monto del efectivo disponible.`,
+        'Liquidar',
+        'Cancelar'
+    );
+
+    if (!confirmed) return;
+
+    try {
+        const response = await fetch('/liquidation/process', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content'),
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({
+                professional_id: professionalId,
+                amount: amount,
+                date: date
+            })
+        });
+
+        const result = await response.json();
+
+        if (!result.success) {
+            throw new Error(result.message || 'Error en la operación');
+        }
+
+        // Mostrar mensaje de éxito
+        await SystemModal.show(
+            'success',
+            'Liquidación Procesada',
+            `Dr. ${professionalName}\nMonto: $${amount.toLocaleString()}\nNuevo saldo en caja: $${result.data.new_balance.toLocaleString()}`,
+            'Aceptar'
+        );
+
+        // Recargar la página para actualizar los datos
+        window.location.reload();
+
+    } catch (error) {
+        // Mostrar modal de error
+        await SystemModal.show(
+            'error',
+            'Error al Procesar Liquidación',
+            error.message,
+            'Aceptar'
+        );
+        console.error('Error:', error);
+    }
+}
 </script>
 @endsection

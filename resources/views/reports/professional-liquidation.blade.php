@@ -22,7 +22,7 @@
                 </svg>
                 Volver
             </a>
-            <a href="{{ route('reports.professional-liquidation', ['professional_id' => $liquidationData['professional']->id, 'date' => $liquidationData['date']->format('Y-m-d'), 'print' => 1]) }}" 
+            <a href="{{ route('reports.professional-liquidation', ['professional_id' => $liquidationData['professional']->id, 'date' => $liquidationData['date']->format('Y-m-d'), 'print' => 1]) }}"
                target="_blank"
                class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg shadow-sm transition-colors">
                 <svg class="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
@@ -30,6 +30,15 @@
                 </svg>
                 Imprimir
             </a>
+            @if($liquidationData['totals']['professional_amount'] > 0)
+            <button onclick="liquidarProfesional({{ $liquidationData['professional']->id }}, '{{ $liquidationData['professional']->full_name }}', {{ $liquidationData['totals']['professional_amount'] }})"
+                    class="inline-flex items-center px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-lg shadow-sm transition-colors">
+                <svg class="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H4.5m-1.125 3.75c0-.621.504-1.125 1.125-1.125h1.5v1.5h-1.5A1.125 1.125 0 013.375 8.25zM6 21V3.75h.75A1.875 1.875 0 018.625 2.25H12m0 0h3.375c1.035 0 1.875.84 1.875 1.875v16.5h-6" />
+                </svg>
+                Liquidar
+            </button>
+            @endif
         </div>
     </div>
 
@@ -237,4 +246,63 @@
         Liquidación generada el {{ $liquidationData['generated_at']->format('d/m/Y H:i:s') }} por {{ $liquidationData['generated_by'] }}
     </div>
 </div>
+
+<script>
+// Función para liquidar profesional
+async function liquidarProfesional(professionalId, professionalName, amount) {
+    // Mostrar modal de confirmación
+    const confirmed = await SystemModal.confirm(
+        'Confirmar Liquidación',
+        `¿Confirmar liquidación de <strong>${professionalName}</strong> por <strong>$${amount.toLocaleString()}</strong>?<br><br>Esto registrará el pago en caja y descontará el monto del efectivo disponible.`,
+        'Liquidar',
+        'Cancelar'
+    );
+
+    if (!confirmed) return;
+
+    try {
+        const response = await fetch('/liquidation/process', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content'),
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({
+                professional_id: professionalId,
+                amount: amount,
+                date: '{{ $liquidationData['date']->format('Y-m-d') }}'
+            })
+        });
+
+        const result = await response.json();
+
+        if (!result.success) {
+            throw new Error(result.message || 'Error en la operación');
+        }
+
+        // Mostrar mensaje de éxito
+        await SystemModal.show(
+            'success',
+            'Liquidación Procesada',
+            `${professionalName}\nMonto: $${amount.toLocaleString()}\nNuevo saldo en caja: $${result.data.new_balance.toLocaleString()}`,
+            'Aceptar'
+        );
+
+        // Recargar la página para actualizar los datos
+        window.location.reload();
+
+    } catch (error) {
+        // Mostrar modal de error
+        await SystemModal.show(
+            'error',
+            'Error al Procesar Liquidación',
+            error.message,
+            'Aceptar'
+        );
+        console.error('Error:', error);
+    }
+}
+</script>
+
 @endsection

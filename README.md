@@ -2,7 +2,7 @@
 
 [![Laravel](https://img.shields.io/badge/Laravel-12.x-red?style=flat&logo=laravel)](https://laravel.com)
 [![PHP](https://img.shields.io/badge/PHP-8.2-blue?style=flat&logo=php)](https://php.net)
-[![Version](https://img.shields.io/badge/Version-2.4.0-green?style=flat)](#changelog)
+[![Version](https://img.shields.io/badge/Version-2.4.2-green?style=flat)](#changelog)
 [![License](https://img.shields.io/badge/License-MIT-yellow?style=flat)](#license)
 
 Sistema integral de gestión médica para clínicas y consultorios, desarrollado con Laravel 12 y tecnologías modernas.
@@ -124,6 +124,63 @@ php artisan config:clear
 - Índices para consultas eficientes
 
 ## 📝 Changelog
+
+### v2.4.2 (2025-09-23) - Sistema de Liquidaciones y Mejoras de UX
+**🏦 Sistema de Liquidación de Profesionales:**
+- **Botón de Liquidación**: Nuevo botón "Liquidar" en reportes de liquidación profesional
+  - Disponible en vista de selección (`/reports/professional-liquidation`) y detalle
+  - Solo visible cuando hay monto a liquidar (> 0)
+  - Color distintivo naranja para diferenciarlo de otras acciones
+- **Validaciones Avanzadas**: Control completo antes de liquidar
+  - Verifica que no haya turnos sin atender del profesional
+  - Verifica que no haya turnos atendidos sin cobrar
+  - Valida saldo suficiente en caja y que esté abierta
+  - Mensajes específicos indicando qué falta por completar
+- **Movimientos de Caja**: Registro automático de pagos a profesionales
+  - Tipo `professional_payment` con monto negativo
+  - Referencia al profesional y usuario que procesa
+  - Actualización automática del balance de caja
+
+**🎨 Sistema de Modales Reutilizable:**
+- **Componente Global**: Modal unificado para todo el sistema (`<x-system-modal>`)
+  - Tipos: success, error, warning, confirm
+  - Iconos y colores temáticos por tipo
+  - Soporte para HTML en mensajes
+- **JavaScript Global**: `SystemModal.confirm()` y `SystemModal.show()`
+  - Reemplaza alerts nativos por interfaz profesional
+  - Animaciones suaves y responsive design
+  - Cierre con Escape y click fuera
+- **UX Mejorada**: Confirmaciones elegantes para operaciones críticas
+  - Liquidaciones con modal de confirmación
+  - Mensajes de éxito y error consistentes
+  - Mejor feedback visual para el usuario
+
+**🔧 Correcciones y Mejoras Técnicas:**
+- **Fix Detección de Caja Cerrada**: Corregido problema en `hasUnclosedCash()`
+  - Cambio de `whereColumn()` a `whereRaw('DATE()')` para comparar fechas
+  - Resuelve falsos positivos de "caja sin cerrar"
+- **Gestión de Versiones**: Sistema de versionado mejorado
+  - Versión leída desde archivo `version` en raíz del proyecto
+  - Independiente del `.env` para mejor control en git
+- **Comando Artisan**: Nuevo comando `php artisan cache:limpiar`
+  - Limpia y regenera todas las cachés del sistema
+  - Combina `optimize:clear`, `config:cache`, `route:cache`, `view:cache`
+
+**🧭 Mejoras de Navegación:**
+- **Breadcrumbs**: Agregados en vistas de reportes
+  - `/reports/daily-schedule`: Dashboard > Reportes > Pacientes a Atender
+  - `/reports/professional-liquidation`: Dashboard > Reportes > Liquidación Profesionales
+- **Botones de Retorno**: Botón "Volver al Dashboard" en headers de reportes
+  - Mejora la navegación con múltiples opciones de retorno
+  - Diseño consistente con el sistema
+
+**🎯 Limpieza de Código:**
+- **Dashboard Simplificado**: Removidos botones de liquidación del dashboard principal
+  - Interfaz más limpia y enfocada
+  - Liquidaciones centralizadas en vistas específicas
+- **Estados de Caja**: Eliminados mensajes permanentes de "caja abierta"
+  - Solo muestra alertas cuando hay problemas que requieren acción
+  - Interfaz menos intrusiva para operación normal
 
 ### v2.4.1 (2025-09-17) - Mejoras Avanzadas del Sistema de Caja
 **🔧 Nuevas Funcionalidades de Caja:**

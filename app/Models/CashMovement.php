@@ -115,13 +115,13 @@ class CashMovement extends Model
             ->whereNotExists(function ($query) {
                 $query->select('id')
                     ->from('cash_movements as cm2')
-                    ->whereColumn('cm2.movement_date', 'cash_movements.movement_date')
+                    ->whereRaw('DATE(cm2.movement_date) = DATE(cash_movements.movement_date)')
                     ->where('cm2.type', 'cash_closing');
             })
             ->where('movement_date', '<', now()->startOfDay())
             ->orderBy('movement_date', 'desc')
             ->first();
-            
+
         return $unclosedDates ? $unclosedDates->movement_date->format('Y-m-d') : null;
     }
 }

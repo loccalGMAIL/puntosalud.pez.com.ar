@@ -59,29 +59,6 @@
                 </div>
                 @endif
 
-                <!-- Estado normal de caja abierta -->
-                @if($dashboardData['cashStatus']['today']['is_open'])
-                <div class="mb-4 rounded-lg border border-green-200 bg-green-50 p-4 dark:border-green-800 dark:bg-green-900/20">
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center">
-                            <svg class="h-5 w-5 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            <div class="ml-3">
-                                <h3 class="text-sm font-medium text-green-800 dark:text-green-200">Caja abierta</h3>
-                                <p class="text-sm text-green-700 dark:text-green-300">
-                                    Caja del día abierta por {{ $dashboardData['cashStatus']['today']['opening_movement']->user->name ?? 'Usuario' }} 
-                                    a las {{ $dashboardData['cashStatus']['today']['opening_movement']->movement_date->format('H:i') }}.
-                                </p>
-                            </div>
-                        </div>
-                        <button @click="openCloseCashModal()" 
-                                class="rounded-lg bg-green-600 px-3 py-2 text-sm font-medium text-white hover:bg-green-700 transition-colors">
-                            Cerrar Caja
-                        </button>
-                    </div>
-                </div>
-                @endif
 
                 <!-- Modal para abrir caja -->
                 <div x-show="openCashModalVisible" 
@@ -786,6 +763,7 @@
             }
         };
     }
+
     </script>
 
     @push('styles')

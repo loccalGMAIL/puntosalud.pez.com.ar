@@ -156,6 +156,9 @@
         </div>
     </div>
 
+    <!-- Modal del Sistema -->
+    <x-system-modal />
+
     @stack('scripts')
 </body>
 </html>
