@@ -214,10 +214,34 @@ class CashController extends Controller
     public function getCashMovementDetails(CashMovement $cashMovement)
     {
         $cashMovement->load(['user']);
-        
+
+        $additionalData = [];
+
+        try {
+            // Cargar información adicional según el tipo de movimiento
+            if ($cashMovement->type === 'patient_payment' && $cashMovement->reference_id &&
+                in_array($cashMovement->reference_type, ['payment', 'App\\Models\\Payment'])) {
+                $payment = \App\Models\Payment::with(['patient', 'paymentAppointments.appointment.professional'])
+                    ->find($cashMovement->reference_id);
+                if ($payment) {
+                    $additionalData['payment'] = $payment;
+                }
+            } elseif ($cashMovement->type === 'professional_payment' && $cashMovement->reference_id &&
+                     in_array($cashMovement->reference_type, ['professional', 'App\\Models\\Professional'])) {
+                $professional = \App\Models\Professional::with(['specialty'])->find($cashMovement->reference_id);
+                if ($professional) {
+                    $additionalData['professional'] = $professional;
+                }
+            }
+        } catch (\Exception $e) {
+            // Si hay error cargando relaciones adicionales, continuar sin ellas
+            \Log::warning('Error loading additional movement details: ' . $e->getMessage());
+        }
+
         return response()->json([
             'success' => true,
-            'cash_movement' => $cashMovement
+            'cash_movement' => $cashMovement,
+            'additional_data' => $additionalData
         ]);
     }
     
