@@ -29,6 +29,7 @@ class Patient extends Model
 
     protected $appends = [
         'is_active',
+        'full_name',
     ];
 
     /**

@@ -187,14 +187,21 @@ class PaymentController extends Controller
         }
     }
     
-    public function show(Payment $payment)
+    public function show(Payment $payment, Request $request)
     {
         $payment->load([
             'patient',
             'paymentAppointments.appointment.professional',
             'paymentAppointments.appointment.office'
         ]);
-        
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'payment' => $payment
+            ]);
+        }
+
         return view('payments.show', compact('payment'));
     }
     

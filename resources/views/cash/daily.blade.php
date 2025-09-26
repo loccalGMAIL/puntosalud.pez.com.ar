@@ -512,6 +512,139 @@
             </div>
         </div>
     </div>
+
+    <!-- Modal para ver detalles del movimiento -->
+    <div x-show="movementDetailsModalVisible"
+         x-cloak
+         class="modal-overlay fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+         @click.self="closeMovementDetailsModal()">
+        <div class="modal-content bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full">
+            <div class="p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+                        Detalles del Movimiento
+                    </h2>
+                    <button @click="closeMovementDetailsModal()"
+                            class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
+                        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+
+                <div x-show="movementDetailsLoading" class="text-center py-8">
+                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500 mx-auto"></div>
+                    <p class="text-gray-600 dark:text-gray-400 mt-2">Cargando detalles...</p>
+                </div>
+
+                <div x-show="!movementDetailsLoading && movementDetails" class="space-y-4">
+                    <!-- Información básica del movimiento -->
+                    <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                        <h3 class="font-medium text-gray-900 dark:text-white mb-3">Información del Movimiento</h3>
+                        <div class="grid grid-cols-2 gap-4 text-sm">
+                            <div>
+                                <span class="text-gray-600 dark:text-gray-400">ID:</span>
+                                <span class="font-mono text-gray-900 dark:text-white ml-2">#<span x-text="movementDetails?.id"></span></span>
+                            </div>
+                            <div>
+                                <span class="text-gray-600 dark:text-gray-400">Fecha:</span>
+                                <span class="text-gray-900 dark:text-white ml-2" x-text="formatDate(movementDetails?.movement_date)"></span>
+                            </div>
+                            <div>
+                                <span class="text-gray-600 dark:text-gray-400">Tipo:</span>
+                                <span class="text-gray-900 dark:text-white ml-2" x-text="getMovementTypeLabel(movementDetails?.type)"></span>
+                            </div>
+                            <div>
+                                <span class="text-gray-600 dark:text-gray-400">Usuario:</span>
+                                <span class="text-gray-900 dark:text-white ml-2" x-text="movementDetails?.user?.name || 'Sistema'"></span>
+                            </div>
+                            <div>
+                                <span class="text-gray-600 dark:text-gray-400">Monto:</span>
+                                <span class="font-medium ml-2"
+                                      :class="movementDetails?.amount > 0 ? 'text-green-600' : 'text-red-600'"
+                                      x-text="formatAmount(movementDetails?.amount)"></span>
+                            </div>
+                            <div>
+                                <span class="text-gray-600 dark:text-gray-400">Saldo resultante:</span>
+                                <span class="font-mono text-gray-900 dark:text-white ml-2" x-text="formatAmount(movementDetails?.balance_after)"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- <!-- Descripción -->
+                    <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                        <h3 class="font-medium text-gray-900 dark:text-white mb-2">Descripción</h3>
+                        <p class="text-gray-900 dark:text-white text-sm" x-text="movementDetails?.description || 'Sin descripción'"></p>
+                    </div> --}}
+
+                    <!-- Detalles específicos para pagos de pacientes -->
+                    <div x-show="movementDetails?.type === 'patient_payment' && paymentDetails"
+                         class="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4">
+                        <h3 class="font-medium text-blue-900 dark:text-blue-200 mb-3">💰 Detalles del Pago</h3>
+                        <div class="text-sm space-y-2">
+                            <div class="flex justify-between">
+                                <span class="text-blue-700 dark:text-blue-300">Número de recibo:</span>
+                                <span class="font-mono text-blue-900 dark:text-blue-100" x-text="paymentDetails?.receipt_number"></span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-blue-700 dark:text-blue-300">Paciente:</span>
+                                <span class="text-blue-900 dark:text-blue-100 font-medium" x-text="paymentDetails?.patient?.full_name"></span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-blue-700 dark:text-blue-300">Método de pago:</span>
+                                <span class="text-blue-900 dark:text-blue-100" x-text="getPaymentMethodLabel(paymentDetails?.payment_method)"></span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-blue-700 dark:text-blue-300">Tipo de pago:</span>
+                                <span class="text-blue-900 dark:text-blue-100" x-text="paymentDetails?.is_package ? 'Paquete de tratamiento' : 'Pago individual'"></span>
+                            </div>
+                            <!-- Mostrar profesionales relacionados -->
+                            <div x-show="paymentDetails?.payment_appointments?.length > 0" class="pt-2 border-t border-blue-200 dark:border-blue-700">
+                                <span class="text-blue-700 dark:text-blue-300">Profesional:</span>
+                                <div class="mt-1 space-y-1">
+                                    <template x-for="appointment in paymentDetails?.payment_appointments" :key="appointment.id">
+                                        <div class="text-blue-900 dark:text-blue-100">
+                                            • Dr. <span x-text="appointment?.appointment?.professional?.first_name + ' ' + appointment?.appointment?.professional?.last_name"></span>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
+                            <div x-show="paymentDetails?.notes" class="pt-2 border-t border-blue-200 dark:border-blue-700">
+                                <span class="text-blue-700 dark:text-blue-300">Notas:</span>
+                                <p class="text-blue-900 dark:text-blue-100 mt-1" x-text="paymentDetails?.notes"></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Detalles específicos para liquidaciones de profesionales -->
+                    <div x-show="movementDetails?.type === 'professional_payment' && professionalDetails"
+                         class="bg-green-50 dark:bg-green-900/20 rounded-lg p-4">
+                        <h3 class="font-medium text-green-900 dark:text-green-200 mb-3">👨‍⚕️ Detalles de la Liquidación</h3>
+                        <div class="text-sm space-y-2">
+                            <div class="flex justify-between">
+                                <span class="text-green-700 dark:text-green-300">Profesional:</span>
+                                <span class="text-green-900 dark:text-green-100 font-medium">
+                                    Dr. <span x-text="professionalDetails?.first_name + ' ' + professionalDetails?.last_name"></span>
+                                </span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-green-700 dark:text-green-300">Especialidad:</span>
+                                <span class="text-green-900 dark:text-green-100" x-text="professionalDetails?.specialty?.name"></span>
+                            </div>
+                            {{-- <div class="flex justify-between">
+                                <span class="text-green-700 dark:text-green-300">Comisión:</span>
+                                <span class="text-green-900 dark:text-green-100" x-text="professionalDetails?.commission_percentage + '%'"></span>
+                            </div>
+                            <div x-show="professionalDetails?.phone" class="flex justify-between">
+                                <span class="text-green-700 dark:text-green-300">Teléfono:</span>
+                                <span class="text-green-900 dark:text-green-100" x-text="professionalDetails?.phone"></span>
+                            </div> --}}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script>
@@ -531,6 +664,13 @@ function dailyCashForm() {
             notes: '',
             close_date: '{{ $cashSummary["date"]->format("Y-m-d") }}'
         },
+
+        // Modal de detalles de movimiento
+        movementDetailsModalVisible: false,
+        movementDetailsLoading: false,
+        movementDetails: null,
+        paymentDetails: null,
+        professionalDetails: null,
 
         // Computed properties para diferencias
         get theoreticalBalance() {
@@ -582,8 +722,86 @@ function dailyCashForm() {
         },
 
         async viewMovementDetails(movementId) {
-            // Implementar modal de detalles
-            console.log('Ver detalles del movimiento:', movementId);
+            this.movementDetailsLoading = true;
+            this.movementDetailsModalVisible = true;
+            this.movementDetails = null;
+            this.paymentDetails = null;
+
+            try {
+                const response = await fetch(`/cash/movements/${movementId}`);
+                const data = await response.json();
+
+                if (data.success) {
+                    this.movementDetails = data.cash_movement;
+
+                    // Usar los datos adicionales del endpoint mejorado
+                    if (data.additional_data) {
+                        this.paymentDetails = data.additional_data.payment || null;
+                        this.professionalDetails = data.additional_data.professional || null;
+                    }
+                } else {
+                    alert('Error al cargar los detalles del movimiento');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error al cargar los detalles del movimiento');
+            } finally {
+                this.movementDetailsLoading = false;
+            }
+        },
+
+        closeMovementDetailsModal() {
+            this.movementDetailsModalVisible = false;
+            this.movementDetails = null;
+            this.paymentDetails = null;
+            this.professionalDetails = null;
+        },
+
+        formatDate(dateString) {
+            if (!dateString) return '';
+            const date = new Date(dateString);
+            return date.toLocaleString('es-AR', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        },
+
+        formatAmount(amount) {
+            if (amount === null || amount === undefined) return '';
+            const prefix = amount > 0 ? '+$' : '$';
+            return prefix + Math.abs(amount).toLocaleString('es-AR', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+        },
+
+        getMovementTypeLabel(type) {
+            const types = {
+                'patient_payment': '💰 Pago Paciente',
+                'professional_payment': '👨‍⚕️ Pago Profesional',
+                'expense': '💸 Gasto',
+                'refund': '🔄 Reembolso',
+                'cash_opening': '🔓 Apertura de Caja',
+                'cash_closing': '🔒 Cierre de Caja',
+                'cash_control': '🔍 Control de Caja',
+                'shift_handover': '🔄 Entrega de Turno',
+                'shift_receive': '📥 Recibo de Turno',
+                'cash_withdrawal': '💸 Retiro de Caja',
+                'other': '📋 Otros'
+            };
+            return types[type] || type;
+        },
+
+        getPaymentMethodLabel(method) {
+            const methods = {
+                'cash': 'Efectivo',
+                'transfer': 'Transferencia',
+                'card': 'Tarjeta'
+            };
+            return methods[method] || method;
         },
 
         // Métodos del modal de cierre

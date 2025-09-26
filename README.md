@@ -2,7 +2,7 @@
 
 [![Laravel](https://img.shields.io/badge/Laravel-12.x-red?style=flat&logo=laravel)](https://laravel.com)
 [![PHP](https://img.shields.io/badge/PHP-8.2-blue?style=flat&logo=php)](https://php.net)
-[![Version](https://img.shields.io/badge/Version-2.4.3-green?style=flat)](#changelog)
+[![Version](https://img.shields.io/badge/Version-2.4.4-green?style=flat)](#changelog)
 [![License](https://img.shields.io/badge/License-MIT-yellow?style=flat)](#license)
 
 Sistema integral de gestión médica para clínicas y consultorios, desarrollado con Laravel 12 y tecnologías modernas.
@@ -124,6 +124,48 @@ php artisan config:clear
 - Índices para consultas eficientes
 
 ## 📝 Changelog
+
+### v2.4.4 (2025-09-26) - Modal de Detalles de Movimientos de Caja
+**🔍 Sistema de Detalles Avanzado:**
+- **Modal Interactivo**: Nuevo modal de detalles al hacer clic en el botón 👁️ de cualquier movimiento
+  - Información básica: ID, fecha, tipo, usuario, monto y saldo resultante
+  - Descripción completa del movimiento
+  - Datos contextuales específicos según el tipo de movimiento
+- **Detalles de Pagos de Pacientes**: Sección azul especializada que muestra:
+  - Número de recibo y método de pago (efectivo/transferencia/tarjeta)
+  - **Nombre completo del paciente** con accessor automático
+  - Lista de profesionales relacionados con el pago
+  - Tipo de pago (individual/paquete de tratamiento)
+  - Notas adicionales del pago
+- **Detalles de Liquidaciones Profesionales**: Sección verde especializada que muestra:
+  - **Nombre completo del profesional** liquidado
+  - **Especialidad médica** con relación cargada automáticamente
+  - Información de contacto y porcentaje de comisión
+
+**🔧 Mejoras Técnicas del Backend:**
+- **Endpoint Mejorado**: `getCashMovementDetails()` con carga inteligente de relaciones
+  - Carga automática de datos del pago y paciente para `patient_payment`
+  - Carga automática de datos del profesional y especialidad para `professional_payment`
+  - Manejo seguro de errores para evitar crashes por datos inconsistentes
+- **Accessor Full Name**: Agregado `'full_name'` al array `$appends` del modelo `Patient`
+  - Combina automáticamente `first_name + ' ' + last_name`
+  - Disponible en todas las respuestas JSON del paciente
+- **Compatibilidad Reference Types**: Soporte para múltiples formatos de `reference_type`
+  - Compatible con `'payment'` y `'App\\Models\\Payment'`
+  - Compatible con `'professional'` y `'App\\Models\\Professional'`
+
+**🎨 Experiencia de Usuario:**
+- **Modal Responsive**: Diseño adaptativo con animaciones suaves
+  - Cierre con Escape, click fuera o botón X
+  - Loading states durante la carga de datos
+  - Manejo de errores con mensajes informativos
+- **Información Contextual Rica**: Cada tipo de movimiento muestra datos relevantes
+  - Pagos: Quién pagó, a qué doctores, cómo pagó
+  - Liquidaciones: Qué profesional, de qué especialidad
+  - Otros: Información básica estándar
+- **Navegación Mejorada**: Fácil acceso desde la tabla de movimientos diarios
+  - Botón visual intuitivo en cada fila
+  - Información detallada sin salir de la vista principal
 
 ### v2.4.3 (2025-09-26) - Optimizaciones del Sistema de Caja
 **💰 Mejoras en Gestión de Movimientos de Caja:**
