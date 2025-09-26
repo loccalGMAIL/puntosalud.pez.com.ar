@@ -2,7 +2,7 @@
 
 [![Laravel](https://img.shields.io/badge/Laravel-12.x-red?style=flat&logo=laravel)](https://laravel.com)
 [![PHP](https://img.shields.io/badge/PHP-8.2-blue?style=flat&logo=php)](https://php.net)
-[![Version](https://img.shields.io/badge/Version-2.4.2-green?style=flat)](#changelog)
+[![Version](https://img.shields.io/badge/Version-2.4.3-green?style=flat)](#changelog)
 [![License](https://img.shields.io/badge/License-MIT-yellow?style=flat)](#license)
 
 Sistema integral de gestión médica para clínicas y consultorios, desarrollado con Laravel 12 y tecnologías modernas.
@@ -124,6 +124,31 @@ php artisan config:clear
 - Índices para consultas eficientes
 
 ## 📝 Changelog
+
+### v2.4.3 (2025-09-26) - Optimizaciones del Sistema de Caja
+**💰 Mejoras en Gestión de Movimientos de Caja:**
+- **Ordenamiento Optimizado**: Los movimientos diarios ahora se ordenan por `created_at` únicamente
+  - Eliminado ordenamiento redundante por `movement_date`
+  - Mejor rendimiento en consultas y visualización más intuitiva
+  - Los movimientos aparecen en el orden real de registro
+- **Columna ID Agregada**: Nueva columna con ID único de movimiento para trazabilidad
+  - Formato `#123` con fuente monoespaciada para mejor legibilidad
+  - Facilita debugging y seguimiento de operaciones específicas
+- **Visualización de Profesionales**: En pagos profesionales se muestra el nombre del médico
+  - Reemplaza descripción genérica con "Dr. [Nombre] [Apellido]"
+  - Descripción original como subtexto para mantener contexto
+
+**🔧 Correcciones y Mejoras Técnicas:**
+- **Fix Apertura de Caja**: Corregido cálculo incorrecto de `balance_after`
+  - La apertura ahora suma al saldo anterior en lugar de reemplazarlo
+  - Monto de apertura ahora es opcional (puede ser 0)
+  - Elimina descoordinación en balances diarios
+- **Enum Actualizado**: Agregado `cash_withdrawal` a tipos de movimiento permitidos
+  - Soluciona error de truncado en retiros de caja
+  - Base de datos y migración actualizadas
+- **UI Simplificada**: Removidas cards de apertura/cierre del resumen por tipo
+  - Resumen enfocado en movimientos operativos relevantes
+  - Interfaz más limpia sin información redundante
 
 ### v2.4.2 (2025-09-23) - Sistema de Liquidaciones y Mejoras de UX
 **🏦 Sistema de Liquidación de Profesionales:**
