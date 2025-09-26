@@ -73,15 +73,14 @@
                                 <div class="space-y-4">
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                            Monto inicial de caja *
+                                            Monto inicial de caja (opcional)
                                         </label>
-                                        <input type="number" 
+                                        <input type="number"
                                                x-model="openCashForm.opening_amount"
-                                               step="0.01" 
+                                               step="0.01"
                                                min="0"
                                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                                               placeholder="0.00"
-                                               required>
+                                               placeholder="0.00">
                                     </div>
                                     
                                     <div>
@@ -699,12 +698,7 @@
             
             async submitOpenCash() {
                 if (this.openCashLoading) return;
-                
-                if (!this.openCashForm.opening_amount) {
-                    DashboardAPI.showNotification('Complete el monto inicial', 'error');
-                    return;
-                }
-                
+
                 this.openCashLoading = true;
                 
                 try {

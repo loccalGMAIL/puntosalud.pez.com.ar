@@ -224,7 +224,7 @@ class CashController extends Controller
     public function openCash(Request $request)
     {
         $validated = $request->validate([
-            'opening_amount' => 'required|numeric|min:0',
+            'opening_amount' => 'nullable|numeric|min:0',
             'notes' => 'nullable|string|max:500'
         ]);
 
@@ -232,7 +232,7 @@ class CashController extends Controller
             DB::beginTransaction();
 
             $today = now()->startOfDay();
-            
+
             // Verificar que no exista ya una apertura para hoy
             $existingOpening = CashMovement::forDate($today)->openingMovements()->first();
             if ($existingOpening) {
@@ -242,15 +242,26 @@ class CashController extends Controller
                 ], 400);
             }
 
+            // Obtener saldo anterior
+            $previousDay = $today->copy()->subDay();
+            $lastMovement = CashMovement::whereDate('movement_date', '<=', $previousDay)
+                ->orderBy('movement_date', 'desc')
+                ->orderBy('created_at', 'desc')
+                ->first();
+
+            $previousBalance = $lastMovement ? $lastMovement->balance_after : 0;
+            $openingAmount = $validated['opening_amount'] ?? 0;
+            $newBalance = $previousBalance + $openingAmount;
+
             // Crear movimiento de apertura
             $cashMovement = CashMovement::create([
                 'movement_date' => now(),
                 'type' => 'cash_opening',
-                'amount' => $validated['opening_amount'],
+                'amount' => $openingAmount,
                 'description' => 'Apertura de caja - ' . ($validated['notes'] ?: 'Apertura del día'),
                 'reference_type' => 'cash_opening',
                 'reference_id' => null,
-                'balance_after' => $validated['opening_amount'],
+                'balance_after' => $newBalance,
                 'user_id' => auth()->id(),
             ]);
 

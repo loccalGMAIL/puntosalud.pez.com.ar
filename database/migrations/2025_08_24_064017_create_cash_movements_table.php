@@ -15,16 +15,17 @@ return new class extends Migration
             $table->id();
             $table->dateTime('movement_date');
             $table->enum('type', [
-                'patient_payment', 
-                'professional_payment', 
-                'expense', 
-                'refund', 
+                'patient_payment',
+                'professional_payment',
+                'expense',
+                'refund',
                 'other',
                 'cash_opening',
-                'cash_closing', 
+                'cash_closing',
                 'cash_control',
                 'shift_handover',
-                'shift_receive'
+                'shift_receive',
+                'cash_withdrawal'
             ]);
             $table->decimal('amount', 10, 2)->comment('Positivo=ingreso, Negativo=egreso');
             $table->text('description')->nullable();

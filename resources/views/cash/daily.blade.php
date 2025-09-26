@@ -164,6 +164,7 @@
             <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Resumen por Tipo de Movimiento</h2>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 @foreach($movementsByType as $type => $data)
+                    @if(!in_array($type, ['cash_opening', 'cash_closing']))
                 <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
                     <div class="flex justify-between items-center mb-2">
                         <h3 class="font-medium text-gray-900 dark:text-white">
@@ -224,6 +225,7 @@
                         </div>
                     </div>
                 </div>
+                    @endif
                 @endforeach
             </div>
         </div>
@@ -278,11 +280,11 @@
                 <table class="w-full">
                     <thead>
                         <tr class="border-b border-gray-200 dark:border-gray-600">
+                            <th class="text-left py-3 px-4 font-semibold text-gray-900 dark:text-white">ID</th>
                             <th class="text-left py-3 px-4 font-semibold text-gray-900 dark:text-white">Hora</th>
                             <th class="text-left py-3 px-4 font-semibold text-gray-900 dark:text-white">Tipo</th>
                             <th class="text-left py-3 px-4 font-semibold text-gray-900 dark:text-white">Usuario</th>
                             <th class="text-left py-3 px-4 font-semibold text-gray-900 dark:text-white">Concepto</th>
-                            <th class="text-left py-3 px-4 font-semibold text-gray-900 dark:text-white">Referencia</th>
                             <th class="text-right py-3 px-4 font-semibold text-gray-900 dark:text-white">Monto</th>
                             <th class="text-right py-3 px-4 font-semibold text-gray-900 dark:text-white">Saldo</th>
                             <th class="w-16"></th>
@@ -291,6 +293,9 @@
                     <tbody class="divide-y divide-gray-200 dark:divide-gray-600">
                         @foreach($movements as $movement)
                         <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
+                            <td class="py-3 px-4 text-sm font-mono text-gray-500 dark:text-gray-400">
+                                #{{ $movement->id }}
+                            </td>
                             <td class="py-3 px-4 text-sm text-gray-600 dark:text-gray-300">
                                 {{ $movement->created_at->format('H:i') }}
                             </td>
@@ -366,10 +371,21 @@
                                 </div>
                             </td>
                             <td class="py-3 px-4 text-sm text-gray-900 dark:text-white">
-                                {{ $movement->description }}
-                            </td>
-                            <td class="py-3 px-4 text-sm text-gray-500 dark:text-gray-400">
-                                {{ ucfirst(str_replace('_', ' ', $movement->reference_type ?? 'N/A')) }}
+                                @if($movement->type === 'professional_payment' && $movement->reference_type === 'App\\Models\\Professional' && $movement->reference_id)
+                                    @php
+                                        $professional = \App\Models\Professional::find($movement->reference_id);
+                                    @endphp
+                                    @if($professional)
+                                        <div>
+                                            <span class="font-medium">Dr. {{ $professional->first_name }} {{ $professional->last_name }}</span>
+                                            <div class="text-xs text-gray-500 dark:text-gray-400">{{ $movement->description }}</div>
+                                        </div>
+                                    @else
+                                        {{ $movement->description }}
+                                    @endif
+                                @else
+                                    {{ $movement->description }}
+                                @endif
                             </td>
                             <td class="py-3 px-4 text-right text-sm font-medium">
                                 @if($movement->amount > 0)
