@@ -34,8 +34,7 @@ class CashController extends Controller
             $query->where('reference_type', $request->reference_type);
         }
         
-        $movements = $query->orderBy('movement_date', 'desc')
-                          ->orderBy('created_at', 'desc')
+        $movements = $query->orderBy('created_at', 'desc')
                           ->get();
         
         $inflows = $movements->where('amount', '>', 0)->sum('amount');
