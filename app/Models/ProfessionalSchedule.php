@@ -56,7 +56,7 @@ class ProfessionalSchedule extends Model
             4 => 'Jueves',
             5 => 'Viernes',
             6 => 'Sábado',
-            7 => 'Domingo'
+            7 => 'Domingo',
         ];
 
         return $days[$this->day_of_week] ?? '';

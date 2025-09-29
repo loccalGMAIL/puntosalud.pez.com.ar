@@ -25,7 +25,7 @@ return new class extends Migration
                 'cash_control',
                 'shift_handover',
                 'shift_receive',
-                'cash_withdrawal'
+                'cash_withdrawal',
             ]);
             $table->decimal('amount', 10, 2)->comment('Positivo=ingreso, Negativo=egreso');
             $table->text('description')->nullable();
@@ -34,12 +34,12 @@ return new class extends Migration
             $table->decimal('balance_after', 10, 2)->nullable();
             $table->unsignedBigInteger('user_id')->nullable();
             $table->timestamps();
-            
+
             // Foreign keys
             $table->foreign('user_id')
-                  ->references('id')
-                  ->on('users');
-            
+                ->references('id')
+                ->on('users');
+
             // Índices
             $table->index('movement_date');
             $table->index('type');

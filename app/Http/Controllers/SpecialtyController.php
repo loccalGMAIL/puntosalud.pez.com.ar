@@ -13,11 +13,11 @@ class SpecialtyController extends Controller
     public function index()
     {
         $specialties = Specialty::orderBy('name')->get();
-        
+
         if (request()->ajax()) {
             return response()->json(['specialties' => $specialties]);
         }
-        
+
         return response()->json($specialties);
     }
 
@@ -35,9 +35,9 @@ class SpecialtyController extends Controller
 
         if ($request->ajax()) {
             return response()->json([
-                'success' => true, 
+                'success' => true,
                 'message' => 'Especialidad creada exitosamente.',
-                'specialty' => $specialty
+                'specialty' => $specialty,
             ]);
         }
 
@@ -50,7 +50,7 @@ class SpecialtyController extends Controller
     public function update(Request $request, Specialty $specialty)
     {
         $validated = $request->validate([
-            'name' => 'required|string|max:255|unique:specialties,name,' . $specialty->id,
+            'name' => 'required|string|max:255|unique:specialties,name,'.$specialty->id,
             'description' => 'nullable|string|max:255',
         ]);
 
@@ -58,9 +58,9 @@ class SpecialtyController extends Controller
 
         if ($request->ajax()) {
             return response()->json([
-                'success' => true, 
+                'success' => true,
                 'message' => 'Especialidad actualizada exitosamente.',
-                'specialty' => $specialty
+                'specialty' => $specialty,
             ]);
         }
 
@@ -76,10 +76,11 @@ class SpecialtyController extends Controller
         if ($specialty->professionals()->exists()) {
             if (request()->ajax()) {
                 return response()->json([
-                    'success' => false, 
-                    'message' => 'No se puede eliminar la especialidad porque tiene profesionales asociados.'
+                    'success' => false,
+                    'message' => 'No se puede eliminar la especialidad porque tiene profesionales asociados.',
                 ], 422);
             }
+
             return back()->withErrors(['error' => 'No se puede eliminar la especialidad porque tiene profesionales asociados.']);
         }
 
@@ -87,8 +88,8 @@ class SpecialtyController extends Controller
 
         if (request()->ajax()) {
             return response()->json([
-                'success' => true, 
-                'message' => 'Especialidad eliminada exitosamente.'
+                'success' => true,
+                'message' => 'Especialidad eliminada exitosamente.',
             ]);
         }
 

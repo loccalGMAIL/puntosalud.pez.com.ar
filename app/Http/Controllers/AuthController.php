@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
-use App\Models\User;
 
 class AuthController extends Controller
 {
@@ -18,7 +18,7 @@ class AuthController extends Controller
         if (Auth::check()) {
             return redirect()->route('dashboard');
         }
-        
+
         return view('auth.login');
     }
 
@@ -35,13 +35,13 @@ class AuthController extends Controller
         // Intentar autenticación con usuarios activos únicamente
         if (Auth::attempt($credentials) && Auth::user()->isActive()) {
             $request->session()->regenerate();
-            
+
             return redirect()->intended(route('dashboard'));
         }
 
         // Si el usuario existe pero no está activo
         $user = User::where('email', $credentials['email'])->first();
-        if ($user && !$user->isActive()) {
+        if ($user && ! $user->isActive()) {
             return back()->withErrors([
                 'email' => 'Su cuenta está desactivada. Contacte al administrador.',
             ])->onlyInput('email');
@@ -58,10 +58,10 @@ class AuthController extends Controller
     public function logout(Request $request)
     {
         Auth::logout();
-        
+
         $request->session()->invalidate();
         $request->session()->regenerateToken();
-        
+
         return redirect()->route('login');
     }
 
@@ -70,10 +70,10 @@ class AuthController extends Controller
      */
     public function showRegister()
     {
-        if (!Auth::check() || !Auth::user()->isAdmin()) {
+        if (! Auth::check() || ! Auth::user()->isAdmin()) {
             abort(403, 'No tiene permisos para acceder a esta página.');
         }
-        
+
         return view('auth.register');
     }
 
@@ -82,7 +82,7 @@ class AuthController extends Controller
      */
     public function register(Request $request)
     {
-        if (!Auth::check() || !Auth::user()->isAdmin()) {
+        if (! Auth::check() || ! Auth::user()->isAdmin()) {
             abort(403, 'No tiene permisos para realizar esta acción.');
         }
 

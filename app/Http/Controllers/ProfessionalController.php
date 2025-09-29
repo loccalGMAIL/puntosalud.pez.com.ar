@@ -16,15 +16,15 @@ class ProfessionalController extends Controller
         $query = Professional::with('specialty')
             ->orderBy('last_name')
             ->orderBy('first_name');
-        
+
         // Filtros
         if ($request->filled('search')) {
             $search = $request->get('search');
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('first_name', 'like', "%{$search}%")
-                  ->orWhere('last_name', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%")
-                  ->orWhere('dni', 'like', "%{$search}%");
+                    ->orWhere('last_name', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhere('dni', 'like', "%{$search}%");
             });
         }
 
@@ -53,7 +53,7 @@ class ProfessionalController extends Controller
         if ($request->ajax()) {
             return response()->json([
                 'professionals' => $professionals,
-                'stats' => $stats
+                'stats' => $stats,
             ]);
         }
 
@@ -66,6 +66,7 @@ class ProfessionalController extends Controller
     public function create()
     {
         $specialties = Specialty::orderBy('name')->get();
+
         return view('professionals.create', compact('specialties'));
     }
 
@@ -95,13 +96,13 @@ class ProfessionalController extends Controller
 
             return redirect()->route('professionals.index')
                 ->with('success', 'Profesional creado exitosamente.');
-                
+
         } catch (\Illuminate\Validation\ValidationException $e) {
             if ($request->ajax()) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Error de validación',
-                    'errors' => $e->errors()
+                    'errors' => $e->errors(),
                 ], 422);
             }
             throw $e;
@@ -114,6 +115,7 @@ class ProfessionalController extends Controller
     public function show(Professional $professional)
     {
         $professional->load('specialty');
+
         return view('professionals.show', compact('professional'));
     }
 
@@ -123,6 +125,7 @@ class ProfessionalController extends Controller
     public function edit(Professional $professional)
     {
         $specialties = Specialty::orderBy('name')->get();
+
         return view('professionals.edit', compact('professional', 'specialties'));
     }
 
@@ -132,9 +135,9 @@ class ProfessionalController extends Controller
     public function update(Request $request, Professional $professional)
     {
         // Si solo se está actualizando el estado
-        if ($request->has('is_active') && !$request->has('first_name')) {
+        if ($request->has('is_active') && ! $request->has('first_name')) {
             $professional->update([
-                'is_active' => $request->boolean('is_active')
+                'is_active' => $request->boolean('is_active'),
             ]);
 
             if ($request->ajax()) {
@@ -151,7 +154,7 @@ class ProfessionalController extends Controller
                 'last_name' => 'required|string|max:255',
                 'email' => 'nullable|string|email|max:255',
                 'phone' => 'nullable|string|max:255',
-                'dni' => 'required|string|max:20|unique:professionals,dni,' . $professional->id,
+                'dni' => 'required|string|max:20|unique:professionals,dni,'.$professional->id,
                 'specialty_id' => 'required|exists:specialties,id',
                 'commission_percentage' => 'required|numeric|min:0|max:100',
                 'is_active' => 'required|in:0,1',
@@ -159,7 +162,7 @@ class ProfessionalController extends Controller
 
             // Convertir is_active a booleano
             $validated['is_active'] = $validated['is_active'] === '1';
-            
+
             $professional->update($validated);
 
             if ($request->ajax()) {
@@ -168,13 +171,13 @@ class ProfessionalController extends Controller
 
             return redirect()->route('professionals.index')
                 ->with('success', 'Profesional actualizado exitosamente.');
-                
+
         } catch (\Illuminate\Validation\ValidationException $e) {
             if ($request->ajax()) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Error de validación',
-                    'errors' => $e->errors()
+                    'errors' => $e->errors(),
                 ], 422);
             }
             throw $e;
@@ -199,7 +202,7 @@ class ProfessionalController extends Controller
     public function toggleStatus(Professional $professional, Request $request)
     {
         $professional->update([
-            'is_active' => !$professional->is_active
+            'is_active' => ! $professional->is_active,
         ]);
 
         $message = $professional->is_active ? 'Profesional activado correctamente.' : 'Profesional desactivado correctamente.';

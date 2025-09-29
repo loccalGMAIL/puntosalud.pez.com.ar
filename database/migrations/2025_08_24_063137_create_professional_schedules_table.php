@@ -20,16 +20,16 @@ return new class extends Migration
             $table->unsignedBigInteger('office_id')->nullable();
             $table->boolean('is_active')->default(true);
             $table->timestamps();
-            
+
             // Foreign keys
             $table->foreign('professional_id')
-                  ->references('id')
-                  ->on('professionals')
-                  ->onDelete('cascade');
+                ->references('id')
+                ->on('professionals')
+                ->onDelete('cascade');
             $table->foreign('office_id')
-                  ->references('id')
-                  ->on('offices');
-            
+                ->references('id')
+                ->on('offices');
+
             // Índices
             $table->index('professional_id');
             $table->index('day_of_week');

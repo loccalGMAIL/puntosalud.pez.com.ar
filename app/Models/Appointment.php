@@ -138,10 +138,10 @@ class Appointment extends Model
         if ($this->status !== 'attended') {
             return 0;
         }
-        
+
         $finalAmount = $this->final_amount ?? 0;
         $amountPaid = $this->amount_paid ?? 0;
-        
+
         return $finalAmount - $amountPaid;
     }
 
@@ -152,7 +152,7 @@ class Appointment extends Model
     {
         $this->update([
             'status' => 'attended',
-            'final_amount' => $finalAmount ?? $this->estimated_amount
+            'final_amount' => $finalAmount ?? $this->estimated_amount,
         ]);
     }
 
@@ -160,7 +160,7 @@ class Appointment extends Model
     {
         $this->update([
             'status' => 'absent',
-            'final_amount' => 0
+            'final_amount' => 0,
         ]);
     }
 
@@ -171,14 +171,14 @@ class Appointment extends Model
 
     public function canBeCancelled()
     {
-        return in_array($this->status, ['scheduled']) && 
+        return in_array($this->status, ['scheduled']) &&
                $this->appointment_date->isFuture();
     }
 
     public function conflictsWith($startTime, $endTime)
     {
         $appointmentEnd = $this->end_time;
-        
-        return !($endTime <= $this->appointment_date || $startTime >= $appointmentEnd);
+
+        return ! ($endTime <= $this->appointment_date || $startTime >= $appointmentEnd);
     }
 }

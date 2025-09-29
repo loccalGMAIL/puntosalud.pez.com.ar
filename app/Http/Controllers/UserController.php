@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
-use App\Models\User;
 
 class UserController extends Controller
 {
@@ -15,7 +15,7 @@ class UserController extends Controller
     public function index()
     {
         $users = User::orderBy('name')->get();
-        
+
         return view('users.index', compact('users'));
     }
 
@@ -77,7 +77,7 @@ class UserController extends Controller
     {
         $rules = [
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email,' . $user->id],
+            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email,'.$user->id],
             'role' => ['required', 'in:admin,receptionist'],
         ];
 
@@ -133,14 +133,14 @@ class UserController extends Controller
             return response()->json(['error' => 'No puede desactivar su propio usuario'], 400);
         }
 
-        $user->update(['is_active' => !$user->is_active]);
+        $user->update(['is_active' => ! $user->is_active]);
 
         $status = $user->is_active ? 'activado' : 'desactivado';
-        
+
         return response()->json([
-            'success' => true, 
+            'success' => true,
             'message' => "Usuario {$status} exitosamente",
-            'is_active' => $user->is_active
+            'is_active' => $user->is_active,
         ]);
     }
 
@@ -161,7 +161,7 @@ class UserController extends Controller
         $user = auth()->user();
 
         // Verificar password actual
-        if (!Hash::check($request->current_password, $user->password)) {
+        if (! Hash::check($request->current_password, $user->password)) {
             return response()->json(['errors' => ['current_password' => ['La contraseña actual es incorrecta']]], 422);
         }
 
@@ -176,6 +176,7 @@ class UserController extends Controller
     public function profile()
     {
         $user = auth()->user();
+
         return view('users.profile', compact('user'));
     }
 }

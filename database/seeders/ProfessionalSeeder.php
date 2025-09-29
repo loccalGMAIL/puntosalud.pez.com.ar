@@ -3,7 +3,6 @@
 namespace Database\Seeders;
 
 use App\Models\Professional;
-use App\Models\Specialty;
 use Illuminate\Database\Seeder;
 
 class ProfessionalSeeder extends Seeder
@@ -64,7 +63,7 @@ class ProfessionalSeeder extends Seeder
                 'specialty_id' => 4,
                 'commission_percentage' => 17.50,
                 'is_active' => false,
-            ]
+            ],
         ];
 
         foreach ($professionals as $professional) {

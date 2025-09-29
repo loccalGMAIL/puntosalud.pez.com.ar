@@ -3,11 +3,11 @@
 namespace Database\Seeders;
 
 use App\Models\Appointment;
-use App\Models\Professional;
-use App\Models\Patient;
 use App\Models\Office;
-use Illuminate\Database\Seeder;
+use App\Models\Patient;
+use App\Models\Professional;
 use Carbon\Carbon;
+use Illuminate\Database\Seeder;
 
 class AppointmentSeeder extends Seeder
 {
@@ -56,36 +56,37 @@ class AppointmentSeeder extends Seeder
         // Obtener profesionales que trabajan este día (cargar relación schedules)
         $workingProfessionals = $professionals->filter(function ($professional) use ($dayOfWeek) {
             // Cargar schedules si no están cargados
-            if (!$professional->relationLoaded('schedules')) {
+            if (! $professional->relationLoaded('schedules')) {
                 $professional->load('schedules');
             }
+
             return $professional->schedules->where('day_of_week', $dayOfWeek)->where('is_active', true)->isNotEmpty();
         });
 
         foreach ($workingProfessionals as $professional) {
             $schedules = $professional->schedules->where('day_of_week', $dayOfWeek)->where('is_active', true);
-            
+
             foreach ($schedules as $schedule) {
                 // Crear 2-4 citas por horario
                 $appointmentCount = rand(2, 4);
-                
+
                 for ($i = 0; $i < $appointmentCount; $i++) {
                     $patient = $patients->random();
-                    
+
                     // Generar hora aleatoria dentro del horario del profesional
                     $startHour = Carbon::parse($schedule->start_time)->hour;
                     $endHour = Carbon::parse($schedule->end_time)->hour;
                     $hour = rand($startHour, $endHour - 1);
                     $minute = [0, 15, 30, 45][rand(0, 3)]; // Cada 15 minutos
-                    
+
                     $appointmentDateTime = $date->copy()->setTime($hour, $minute);
-                    
+
                     // Duración aleatoria entre 30 y 60 minutos
                     $duration = [30, 45, 60][rand(0, 2)];
-                    
+
                     // Monto estimado según especialidad
                     $estimatedAmount = $this->getEstimatedAmountBySpecialty($professional->specialty_id);
-                    
+
                     // Estado según si es pasado o futuro
                     if ($isPast) {
                         $status = ['attended', 'attended', 'attended', 'absent', 'cancelled'][rand(0, 4)];
@@ -95,7 +96,7 @@ class AppointmentSeeder extends Seeder
 
                     // Monto final solo para citas atendidas
                     $finalAmount = $status === 'attended' ? $estimatedAmount + rand(-500, 1000) : null;
-                    
+
                     $appointments[] = [
                         'professional_id' => $professional->id,
                         'patient_id' => $patient->id,
@@ -138,7 +139,7 @@ class AppointmentSeeder extends Seeder
             'Renovación de receta',
             'Chequeo anual',
             'Consulta por síntomas',
-            null, null, null // Para que muchas citas no tengan notas
+            null, null, null, // Para que muchas citas no tengan notas
         ];
 
         return $notes[rand(0, count($notes) - 1)];

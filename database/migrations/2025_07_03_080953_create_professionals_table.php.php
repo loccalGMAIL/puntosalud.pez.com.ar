@@ -22,10 +22,10 @@ return new class extends Migration
             $table->decimal('commission_percentage', 5, 2)->default(70.00);
             $table->boolean('is_active')->default(true);
             $table->timestamps();
-            
+
             // Foreign keys
             $table->foreign('specialty_id')->references('id')->on('specialties');
-            
+
             // Índices
             $table->index('dni');
             $table->index('is_active');

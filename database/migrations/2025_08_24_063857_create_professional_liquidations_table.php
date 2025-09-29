@@ -28,15 +28,15 @@ return new class extends Migration
             $table->unsignedBigInteger('paid_by')->nullable();
             $table->text('notes')->nullable();
             $table->timestamps();
-            
+
             // Foreign keys
             $table->foreign('professional_id')
-                  ->references('id')
-                  ->on('professionals');
+                ->references('id')
+                ->on('professionals');
             $table->foreign('paid_by')
-                  ->references('id')
-                  ->on('users');
-            
+                ->references('id')
+                ->on('users');
+
             // Índices
             $table->index(['professional_id', 'liquidation_date']);
             $table->index('payment_status');

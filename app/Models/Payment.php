@@ -108,13 +108,13 @@ class Payment extends Model
         if ($this->payment_type !== 'package') {
             return 0;
         }
-        
+
         return $this->sessions_included - $this->sessions_used;
     }
 
     public function getIsPackageCompleteAttribute()
     {
-        return $this->payment_type === 'package' && 
+        return $this->payment_type === 'package' &&
                $this->sessions_used >= $this->sessions_included;
     }
 
@@ -140,9 +140,10 @@ class Payment extends Model
     {
         if ($this->payment_type === 'package' && $this->sessions_remaining > 0) {
             $this->increment('sessions_used');
+
             return true;
         }
-        
+
         return false;
     }
 
@@ -151,11 +152,11 @@ class Payment extends Model
         if ($this->payment_type === 'single') {
             return $this->paymentAppointments()->count() === 0;
         }
-        
+
         if ($this->payment_type === 'package') {
             return $this->sessions_remaining > 0;
         }
-        
+
         return false;
     }
 
@@ -192,7 +193,7 @@ class Payment extends Model
             ->first();
 
         $number = $lastPayment ? (intval(substr($lastPayment->receipt_number, -6)) + 1) : 1;
-        
+
         return sprintf('REC-%s-%06d', $year, $number);
     }
 }

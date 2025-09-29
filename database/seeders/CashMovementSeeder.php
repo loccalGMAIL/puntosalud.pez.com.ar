@@ -5,8 +5,8 @@ namespace Database\Seeders;
 use App\Models\CashMovement;
 use App\Models\Payment;
 use App\Models\User;
-use Illuminate\Database\Seeder;
 use Carbon\Carbon;
+use Illuminate\Database\Seeder;
 
 class CashMovementSeeder extends Seeder
 {
@@ -68,7 +68,7 @@ class CashMovementSeeder extends Seeder
         foreach ($expenses as $expense) {
             $expenseDate = $startDate->copy()->addDays(rand(1, 25))->setTime(rand(10, 16), rand(0, 59));
             $runningBalance += $expense['amount'];
-            
+
             $movements[] = [
                 'movement_date' => $expenseDate,
                 'type' => 'expense',
@@ -92,7 +92,7 @@ class CashMovementSeeder extends Seeder
         foreach ($professionalPayments as $payment) {
             $paymentDate = $startDate->copy()->addDays(rand(5, 28))->setTime(rand(14, 17), rand(0, 59));
             $runningBalance += $payment['amount'];
-            
+
             $movements[] = [
                 'movement_date' => $paymentDate,
                 'type' => 'professional_payment',

@@ -21,22 +21,22 @@ return new class extends Migration
             $table->decimal('commission_amount', 10, 2);
             $table->string('concept')->nullable();
             $table->timestamps();
-            
+
             // Foreign keys
             $table->foreign('liquidation_id')
-                  ->references('id')
-                  ->on('professional_liquidations')
-                  ->onDelete('cascade');
+                ->references('id')
+                ->on('professional_liquidations')
+                ->onDelete('cascade');
             $table->foreign('payment_appointment_id')
-                  ->references('id')
-                  ->on('payment_appointments');
+                ->references('id')
+                ->on('payment_appointments');
             $table->foreign('payment_id')
-                  ->references('id')
-                  ->on('payments');
+                ->references('id')
+                ->on('payments');
             $table->foreign('appointment_id')
-                  ->references('id')
-                  ->on('appointments');
-            
+                ->references('id')
+                ->on('appointments');
+
             // Índices
             $table->index('liquidation_id');
         });

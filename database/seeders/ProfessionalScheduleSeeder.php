@@ -2,9 +2,9 @@
 
 namespace Database\Seeders;
 
-use App\Models\ProfessionalSchedule;
-use App\Models\Professional;
 use App\Models\Office;
+use App\Models\Professional;
+use App\Models\ProfessionalSchedule;
 use Illuminate\Database\Seeder;
 
 class ProfessionalScheduleSeeder extends Seeder
