@@ -159,7 +159,7 @@
         </div>
     </div>
 
-    <!-- Gráfico de Tendencias -->
+    {{-- <!-- Gráfico de Tendencias -->
     <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-6">
         <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Tendencia de Ingresos vs Egresos</h2>
         <div class="h-64 flex items-center justify-center border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg">
@@ -171,7 +171,7 @@
                 <p class="text-gray-400 dark:text-gray-500 text-xs">Integrar con Chart.js o similar</p>
             </div>
         </div>
-    </div>
+    </div> --}}
 
     <!-- Análisis por Tipo de Movimiento -->
     @if(isset($movementsByType) && $movementsByType->count() > 0)
@@ -179,6 +179,7 @@
         <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Análisis por Tipo de Movimiento</h2>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             @foreach($movementsByType as $type => $data)
+                @if(!in_array($type, ['cash_opening', 'cash_closing']))
             <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
                 <div class="flex justify-between items-center mb-3">
                     <h3 class="font-medium text-gray-900 dark:text-white">
@@ -210,6 +211,9 @@
                             @case('shift_receive')
                                 📥 Recibo de Turno
                                 @break
+                            @case('cash_withdrawal')
+                                💸 Retiro de Efectivo
+                                @break
                             @case('other')
                                 📋 Otro
                                 @break
@@ -236,6 +240,7 @@
                     </div>
                 </div>
             </div>
+                @endif
             @endforeach
         </div>
     </div>
