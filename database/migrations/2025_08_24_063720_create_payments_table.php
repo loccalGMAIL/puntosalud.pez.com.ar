@@ -26,15 +26,15 @@ return new class extends Migration
             $table->string('receipt_number', 50)->nullable();
             $table->unsignedBigInteger('created_by')->nullable();
             $table->timestamps();
-            
+
             // Foreign keys
             $table->foreign('patient_id')
-                  ->references('id')
-                  ->on('patients');
+                ->references('id')
+                ->on('patients');
             $table->foreign('created_by')
-                  ->references('id')
-                  ->on('users');
-            
+                ->references('id')
+                ->on('users');
+
             // Índices
             $table->index('patient_id');
             $table->index('payment_date');

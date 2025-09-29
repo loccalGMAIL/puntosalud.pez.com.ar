@@ -15,7 +15,7 @@ class AppointmentSettingSeeder extends Seeder
         foreach ($professionals as $professional) {
             // Duración por defecto según especialidad
             $defaultDuration = $this->getDefaultDurationBySpecialty($professional->specialty_id);
-            
+
             AppointmentSetting::create([
                 'professional_id' => $professional->id,
                 'default_duration_minutes' => $defaultDuration,

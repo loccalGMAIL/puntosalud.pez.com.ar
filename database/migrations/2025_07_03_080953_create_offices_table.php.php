@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('name', 50);
             $table->boolean('is_active')->default(true);
             $table->timestamps();
-            
+
             // Índices
             $table->index('is_active');
         });

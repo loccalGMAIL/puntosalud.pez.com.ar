@@ -24,7 +24,7 @@ return new class extends Migration
             $table->text('address')->nullable();
             $table->boolean('activo')->default(true);
             $table->timestamps();
-            
+
             // Índices
             $table->index('dni');
             $table->index(['last_name', 'first_name']);

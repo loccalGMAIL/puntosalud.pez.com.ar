@@ -23,14 +23,14 @@ class CheckUserActive
 
         if (Auth::check()) {
             $user = Auth::user();
-            
-            if (!$user->isActive()) {
+
+            if (! $user->isActive()) {
                 Auth::logout();
                 $request->session()->invalidate();
                 $request->session()->regenerateToken();
-                
+
                 return redirect()->route('login')->withErrors([
-                    'email' => 'Su cuenta ha sido desactivada. Contacte al administrador.'
+                    'email' => 'Su cuenta ha sido desactivada. Contacte al administrador.',
                 ]);
             }
         }

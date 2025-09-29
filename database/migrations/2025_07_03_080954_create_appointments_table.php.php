@@ -24,21 +24,21 @@ return new class extends Migration
             $table->text('notes')->nullable();
             $table->unsignedBigInteger('created_by')->nullable();
             $table->timestamps();
-            
+
             // Foreign keys
             $table->foreign('professional_id')
-                  ->references('id')
-                  ->on('professionals');
+                ->references('id')
+                ->on('professionals');
             $table->foreign('patient_id')
-                  ->references('id')
-                  ->on('patients');
+                ->references('id')
+                ->on('patients');
             $table->foreign('office_id')
-                  ->references('id')
-                  ->on('offices');
+                ->references('id')
+                ->on('offices');
             $table->foreign('created_by')
-                  ->references('id')
-                  ->on('users');
-            
+                ->references('id')
+                ->on('users');
+
             // Índices
             $table->index(['professional_id', 'appointment_date']);
             $table->index('patient_id');

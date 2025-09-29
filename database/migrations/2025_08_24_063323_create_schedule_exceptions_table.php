@@ -18,12 +18,12 @@ return new class extends Migration
             $table->boolean('affects_all')->default(true);
             $table->unsignedBigInteger('created_by')->nullable();
             $table->timestamps();
-            
+
             // Foreign keys
             $table->foreign('created_by')
-                  ->references('id')
-                  ->on('users');
-            
+                ->references('id')
+                ->on('users');
+
             // Índices
             $table->index('exception_date');
         });

@@ -94,7 +94,7 @@ class User extends Authenticatable
      */
     public function getRoleNameAttribute(): string
     {
-        return match($this->role) {
+        return match ($this->role) {
             'admin' => 'Administrador',
             'receptionist' => 'Recepcionista',
             default => 'Desconocido'

@@ -16,13 +16,13 @@ return new class extends Migration
             $table->unsignedBigInteger('professional_id');
             $table->integer('default_duration_minutes')->default(30);
             $table->timestamps();
-            
+
             // Foreign keys
             $table->foreign('professional_id')
-                  ->references('id')
-                  ->on('professionals')
-                  ->onDelete('cascade');
-            
+                ->references('id')
+                ->on('professionals')
+                ->onDelete('cascade');
+
             // Unique constraint
             $table->unique('professional_id');
         });

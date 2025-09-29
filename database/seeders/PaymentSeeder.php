@@ -2,12 +2,12 @@
 
 namespace Database\Seeders;
 
-use App\Models\Payment;
-use App\Models\Patient;
 use App\Models\Appointment;
+use App\Models\Patient;
+use App\Models\Payment;
 use App\Models\User;
-use Illuminate\Database\Seeder;
 use Carbon\Carbon;
+use Illuminate\Database\Seeder;
 
 class PaymentSeeder extends Seeder
 {
@@ -15,16 +15,16 @@ class PaymentSeeder extends Seeder
     {
         $patients = Patient::all();
         $adminUser = User::where('role', 'admin')->first();
-        
+
         // Crear algunos pagos únicos
         $this->createSinglePayments($patients, $adminUser);
-        
+
         // Crear algunos paquetes
         $this->createPackagePayments($patients, $adminUser);
-        
+
         // Crear algunos reembolsos
         $this->createRefundPayments($patients, $adminUser);
-        
+
         // Asociar pagos con citas atendidas
         $this->associatePaymentsWithAppointments();
     }
@@ -34,7 +34,7 @@ class PaymentSeeder extends Seeder
         for ($i = 0; $i < 20; $i++) {
             $patient = $patients->random();
             $paymentDate = Carbon::today()->subDays(rand(0, 30))->addHours(rand(8, 18));
-            
+
             Payment::create([
                 'patient_id' => $patient->id,
                 'payment_date' => $paymentDate,
@@ -44,7 +44,7 @@ class PaymentSeeder extends Seeder
                 'sessions_included' => 1,
                 'sessions_used' => 0,
                 'concept' => 'Consulta médica',
-                'receipt_number' => 'REC-' . str_pad($i + 1, 4, '0', STR_PAD_LEFT),
+                'receipt_number' => 'REC-'.str_pad($i + 1, 4, '0', STR_PAD_LEFT),
                 'created_by' => $adminUser->id,
             ]);
         }
@@ -57,7 +57,7 @@ class PaymentSeeder extends Seeder
             $paymentDate = Carbon::today()->subDays(rand(0, 60))->addHours(rand(8, 18));
             $sessions = [4, 6, 8, 10][rand(0, 3)];
             $sessionsUsed = rand(0, min($sessions, 5));
-            
+
             Payment::create([
                 'patient_id' => $patient->id,
                 'payment_date' => $paymentDate,
@@ -67,7 +67,7 @@ class PaymentSeeder extends Seeder
                 'sessions_included' => $sessions,
                 'sessions_used' => $sessionsUsed,
                 'concept' => "Paquete de $sessions sesiones",
-                'receipt_number' => 'PAQ-' . str_pad($i + 1, 4, '0', STR_PAD_LEFT),
+                'receipt_number' => 'PAQ-'.str_pad($i + 1, 4, '0', STR_PAD_LEFT),
                 'created_by' => $adminUser->id,
             ]);
         }
@@ -78,7 +78,7 @@ class PaymentSeeder extends Seeder
         for ($i = 0; $i < 3; $i++) {
             $patient = $patients->random();
             $paymentDate = Carbon::today()->subDays(rand(0, 15))->addHours(rand(8, 18));
-            
+
             Payment::create([
                 'patient_id' => $patient->id,
                 'payment_date' => $paymentDate,
@@ -88,7 +88,7 @@ class PaymentSeeder extends Seeder
                 'sessions_included' => 0,
                 'sessions_used' => 0,
                 'concept' => 'Reembolso por cancelación',
-                'receipt_number' => 'REF-' . str_pad($i + 1, 4, '0', STR_PAD_LEFT),
+                'receipt_number' => 'REF-'.str_pad($i + 1, 4, '0', STR_PAD_LEFT),
                 'created_by' => $adminUser->id,
             ]);
         }
@@ -110,7 +110,7 @@ class PaymentSeeder extends Seeder
                     $query->where('payment_type', 'single')
                         ->orWhere(function ($q) {
                             $q->where('payment_type', 'package')
-                              ->whereRaw('sessions_used < sessions_included');
+                                ->whereRaw('sessions_used < sessions_included');
                         });
                 })
                 ->get();

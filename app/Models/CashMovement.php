@@ -98,13 +98,13 @@ class CashMovement extends Model
     {
         $opening = static::forDate($date)->openingMovements()->first();
         $closing = static::forDate($date)->closingMovements()->first();
-        
+
         return [
-            'is_open' => $opening && !$closing,
+            'is_open' => $opening && ! $closing,
             'is_closed' => $opening && $closing,
-            'needs_opening' => !$opening,
+            'needs_opening' => ! $opening,
             'opening_movement' => $opening,
-            'closing_movement' => $closing
+            'closing_movement' => $closing,
         ];
     }
 

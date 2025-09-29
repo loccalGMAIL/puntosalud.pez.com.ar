@@ -44,9 +44,9 @@ class Office extends Model
      */
     public function isAvailableAt($dateTime)
     {
-        return !$this->appointments()
+        return ! $this->appointments()
             ->where('appointment_date', '<=', $dateTime)
-            ->where(function($query) use ($dateTime) {
+            ->where(function ($query) use ($dateTime) {
                 $query->whereRaw('DATE_ADD(appointment_date, INTERVAL duration MINUTE) > ?', [$dateTime]);
             })
             ->whereNotIn('status', ['cancelled'])
@@ -56,7 +56,7 @@ class Office extends Model
     public function getScheduleForDate($date)
     {
         $dayOfWeek = date('N', strtotime($date)); // 1=Lunes, 7=Domingo
-        
+
         return $this->professionalSchedules()
             ->where('day_of_week', $dayOfWeek)
             ->where('is_active', true)

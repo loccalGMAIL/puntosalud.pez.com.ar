@@ -17,21 +17,21 @@ return new class extends Migration
             $table->unsignedBigInteger('appointment_id');
             $table->decimal('allocated_amount', 10, 2);
             $table->boolean('is_liquidation_trigger')->default(false)
-                  ->comment('TRUE para primera sesión de paquete');
+                ->comment('TRUE para primera sesión de paquete');
             $table->timestamps();
-            
+
             // Foreign keys
             $table->foreign('payment_id')
-                  ->references('id')
-                  ->on('payments')
-                  ->onDelete('cascade');
+                ->references('id')
+                ->on('payments')
+                ->onDelete('cascade');
             $table->foreign('appointment_id')
-                  ->references('id')
-                  ->on('appointments');
-            
+                ->references('id')
+                ->on('appointments');
+
             // Unique constraint
             $table->unique(['payment_id', 'appointment_id']);
-            
+
             // Índices
             $table->index('appointment_id');
         });
