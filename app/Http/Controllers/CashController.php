@@ -6,7 +6,6 @@ use App\Models\CashMovement;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 
 class CashController extends Controller
 {
@@ -14,36 +13,36 @@ class CashController extends Controller
     {
         $date = $request->get('date', now()->format('Y-m-d'));
         $selectedDate = Carbon::parse($date);
-        
+
         $previousDay = $selectedDate->copy()->subDay();
         $lastBalanceMovement = CashMovement::whereDate('movement_date', '<=', $previousDay)
             ->orderBy('movement_date', 'desc')
             ->orderBy('created_at', 'desc')
             ->first();
-        
+
         $initialBalance = $lastBalanceMovement ? $lastBalanceMovement->balance_after : 0;
-        
+
         $query = CashMovement::with(['user'])
             ->whereDate('movement_date', $selectedDate);
-        
+
         if ($request->filled('type')) {
             $query->where('type', $request->type);
         }
-        
+
         if ($request->filled('reference_type')) {
             $query->where('reference_type', $request->reference_type);
         }
-        
+
         $movements = $query->orderBy('created_at', 'desc')
-                          ->get();
-        
+            ->get();
+
         $inflows = $movements->where('amount', '>', 0)->sum('amount');
         $outflows = $movements->where('amount', '<', 0)->sum('amount');
         $finalBalance = $initialBalance + $inflows + $outflows;
-        
+
         $lastMovement = $movements->first();
         $systemFinalBalance = $lastMovement ? $lastMovement->balance_after : $initialBalance;
-        
+
         // Obtener estado de caja para el día
         $cashStatus = CashMovement::getCashStatusForDate($selectedDate);
 
@@ -57,120 +56,120 @@ class CashController extends Controller
             'is_closed' => $cashStatus['is_closed'],
             'is_open' => $cashStatus['is_open'],
             'needs_opening' => $cashStatus['needs_opening'],
-            'movements_count' => $movements->count()
+            'movements_count' => $movements->count(),
         ];
-        
+
         $movementsByType = $movements->groupBy('type')->map(function ($group, $type) {
             return [
                 'type' => $type,
                 'inflows' => $group->where('amount', '>', 0)->sum('amount'),
                 'outflows' => abs($group->where('amount', '<', 0)->sum('amount')),
-                'count' => $group->count()
+                'count' => $group->count(),
             ];
         });
-        
+
         if ($request->ajax()) {
             return response()->json([
                 'success' => true,
                 'summary' => $cashSummary,
                 'movements' => $movements,
-                'movements_by_type' => $movementsByType
+                'movements_by_type' => $movementsByType,
             ]);
         }
-        
+
         return view('cash.daily', compact('cashSummary', 'movements', 'movementsByType'));
     }
-    
+
     public function cashReport(Request $request)
     {
         $dateFrom = $request->get('date_from', now()->startOfMonth()->format('Y-m-d'));
         $dateTo = $request->get('date_to', now()->format('Y-m-d'));
         $groupBy = $request->get('group_by', 'day');
-        
+
         $startDate = Carbon::parse($dateFrom);
         $endDate = Carbon::parse($dateTo);
-        
+
         $movements = CashMovement::with(['user'])
             ->whereDate('movement_date', '>=', $startDate)
             ->whereDate('movement_date', '<=', $endDate)
             ->orderBy('movement_date')
             ->get();
-        
+
         $reportData = $this->generateReportData($movements, $groupBy, $startDate, $endDate);
-        
+
         $summary = [
             'total_inflows' => $movements->where('amount', '>', 0)->sum('amount'),
             'total_outflows' => abs($movements->where('amount', '<', 0)->sum('amount')),
             'net_amount' => $movements->sum('amount'),
             'movements_count' => $movements->count(),
-            'period_days' => $startDate->diffInDays($endDate) + 1
+            'period_days' => $startDate->diffInDays($endDate) + 1,
         ];
-        
+
         $movementsByType = $movements->groupBy('type')->map(function ($group, $type) {
             return [
                 'type' => $type,
                 'inflows' => $group->where('amount', '>', 0)->sum('amount'),
                 'outflows' => abs($group->where('amount', '<', 0)->sum('amount')),
-                'count' => $group->count()
+                'count' => $group->count(),
             ];
         });
-        
+
         if ($request->ajax()) {
             return response()->json([
                 'success' => true,
                 'report_data' => $reportData,
                 'summary' => $summary,
-                'movements_by_type' => $movementsByType
+                'movements_by_type' => $movementsByType,
             ]);
         }
-        
+
         return view('cash.report', compact('reportData', 'summary', 'movementsByType'));
     }
-    
+
     public function addExpense(Request $request)
     {
         if ($request->isMethod('get')) {
             $expenseCategories = [
                 'office_supplies' => 'Insumos de Oficina',
-                'medical_supplies' => 'Insumos Médicos', 
+                'medical_supplies' => 'Insumos Médicos',
                 'services' => 'Servicios',
                 'maintenance' => 'Mantenimiento',
                 'taxes' => 'Impuestos',
                 'professional_payments' => 'Pagos a Profesionales',
-                'other' => 'Otros'
+                'other' => 'Otros',
             ];
-            
+
             return view('cash.expense-form', compact('expenseCategories'));
         }
-        
+
         $validated = $request->validate([
             'amount' => 'required|numeric|min:0.01',
             'description' => 'required|string|max:500',
             'category' => 'required|string|in:office_supplies,medical_supplies,services,maintenance,taxes,professional_payments,other',
             'receipt_file' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
-            'notes' => 'nullable|string|max:500'
+            'notes' => 'nullable|string|max:500',
         ]);
-        
+
         try {
             DB::beginTransaction();
-            
+
             $receiptPath = null;
             if ($request->hasFile('receipt_file')) {
                 $receiptPath = $request->file('receipt_file')->store('cash/receipts', 'public');
             }
-            
+
             $lastMovement = CashMovement::orderBy('movement_date', 'desc')
                 ->orderBy('created_at', 'desc')
                 ->first();
-            
+
             $currentBalance = $lastMovement ? $lastMovement->balance_after : 0;
             $newBalance = $currentBalance - $validated['amount'];
-            
+
             $description = $validated['description'];
             if ($validated['notes']) {
-                $description .= ' - ' . $validated['notes'];
+                $description .= ' - '.$validated['notes'];
             }
-            
+
             $cashMovement = CashMovement::create([
                 'movement_date' => now(),
                 'type' => 'expense',
@@ -181,36 +180,36 @@ class CashController extends Controller
                 'balance_after' => $newBalance,
                 'user_id' => auth()->id(),
             ]);
-            
+
             DB::commit();
-            
+
             if ($request->ajax()) {
                 return response()->json([
                     'success' => true,
                     'message' => 'Gasto registrado exitosamente.',
-                    'cash_movement' => $cashMovement
+                    'cash_movement' => $cashMovement,
                 ]);
             }
-            
+
             return redirect()->route('cash.daily')
                 ->with('success', 'Gasto registrado exitosamente.');
-            
+
         } catch (\Exception $e) {
             DB::rollBack();
-            
+
             if ($request->ajax()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Error al registrar el gasto: ' . $e->getMessage()
+                    'message' => 'Error al registrar el gasto: '.$e->getMessage(),
                 ], 500);
             }
-            
+
             return redirect()->back()
-                ->withErrors(['error' => 'Error al registrar el gasto: ' . $e->getMessage()])
+                ->withErrors(['error' => 'Error al registrar el gasto: '.$e->getMessage()])
                 ->withInput();
         }
     }
-    
+
     public function getCashMovementDetails(CashMovement $cashMovement)
     {
         $cashMovement->load(['user']);
@@ -235,21 +234,21 @@ class CashController extends Controller
             }
         } catch (\Exception $e) {
             // Si hay error cargando relaciones adicionales, continuar sin ellas
-            \Log::warning('Error loading additional movement details: ' . $e->getMessage());
+            \Log::warning('Error loading additional movement details: '.$e->getMessage());
         }
 
         return response()->json([
             'success' => true,
             'cash_movement' => $cashMovement,
-            'additional_data' => $additionalData
+            'additional_data' => $additionalData,
         ]);
     }
-    
+
     public function openCash(Request $request)
     {
         $validated = $request->validate([
             'opening_amount' => 'nullable|numeric|min:0',
-            'notes' => 'nullable|string|max:500'
+            'notes' => 'nullable|string|max:500',
         ]);
 
         try {
@@ -262,7 +261,7 @@ class CashController extends Controller
             if ($existingOpening) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Ya existe una apertura de caja para el día de hoy.'
+                    'message' => 'Ya existe una apertura de caja para el día de hoy.',
                 ], 400);
             }
 
@@ -282,7 +281,7 @@ class CashController extends Controller
                 'movement_date' => now(),
                 'type' => 'cash_opening',
                 'amount' => $openingAmount,
-                'description' => 'Apertura de caja - ' . ($validated['notes'] ?: 'Apertura del día'),
+                'description' => 'Apertura de caja - '.($validated['notes'] ?: 'Apertura del día'),
                 'reference_type' => 'cash_opening',
                 'reference_id' => null,
                 'balance_after' => $newBalance,
@@ -294,15 +293,15 @@ class CashController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Caja abierta exitosamente.',
-                'cash_movement' => $cashMovement
+                'cash_movement' => $cashMovement,
             ]);
 
         } catch (\Exception $e) {
             DB::rollBack();
-            
+
             return response()->json([
                 'success' => false,
-                'message' => 'Error al abrir la caja: ' . $e->getMessage()
+                'message' => 'Error al abrir la caja: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -312,20 +311,20 @@ class CashController extends Controller
         $validated = $request->validate([
             'closing_amount' => 'required|numeric|min:0',
             'notes' => 'nullable|string|max:500',
-            'close_date' => 'nullable|date'
+            'close_date' => 'nullable|date',
         ]);
 
         try {
             DB::beginTransaction();
 
             $closeDate = $validated['close_date'] ? Carbon::parse($validated['close_date']) : now()->startOfDay();
-            
+
             // Verificar que exista apertura para esa fecha
             $opening = CashMovement::forDate($closeDate)->openingMovements()->first();
-            if (!$opening) {
+            if (! $opening) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'No se encontró apertura de caja para la fecha especificada.'
+                    'message' => 'No se encontró apertura de caja para la fecha especificada.',
                 ], 400);
             }
 
@@ -334,28 +333,33 @@ class CashController extends Controller
             if ($existingClosing) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Ya existe un cierre de caja para esa fecha.'
+                    'message' => 'Ya existe un cierre de caja para esa fecha.',
                 ], 400);
             }
 
-            // Calcular el balance teórico del día
-            $dayMovements = CashMovement::forDate($closeDate)->get();
-            $theoreticalBalance = $dayMovements->sum('amount');
+            // Obtener el saldo actual antes del cierre
+            $lastMovement = CashMovement::whereDate('movement_date', '<=', $closeDate)
+                ->orderBy('movement_date', 'desc')
+                ->orderBy('created_at', 'desc')
+                ->first();
 
-            // Crear movimiento de cierre
+            $currentBalance = $lastMovement ? $lastMovement->balance_after : 0;
+
+            // Crear movimiento de cierre que retira todo el saldo
             $cashMovement = CashMovement::create([
                 'movement_date' => $closeDate->endOfDay(),
                 'type' => 'cash_closing',
-                'amount' => 0, // El cierre no suma/resta, solo registra
-                'description' => 'Cierre de caja - Efectivo contado: $' . number_format($validated['closing_amount'], 2) . 
-                               ($validated['notes'] ? ' - ' . $validated['notes'] : ''),
+                'amount' => -$currentBalance, // Retirar todo el saldo actual
+                'description' => 'Cierre de caja - Efectivo contado: $'.number_format($validated['closing_amount'], 2).
+                               ' - Saldo retirado: $'.number_format($currentBalance, 2).
+                               ($validated['notes'] ? ' - '.$validated['notes'] : ''),
                 'reference_type' => 'cash_closing',
                 'reference_id' => null,
-                'balance_after' => $theoreticalBalance,
+                'balance_after' => 0, // Balance queda en cero
                 'user_id' => auth()->id(),
             ]);
 
-            $difference = $validated['closing_amount'] - $theoreticalBalance;
+            $difference = $validated['closing_amount'] - $currentBalance;
 
             DB::commit();
 
@@ -365,19 +369,20 @@ class CashController extends Controller
                 'cash_movement' => $cashMovement,
                 'redirect_url' => route('cash.daily-report', ['date' => $closeDate->format('Y-m-d')]),
                 'summary' => [
-                    'theoretical_balance' => $theoreticalBalance,
+                    'theoretical_balance' => $currentBalance,
                     'counted_amount' => $validated['closing_amount'],
                     'difference' => $difference,
-                    'date' => $closeDate->format('d/m/Y')
-                ]
+                    'date' => $closeDate->format('d/m/Y'),
+                    'withdrawn_amount' => $currentBalance,
+                ],
             ]);
 
         } catch (\Exception $e) {
             DB::rollBack();
-            
+
             return response()->json([
                 'success' => false,
-                'message' => 'Error al cerrar la caja: ' . $e->getMessage()
+                'message' => 'Error al cerrar la caja: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -394,7 +399,7 @@ class CashController extends Controller
             'success' => true,
             'status' => $status,
             'unclosed_date' => $unclosedDate,
-            'date' => $selectedDate->format('Y-m-d')
+            'date' => $selectedDate->format('Y-m-d'),
         ]);
     }
 
@@ -452,7 +457,7 @@ class CashController extends Controller
             'closing_movement' => $closingMovement,
             'counted_amount' => $countedAmount,
             'difference' => $difference,
-            'is_closed' => $closingMovement !== null
+            'is_closed' => $closingMovement !== null,
         ];
 
         // Agrupar por tipo de movimiento
@@ -461,7 +466,7 @@ class CashController extends Controller
                 'type' => $type,
                 'inflows' => $group->where('amount', '>', 0)->sum('amount'),
                 'outflows' => abs($group->where('amount', '<', 0)->sum('amount')),
-                'count' => $group->count()
+                'count' => $group->count(),
             ];
         });
 
@@ -485,7 +490,7 @@ class CashController extends Controller
                 'expense_payment' => 'Pago de Gastos',
                 'professional_liquidation' => 'Liquidación de Profesional',
                 'safe_custody' => 'Custodia en Caja Fuerte',
-                'other_withdrawal' => 'Otro Retiro'
+                'other_withdrawal' => 'Otro Retiro',
             ];
 
             return view('cash.withdrawal-form', compact('withdrawalTypes'));
@@ -496,7 +501,7 @@ class CashController extends Controller
             'withdrawal_type' => 'required|string|in:bank_deposit,expense_payment,professional_liquidation,safe_custody,other_withdrawal',
             'description' => 'required|string|max:500',
             'recipient' => 'nullable|string|max:255',
-            'notes' => 'nullable|string|max:500'
+            'notes' => 'nullable|string|max:500',
         ]);
 
         try {
@@ -512,18 +517,18 @@ class CashController extends Controller
             if ($currentBalance < $validated['amount']) {
                 return response()->json([
                     'success' => false,
-                    'message' => "Saldo insuficiente en caja. Disponible: $" . number_format($currentBalance, 2)
+                    'message' => 'Saldo insuficiente en caja. Disponible: $'.number_format($currentBalance, 2),
                 ], 400);
             }
 
             $newBalance = $currentBalance - $validated['amount'];
 
-            $description = "Retiro: " . $validated['description'];
+            $description = 'Retiro: '.$validated['description'];
             if ($validated['recipient']) {
-                $description .= " - Destinatario: " . $validated['recipient'];
+                $description .= ' - Destinatario: '.$validated['recipient'];
             }
             if ($validated['notes']) {
-                $description .= " - " . $validated['notes'];
+                $description .= ' - '.$validated['notes'];
             }
 
             $cashMovement = CashMovement::create([
@@ -544,7 +549,7 @@ class CashController extends Controller
                     'success' => true,
                     'message' => 'Retiro registrado exitosamente.',
                     'cash_movement' => $cashMovement,
-                    'new_balance' => $newBalance
+                    'new_balance' => $newBalance,
                 ]);
             }
 
@@ -557,12 +562,12 @@ class CashController extends Controller
             if ($request->ajax()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Error al registrar el retiro: ' . $e->getMessage()
+                    'message' => 'Error al registrar el retiro: '.$e->getMessage(),
                 ], 500);
             }
 
             return redirect()->back()
-                ->withErrors(['error' => 'Error al registrar el retiro: ' . $e->getMessage()])
+                ->withErrors(['error' => 'Error al registrar el retiro: '.$e->getMessage()])
                 ->withInput();
         }
     }
@@ -570,7 +575,7 @@ class CashController extends Controller
     private function generateReportData($movements, $groupBy, $startDate, $endDate)
     {
         $data = collect();
-        
+
         switch ($groupBy) {
             case 'day':
                 $period = $startDate->copy();
@@ -578,65 +583,67 @@ class CashController extends Controller
                     $dayMovements = $movements->filter(function ($movement) use ($period) {
                         return Carbon::parse($movement->movement_date)->isSameDay($period);
                     });
-                    
+
                     $data->push([
                         'period' => $period->format('Y-m-d'),
                         'period_label' => $period->format('d/m/Y'),
                         'inflows' => $dayMovements->where('amount', '>', 0)->sum('amount'),
                         'outflows' => abs($dayMovements->where('amount', '<', 0)->sum('amount')),
                         'net' => $dayMovements->sum('amount'),
-                        'count' => $dayMovements->count()
+                        'count' => $dayMovements->count(),
                     ]);
-                    
+
                     $period->addDay();
                 }
                 break;
-                
+
             case 'week':
                 $period = $startDate->copy()->startOfWeek();
                 while ($period->lte($endDate)) {
                     $weekEnd = $period->copy()->endOfWeek();
                     $weekMovements = $movements->filter(function ($movement) use ($period, $weekEnd) {
                         $moveDate = Carbon::parse($movement->movement_date);
+
                         return $moveDate->between($period, $weekEnd);
                     });
-                    
+
                     $data->push([
                         'period' => $period->format('Y-m-d'),
-                        'period_label' => 'Semana del ' . $period->format('d/m') . ' al ' . $weekEnd->format('d/m/Y'),
+                        'period_label' => 'Semana del '.$period->format('d/m').' al '.$weekEnd->format('d/m/Y'),
                         'inflows' => $weekMovements->where('amount', '>', 0)->sum('amount'),
                         'outflows' => abs($weekMovements->where('amount', '<', 0)->sum('amount')),
                         'net' => $weekMovements->sum('amount'),
-                        'count' => $weekMovements->count()
+                        'count' => $weekMovements->count(),
                     ]);
-                    
+
                     $period->addWeek();
                 }
                 break;
-                
+
             case 'month':
                 $period = $startDate->copy()->startOfMonth();
                 while ($period->lte($endDate)) {
                     $monthEnd = $period->copy()->endOfMonth();
                     $monthMovements = $movements->filter(function ($movement) use ($period, $monthEnd) {
                         $moveDate = Carbon::parse($movement->movement_date);
+
                         return $moveDate->between($period, $monthEnd);
                     });
-                    
+
                     $data->push([
                         'period' => $period->format('Y-m'),
                         'period_label' => $period->format('F Y'),
                         'inflows' => $monthMovements->where('amount', '>', 0)->sum('amount'),
                         'outflows' => abs($monthMovements->where('amount', '<', 0)->sum('amount')),
                         'net' => $monthMovements->sum('amount'),
-                        'count' => $monthMovements->count()
+                        'count' => $monthMovements->count(),
                     ]);
-                    
+
                     $period->addMonth();
                 }
                 break;
         }
-        
-        return $data;
+
+        return $data->reverse();
     }
 }

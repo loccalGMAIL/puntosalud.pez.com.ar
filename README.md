@@ -2,7 +2,7 @@
 
 [![Laravel](https://img.shields.io/badge/Laravel-12.x-red?style=flat&logo=laravel)](https://laravel.com)
 [![PHP](https://img.shields.io/badge/PHP-8.2-blue?style=flat&logo=php)](https://php.net)
-[![Version](https://img.shields.io/badge/Version-2.4.4-green?style=flat)](#changelog)
+[![Version](https://img.shields.io/badge/Version-2.4.5-green?style=flat)](#changelog)
 [![License](https://img.shields.io/badge/License-MIT-yellow?style=flat)](#license)
 
 Sistema integral de gestión médica para clínicas y consultorios, desarrollado con Laravel 12 y tecnologías modernas.
@@ -124,6 +124,28 @@ php artisan config:clear
 - Índices para consultas eficientes
 
 ## 📝 Changelog
+
+### v2.4.5 (2025-09-29) - Correcciones del Sistema de Caja y Reportes
+**🔧 Sistema de Cierre de Caja Mejorado:**
+- **Retiro Completo de Saldo**: Al cerrar caja, todo el saldo se retira automáticamente
+  - El balance queda en 0 después del cierre, evitando arrastrar errores al día siguiente
+  - Descripción mejorada muestra tanto el efectivo contado como el saldo retirado
+  - Cálculo correcto de diferencias entre efectivo contado vs saldo real
+
+**📊 Mejoras en Reportes de Caja:**
+- **Ordenamiento Inverso**: Tabla de "Datos Tabulares del Período" ahora muestra fechas más recientes primero
+  - Aplica para agrupación por día, semana y mes
+  - Mejor experiencia de usuario al ver primero los datos más actuales
+- **Análisis Filtrado**: Removidos movimientos administrativos del análisis por tipo
+  - Excluidos: apertura y cierre de caja del análisis por tipo de movimiento
+  - Enfoque en movimientos operativos relevantes (pagos, gastos, retiros)
+- **Traducción Mejorada**: Tipo "cash_withdrawal" ahora aparece como "💸 Retiro de Efectivo"
+  - Consistencia en idioma español con iconos apropiados
+
+**🎯 Beneficios:**
+- Mayor precisión contable con saldos que no se arrastran entre días
+- Reportes más claros enfocados en operaciones de negocio
+- Mejor experiencia de usuario con datos ordenados cronológicamente
 
 ### v2.4.4 (2025-09-26) - Modal de Detalles de Movimientos de Caja
 **🔍 Sistema de Detalles Avanzado:**
