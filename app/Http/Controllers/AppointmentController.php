@@ -104,7 +104,7 @@ class AppointmentController extends Controller
                 'patient_id' => 'required|exists:patients,id',
                 'appointment_date' => 'required|date',
                 'appointment_time' => 'required|date_format:H:i',
-                'duration' => 'required|integer|min:15|max:120',
+                'duration' => 'required|integer|in:15,20,30,40,45,60',
                 'office_id' => 'nullable|exists:offices,id',
                 'notes' => 'nullable|string|max:500',
                 'estimated_amount' => 'nullable|numeric|min:0',
@@ -128,36 +128,27 @@ class AppointmentController extends Controller
                 'duration.required' => 'La duración es obligatoria.',
             ]);
 
-            // Validar que la caja esté abierta para pagos inmediatos o turnos de hoy
-            $appointmentDate = Carbon::parse($validated['appointment_date']);
-            $today = Carbon::today();
+            // Validar que la caja esté abierta SOLO para pagos inmediatos
             $hasImmediatePayment = ! empty($validated['pay_now']) &&
                                  in_array($validated['pay_now'], ['true', 'True', '1', 1, true], true);
 
-            // Validar si el turno es para hoy O si tiene pago inmediato (que afecta la caja de hoy)
-            if ($appointmentDate->isSameDay($today) || $hasImmediatePayment) {
+            // Solo validar caja si se va a cobrar inmediatamente
+            if ($hasImmediatePayment) {
+                $today = Carbon::today();
                 $cashStatus = CashMovement::getCashStatusForDate($today);
 
                 if ($cashStatus['is_closed']) {
-                    $message = $hasImmediatePayment && ! $appointmentDate->isSameDay($today)
-                        ? 'No se pueden procesar pagos cuando la caja del día está cerrada. El turno puede crearse sin pago o debe abrir la caja.'
-                        : 'No se pueden crear turnos cuando la caja del día está cerrada. Debe abrir la caja para continuar.';
-
                     return response()->json([
                         'success' => false,
-                        'message' => $message,
+                        'message' => 'No se pueden procesar pagos cuando la caja del día está cerrada. El turno puede crearse sin pago o debe abrir la caja.',
                         'error_type' => 'cash_closed',
                     ], 422);
                 }
 
                 if ($cashStatus['needs_opening']) {
-                    $message = $hasImmediatePayment && ! $appointmentDate->isSameDay($today)
-                        ? 'No se pueden procesar pagos sin haber abierto la caja del día. El turno puede crearse sin pago o debe abrir la caja primero.'
-                        : 'No se pueden crear turnos sin haber abierto la caja del día. Por favor, abra la caja primero.';
-
                     return response()->json([
                         'success' => false,
-                        'message' => $message,
+                        'message' => 'No se pueden procesar pagos sin haber abierto la caja del día. El turno puede crearse sin pago o debe abrir la caja primero.',
                         'error_type' => 'cash_not_opened',
                     ], 422);
                 }
@@ -312,7 +303,7 @@ class AppointmentController extends Controller
                 'patient_id' => 'required|exists:patients,id',
                 'appointment_date' => 'required|date',
                 'appointment_time' => 'required|string',
-                'duration' => 'required|integer|min:15|max:120',
+                'duration' => 'required|integer|in:15,20,30,40,45,60',
                 'office_id' => 'nullable|exists:offices,id',
                 'notes' => 'nullable|string|max:500',
                 'estimated_amount' => 'nullable|numeric|min:0',

@@ -2,7 +2,7 @@
 
 [![Laravel](https://img.shields.io/badge/Laravel-12.x-red?style=flat&logo=laravel)](https://laravel.com)
 [![PHP](https://img.shields.io/badge/PHP-8.2-blue?style=flat&logo=php)](https://php.net)
-[![Version](https://img.shields.io/badge/Version-2.4.5-green?style=flat)](#changelog)
+[![Version](https://img.shields.io/badge/Version-2.4.6-green?style=flat)](#changelog)
 [![License](https://img.shields.io/badge/License-MIT-yellow?style=flat)](#license)
 
 Sistema integral de gestión médica para clínicas y consultorios, desarrollado con Laravel 12 y tecnologías modernas.
@@ -124,6 +124,32 @@ php artisan config:clear
 - Índices para consultas eficientes
 
 ## 📝 Changelog
+
+### v2.4.6 (2025-10-01) - Mejoras de Validación y Configuración
+**🔧 Sistema de Turnos Optimizado:**
+- **Creación Flexible**: Turnos pueden crearse sin caja abierta cuando no hay pago inmediato
+  - Validación de caja solo al cobrar instantáneamente
+  - Mayor flexibilidad operativa para programación de agenda
+  - Mensajes de error específicos para cada contexto
+- **Cobro Seguro**: Validación de caja obligatoria al cobrar desde dashboard
+  - Previene cobros cuando caja está cerrada o no abierta
+  - Protege integridad contable del sistema
+  - Mensajes informativos para recepcionistas
+
+**⚙️ Configuraciones Actualizadas:**
+- **Consultorios Expandidos**: Actualizado seeder de 5 a 10 consultorios
+  - Numeración secuencial: Consultorio 1 al 10
+  - Todos activos por defecto para uso inmediato
+- **Duraciones Refinadas**: Opciones de tiempo más granulares para turnos
+  - Nuevas opciones: 15, 20, 30, 40, 45, 60 minutos
+  - Eliminadas duraciones extensas (90, 120 min) por optimización
+  - Validación backend actualizada para valores exactos
+
+**🎯 Beneficios:**
+- Operación más fluida sin restricciones innecesarias de caja
+- Mayor seguridad en procesos de cobro
+- Configuración más práctica para clínicas reales
+- Mejor experiencia de usuario para recepcionistas
 
 ### v2.4.5 (2025-09-29) - Correcciones del Sistema de Caja y Reportes
 **🔧 Sistema de Cierre de Caja Mejorado:**
