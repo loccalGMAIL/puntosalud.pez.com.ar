@@ -228,6 +228,24 @@ class DashboardController extends Controller
                 ], 400);
             }
 
+            // Validar que la caja esté abierta para procesar pagos
+            $today = Carbon::today();
+            $cashStatus = CashMovement::getCashStatusForDate($today);
+
+            if ($cashStatus['is_closed']) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No se pueden procesar pagos cuando la caja del día está cerrada. Debe abrir la caja para continuar.',
+                ], 400);
+            }
+
+            if ($cashStatus['needs_opening']) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No se pueden procesar pagos sin haber abierto la caja del día. Por favor, abra la caja primero.',
+                ], 400);
+            }
+
             // Actualizar monto final del turno
             $appointment->update([
                 'final_amount' => $validated['final_amount'],
