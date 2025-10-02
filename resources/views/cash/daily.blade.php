@@ -384,8 +384,8 @@
                                     @endphp
                                     @if($professional)
                                         <div>
-                                            <span class="font-medium">Dr. {{ $professional->first_name }} {{ $professional->last_name }}</span>
                                             <div class="text-xs text-gray-500 dark:text-gray-400">{{ $movement->description }}</div>
+                                            <span class="font-medium">Dr. {{ $professional->first_name }} {{ $professional->last_name }}</span>
                                         </div>
                                     @else
                                         {{ $movement->description }}
@@ -577,12 +577,6 @@
                             </div>
                         </div>
                     </div>
-
-                    {{-- <!-- Descripción -->
-                    <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-                        <h3 class="font-medium text-gray-900 dark:text-white mb-2">Descripción</h3>
-                        <p class="text-gray-900 dark:text-white text-sm" x-text="movementDetails?.description || 'Sin descripción'"></p>
-                    </div> --}}
 
                     <!-- Detalles específicos para pagos de pacientes -->
                     <div x-show="movementDetails?.type === 'patient_payment' && paymentDetails"
