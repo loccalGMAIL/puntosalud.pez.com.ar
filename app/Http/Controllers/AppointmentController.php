@@ -551,11 +551,8 @@ class AppointmentController extends Controller
      */
     private function createCashMovement(Payment $payment)
     {
-        $lastMovement = CashMovement::orderBy('movement_date', 'desc')
-            ->orderBy('created_at', 'desc')
-            ->first();
-
-        $currentBalance = $lastMovement ? $lastMovement->balance_after : 0;
+        // Obtener balance actual con lock pesimista
+        $currentBalance = CashMovement::getCurrentBalanceWithLock();
         $newBalance = $currentBalance + $payment->amount;
 
         CashMovement::create([

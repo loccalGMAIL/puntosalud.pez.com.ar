@@ -327,7 +327,7 @@
                                         </span>
                                         @break
                                     @case('cash_opening')
-                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200">
+                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200">
                                             🔓 Apertura de Caja
                                         </span>
                                         @break

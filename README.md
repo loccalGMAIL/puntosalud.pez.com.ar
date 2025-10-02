@@ -2,7 +2,7 @@
 
 [![Laravel](https://img.shields.io/badge/Laravel-12.x-red?style=flat&logo=laravel)](https://laravel.com)
 [![PHP](https://img.shields.io/badge/PHP-8.2-blue?style=flat&logo=php)](https://php.net)
-[![Version](https://img.shields.io/badge/Version-2.4.6-green?style=flat)](#changelog)
+[![Version](https://img.shields.io/badge/Version-2.4.7-green?style=flat)](#changelog)
 [![License](https://img.shields.io/badge/License-MIT-yellow?style=flat)](#license)
 
 Sistema integral de gestión médica para clínicas y consultorios, desarrollado con Laravel 12 y tecnologías modernas.
@@ -124,6 +124,28 @@ php artisan config:clear
 - Índices para consultas eficientes
 
 ## 📝 Changelog
+
+### v2.4.7 (2025-10-02) - Corrección de Condiciones de Carrera en Sistema de Caja
+**🔒 Sistema de Locks Pesimistas:**
+- **Prevención de Condiciones de Carrera**: Implementado `lockForUpdate()` en todos los cálculos de balance de caja
+  - Nuevo método `getCurrentBalanceWithLock()` en modelo `CashMovement`
+  - Lock pesimista garantiza consistencia en transacciones concurrentes
+  - Evita descalces de balance cuando múltiples operaciones ocurren simultáneamente
+- **Controladores Actualizados**: Aplicado en todos los puntos críticos
+  - `CashController`: Gastos, retiros, apertura y cierre de caja
+  - `AppointmentController`: Creación de pagos anticipados
+  - `DashboardController`: Cobros desde dashboard
+  - `LiquidationController`: Liquidaciones profesionales
+
+**🎨 Mejoras de Interfaz:**
+- **Colores Consistentes**: Etiquetas de "Apertura de Caja" y "Cierre de Caja" ahora usan el mismo color naranja
+  - Mejora visual en lista de "Movimientos del Día"
+  - Mejor identificación de operaciones administrativas de caja
+
+**🎯 Impacto:**
+- Elimina errores de balance por operaciones simultáneas
+- Mayor confiabilidad en sistema de caja con múltiples usuarios
+- Consistencia contable garantizada a nivel de base de datos
 
 ### v2.4.6 (2025-10-01) - Mejoras de Validación y Configuración
 **🔧 Sistema de Turnos Optimizado:**

@@ -100,16 +100,18 @@ class LiquidationController extends Controller
 
     private function getCurrentCashBalance($date)
     {
-        // Obtener el balance actual de caja para la fecha
+        // Obtener el balance actual de caja con lock pesimista
         $lastMovement = CashMovement::whereDate('movement_date', $date)
             ->orderBy('created_at', 'desc')
+            ->lockForUpdate()
             ->first();
 
         if (! $lastMovement) {
-            // Si no hay movimientos hoy, buscar el último balance
+            // Si no hay movimientos hoy, buscar el último balance con lock
             $lastMovement = CashMovement::where('movement_date', '<', $date->startOfDay())
                 ->orderBy('movement_date', 'desc')
                 ->orderBy('created_at', 'desc')
+                ->lockForUpdate()
                 ->first();
         }
 
