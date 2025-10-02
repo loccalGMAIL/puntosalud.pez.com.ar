@@ -2,7 +2,7 @@
 
 [![Laravel](https://img.shields.io/badge/Laravel-12.x-red?style=flat&logo=laravel)](https://laravel.com)
 [![PHP](https://img.shields.io/badge/PHP-8.2-blue?style=flat&logo=php)](https://php.net)
-[![Version](https://img.shields.io/badge/Version-2.4.8-green?style=flat)](#changelog)
+[![Version](https://img.shields.io/badge/Version-2.4.9-green?style=flat)](#changelog)
 [![License](https://img.shields.io/badge/License-MIT-yellow?style=flat)](#license)
 
 Sistema integral de gestión médica para clínicas y consultorios, desarrollado con Laravel 12 y tecnologías modernas.
@@ -124,6 +124,39 @@ php artisan config:clear
 - Índices para consultas eficientes
 
 ## 📝 Changelog
+
+### v2.4.9 (2025-10-02) - Mejoras en Dashboard y Gestión de Consultas
+**📊 Dashboard Optimizado:**
+- **Vista de Consultas Filtrada**: Dashboard principal ahora oculta consultas completadas (atendidas + pagadas) y ausentes
+  - Enfoque en consultas que requieren acción
+  - Vista más limpia y orientada a tareas pendientes
+- **Nueva Vista "Todas las Consultas"**: Vista completa con todas las consultas del día
+  - Accesible desde botón "Ver todas →" en el dashboard
+  - Muestra todas las consultas sin filtros (programadas, atendidas, pagadas, ausentes, canceladas)
+  - Breadcrumb navegacional: Dashboard > Todas las Consultas
+  - Botón "Volver al Dashboard"
+- **Detalle de Pagos Integrado**: En consultas pagadas, nuevo botón de ojo (👁️) para ver detalle
+  - Reutiliza vista existente de payments.show
+  - Color verde esmeralda para asociación visual con pagos
+  - Solo visible en turnos con pago registrado
+
+**📈 Card de Métricas Mejorada:**
+- **Contador de Ausentes**: Agregado indicador de consultas ausentes en card "Consultas del Día"
+  - Layout en grid 2x2 para mejor distribución
+  - Iconografía consistente: ✓ Completadas (verde) | ⏰ Pendientes (amarillo) | ✕ Ausentes (rojo)
+
+**🔗 Navegación Mejorada:**
+- **Botón "Ver Detalle de Caja"**: Ahora redirige a vista de Caja del Día (`/cash/daily`)
+  - Acceso directo desde resumen de caja en dashboard
+
+**📁 Archivos Nuevos:**
+- `resources/views/dashboard-appointments.blade.php` - Vista completa de consultas
+- Ruta: `GET /dashboard/appointments` → `dashboard.appointments`
+
+**📁 Archivos Modificados:**
+- `app/Http/Controllers/DashboardController.php` - Método `appointments()` y contador de ausentes
+- `resources/views/dashboard.blade.php` - Filtros y mejoras visuales
+- `routes/web.php` - Nueva ruta para vista de consultas
 
 ### v2.4.8 (2025-10-02) - Optimización de Integridad Contable y UX
 **🔒 Integridad Contable Reforzada:**
