@@ -222,14 +222,14 @@
                 <table class="min-w-full divide-y divide-emerald-200/50 dark:divide-emerald-800/30">
                     <thead class="bg-emerald-50/50 dark:bg-emerald-950/20">
                         <tr>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">Fecha/Hora</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">Paciente</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">Profesional</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">Duración</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">Estado</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">Monto</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">Consultorio</th>
-                            <th class="px-6 py-3 text-right text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">Acciones</th>
+                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">Fecha/Hora</th>
+                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">Paciente</th>
+                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">Profesional</th>
+                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">Dur.</th>
+                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">Estado</th>
+                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">Monto</th>
+                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">Consult.</th>
+                            <th class="px-3 py-2 text-right text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">Acciones</th>
                         </tr>
                     </thead>
                     <tbody class="bg-white dark:bg-gray-800 divide-y divide-emerald-200/30 dark:divide-emerald-800/30">
@@ -252,70 +252,64 @@
                         <template x-for="appointment in filteredAppointments" :key="appointment.id">
                             <tr class="hover:bg-emerald-50/30 dark:hover:bg-emerald-950/20 transition-colors duration-200">
                                 <!-- Fecha/Hora -->
-                                <td class="px-6 py-4">
-                                    <div>
-                                        <div class="text-sm font-medium text-gray-900 dark:text-white" x-text="formatDate(appointment.appointment_date)"></div>
-                                        <div class="text-sm text-gray-500 dark:text-gray-400" x-text="formatTime(appointment.appointment_date)"></div>
-                                    </div>
+                                <td class="px-3 py-2 whitespace-nowrap">
+                                    <div class="text-xs font-medium text-gray-900 dark:text-white" x-text="formatDate(appointment.appointment_date)"></div>
+                                    <div class="text-xs text-gray-500 dark:text-gray-400" x-text="formatTime(appointment.appointment_date)"></div>
                                 </td>
-                                
+
                                 <!-- Paciente -->
-                                <td class="px-6 py-4">
-                                    <div>
-                                        <div class="text-sm font-medium text-gray-900 dark:text-white" x-text="appointment.patient.last_name + ', ' + appointment.patient.first_name"></div>
-                                        <div class="text-sm text-gray-500 dark:text-gray-400" x-text="appointment.patient.dni"></div>
-                                    </div>
+                                <td class="px-3 py-2">
+                                    <div class="text-xs font-medium text-gray-900 dark:text-white" x-text="appointment.patient.last_name + ', ' + appointment.patient.first_name"></div>
+                                    <div class="text-xs text-gray-500 dark:text-gray-400" x-text="appointment.patient.dni"></div>
                                 </td>
-                                
+
                                 <!-- Profesional -->
-                                <td class="px-6 py-4">
-                                    <div>
-                                        <div class="text-sm font-medium text-gray-900 dark:text-white" x-text="'Dr. ' + appointment.professional.first_name + ' ' + appointment.professional.last_name"></div>
-                                        <div class="text-sm text-gray-500 dark:text-gray-400" x-text="appointment.professional.specialty.name"></div>
-                                    </div>
+                                <td class="px-3 py-2">
+                                    <div class="text-xs font-medium text-gray-900 dark:text-white" x-text="'Dr. ' + appointment.professional.first_name + ' ' + appointment.professional.last_name"></div>
+                                    <div class="text-xs text-gray-500 dark:text-gray-400" x-text="appointment.professional.specialty.name"></div>
                                 </td>
-                                
+
                                 <!-- Duración -->
-                                <td class="px-6 py-4">
-                                    <span class="text-sm text-gray-900 dark:text-white" x-text="appointment.duration + ' min'"></span>
+                                <td class="px-3 py-2 whitespace-nowrap">
+                                    <span class="text-xs text-gray-900 dark:text-white" x-text="appointment.duration + ' min'"></span>
                                 </td>
-                                
+
                                 <!-- Estado -->
-                                <td class="px-6 py-4">
-                                    <span :class="getStatusClass(appointment.status)" 
-                                          class="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full gap-1" 
+                                <td class="px-3 py-2">
+                                    <span :class="getStatusClass(appointment.status)"
+                                          class="inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full gap-1"
                                           x-text="getStatusText(appointment.status)">
                                     </span>
                                 </td>
-                                
+
                                 <!-- Monto -->
-                                <td class="px-6 py-4">
-                                    <span x-show="appointment.final_amount || appointment.estimated_amount" 
-                                          class="text-sm font-medium text-gray-900 dark:text-white" 
-                                          x-text="'$' + (appointment.final_amount || appointment.estimated_amount || 0).toLocaleString()">
+                                <td class="px-3 py-2 whitespace-nowrap">
+                                    <span x-show="appointment.final_amount || appointment.estimated_amount"
+                                          class="text-xs font-medium text-gray-900 dark:text-white"
+                                          x-text="'$' + parseFloat(appointment.final_amount || appointment.estimated_amount || 0).toLocaleString('es-AR', {minimumFractionDigits: 2, maximumFractionDigits: 2})">
                                     </span>
-                                    <span x-show="!appointment.final_amount && !appointment.estimated_amount" 
-                                          class="text-sm text-gray-500 dark:text-gray-400">-</span>
+                                    <span x-show="!appointment.final_amount && !appointment.estimated_amount"
+                                          class="text-xs text-gray-500 dark:text-gray-400">-</span>
                                 </td>
-                                
+
                                 <!-- Consultorio -->
-                                <td class="px-6 py-4">
-                                    <span x-show="appointment.office" 
-                                          class="text-sm text-gray-900 dark:text-white" 
+                                <td class="px-3 py-2 whitespace-nowrap">
+                                    <span x-show="appointment.office"
+                                          class="text-xs text-gray-900 dark:text-white"
                                           x-text="appointment.office?.name">
                                     </span>
-                                    <span x-show="!appointment.office" 
-                                          class="text-sm text-gray-500 dark:text-gray-400">-</span>
+                                    <span x-show="!appointment.office"
+                                          class="text-xs text-gray-500 dark:text-gray-400">-</span>
                                 </td>
-                                
+
                                 <!-- Acciones -->
-                                <td class="px-6 py-4 text-right">
-                                    <div class="flex items-center justify-end gap-2">
+                                <td class="px-3 py-2 text-right">
+                                    <div class="flex items-center justify-end gap-1">
                                         <!-- Botón Editar -->
-                                        <button @click="openEditModal(appointment)" 
-                                                class="p-2 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                                        <button @click="openEditModal(appointment)"
+                                                class="p-1.5 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors"
                                                 title="Editar turno">
-                                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                                                 <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
                                             </svg>
                                         </button>
@@ -323,10 +317,10 @@
                                         <!-- Dropdown de estados -->
                                         <div class="relative" x-data="{ statusDropdownOpen: false }" @click.away="statusDropdownOpen = false">
                                             <!-- Botón de estado -->
-                                            <button @click="statusDropdownOpen = !statusDropdownOpen" 
-                                                    class="p-2 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                                            <button @click="statusDropdownOpen = !statusDropdownOpen"
+                                                    class="p-1.5 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors"
                                                     title="Cambiar estado">
-                                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                                                     <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
                                                 </svg>
                                             </button>

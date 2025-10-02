@@ -207,62 +207,16 @@ class PaymentController extends Controller
 
     public function edit(Payment $payment)
     {
-        $payment->load([
-            'patient',
-            'paymentAppointments.appointment.professional',
-        ]);
-
-        return view('payments.edit', compact('payment'));
+        // Deshabilitado: No se permite editar pagos para mantener integridad contable
+        // Si hay un error, usar retiros/ingresos manuales para ajustes
+        abort(403, 'No se permite editar pagos registrados. Para correcciones use retiros o ingresos manuales en caja.');
     }
 
     public function update(Request $request, Payment $payment)
     {
-        $validated = $request->validate([
-            'payment_method' => 'required|in:cash,transfer,card',
-            'amount' => 'required|numeric|min:0',
-            'concept' => 'nullable|string|max:500',
-            'liquidation_status' => 'required|in:pending,liquidated,cancelled',
-        ]);
-
-        try {
-            DB::beginTransaction();
-
-            $oldAmount = $payment->amount;
-            $oldMethod = $payment->payment_method;
-
-            $payment->update($validated);
-
-            // Si cambió el monto o método, actualizar movimiento de caja
-            if ($oldAmount != $validated['amount'] || $oldMethod != $validated['payment_method']) {
-                $this->updateCashMovement($payment, $oldAmount, $oldMethod);
-            }
-
-            DB::commit();
-
-            if ($request->ajax()) {
-                return response()->json([
-                    'success' => true,
-                    'message' => 'Pago actualizado exitosamente.',
-                    'payment' => $payment->fresh(),
-                ]);
-            }
-
-            return redirect()->route('payments.show', $payment)
-                ->with('success', 'Pago actualizado exitosamente.');
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-
-            if ($request->ajax()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Error al actualizar el pago: '.$e->getMessage(),
-                ], 500);
-            }
-
-            return redirect()->back()
-                ->withErrors(['error' => 'Error al actualizar el pago: '.$e->getMessage()]);
-        }
+        // Deshabilitado: No se permite editar pagos para mantener integridad contable
+        // Si hay un error, usar retiros/ingresos manuales para ajustes
+        abort(403, 'No se permite editar pagos registrados. Para correcciones use retiros o ingresos manuales en caja.');
     }
 
     public function destroy(Payment $payment)
@@ -479,43 +433,31 @@ class PaymentController extends Controller
 
     private function createCashMovement(Payment $payment)
     {
-        $multiplier = $payment->payment_type === 'refund' ? -1 : 1;
+        // Obtener balance actual con lock pesimista
+        $currentBalance = CashMovement::getCurrentBalanceWithLock();
+
+        // Determinar tipo y monto según si es reembolso o pago
+        $type = $payment->payment_type === 'refund' ? 'refund' : 'patient_payment';
+        $amount = $payment->payment_type === 'refund' ? -$payment->amount : $payment->amount;
+        $newBalance = $currentBalance + $amount;
+
+        // Generar descripción del movimiento
+        $description = $payment->concept ?: $this->getDefaultConcept($payment);
 
         CashMovement::create([
             'movement_date' => $payment->payment_date,
-            'movement_type' => $payment->payment_type === 'refund' ? 'outflow' : 'inflow',
-            'amount' => $payment->amount * $multiplier,
-            'payment_method' => $payment->payment_method,
-            'concept' => $payment->concept ?: $this->getDefaultConcept($payment),
+            'type' => $type,
+            'amount' => $amount,
+            'description' => $description,
             'reference_type' => 'payment',
             'reference_id' => $payment->id,
+            'balance_after' => $newBalance,
             'user_id' => auth()->id(),
         ]);
     }
 
-    private function updateCashMovement(Payment $payment, $oldAmount, $oldMethod)
-    {
-        $cashMovement = CashMovement::where('reference_type', 'payment')
-            ->where('reference_id', $payment->id)
-            ->first();
-
-        if ($cashMovement) {
-            $multiplier = $payment->payment_type === 'refund' ? -1 : 1;
-
-            $cashMovement->update([
-                'amount' => $payment->amount * $multiplier,
-                'payment_method' => $payment->payment_method,
-                'concept' => $payment->concept ?: $this->getDefaultConcept($payment),
-            ]);
-        }
-    }
-
-    private function reverseCashMovement(Payment $payment)
-    {
-        CashMovement::where('reference_type', 'payment')
-            ->where('reference_id', $payment->id)
-            ->delete();
-    }
+    // Métodos removidos: updateCashMovement() y reverseCashMovement()
+    // Ya no se permite editar pagos para mantener integridad contable
 
     private function getDefaultConcept(Payment $payment)
     {

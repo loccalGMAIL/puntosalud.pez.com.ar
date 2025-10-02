@@ -567,6 +567,97 @@ class CashController extends Controller
         }
     }
 
+    public function manualIncomeForm(Request $request)
+    {
+        if ($request->isMethod('get')) {
+            $incomeCategories = [
+                'professional_module_payment' => 'Pago Módulo Profesional',
+                'correction' => 'Corrección de Ingreso',
+                'product_sale' => 'Venta de Producto',
+                'service_fee' => 'Cobro de Servicio Extra',
+                'reimbursement' => 'Reintegro/Devolución',
+                'other' => 'Otros Ingresos',
+            ];
+
+            return view('cash.manual-income-form', compact('incomeCategories'));
+        }
+
+        $validated = $request->validate([
+            'amount' => 'required|numeric|min:0.01',
+            'category' => 'required|string|in:professional_module_payment,correction,product_sale,service_fee,reimbursement,other',
+            'description' => 'required|string|max:500',
+            'receipt_file' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
+            'notes' => 'nullable|string|max:500',
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            $receiptPath = null;
+            if ($request->hasFile('receipt_file')) {
+                $receiptPath = $request->file('receipt_file')->store('receipts', 'public');
+            }
+
+            // Obtener balance actual con lock pesimista
+            $currentBalance = CashMovement::getCurrentBalanceWithLock();
+            $newBalance = $currentBalance + $validated['amount'];
+
+            // Construir descripción con categoría
+            $categoryLabels = [
+                'professional_module_payment' => 'Pago Módulo Profesional',
+                'correction' => 'Corrección de Ingreso',
+                'product_sale' => 'Venta de Producto',
+                'service_fee' => 'Cobro de Servicio Extra',
+                'reimbursement' => 'Reintegro/Devolución',
+                'other' => 'Otros Ingresos',
+            ];
+
+            $description = '['.$categoryLabels[$validated['category']].'] '.$validated['description'];
+            if ($validated['notes']) {
+                $description .= ' - '.$validated['notes'];
+            }
+
+            $cashMovement = CashMovement::create([
+                'movement_date' => now(),
+                'type' => 'other',
+                'amount' => $validated['amount'],
+                'description' => $description,
+                'reference_type' => 'manual_income',
+                'reference_id' => null,
+                'balance_after' => $newBalance,
+                'user_id' => auth()->id(),
+            ]);
+
+            DB::commit();
+
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Ingreso manual registrado exitosamente.',
+                    'cash_movement' => $cashMovement,
+                    'new_balance' => $newBalance,
+                ]);
+            }
+
+            return redirect()->route('cash.daily')
+                ->with('success', 'Ingreso manual registrado exitosamente.');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Error al registrar el ingreso: '.$e->getMessage(),
+                ], 500);
+            }
+
+            return redirect()->back()
+                ->withErrors(['error' => 'Error al registrar el ingreso: '.$e->getMessage()])
+                ->withInput();
+        }
+    }
+
     private function generateReportData($movements, $groupBy, $startDate, $endDate)
     {
         $data = collect();
