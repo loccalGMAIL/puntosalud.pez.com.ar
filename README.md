@@ -125,6 +125,67 @@ php artisan config:clear
 
 ## 📝 Changelog
 
+### v2.4.10 (2025-10-02) - Corrección Crítica del Sistema de Liquidaciones
+**🔧 Refactorización Completa de Liquidaciones:**
+- **PROBLEMA CRÍTICO SOLUCIONADO**: Sistema de liquidaciones no usaba las tablas diseñadas
+  - Antes: Solo creaba `CashMovement` sin trazabilidad
+  - Ahora: Usa correctamente `professional_liquidations` y `liquidation_details`
+
+**🛡️ Prevención de Duplicados:**
+- **Validación por fecha**: No permite liquidar dos veces el mismo profesional en la misma fecha
+  - Verifica existencia de liquidación previa antes de procesar
+  - Mensaje de error con ID de liquidación existente
+- **Validación por pago**: No permite liquidar pagos ya liquidados
+  - Verifica `liquidation_status` de cada pago asociado
+  - Bloquea si detecta pagos previamente liquidados
+
+**📊 Sistema de Trazabilidad Completo:**
+- **`professional_liquidations`**: Registro resumen de la liquidación
+  - Total de turnos (programados, atendidos, ausentes)
+  - Monto total cobrado
+  - Comisión del profesional calculada
+  - Monto de la clínica
+  - Estado de pago y método
+  - Fecha y usuario que procesó
+- **`liquidation_details`**: Detalle individual por turno
+  - Link a appointment, payment y payment_appointment
+  - Monto individual y comisión calculada
+  - Concepto descriptivo (hora + paciente)
+  - Permite auditoría completa de qué se liquidó
+
+**✅ Actualización Automática de Estados:**
+- **Campo `liquidation_status` en payments**: Ahora se actualiza correctamente
+  - Marca como 'liquidated' todos los pagos incluidos en la liquidación
+  - Permite filtrar pagos pendientes vs liquidados
+  - Scopes `pendingLiquidation()` y `liquidated()` ahora funcionales
+
+**🔗 Referencias Correctas:**
+- **CashMovement mejorado**:
+  - Antes: `reference_type` = Professional (genérico)
+  - Ahora: `reference_type` = ProfessionalLiquidation (específico)
+  - Permite navegar desde el movimiento de caja a la liquidación completa
+
+**📈 Validaciones de Negocio:**
+- Verifica que caja esté abierta
+- Verifica que no haya turnos pendientes sin atender
+- Verifica que no haya turnos atendidos sin cobrar
+- Verifica saldo suficiente en caja
+- **NUEVO**: Valida que monto ingresado coincida con comisión calculada
+
+**📁 Archivos Modificados:**
+- `app/Http/Controllers/LiquidationController.php` - Refactorización completa del método `processLiquidation()`
+  - Usa `ProfessionalLiquidation` y `LiquidationDetail`
+  - Actualiza `liquidation_status` en payments
+  - Validaciones anti-duplicado robustas
+  - Respuesta JSON enriquecida con más información
+
+**🎯 Impacto:**
+- ✅ Elimina duplicados de liquidaciones (problema reportado con movimientos #121, #122, #123)
+- ✅ Permite auditoría completa de qué se liquidó y cuándo
+- ✅ Previene errores de cálculo con validación automática
+- ✅ Marcado correcto de pagos liquidados en la vista de payments
+- ✅ Trazabilidad completa desde cualquier punto (turno → pago → liquidación → caja)
+
 ### v2.4.9 (2025-10-02) - Mejoras en Dashboard y Gestión de Consultas
 **📊 Dashboard Optimizado:**
 - **Vista de Consultas Filtrada**: Dashboard principal ahora oculta consultas completadas (atendidas + pagadas) y ausentes

@@ -4,7 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\Appointment;
 use App\Models\CashMovement;
+use App\Models\LiquidationDetail;
+use App\Models\Payment;
 use App\Models\Professional;
+use App\Models\ProfessionalLiquidation;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -26,13 +29,24 @@ class LiquidationController extends Controller
             $amount = $request->amount;
             $date = Carbon::parse($request->date);
 
-            // Verificar que la caja esté abierta
+            // 1. Verificar que NO exista ya una liquidación para este profesional en esta fecha
+            $existingLiquidation = ProfessionalLiquidation::where('professional_id', $professional->id)
+                ->whereDate('liquidation_date', $date)
+                ->first();
+
+            if ($existingLiquidation) {
+                throw new \Exception("Ya existe una liquidación para {$professional->full_name} en la fecha {$date->format('d/m/Y')}. ".
+                                   "ID de liquidación: {$existingLiquidation->id}. ".
+                                   "No se permite liquidar dos veces el mismo día.");
+            }
+
+            // 2. Verificar que la caja esté abierta
             $cashStatus = CashMovement::getCashStatusForDate($date);
             if (! $cashStatus['is_open']) {
                 throw new \Exception('La caja debe estar abierta para procesar liquidaciones.');
             }
 
-            // Verificar turnos pendientes del profesional
+            // 3. Verificar turnos pendientes del profesional
             $pendingAppointments = Appointment::where('professional_id', $professional->id)
                 ->whereDate('appointment_date', $date)
                 ->where('status', 'scheduled')
@@ -44,7 +58,7 @@ class LiquidationController extends Controller
                                    " sin atender del día {$date->format('d/m/Y')}.");
             }
 
-            // Verificar turnos atendidos sin cobrar
+            // 4. Verificar turnos atendidos sin cobrar
             $unpaidAppointments = Appointment::where('professional_id', $professional->id)
                 ->whereDate('appointment_date', $date)
                 ->where('status', 'attended')
@@ -57,20 +71,114 @@ class LiquidationController extends Controller
                                    " sin cobrar del día {$date->format('d/m/Y')}.");
             }
 
-            // Verificar que hay suficiente efectivo en caja
+            // 5. Obtener todos los turnos atendidos del día con sus pagos
+            $attendedAppointments = Appointment::with(['paymentAppointments.payment'])
+                ->where('professional_id', $professional->id)
+                ->whereDate('appointment_date', $date)
+                ->where('status', 'attended')
+                ->get();
+
+            if ($attendedAppointments->isEmpty()) {
+                throw new \Exception("No hay turnos atendidos para liquidar en la fecha {$date->format('d/m/Y')}.");
+            }
+
+            // 6. Validar que ningún pago ya esté liquidado
+            $alreadyLiquidatedPayments = [];
+            foreach ($attendedAppointments as $appointment) {
+                foreach ($appointment->paymentAppointments as $pa) {
+                    if ($pa->payment && $pa->payment->liquidation_status === 'liquidated') {
+                        $alreadyLiquidatedPayments[] = $pa->payment->id;
+                    }
+                }
+            }
+
+            if (!empty($alreadyLiquidatedPayments)) {
+                throw new \Exception("Algunos pagos ya fueron liquidados anteriormente. IDs: ".implode(', ', $alreadyLiquidatedPayments).". ".
+                                   "No se puede liquidar dos veces el mismo pago.");
+            }
+
+            // 7. Calcular estadísticas y montos
+            $totalAppointments = Appointment::where('professional_id', $professional->id)
+                ->whereDate('appointment_date', $date)
+                ->count();
+
+            $absentAppointments = Appointment::where('professional_id', $professional->id)
+                ->whereDate('appointment_date', $date)
+                ->where('status', 'absent')
+                ->count();
+
+            $totalCollected = $attendedAppointments->sum('final_amount');
+            $professionalCommission = $professional->calculateCommission($totalCollected);
+            $clinicAmount = $totalCollected - $professionalCommission;
+
+            // Verificar que el monto ingresado coincida con la comisión calculada
+            if (abs($amount - $professionalCommission) > 0.01) {
+                throw new \Exception("El monto ingresado (\${$amount}) no coincide con la comisión calculada (\${$professionalCommission}). ".
+                                   "Por favor verifique los datos.");
+            }
+
+            // 8. Verificar que hay suficiente efectivo en caja
             $currentBalance = $this->getCurrentCashBalance($date);
             if ($currentBalance < $amount) {
                 throw new \Exception('Saldo insuficiente en caja. Disponible: $'.number_format($currentBalance, 2));
             }
 
-            // Crear movimiento de caja por pago al profesional
+            // 9. Crear registro en professional_liquidations
+            $liquidation = ProfessionalLiquidation::create([
+                'professional_id' => $professional->id,
+                'liquidation_date' => $date,
+                'sheet_type' => 'liquidation',
+                'appointments_total' => $totalAppointments,
+                'appointments_attended' => $attendedAppointments->count(),
+                'appointments_absent' => $absentAppointments,
+                'total_collected' => $totalCollected,
+                'professional_commission' => $professionalCommission,
+                'clinic_amount' => $clinicAmount,
+                'payment_status' => 'paid', // Se marca como pagado inmediatamente
+                'payment_method' => 'cash',
+                'paid_at' => now(),
+                'paid_by' => auth()->id(),
+                'notes' => "Liquidación procesada el {$date->format('d/m/Y')}",
+            ]);
+
+            // 10. Crear detalles en liquidation_details por cada turno
+            $paymentIds = [];
+            foreach ($attendedAppointments as $appointment) {
+                $paymentAppointment = $appointment->paymentAppointments->first();
+                $payment = $paymentAppointment ? $paymentAppointment->payment : null;
+
+                $appointmentAmount = $appointment->final_amount ?? 0;
+                $appointmentCommission = $professional->calculateCommission($appointmentAmount);
+
+                LiquidationDetail::create([
+                    'liquidation_id' => $liquidation->id,
+                    'payment_appointment_id' => $paymentAppointment?->id,
+                    'payment_id' => $payment?->id,
+                    'appointment_id' => $appointment->id,
+                    'amount' => $appointmentAmount,
+                    'commission_amount' => $appointmentCommission,
+                    'concept' => "Turno {$appointment->appointment_date->format('H:i')} - {$appointment->patient->full_name}",
+                ]);
+
+                if ($payment) {
+                    $paymentIds[] = $payment->id;
+                }
+            }
+
+            // 11. Actualizar liquidation_status en payments
+            if (!empty($paymentIds)) {
+                Payment::whereIn('id', $paymentIds)
+                    ->update(['liquidation_status' => 'liquidated']);
+            }
+
+            // 12. Crear movimiento de caja por pago al profesional
             CashMovement::create([
                 'movement_date' => $date,
                 'type' => 'professional_payment',
                 'amount' => -$amount, // Negativo porque es una salida de dinero
-                'description' => "Liquidación profesional: {$professional->name}",
-                'reference_type' => Professional::class,
-                'reference_id' => $professional->id,
+                'description' => "Liquidación profesional: {$professional->full_name} - {$attendedAppointments->count()} turnos",
+                'reference_type' => ProfessionalLiquidation::class,
+                'reference_id' => $liquidation->id,
                 'balance_after' => $currentBalance - $amount,
                 'user_id' => auth()->id(),
             ]);
@@ -81,10 +189,16 @@ class LiquidationController extends Controller
                 'success' => true,
                 'message' => 'Liquidación procesada correctamente',
                 'data' => [
-                    'professional_name' => $professional->name,
+                    'liquidation_id' => $liquidation->id,
+                    'professional_name' => $professional->full_name,
+                    'appointments_attended' => $attendedAppointments->count(),
+                    'total_collected' => $totalCollected,
+                    'professional_commission' => $professionalCommission,
+                    'clinic_amount' => $clinicAmount,
                     'amount' => $amount,
                     'date' => $date->format('Y-m-d'),
                     'new_balance' => $currentBalance - $amount,
+                    'payments_liquidated' => count($paymentIds),
                 ],
             ]);
 
