@@ -192,9 +192,19 @@ class ReportController extends Controller
             })
             ->orderBy('last_name')
             ->get()
-            ->map(function ($professional) {
+            ->map(function ($professional) use ($selectedDate) {
                 $totalAmount = $professional->appointments->sum('final_amount');
                 $professionalCommission = $professional->calculateCommission($totalAmount);
+
+                // Obtener reintegros del día para este profesional
+                $refunds = \App\Models\CashMovement::where('type', 'expense')
+                    ->where('professional_id', $professional->id)
+                    ->whereDate('movement_date', $selectedDate)
+                    ->get();
+
+                $totalRefunds = $refunds->sum(function($refund) {
+                    return abs($refund->amount); // Los gastos son negativos, convertir a positivo
+                });
 
                 return [
                     'id' => $professional->id,
@@ -202,7 +212,8 @@ class ReportController extends Controller
                     'specialty' => $professional->specialty,
                     'attended_count' => $professional->appointments->count(),
                     'total_amount' => $totalAmount,
-                    'professional_amount' => $professionalCommission,
+                    'refunds' => $totalRefunds,
+                    'professional_amount' => $professionalCommission - $totalRefunds,
                     'clinic_amount' => $totalAmount - $professionalCommission,
                 ];
             })
@@ -261,7 +272,19 @@ class ReportController extends Controller
         // Calcular estadísticas de liquidación
         $totalAmount = $attendedAppointments->sum('final_amount');
         $professionalCommission = $professional->calculateCommission($totalAmount);
+
+        // Obtener reintegros del día para este profesional
+        $refunds = \App\Models\CashMovement::where('type', 'expense')
+            ->where('professional_id', $professionalId)
+            ->whereDate('movement_date', $selectedDate)
+            ->get();
+
+        $totalRefunds = $refunds->sum(function($refund) {
+            return abs($refund->amount); // Los gastos son negativos, convertir a positivo
+        });
+
         $clinicAmount = $totalAmount - $professionalCommission;
+        $finalProfessionalAmount = $professionalCommission - $totalRefunds;
 
         // Separar por tipo de pago
         $prepaidAppointments = $attendedAppointments->where('is_prepaid', true);
@@ -275,9 +298,12 @@ class ReportController extends Controller
             'prepaid_appointments' => $prepaidAppointments,
             'today_paid_appointments' => $todayPaidAppointments,
             'unpaid_appointments' => $unpaidAppointments,
+            'refunds' => $refunds,
             'totals' => [
                 'total_amount' => $totalAmount,
-                'professional_amount' => $professionalCommission,
+                'professional_commission' => $professionalCommission,
+                'total_refunds' => $totalRefunds,
+                'professional_amount' => $finalProfessionalAmount,
                 'clinic_amount' => $clinicAmount,
                 'commission_percentage' => $professional->commission_percentage,
                 'prepaid_amount' => $prepaidAppointments->sum('final_amount'),

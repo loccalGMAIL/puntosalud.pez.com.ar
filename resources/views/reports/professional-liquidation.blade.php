@@ -77,6 +77,12 @@
                 <span class="text-emerald-700 dark:text-emerald-300">Comisión Clínica ({{ 100 - $liquidationData['totals']['commission_percentage'] }}%):</span>
                 <span class="font-medium text-emerald-900 dark:text-emerald-100">-${{ number_format($liquidationData['totals']['clinic_amount'], 0, ',', '.') }}</span>
             </div>
+            @if($liquidationData['totals']['total_refunds'] > 0)
+            <div class="flex justify-between text-sm">
+                <span class="text-red-700 dark:text-red-300">Reintegros a Pacientes:</span>
+                <span class="font-medium text-red-900 dark:text-red-100">-${{ number_format($liquidationData['totals']['total_refunds'], 0, ',', '.') }}</span>
+            </div>
+            @endif
             <div class="border-t border-emerald-200 dark:border-emerald-800 pt-3">
                 <div class="flex justify-between">
                     <span class="font-semibold text-emerald-900 dark:text-emerald-100">MONTO A ENTREGAR AL PROFESIONAL:</span>
@@ -235,6 +241,58 @@
                                 </tr>
                             @endforeach
                         </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    <!-- Reintegros a Pacientes -->
+    @if(count($liquidationData['refunds']) > 0)
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 mb-6">
+            <div class="bg-yellow-50 dark:bg-yellow-900/20 border-b border-gray-200 dark:border-gray-700 px-6 py-4">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                    🔄 Reintegros a Pacientes ({{ count($liquidationData['refunds']) }})
+                </h3>
+                <p class="text-sm text-gray-600 dark:text-gray-400">
+                    Montos devueltos que se descuentan de su liquidación: ${{ number_format($liquidationData['totals']['total_refunds'], 0, ',', '.') }}
+                </p>
+            </div>
+            <div class="p-6">
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead>
+                            <tr class="border-b border-gray-200 dark:border-gray-600">
+                                <th class="text-left py-2 px-3 text-sm font-medium text-gray-700 dark:text-gray-300">Hora</th>
+                                <th class="text-left py-2 px-3 text-sm font-medium text-gray-700 dark:text-gray-300">Descripción</th>
+                                <th class="text-right py-2 px-3 text-sm font-medium text-gray-700 dark:text-gray-300">Monto</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($liquidationData['refunds'] as $refund)
+                                <tr class="border-b border-gray-100 dark:border-gray-700">
+                                    <td class="py-3 px-3 font-medium text-gray-900 dark:text-white">
+                                        {{ \Carbon\Carbon::parse($refund->movement_date)->format('H:i') }}
+                                    </td>
+                                    <td class="py-3 px-3">
+                                        <div class="text-sm text-gray-900 dark:text-white">{{ $refund->description }}</div>
+                                    </td>
+                                    <td class="py-3 px-3 text-right font-medium text-red-600 dark:text-red-400">
+                                        -${{ number_format(abs($refund->amount), 0, ',', '.') }}
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                        <tfoot>
+                            <tr class="border-t-2 border-gray-300 dark:border-gray-600">
+                                <td colspan="2" class="py-3 px-3 text-right font-semibold text-gray-900 dark:text-white">
+                                    Total Reintegros:
+                                </td>
+                                <td class="py-3 px-3 text-right font-bold text-red-600 dark:text-red-400">
+                                    -${{ number_format($liquidationData['totals']['total_refunds'], 0, ',', '.') }}
+                                </td>
+                            </tr>
+                        </tfoot>
                     </table>
                 </div>
             </div>

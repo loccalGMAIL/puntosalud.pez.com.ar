@@ -2,7 +2,7 @@
 
 [![Laravel](https://img.shields.io/badge/Laravel-12.x-red?style=flat&logo=laravel)](https://laravel.com)
 [![PHP](https://img.shields.io/badge/PHP-8.2-blue?style=flat&logo=php)](https://php.net)
-[![Version](https://img.shields.io/badge/Version-2.4.10-green?style=flat)](#changelog)
+[![Version](https://img.shields.io/badge/Version-2.4.11-green?style=flat)](#changelog)
 [![License](https://img.shields.io/badge/License-MIT-yellow?style=flat)](#license)
 
 Sistema integral de gestión médica para clínicas y consultorios, desarrollado con Laravel 12 y tecnologías modernas.
@@ -124,6 +124,51 @@ php artisan config:clear
 - Índices para consultas eficientes
 
 ## 📝 Changelog
+
+### v2.4.11 (2025-10-02) - Sistema de Devoluciones/Reintegros de Profesionales
+**💸 Nueva Funcionalidad de Devoluciones:**
+- **Devolución a Pacientes por Profesionales**: Sistema para registrar reintegros que realiza el profesional al paciente
+  - Nueva categoría "Reintegro/Devolución a Paciente" en gastos (eliminada de ingresos manuales)
+  - Selector de profesional responsable (obligatorio para esta categoría)
+  - El monto se registra como gasto y se asocia al profesional para futuras liquidaciones
+  - Campo `professional_id` en tabla `cash_movements` con foreign key a `professionals`
+
+**🔄 Cambios de Categorización:**
+- **Movido de Ingresos a Gastos**: "Reintegro/Devolución" ya no aparece en ingresos manuales
+  - Antes: Categoría disponible en `/cash/manual-income`
+  - Ahora: Categoría "Reintegro/Devolución a Paciente" en `/cash/expense-form`
+- **Selector Condicional**: Campo de profesional solo aparece cuando se selecciona categoría de devolución
+  - Implementado con Alpine.js (x-show condicional)
+  - Validación requerida solo para esta categoría específica
+  - Mensaje informativo: "Este monto será descontado de la liquidación del profesional"
+
+**🗄️ Cambios de Base de Datos:**
+- **Migración**: `2025_10_02_104646_add_professional_id_to_cash_movements_table.php`
+  - Campo `professional_id` UNSIGNED BIGINT nullable
+  - Foreign key a tabla `professionals` con `onDelete('set null')`
+  - Índice en `professional_id` para optimización de consultas
+- **Modelo CashMovement**: Agregada relación `professional()` y campo en `$fillable`
+
+**📋 Flujo de Uso:**
+1. Recepcionista registra devolución desde "Registrar Gasto"
+2. Selecciona categoría "Reintegro/Devolución a Paciente"
+3. Aparece combo de profesionales (ordenados alfabéticamente por apellido)
+4. Selecciona profesional responsable del reintegro
+5. Completa monto, descripción y opcionalmente comprobante
+6. El sistema registra el movimiento de caja asociado al profesional
+7. Este monto podrá ser descontado en futuras liquidaciones del profesional
+
+**🎯 Beneficios:**
+- Trazabilidad completa de devoluciones por profesional
+- Control de gastos post-cobro que afectan la liquidación
+- Registro contable correcto (gasto, no ingreso)
+- Base para futuro sistema de descuentos automáticos en liquidaciones
+
+**📁 Archivos Modificados:**
+- `database/migrations/2025_10_02_104646_add_professional_id_to_cash_movements_table.php` - Nueva migración
+- `app/Models/CashMovement.php` - Relación professional() y fillable actualizado
+- `app/Http/Controllers/CashController.php` - Categoría movida, validación y guardado de professional_id
+- `resources/views/cash/expense-form.blade.php` - Selector condicional de profesional con Alpine.js
 
 ### v2.4.10 (2025-10-02) - Corrección Crítica del Sistema de Liquidaciones
 **🔧 Refactorización Completa de Liquidaciones:**
