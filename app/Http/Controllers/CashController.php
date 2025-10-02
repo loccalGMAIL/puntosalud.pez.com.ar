@@ -22,7 +22,7 @@ class CashController extends Controller
 
         $initialBalance = $lastBalanceMovement ? $lastBalanceMovement->balance_after : 0;
 
-        $query = CashMovement::with(['user'])
+        $query = CashMovement::with(['user', 'professional'])
             ->whereDate('movement_date', $selectedDate);
 
         if ($request->filled('type')) {
@@ -136,16 +136,33 @@ class CashController extends Controller
                 'maintenance' => 'Mantenimiento',
                 'taxes' => 'Impuestos',
                 'professional_payments' => 'Pagos a Profesionales',
+                'patient_refund' => 'Reintegro/Devolución a Paciente',
                 'other' => 'Otros',
             ];
 
-            return view('cash.expense-form', compact('expenseCategories'));
+            // Obtener profesionales activos que tengan turnos hoy y no estén liquidados
+            $today = now()->format('Y-m-d');
+
+            $professionals = \App\Models\Professional::active()
+                ->whereHas('appointments', function ($query) use ($today) {
+                    $query->whereDate('appointment_date', $today);
+                })
+                ->whereDoesntHave('liquidations', function ($query) use ($today) {
+                    $query->where('liquidation_date', $today)
+                          ->where('payment_status', 'paid');
+                })
+                ->orderBy('last_name')
+                ->orderBy('first_name')
+                ->get();
+
+            return view('cash.expense-form', compact('expenseCategories', 'professionals'));
         }
 
         $validated = $request->validate([
             'amount' => 'required|numeric|min:0.01',
             'description' => 'required|string|max:500',
-            'category' => 'required|string|in:office_supplies,medical_supplies,services,maintenance,taxes,professional_payments,other',
+            'category' => 'required|string|in:office_supplies,medical_supplies,services,maintenance,taxes,professional_payments,patient_refund,other',
+            'professional_id' => 'nullable|exists:professionals,id|required_if:category,patient_refund',
             'receipt_file' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
             'notes' => 'nullable|string|max:500',
         ]);
@@ -163,6 +180,15 @@ class CashController extends Controller
             $newBalance = $currentBalance - $validated['amount'];
 
             $description = $validated['description'];
+
+            // Si es devolución a paciente, agregar nombre del profesional a la descripción
+            if ($validated['category'] === 'patient_refund' && isset($validated['professional_id'])) {
+                $professional = \App\Models\Professional::find($validated['professional_id']);
+                if ($professional) {
+                    $description = "Reintegro a Paciente - Dr. {$professional->first_name} {$professional->last_name} - " . $description;
+                }
+            }
+
             if ($validated['notes']) {
                 $description .= ' - '.$validated['notes'];
             }
@@ -176,6 +202,7 @@ class CashController extends Controller
                 'reference_id' => null,
                 'balance_after' => $newBalance,
                 'user_id' => auth()->id(),
+                'professional_id' => $validated['professional_id'] ?? null, // Guardar profesional si es devolución
             ]);
 
             DB::commit();
@@ -209,7 +236,7 @@ class CashController extends Controller
 
     public function getCashMovementDetails(CashMovement $cashMovement)
     {
-        $cashMovement->load(['user']);
+        $cashMovement->load(['user', 'professional.specialty']);
 
         $additionalData = [];
 
@@ -227,6 +254,11 @@ class CashController extends Controller
                 $professional = \App\Models\Professional::with(['specialty'])->find($cashMovement->reference_id);
                 if ($professional) {
                     $additionalData['professional'] = $professional;
+                }
+            } elseif ($cashMovement->type === 'expense' && $cashMovement->professional_id) {
+                // Si es un gasto con profesional (reintegro a paciente)
+                if ($cashMovement->professional) {
+                    $additionalData['refund_professional'] = $cashMovement->professional;
                 }
             }
         } catch (\Exception $e) {
@@ -575,17 +607,28 @@ class CashController extends Controller
                 'correction' => 'Corrección de Ingreso',
                 'product_sale' => 'Venta de Producto',
                 'service_fee' => 'Cobro de Servicio Extra',
-                'reimbursement' => 'Reintegro/Devolución',
                 'other' => 'Otros Ingresos',
             ];
 
-            return view('cash.manual-income-form', compact('incomeCategories'));
+            // Obtener profesionales activos que tengan turnos hoy
+            $today = now()->format('Y-m-d');
+
+            $professionals = \App\Models\Professional::active()
+                ->whereHas('appointments', function ($query) use ($today) {
+                    $query->whereDate('appointment_date', $today);
+                })
+                ->orderBy('last_name')
+                ->orderBy('first_name')
+                ->get();
+
+            return view('cash.manual-income-form', compact('incomeCategories', 'professionals'));
         }
 
         $validated = $request->validate([
             'amount' => 'required|numeric|min:0.01',
-            'category' => 'required|string|in:professional_module_payment,correction,product_sale,service_fee,reimbursement,other',
+            'category' => 'required|string|in:professional_module_payment,correction,product_sale,service_fee,other',
             'description' => 'required|string|max:500',
+            'professional_id' => 'nullable|exists:professionals,id|required_if:category,professional_module_payment',
             'receipt_file' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
             'notes' => 'nullable|string|max:500',
         ]);
@@ -608,11 +651,19 @@ class CashController extends Controller
                 'correction' => 'Corrección de Ingreso',
                 'product_sale' => 'Venta de Producto',
                 'service_fee' => 'Cobro de Servicio Extra',
-                'reimbursement' => 'Reintegro/Devolución',
                 'other' => 'Otros Ingresos',
             ];
 
             $description = '['.$categoryLabels[$validated['category']].'] '.$validated['description'];
+
+            // Si es pago módulo profesional, agregar nombre del profesional a la descripción
+            if ($validated['category'] === 'professional_module_payment' && isset($validated['professional_id'])) {
+                $professional = \App\Models\Professional::find($validated['professional_id']);
+                if ($professional) {
+                    $description = "Pago Módulo - Dr. {$professional->first_name} {$professional->last_name} - " . $validated['description'];
+                }
+            }
+
             if ($validated['notes']) {
                 $description .= ' - '.$validated['notes'];
             }
@@ -626,6 +677,7 @@ class CashController extends Controller
                 'reference_id' => null,
                 'balance_after' => $newBalance,
                 'user_id' => auth()->id(),
+                'professional_id' => $validated['professional_id'] ?? null,
             ]);
 
             DB::commit();

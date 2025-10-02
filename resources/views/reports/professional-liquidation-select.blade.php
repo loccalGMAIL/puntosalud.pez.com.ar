@@ -97,6 +97,12 @@
                                         <span class="text-gray-600 dark:text-gray-400">Total generado:</span>
                                         <span class="font-medium text-gray-900 dark:text-white">${{ number_format($professional['total_amount'], 0, ',', '.') }}</span>
                                     </div>
+                                    @if($professional['refunds'] > 0)
+                                    <div class="flex justify-between text-sm">
+                                        <span class="text-red-600 dark:text-red-400">Reintegros:</span>
+                                        <span class="font-medium text-red-700 dark:text-red-400">-${{ number_format($professional['refunds'], 0, ',', '.') }}</span>
+                                    </div>
+                                    @endif
                                     <div class="flex justify-between text-sm border-t border-gray-200 dark:border-gray-600 pt-1">
                                         <span class="text-emerald-700 dark:text-emerald-400 font-medium">A liquidar:</span>
                                         <span class="font-bold text-emerald-700 dark:text-emerald-400">${{ number_format($professional['professional_amount'], 0, ',', '.') }}</span>

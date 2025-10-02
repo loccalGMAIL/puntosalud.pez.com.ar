@@ -18,6 +18,7 @@ class CashMovement extends Model
         'reference_id',
         'balance_after',
         'user_id',
+        'professional_id',
     ];
 
     protected function casts(): array
@@ -32,6 +33,11 @@ class CashMovement extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function professional()
+    {
+        return $this->belongsTo(Professional::class);
     }
 
     public function reference()

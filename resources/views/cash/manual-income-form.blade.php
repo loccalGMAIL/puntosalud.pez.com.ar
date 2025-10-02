@@ -70,6 +70,7 @@
                             Categoría del Ingreso *
                         </label>
                         <select x-model="form.category"
+                                @change="handleCategoryChange()"
                                 class="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white"
                                 required>
                             <option value="">Seleccionar categoría</option>
@@ -79,8 +80,42 @@
                         </select>
                     </div>
 
+                    <!-- Profesional (solo si es pago módulo profesional) -->
+                    <div x-show="form.category === 'professional_module_payment'" x-cloak>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            Profesional *
+                        </label>
+                        @if(count($professionals) > 0)
+                            <select x-model="form.professional_id"
+                                    class="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white"
+                                    :required="form.category === 'professional_module_payment'">
+                                <option value="">Seleccionar profesional</option>
+                                @foreach($professionals as $prof)
+                                <option value="{{ $prof->id }}">{{ $prof->full_name }} - {{ $prof->specialty->name }}</option>
+                                @endforeach
+                            </select>
+                            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                Este ingreso se asociará al profesional seleccionado
+                            </p>
+                        @else
+                            <div class="w-full px-4 py-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                                <div class="flex items-start gap-3">
+                                    <svg class="w-5 h-5 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+                                    </svg>
+                                    <div class="flex-1">
+                                        <h4 class="text-sm font-medium text-yellow-800 dark:text-yellow-200">No hay profesionales disponibles</h4>
+                                        <p class="text-xs text-yellow-700 dark:text-yellow-300 mt-1">
+                                            Solo se pueden registrar pagos de módulo para profesionales que tengan turnos programados para hoy ({{ now()->format('d/m/Y') }})
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        @endif
+                    </div>
+
                     <!-- Descripción -->
-                    <div class="md:col-span-2">
+                    <div :class="form.category === 'professional_module_payment' ? '' : 'md:col-span-2'">
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                             Descripción del Ingreso *
                         </label>
@@ -198,11 +233,20 @@ function incomeForm() {
         form: {
             amount: '',
             category: '',
+            professional_id: '',
             description: '',
             notes: ''
         },
 
         categories: @json($incomeCategories),
+        hasProfessionals: {{ count($professionals) > 0 ? 'true' : 'false' }},
+
+        handleCategoryChange() {
+            // Limpiar professional_id si no es pago módulo profesional
+            if (this.form.category !== 'professional_module_payment') {
+                this.form.professional_id = '';
+            }
+        },
 
         handleFileUpload(event) {
             const file = event.target.files[0];
@@ -249,9 +293,16 @@ function incomeForm() {
         },
 
         isFormValid() {
-            return this.form.amount &&
+            const baseValid = this.form.amount &&
                    this.form.category &&
                    this.form.description.trim();
+
+            // Si es pago módulo profesional, validar que haya profesionales disponibles y uno seleccionado
+            if (this.form.category === 'professional_module_payment') {
+                return baseValid && this.hasProfessionals && this.form.professional_id;
+            }
+
+            return baseValid;
         },
 
         async submitIncome() {
@@ -263,6 +314,10 @@ function incomeForm() {
                 formData.append('category', this.form.category);
                 formData.append('description', this.form.description);
                 formData.append('notes', this.form.notes);
+
+                if (this.form.professional_id) {
+                    formData.append('professional_id', this.form.professional_id);
+                }
 
                 if (this.selectedFile) {
                     formData.append('receipt_file', this.selectedFile);

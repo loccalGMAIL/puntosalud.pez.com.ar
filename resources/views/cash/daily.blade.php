@@ -319,9 +319,15 @@
                                         </span>
                                         @break
                                     @case('expense')
-                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
-                                            💸 Gasto
-                                        </span>
+                                        @if($movement->professional_id)
+                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
+                                                🔄 Reintegro Paciente
+                                            </span>
+                                        @else
+                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
+                                                💸 Gasto
+                                            </span>
+                                        @endif
                                         @break
                                     @case('refund')
                                         <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
@@ -642,6 +648,35 @@
                             </div> --}}
                         </div>
                     </div>
+
+                    <!-- Detalles específicos para reintegros a pacientes -->
+                    <div x-show="movementDetails?.type === 'expense' && refundProfessionalDetails"
+                         class="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg p-4">
+                        <h3 class="font-medium text-yellow-900 dark:text-yellow-200 mb-3">🔄 Detalles del Reintegro</h3>
+                        <div class="text-sm space-y-2">
+                            <div class="flex justify-between">
+                                <span class="text-yellow-700 dark:text-yellow-300">Profesional Responsable:</span>
+                                <span class="text-yellow-900 dark:text-yellow-100 font-medium">
+                                    Dr. <span x-text="refundProfessionalDetails?.first_name + ' ' + refundProfessionalDetails?.last_name"></span>
+                                </span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-yellow-700 dark:text-yellow-300">Especialidad:</span>
+                                <span class="text-yellow-900 dark:text-yellow-100" x-text="refundProfessionalDetails?.specialty?.name"></span>
+                            </div>
+                            <div class="pt-2 border-t border-yellow-200 dark:border-yellow-700">
+                                <p class="text-xs text-yellow-700 dark:text-yellow-300">
+                                    💡 Este monto será descontado de la liquidación del profesional
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Descripción del movimiento -->
+                    <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                        <h3 class="font-medium text-gray-900 dark:text-white mb-2">Descripción</h3>
+                        <p class="text-sm text-gray-700 dark:text-gray-300" x-text="movementDetails?.description"></p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -672,6 +707,7 @@ function dailyCashForm() {
         movementDetails: null,
         paymentDetails: null,
         professionalDetails: null,
+        refundProfessionalDetails: null,
 
         // Computed properties para diferencias
         get theoreticalBalance() {
@@ -727,6 +763,8 @@ function dailyCashForm() {
             this.movementDetailsModalVisible = true;
             this.movementDetails = null;
             this.paymentDetails = null;
+            this.professionalDetails = null;
+            this.refundProfessionalDetails = null;
 
             try {
                 const response = await fetch(`/cash/movements/${movementId}`);
@@ -739,6 +777,7 @@ function dailyCashForm() {
                     if (data.additional_data) {
                         this.paymentDetails = data.additional_data.payment || null;
                         this.professionalDetails = data.additional_data.professional || null;
+                        this.refundProfessionalDetails = data.additional_data.refund_professional || null;
                     }
                 } else {
                     alert('Error al cargar los detalles del movimiento');

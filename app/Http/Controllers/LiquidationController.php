@@ -109,12 +109,24 @@ class LiquidationController extends Controller
 
             $totalCollected = $attendedAppointments->sum('final_amount');
             $professionalCommission = $professional->calculateCommission($totalCollected);
+
+            // Obtener reintegros del día para este profesional
+            $refunds = CashMovement::where('type', 'expense')
+                ->where('professional_id', $professional->id)
+                ->whereDate('movement_date', $date)
+                ->get();
+
+            $totalRefunds = $refunds->sum(function($refund) {
+                return abs($refund->amount); // Los gastos son negativos, convertir a positivo
+            });
+
+            $finalProfessionalAmount = $professionalCommission - $totalRefunds;
             $clinicAmount = $totalCollected - $professionalCommission;
 
-            // Verificar que el monto ingresado coincida con la comisión calculada
-            if (abs($amount - $professionalCommission) > 0.01) {
-                throw new \Exception("El monto ingresado (\${$amount}) no coincide con la comisión calculada (\${$professionalCommission}). ".
-                                   "Por favor verifique los datos.");
+            // Verificar que el monto ingresado coincida con la comisión calculada MENOS los reintegros
+            if (abs($amount - $finalProfessionalAmount) > 0.01) {
+                throw new \Exception("El monto ingresado (\${$amount}) no coincide con la comisión calculada menos reintegros (\${$finalProfessionalAmount}). ".
+                                   "Comisión base: \${$professionalCommission} - Reintegros: \${$totalRefunds} = \${$finalProfessionalAmount}");
             }
 
             // 8. Verificar que hay suficiente efectivo en caja
@@ -138,7 +150,8 @@ class LiquidationController extends Controller
                 'payment_method' => 'cash',
                 'paid_at' => now(),
                 'paid_by' => auth()->id(),
-                'notes' => "Liquidación procesada el {$date->format('d/m/Y')}",
+                'notes' => "Liquidación procesada el {$date->format('d/m/Y')}".
+                          ($totalRefunds > 0 ? " - Reintegros descontados: \${$totalRefunds}" : ""),
             ]);
 
             // 10. Crear detalles en liquidation_details por cada turno
@@ -194,11 +207,14 @@ class LiquidationController extends Controller
                     'appointments_attended' => $attendedAppointments->count(),
                     'total_collected' => $totalCollected,
                     'professional_commission' => $professionalCommission,
+                    'total_refunds' => $totalRefunds,
+                    'final_professional_amount' => $finalProfessionalAmount,
                     'clinic_amount' => $clinicAmount,
                     'amount' => $amount,
                     'date' => $date->format('Y-m-d'),
                     'new_balance' => $currentBalance - $amount,
                     'payments_liquidated' => count($paymentIds),
+                    'refunds_count' => $refunds->count(),
                 ],
             ]);
 
