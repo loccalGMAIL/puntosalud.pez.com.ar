@@ -1,10 +1,10 @@
 @extends('layouts.app')
 
-@section('title', 'Registrar Gasto - ' . config('app.name'))
-@section('mobileTitle', 'Registrar Gasto')
+@section('title', 'Ingreso Manual - ' . config('app.name'))
+@section('mobileTitle', 'Ingreso Manual')
 
 @section('content')
-<div class="p-6" x-data="expenseForm()">
+<div class="p-6" x-data="incomeForm()">
     <!-- Header -->
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
@@ -17,12 +17,12 @@
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
                 </svg>
-                <span>Registrar Gasto</span>
+                <span>Ingreso Manual</span>
             </nav>
-            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Registrar Gasto</h1>
-            <p class="text-gray-600 dark:text-gray-400">Registre salidas de dinero y gastos operativos</p>
+            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Registrar Ingreso Manual</h1>
+            <p class="text-gray-600 dark:text-gray-400">Registre entradas de dinero no relacionadas con turnos</p>
         </div>
-        
+
         <div class="flex gap-3">
             <a href="{{ route('cash.daily') }}"
                class="inline-flex items-center px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white text-sm font-medium rounded-lg shadow-sm transition-colors duration-200">
@@ -35,15 +35,15 @@
     </div>
 
     <!-- Formulario -->
-    <form @submit.prevent="submitExpense()" class="space-y-6">
-        <!-- Información Básica del Gasto -->
+    <form @submit.prevent="submitIncome()" class="space-y-6">
+        <!-- Información Básica del Ingreso -->
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
             <div class="p-6">
                 <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                    <svg class="w-5 h-5 text-red-600" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                    <svg class="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m6-6H6" />
                     </svg>
-                    Información del Gasto
+                    Información del Ingreso
                 </h2>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -54,11 +54,11 @@
                         </label>
                         <div class="relative">
                             <span class="absolute left-3 top-2.5 text-gray-500 dark:text-gray-400">$</span>
-                            <input x-model="form.amount" 
-                                   type="number" 
-                                   step="0.01" 
+                            <input x-model="form.amount"
+                                   type="number"
+                                   step="0.01"
                                    min="0.01"
-                                   class="w-full pl-8 pr-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:ring-red-500 focus:border-red-500 dark:bg-gray-700 dark:text-white"
+                                   class="w-full pl-8 pr-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white"
                                    placeholder="0.00"
                                    required>
                         </div>
@@ -67,43 +67,28 @@
                     <!-- Categoría -->
                     <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                            Categoría del Gasto *
+                            Categoría del Ingreso *
                         </label>
-                        <select x-model="form.category" 
-                                class="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:ring-red-500 focus:border-red-500 dark:bg-gray-700 dark:text-white"
+                        <select x-model="form.category"
+                                class="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white"
                                 required>
                             <option value="">Seleccionar categoría</option>
-                            @foreach($expenseCategories as $key => $label)
+                            @foreach($incomeCategories as $key => $label)
                             <option value="{{ $key }}">{{ $label }}</option>
                             @endforeach
                         </select>
                     </div>
 
-                    <!-- Método de Pago -->
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                            Método de Pago *
-                        </label>
-                        <select x-model="form.payment_method" 
-                                class="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:ring-red-500 focus:border-red-500 dark:bg-gray-700 dark:text-white"
-                                required>
-                            <option value="">Seleccionar método</option>
-                            <option value="cash">💵 Efectivo</option>
-                            <option value="transfer">🏦 Transferencia</option>
-                            <option value="card">💳 Tarjeta</option>
-                        </select>
-                    </div>
-
                     <!-- Descripción -->
-                    <div>
+                    <div class="md:col-span-2">
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                            Descripción del Gasto *
+                            Descripción del Ingreso *
                         </label>
-                        <input x-model="form.description" 
-                               type="text" 
+                        <input x-model="form.description"
+                               type="text"
                                maxlength="255"
-                               class="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:ring-red-500 focus:border-red-500 dark:bg-gray-700 dark:text-white"
-                               placeholder="Descripción del gasto..."
+                               class="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white"
+                               placeholder="Descripción del ingreso..."
                                required>
                     </div>
                 </div>
@@ -113,11 +98,11 @@
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                         Notas Adicionales
                     </label>
-                    <textarea x-model="form.notes" 
+                    <textarea x-model="form.notes"
                               rows="3"
                               maxlength="500"
-                              placeholder="Información adicional sobre el gasto (opcional)..."
-                              class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:ring-red-500 focus:border-red-500 dark:bg-gray-700 dark:text-white resize-none"></textarea>
+                              placeholder="Información adicional sobre el ingreso (opcional)..."
+                              class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white resize-none"></textarea>
                     <div class="text-xs text-gray-500 dark:text-gray-400 mt-1" x-text="`${form.notes.length}/500 caracteres`"></div>
                 </div>
             </div>
@@ -134,12 +119,12 @@
                 </h2>
 
                 <div class="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6">
-                    <input type="file" 
+                    <input type="file"
                            @change="handleFileUpload"
                            accept=".jpg,.jpeg,.png,.pdf"
                            class="hidden"
                            id="receipt-file">
-                    
+
                     <div x-show="!selectedFile" class="text-center">
                         <svg class="w-12 h-12 text-gray-400 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
@@ -165,7 +150,7 @@
                                 <div class="text-xs text-gray-500 dark:text-gray-400" x-text="formatFileSize(selectedFile?.size)"></div>
                             </div>
                         </div>
-                        <button type="button" 
+                        <button type="button"
                                 @click="removeFile()"
                                 class="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300">
                             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
@@ -179,18 +164,18 @@
 
         <!-- Botones -->
         <div class="flex justify-end gap-4">
-            <a href="{{ route('cash.daily') }}" 
-               class="px-6 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors">
+            <a href="{{ route('cash.daily') }}"
+               class="px-6 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors">
                 Cancelar
             </a>
-            <button type="submit" 
+            <button type="submit"
                     :disabled="loading || !isFormValid()"
-                    class="px-6 py-2.5 text-sm font-medium text-white bg-red-600 hover:bg-red-700 disabled:bg-red-400 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors disabled:cursor-not-allowed">
+                    class="px-6 py-2.5 text-sm font-medium text-white bg-green-600 hover:bg-green-700 disabled:bg-green-400 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors disabled:cursor-not-allowed">
                 <span x-show="!loading" class="flex items-center gap-2">
                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
                     </svg>
-                    Registrar Gasto
+                    Registrar Ingreso
                 </span>
                 <span x-show="loading" class="flex items-center gap-2">
                     <svg class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
@@ -205,11 +190,11 @@
 </div>
 
 <script>
-function expenseForm() {
+function incomeForm() {
     return {
         loading: false,
         selectedFile: null,
-        
+
         form: {
             amount: '',
             category: '',
@@ -217,7 +202,7 @@ function expenseForm() {
             notes: ''
         },
 
-        categories: @json($expenseCategories),
+        categories: @json($incomeCategories),
 
         handleFileUpload(event) {
             const file = event.target.files[0];
@@ -227,14 +212,14 @@ function expenseForm() {
                     alert('El archivo es muy grande. Máximo 2MB permitido.');
                     return;
                 }
-                
+
                 // Validar tipo
                 const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'];
                 if (!allowedTypes.includes(file.type)) {
                     alert('Tipo de archivo no válido. Solo JPG, PNG y PDF.');
                     return;
                 }
-                
+
                 this.selectedFile = file;
             }
         },
@@ -256,15 +241,6 @@ function expenseForm() {
             return this.categories[this.form.category] || 'Sin categoría';
         },
 
-        getMethodLabel() {
-            const methods = {
-                'cash': '💵 Efectivo',
-                'transfer': '🏦 Transferencia', 
-                'card': '💳 Tarjeta'
-            };
-            return methods[this.form.payment_method] || 'Sin método';
-        },
-
         formatNumber(num) {
             return new Intl.NumberFormat('es-AR', {
                 minimumFractionDigits: 2,
@@ -273,12 +249,12 @@ function expenseForm() {
         },
 
         isFormValid() {
-            return this.form.amount && 
-                   this.form.category && 
+            return this.form.amount &&
+                   this.form.category &&
                    this.form.description.trim();
         },
 
-        async submitExpense() {
+        async submitIncome() {
             this.loading = true;
 
             try {
@@ -287,14 +263,14 @@ function expenseForm() {
                 formData.append('category', this.form.category);
                 formData.append('description', this.form.description);
                 formData.append('notes', this.form.notes);
-                
+
                 if (this.selectedFile) {
                     formData.append('receipt_file', this.selectedFile);
                 }
-                
+
                 formData.append('_token', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
 
-                const response = await fetch('/cash/expense', {
+                const response = await fetch('/cash/manual-income', {
                     method: 'POST',
                     body: formData,
                     headers: {
@@ -307,10 +283,10 @@ function expenseForm() {
                 if (response.ok && result.success) {
                     window.location.href = '/cash/daily';
                 } else {
-                    alert(result.message || 'Error al registrar el gasto');
+                    alert(result.message || 'Error al registrar el ingreso');
                 }
             } catch (error) {
-                alert('Error al registrar el gasto');
+                alert('Error al registrar el ingreso');
             } finally {
                 this.loading = false;
             }

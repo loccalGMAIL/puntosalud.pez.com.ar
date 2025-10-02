@@ -20,13 +20,14 @@
         </div>
         
         <div class="flex gap-3">
-            <a href="{{ route('payments.create') }}" 
+            {{-- Botón "Crear pago" removido: Los pagos se crean desde turnos --}}
+            {{-- <a href="{{ route('payments.create') }}"
                class="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg shadow-sm transition-colors duration-200">
                 <svg class="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
                 </svg>
                 Nuevo Pago
-            </a>
+            </a> --}}
         </div>
     </div>
 
@@ -294,16 +295,8 @@
                                                 </svg>
                                             </a>
 
-                                            <!-- Editar -->
-                                            @if($payment->liquidation_status !== 'liquidated')
-                                                <a href="{{ route('payments.edit', $payment) }}" 
-                                                   class="p-2 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
-                                                   title="Editar">
-                                                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
-                                                    </svg>
-                                                </a>
-                                            @endif
+                                            <!-- Editar: Deshabilitado para mantener integridad contable -->
+                                            {{-- Edición removida: usar retiros/ingresos manuales para correcciones --}}
 
                                             <!-- Eliminar -->
                                             @if($payment->liquidation_status === 'pending')
@@ -326,9 +319,7 @@
                                                 <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H4.5m2.25 0v3m0 0v.75A.75.75 0 016 10.5h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H6.75m2.25 0h3m-3 7.5h3m-3-4.5h3M6.75 7.5H12m-3 3v6m-1.5-6h1.5m-1.5 0V9" />
                                             </svg>
                                             <p class="text-gray-600 dark:text-gray-400">No se encontraron pagos</p>
-                                            <a href="{{ route('payments.create') }}" class="px-3 py-1 text-sm border border-green-300 dark:border-green-600 rounded-md hover:bg-green-50 dark:hover:bg-green-900/20 text-green-600 dark:text-green-400">
-                                                Registrar primer pago
-                                            </a>
+                                            <p class="text-sm text-gray-500 dark:text-gray-500">Los pagos se registran desde la creación de turnos</p>
                                         </div>
                                     </td>
                                 </tr>

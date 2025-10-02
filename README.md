@@ -2,7 +2,7 @@
 
 [![Laravel](https://img.shields.io/badge/Laravel-12.x-red?style=flat&logo=laravel)](https://laravel.com)
 [![PHP](https://img.shields.io/badge/PHP-8.2-blue?style=flat&logo=php)](https://php.net)
-[![Version](https://img.shields.io/badge/Version-2.4.7-green?style=flat)](#changelog)
+[![Version](https://img.shields.io/badge/Version-2.4.8-green?style=flat)](#changelog)
 [![License](https://img.shields.io/badge/License-MIT-yellow?style=flat)](#license)
 
 Sistema integral de gestión médica para clínicas y consultorios, desarrollado con Laravel 12 y tecnologías modernas.
@@ -124,6 +124,48 @@ php artisan config:clear
 - Índices para consultas eficientes
 
 ## 📝 Changelog
+
+### v2.4.8 (2025-10-02) - Optimización de Integridad Contable y UX
+**🔒 Integridad Contable Reforzada:**
+- **Pagos No Editables**: Deshabilitada edición de pagos registrados para mantener trazabilidad
+  - Métodos `edit()` y `update()` de PaymentController bloqueados con error 403
+  - Botones de edición removidos de vistas de pagos
+  - Correcciones se realizan mediante ingresos/gastos manuales
+- **Sistema de Ingresos Manuales**: Nueva funcionalidad completa para ajustes de caja
+  - 6 categorías: Pago Módulo Profesional, Corrección, Venta Producto, Servicio Extra, Reintegro, Otros
+  - Adjuntar comprobantes (JPG, PNG, PDF hasta 2MB)
+  - Lock pesimista para prevenir condiciones de carrera
+  - Descripción automática con categoría incluida
+- **PaymentController Actualizado**: Código obsoleto corregido
+  - `createCashMovement()` ahora usa esquema correcto con `balance_after`
+  - Uso de `getCurrentBalanceWithLock()` para transacciones seguras
+
+**🎨 Mejoras de Interfaz:**
+- **Tabla de Turnos Optimizada**: Reducción del 30% en ancho
+  - Padding reducido: `px-6 py-4` → `px-3 py-2`
+  - Fuentes más compactas: `text-sm` → `text-xs`
+  - Headers abreviados: "Duración" → "Dur.", "Consultorio" → "Consult."
+  - Botones de acción más pequeños con iconos reducidos
+- **Formato de Montos Mejorado**: Decimales siempre visibles
+  - Formato argentino: `$1.234,56` (con 2 decimales fijos)
+  - Aplicado en tabla de appointments
+- **Formularios de Caja Simplificados**:
+  - Removida vista previa de expense-form
+  - Formularios más directos y limpios
+  - Adjuntar comprobantes en ambos formularios (gastos e ingresos)
+
+**🎯 Categorías Actualizadas:**
+- "Pago Bloque Profesional" renombrado a "Pago Módulo Profesional"
+
+**📁 Archivos Modificados:**
+- `app/Http/Controllers/PaymentController.php` - Pagos no editables
+- `app/Http/Controllers/CashController.php` - Ingreso manual con comprobantes
+- `app/Models/CashMovement.php` - Método `getCurrentBalanceWithLock()`
+- `resources/views/payments/*.blade.php` - Botones de edición removidos
+- `resources/views/cash/manual-income-form.blade.php` - Nueva funcionalidad
+- `resources/views/cash/expense-form.blade.php` - Vista previa removida
+- `resources/views/appointments/index.blade.php` - Tabla optimizada
+- `routes/web.php` - Rutas de ingreso manual
 
 ### v2.4.7 (2025-10-02) - Corrección de Condiciones de Carrera en Sistema de Caja
 **🔒 Sistema de Locks Pesimistas:**
