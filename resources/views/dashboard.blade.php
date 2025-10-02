@@ -180,7 +180,7 @@
                         <div class="mt-1 flex items-baseline gap-2">
                             <p class="text-2xl font-bold text-gray-900 dark:text-white transition-all duration-300 group-hover:scale-105">{{ $dashboardData['consultasHoy']['total'] }}</p>
                         </div>
-                        <div class="mt-2 flex gap-4 text-xs">
+                        <div class="mt-2 grid grid-cols-2 gap-2 text-xs">
                             <div class="flex items-center gap-1">
                                 <svg class="h-3 w-3 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -192,6 +192,12 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
                                 <span class="text-gray-600 dark:text-gray-400">{{ $dashboardData['consultasHoy']['pendientes'] }} pendientes</span>
+                            </div>
+                            <div class="flex items-center gap-1">
+                                <svg class="h-3 w-3 text-red-600" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9.75 9.75l4.5 4.5m0-4.5l-4.5 4.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                <span class="text-gray-600 dark:text-gray-400">{{ $dashboardData['consultasHoy']['ausentes'] }} ausentes</span>
                             </div>
                         </div>
                     </div>
@@ -294,13 +300,14 @@
                         </svg>
                         Consultas de Hoy
                     </h2>
-                    <button class="text-sm text-emerald-600 hover:text-emerald-800 font-medium transition-colors duration-200 dark:text-emerald-400 dark:hover:text-emerald-300">
+                    <a href="{{ route('dashboard.appointments') }}" class="text-sm text-emerald-600 hover:text-emerald-800 font-medium transition-colors duration-200 dark:text-emerald-400 dark:hover:text-emerald-300">
                         Ver todas →
-                    </button>
+                    </a>
                 </div>
                 
                 <div class="space-y-3">
                     @forelse($dashboardData['consultasDetalle'] as $consulta)
+                        @if(!($consulta['status'] === 'attended' && $consulta['isPaid']) && $consulta['status'] !== 'absent')
                         <div class="group flex items-center justify-between p-4 rounded-lg border bg-white/80 transition-all duration-200 hover:shadow-md dark:bg-gray-800/50 
                             @if($consulta['status'] === 'attended') border-emerald-100 hover:border-emerald-200 dark:border-emerald-800/30 dark:hover:border-emerald-700/50
                             @elseif($consulta['status'] === 'scheduled') border-blue-100 hover:border-blue-200 dark:border-blue-800/30 dark:hover:border-blue-700/50
@@ -392,6 +399,7 @@
                                 </div>
                             </div>
                         </div>
+                        @endif
                     @empty
                         <!-- Estado vacío -->
                         <div class="text-center py-8">
@@ -490,9 +498,9 @@
 
                 
                 <!-- Botón de acción -->
-                <button class="w-full mt-6 bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 transform hover:scale-105 shadow-md hover:shadow-lg">
+                <a href="{{ route('cash.daily') }}" class="block w-full mt-6 bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 transform hover:scale-105 shadow-md hover:shadow-lg text-center">
                     Ver Detalle de Caja
-                </button>
+                </a>
             </div>
         </div>
     </div>

@@ -44,6 +44,7 @@ class DashboardController extends Controller
             'completadas' => Appointment::forDate($today)->attended()->count(),
             'pendientes' => Appointment::forDate($today)->pending()->count(),
             'canceladas' => Appointment::forDate($today)->cancelled()->count(),
+            'ausentes' => Appointment::forDate($today)->where('status', 'absent')->count(),
         ];
 
         // Ingresos del día (basado en asignaciones de pago de turnos atendidos hoy)
@@ -150,6 +151,46 @@ class DashboardController extends Controller
         ];
 
         return view('dashboard', compact('dashboardData'));
+    }
+
+    public function appointments()
+    {
+        $today = Carbon::today();
+
+        // Consultas detalladas del día (todas, sin filtros)
+        $consultasDetalle = Appointment::with(['patient', 'professional', 'paymentAppointments.payment'])
+            ->forDate($today)
+            ->orderBy('appointment_date')
+            ->get()
+            ->map(function ($appointment) {
+                $isPaid = $appointment->paymentAppointments()->exists();
+                $paymentId = null;
+
+                if ($isPaid) {
+                    $paymentId = $appointment->paymentAppointments->first()->payment_id ?? null;
+                }
+
+                return [
+                    'id' => $appointment->id,
+                    'paciente' => $appointment->patient->full_name,
+                    'profesional' => $appointment->professional->full_name,
+                    'hora' => $appointment->appointment_date->format('H:i'),
+                    'monto' => $appointment->final_amount ?? $appointment->estimated_amount ?? 0,
+                    'status' => $appointment->status,
+                    'statusLabel' => $this->getStatusLabel($appointment->status),
+                    'isPaid' => $isPaid,
+                    'paymentId' => $paymentId,
+                    'canMarkAttended' => $appointment->status === 'scheduled',
+                    'canMarkCompleted' => $appointment->status === 'attended' && ! $isPaid,
+                ];
+            });
+
+        $data = [
+            'consultasDetalle' => $consultasDetalle->values(),
+            'fecha' => $today->format('d/m/Y'),
+        ];
+
+        return view('dashboard-appointments', compact('data'));
     }
 
     public function markAttended(Request $request, Appointment $appointment)
