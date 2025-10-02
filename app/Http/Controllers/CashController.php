@@ -158,11 +158,8 @@ class CashController extends Controller
                 $receiptPath = $request->file('receipt_file')->store('cash/receipts', 'public');
             }
 
-            $lastMovement = CashMovement::orderBy('movement_date', 'desc')
-                ->orderBy('created_at', 'desc')
-                ->first();
-
-            $currentBalance = $lastMovement ? $lastMovement->balance_after : 0;
+            // Obtener balance actual con lock pesimista
+            $currentBalance = CashMovement::getCurrentBalanceWithLock();
             $newBalance = $currentBalance - $validated['amount'];
 
             $description = $validated['description'];
@@ -265,11 +262,12 @@ class CashController extends Controller
                 ], 400);
             }
 
-            // Obtener saldo anterior
+            // Obtener saldo anterior con lock pesimista
             $previousDay = $today->copy()->subDay();
             $lastMovement = CashMovement::whereDate('movement_date', '<=', $previousDay)
                 ->orderBy('movement_date', 'desc')
                 ->orderBy('created_at', 'desc')
+                ->lockForUpdate()
                 ->first();
 
             $previousBalance = $lastMovement ? $lastMovement->balance_after : 0;
@@ -337,10 +335,11 @@ class CashController extends Controller
                 ], 400);
             }
 
-            // Obtener el saldo actual antes del cierre
+            // Obtener el saldo actual antes del cierre con lock pesimista
             $lastMovement = CashMovement::whereDate('movement_date', '<=', $closeDate)
                 ->orderBy('movement_date', 'desc')
                 ->orderBy('created_at', 'desc')
+                ->lockForUpdate()
                 ->first();
 
             $currentBalance = $lastMovement ? $lastMovement->balance_after : 0;
@@ -507,12 +506,8 @@ class CashController extends Controller
         try {
             DB::beginTransaction();
 
-            // Verificar que hay suficiente efectivo en caja
-            $lastMovement = CashMovement::orderBy('movement_date', 'desc')
-                ->orderBy('created_at', 'desc')
-                ->first();
-
-            $currentBalance = $lastMovement ? $lastMovement->balance_after : 0;
+            // Verificar que hay suficiente efectivo en caja (con lock pesimista)
+            $currentBalance = CashMovement::getCurrentBalanceWithLock();
 
             if ($currentBalance < $validated['amount']) {
                 return response()->json([

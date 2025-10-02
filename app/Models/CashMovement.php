@@ -124,4 +124,19 @@ class CashMovement extends Model
 
         return $unclosedDates ? $unclosedDates->movement_date->format('Y-m-d') : null;
     }
+
+    /**
+     * Obtiene el balance actual de caja con lock pesimista para evitar condiciones de carrera
+     *
+     * @return float El balance actual de caja
+     */
+    public static function getCurrentBalanceWithLock()
+    {
+        $lastMovement = static::orderBy('movement_date', 'desc')
+            ->orderBy('created_at', 'desc')
+            ->lockForUpdate()
+            ->first();
+
+        return $lastMovement ? $lastMovement->balance_after : 0;
+    }
 }
