@@ -67,15 +67,18 @@
 
                 <div>
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Duración *</label>
-                    <select x-model="form.duration" 
+                    <select x-model="form.duration"
                             class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500 dark:bg-gray-700 dark:text-white"
                             required>
+                        <option value="10">10 minutos</option>
                         <option value="15">15 minutos</option>
                         <option value="20">20 minutos</option>
                         <option value="30">30 minutos</option>
                         <option value="40">40 minutos</option>
                         <option value="45">45 minutos</option>
                         <option value="60">1 hora</option>
+                        <option value="90">1 hora 30 minutos</option>
+                        <option value="120">2 horas</option>
                     </select>
                 </div>
             </div>

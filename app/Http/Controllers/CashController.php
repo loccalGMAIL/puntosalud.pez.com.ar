@@ -455,9 +455,10 @@ class CashController extends Controller
             ->orderBy('created_at')
             ->get();
 
-        // Calcular totales
-        $inflows = $movements->where('amount', '>', 0)->sum('amount');
-        $outflows = $movements->where('amount', '<', 0)->sum('amount');
+        // Calcular totales (excluyendo apertura y cierre de caja)
+        $movementsForTotals = $movements->whereNotIn('type', ['cash_opening', 'cash_closing']);
+        $inflows = $movementsForTotals->where('amount', '>', 0)->sum('amount');
+        $outflows = $movementsForTotals->where('amount', '<', 0)->sum('amount');
         $finalBalance = $initialBalance + $inflows + $outflows;
 
         // Obtener movimientos de apertura y cierre
@@ -491,15 +492,18 @@ class CashController extends Controller
             'is_closed' => $closingMovement !== null,
         ];
 
-        // Agrupar por tipo de movimiento
-        $movementsByType = $movements->groupBy('type')->map(function ($group, $type) {
-            return [
-                'type' => $type,
-                'inflows' => $group->where('amount', '>', 0)->sum('amount'),
-                'outflows' => abs($group->where('amount', '<', 0)->sum('amount')),
-                'count' => $group->count(),
-            ];
-        });
+        // Agrupar por tipo de movimiento (excluyendo apertura y cierre)
+        $movementsByType = $movements
+            ->whereNotIn('type', ['cash_opening', 'cash_closing'])
+            ->groupBy('type')
+            ->map(function ($group, $type) {
+                return [
+                    'type' => $type,
+                    'inflows' => $group->where('amount', '>', 0)->sum('amount'),
+                    'outflows' => abs($group->where('amount', '<', 0)->sum('amount')),
+                    'count' => $group->count(),
+                ];
+            });
 
         // Resumen por usuario - simplificado para debug
         $userSummary = collect(); // Temporalmente vacío para evitar errores

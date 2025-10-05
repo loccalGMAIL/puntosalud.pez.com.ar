@@ -191,18 +191,11 @@
                                 @endforeach
                                 
                                 @if($remainingCount > 0)
-                                    @if($isPast)
-                                        <div class="w-full text-xs text-gray-400 dark:text-gray-600 text-center py-1 bg-gray-50 dark:bg-gray-700/50 rounded"
-                                             title="Día pasado">
-                                            +{{ $remainingCount }} más
-                                        </div>
-                                    @else
-                                        <button onclick="openDayModal('{{ $currentDay->format('Y-m-d') }}', {{ $selectedProfessional }})" 
-                                                class="w-full text-xs text-gray-500 dark:text-gray-400 text-center py-1 bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 rounded cursor-pointer transition-colors"
-                                                title="Ver todos los turnos del día">
-                                            +{{ $remainingCount }} más
-                                        </button>
-                                    @endif
+                                    <button onclick="openDayModal('{{ $currentDay->format('Y-m-d') }}', {{ $selectedProfessional }})"
+                                            class="w-full text-xs text-gray-500 dark:text-gray-400 text-center py-1 bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 rounded cursor-pointer transition-colors"
+                                            title="Ver todos los turnos del día">
+                                        +{{ $remainingCount }} más
+                                    </button>
                                 @endif
                             </div>
                         @endif
@@ -269,14 +262,24 @@
             <!-- Body -->
             <div class="p-6">
                 <!-- Add New Appointment Button -->
-                <div class="mb-4">
-                    <button @click="openCreateModal(selectedDayDate, selectedProfessionalId); dayModalOpen = false;" 
+                <div class="mb-4" x-show="!isDayInPast()">
+                    <button @click="openCreateModal(selectedDayDate, selectedProfessionalId); dayModalOpen = false;"
                             class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg shadow-sm transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
                         <svg class="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
                         </svg>
                         Nuevo Turno
                     </button>
+                </div>
+
+                <!-- Past Day Notice -->
+                <div class="mb-4 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg p-3" x-show="isDayInPast()">
+                    <div class="flex items-center text-sm text-gray-600 dark:text-gray-400">
+                        <svg class="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />
+                        </svg>
+                        <span>Día pasado - Solo visualización. Los turnos atendidos no se pueden editar.</span>
+                    </div>
                 </div>
 
                 <!-- Appointments List -->
@@ -305,9 +308,13 @@
                                 </div>
                                 
                                 <div class="flex items-center gap-2">
-                                    <button @click="openEditModal(appointment); dayModalOpen = false;" 
-                                            class="p-2 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
-                                            title="Editar turno">
+                                    <!-- Edit button - disabled for attended appointments or past dates -->
+                                    <button @click="openEditModal(appointment); dayModalOpen = false;"
+                                            :disabled="appointment.status === 'attended' || isAppointmentInPast(appointment)"
+                                            :class="appointment.status === 'attended' || isAppointmentInPast(appointment) ?
+                                                'p-2 text-gray-400 dark:text-gray-600 rounded-lg cursor-not-allowed opacity-50' :
+                                                'p-2 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors'"
+                                            :title="appointment.status === 'attended' ? 'Turno atendido - No editable' : 'Editar turno'">
                                         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                                             <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
                                         </svg>
@@ -611,6 +618,22 @@ document.addEventListener('alpine:init', () => {
                 absent: 'Ausente'
             };
             return texts[status] || status;
+        },
+
+        isDayInPast() {
+            if (!this.selectedDayDate) return false;
+            const selectedDate = new Date(this.selectedDayDate);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            selectedDate.setHours(0, 0, 0, 0);
+            return selectedDate < today;
+        },
+
+        isAppointmentInPast(appointment) {
+            if (!appointment || !appointment.appointment_date) return false;
+            const appointmentDate = new Date(appointment.appointment_date);
+            const now = new Date();
+            return appointmentDate < now;
         },
 
         showNotification(message, type = 'info') {

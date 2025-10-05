@@ -2,7 +2,7 @@
 
 [![Laravel](https://img.shields.io/badge/Laravel-12.x-red?style=flat&logo=laravel)](https://laravel.com)
 [![PHP](https://img.shields.io/badge/PHP-8.2-blue?style=flat&logo=php)](https://php.net)
-[![Version](https://img.shields.io/badge/Version-2.4.11-green?style=flat)](#changelog)
+[![Version](https://img.shields.io/badge/Version-2.4.12-green?style=flat)](#changelog)
 [![License](https://img.shields.io/badge/License-MIT-yellow?style=flat)](#license)
 
 Sistema integral de gestión médica para clínicas y consultorios, desarrollado con Laravel 12 y tecnologías modernas.
@@ -124,6 +124,48 @@ php artisan config:clear
 - Índices para consultas eficientes
 
 ## 📝 Changelog
+
+### v2.4.12 (2025-10-05) - Mejoras en Agenda y Reporte de Caja
+**📅 Visualización de Turnos Pasados:**
+- **Modal de Días Pasados Habilitado**: Botón "+X más" ahora funciona en días pasados
+  - Permite visualizar todos los turnos de días anteriores
+  - Modal muestra aviso visual: "Día pasado - Solo visualización"
+  - Botón "Nuevo Turno" oculto automáticamente en días pasados
+- **Edición Inteligente de Turnos**: Sistema de permisos granular
+  - Turnos con estado "atendido" no son editables (botón deshabilitado visualmente)
+  - Turnos en fechas/horarios pasados no son editables
+  - Indicadores visuales claros (opacidad 50%, cursor not-allowed)
+  - Tooltips informativos: "Turno atendido - No editable"
+- **Funciones JavaScript Nuevas**:
+  - `isDayInPast()`: Valida si el día seleccionado es anterior a hoy
+  - `isAppointmentInPast()`: Valida si la fecha/hora del turno ya pasó
+
+**💰 Reporte de Cierre de Caja Optimizado:**
+- **Desglose de Movimientos Limpio**: Apertura y cierre excluidos de tablas
+  - Tabla "Desglose por Tipo de Movimiento" ya no muestra apertura/cierre de caja
+  - Enfoque en movimientos operativos: pagos, gastos, retiros, reintegros
+  - Totales calculados sin incluir montos de apertura/cierre
+- **Cálculos Precisos**: Ingresos y egresos reflejan operaciones reales
+  - `$movementsForTotals` filtra automáticamente tipos administrativos
+  - Resumen financiero más representativo de la actividad del día
+
+**⏱️ Opciones de Duración Ampliadas:**
+- **Nuevas Duraciones de Turnos**: Agregadas 3 opciones al selector
+  - 10 minutos (para consultas express/controles rápidos)
+  - 90 minutos / 1 hora 30 minutos (terapias/procedimientos medianos)
+  - 120 minutos / 2 horas (cirugías menores/procedimientos extensos)
+- **Total Opciones Disponibles**: 10, 15, 20, 30, 40, 45, 60, 90, 120 minutos
+
+**📁 Archivos Modificados:**
+- `resources/views/agenda/index.blade.php` - Modal de días pasados y validaciones
+- `app/Http/Controllers/CashController.php` - Filtros en método `dailyReport()`
+- `resources/views/appointments/modal.blade.php` - Opciones de duración ampliadas
+- `VERSION` - Actualizado a 2.4.12
+
+**🎯 Beneficios:**
+- Mayor transparencia histórica de turnos sin riesgo de modificaciones accidentales
+- Reportes de caja más claros enfocados en movimientos operativos
+- Flexibilidad horaria para diferentes tipos de consultas/procedimientos
 
 ### v2.4.11 (2025-10-02) - Sistema de Devoluciones/Reintegros de Profesionales
 **💸 Nueva Funcionalidad de Devoluciones:**
