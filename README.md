@@ -2,7 +2,7 @@
 
 [![Laravel](https://img.shields.io/badge/Laravel-12.x-red?style=flat&logo=laravel)](https://laravel.com)
 [![PHP](https://img.shields.io/badge/PHP-8.2-blue?style=flat&logo=php)](https://php.net)
-[![Version](https://img.shields.io/badge/Version-2.4.13-green?style=flat)](#changelog)
+[![Version](https://img.shields.io/badge/Version-2.4.14-green?style=flat)](#changelog)
 [![License](https://img.shields.io/badge/License-MIT-yellow?style=flat)](#license)
 
 Sistema integral de gestión médica para clínicas y consultorios, desarrollado con Laravel 12 y tecnologías modernas.
@@ -124,6 +124,46 @@ php artisan config:clear
 - Índices para consultas eficientes
 
 ## 📝 Changelog
+
+### v2.4.14 (2025-10-07) - Botón de Reimpresión y Protección de Cajas Históricas
+**🖨️ Nueva Funcionalidad de Reimpresión:**
+- **Botón "Reimprimir"**: Nuevo botón en vista de Caja del Día cuando la caja está cerrada
+  - Se muestra junto al botón "Ver Reporte" en el header
+  - Color distintivo morado para diferenciarlo de otras acciones
+  - Ícono de impresora para identificación visual clara
+
+**⚡ Funcionalidad de Autoimpresión:**
+- **Impresión Automática**: Al hacer clic en "Reimprimir" se abre el reporte en nueva ventana y automáticamente:
+  - Abre el diálogo de impresión del navegador
+  - Cierra la ventana emergente después de imprimir (si aplica)
+  - Aprovecha parámetro `print=true` ya existente en el sistema
+
+**🔒 Protección de Cajas Históricas:**
+- **Botones Condicionales**: Los botones de acción solo se muestran en la caja del día actual
+  - "Ingreso Manual" - Oculto en días anteriores
+  - "Registrar Gasto" - Oculto en días anteriores
+  - "Retirar Dinero" - Oculto en días anteriores
+- **Prevención de Modificaciones Accidentales**: Evita que se registren movimientos en cajas cerradas de días pasados
+- **Vista de Solo Lectura**: Cajas históricas son consultivas, sin opciones de modificación
+
+**🎨 Mejoras de UX:**
+- **Dos Opciones Claras**:
+  - "Ver Reporte" (verde con ícono de ojo): Para visualizar en pantalla
+  - "Reimprimir" (morado con ícono de impresora): Para imprimir directamente
+- **Target _blank**: Abre en nueva pestaña/ventana sin perder el contexto actual
+- **Interfaz Contextual**: Los botones disponibles dependen del día visualizado
+
+**📁 Archivos Modificados:**
+- `resources/views/cash/daily.blade.php` - Botón de reimpresión y protección de días anteriores
+- `VERSION` - Actualizado a 2.4.14
+
+**🎯 Beneficios:**
+- ✅ Acceso rápido a reimprimir reportes de cierre sin pasos adicionales
+- ✅ Mejor experiencia para usuarios que necesitan impresiones físicas
+- ✅ Separación clara entre visualización e impresión
+- ✅ Protección de integridad contable de cajas cerradas
+- ✅ Prevención de errores al registrar movimientos en fechas incorrectas
+- ✅ Aprovecha infraestructura existente (no requiere cambios en backend)
 
 ### v2.4.13 (2025-10-07) - Refactorización de Sistema de Referencias en CashMovement
 **🔧 Optimización de Arquitectura:**
