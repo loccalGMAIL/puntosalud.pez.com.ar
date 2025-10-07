@@ -22,7 +22,7 @@ class CashController extends Controller
 
         $initialBalance = $lastBalanceMovement ? $lastBalanceMovement->balance_after : 0;
 
-        $query = CashMovement::with(['user', 'professional'])
+        $query = CashMovement::with(['user'])
             ->whereDate('movement_date', $selectedDate);
 
         if ($request->filled('type')) {
@@ -198,11 +198,10 @@ class CashController extends Controller
                 'type' => 'expense',
                 'amount' => -$validated['amount'], // Negativo para egreso
                 'description' => $description,
-                'reference_type' => 'expense_category',
-                'reference_id' => null,
+                'reference_type' => isset($validated['professional_id']) ? 'App\\Models\\Professional' : 'expense_category',
+                'reference_id' => $validated['professional_id'] ?? null,
                 'balance_after' => $newBalance,
                 'user_id' => auth()->id(),
-                'professional_id' => $validated['professional_id'] ?? null, // Guardar profesional si es devolución
             ]);
 
             DB::commit();
@@ -236,12 +235,12 @@ class CashController extends Controller
 
     public function getCashMovementDetails(CashMovement $cashMovement)
     {
-        $cashMovement->load(['user', 'professional.specialty']);
+        $cashMovement->load(['user']);
 
         $additionalData = [];
 
         try {
-            // Cargar información adicional según el tipo de movimiento
+            // Cargar información adicional según el tipo de movimiento y reference_type
             if ($cashMovement->type === 'patient_payment' && $cashMovement->reference_id &&
                 in_array($cashMovement->reference_type, ['payment', 'App\\Models\\Payment'])) {
                 $payment = \App\Models\Payment::with(['patient', 'paymentAppointments.appointment.professional'])
@@ -249,16 +248,17 @@ class CashController extends Controller
                 if ($payment) {
                     $additionalData['payment'] = $payment;
                 }
-            } elseif ($cashMovement->type === 'professional_payment' && $cashMovement->reference_id &&
+            } elseif ($cashMovement->reference_id &&
                      in_array($cashMovement->reference_type, ['professional', 'App\\Models\\Professional'])) {
+                // Carga profesional para liquidaciones y reintegros
                 $professional = \App\Models\Professional::with(['specialty'])->find($cashMovement->reference_id);
                 if ($professional) {
-                    $additionalData['professional'] = $professional;
-                }
-            } elseif ($cashMovement->type === 'expense' && $cashMovement->professional_id) {
-                // Si es un gasto con profesional (reintegro a paciente)
-                if ($cashMovement->professional) {
-                    $additionalData['refund_professional'] = $cashMovement->professional;
+                    if ($cashMovement->type === 'professional_payment') {
+                        $additionalData['professional'] = $professional;
+                    } elseif ($cashMovement->type === 'expense') {
+                        // Reintegro a paciente
+                        $additionalData['refund_professional'] = $professional;
+                    }
                 }
             }
         } catch (\Exception $e) {
@@ -677,11 +677,10 @@ class CashController extends Controller
                 'type' => 'other',
                 'amount' => $validated['amount'],
                 'description' => $description,
-                'reference_type' => 'manual_income',
-                'reference_id' => null,
+                'reference_type' => isset($validated['professional_id']) ? 'App\\Models\\Professional' : 'manual_income',
+                'reference_id' => $validated['professional_id'] ?? null,
                 'balance_after' => $newBalance,
                 'user_id' => auth()->id(),
-                'professional_id' => $validated['professional_id'] ?? null,
             ]);
 
             DB::commit();

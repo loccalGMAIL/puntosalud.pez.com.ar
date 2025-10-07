@@ -319,7 +319,7 @@
                                         </span>
                                         @break
                                     @case('expense')
-                                        @if($movement->professional_id)
+                                        @if($movement->reference_type === 'App\\Models\\Professional' && $movement->reference_id)
                                             <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
                                                 🔄 Reintegro Paciente
                                             </span>
