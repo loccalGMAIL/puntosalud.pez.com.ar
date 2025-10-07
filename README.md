@@ -2,7 +2,7 @@
 
 [![Laravel](https://img.shields.io/badge/Laravel-12.x-red?style=flat&logo=laravel)](https://laravel.com)
 [![PHP](https://img.shields.io/badge/PHP-8.2-blue?style=flat&logo=php)](https://php.net)
-[![Version](https://img.shields.io/badge/Version-2.4.12-green?style=flat)](#changelog)
+[![Version](https://img.shields.io/badge/Version-2.4.13-green?style=flat)](#changelog)
 [![License](https://img.shields.io/badge/License-MIT-yellow?style=flat)](#license)
 
 Sistema integral de gestión médica para clínicas y consultorios, desarrollado con Laravel 12 y tecnologías modernas.
@@ -124,6 +124,48 @@ php artisan config:clear
 - Índices para consultas eficientes
 
 ## 📝 Changelog
+
+### v2.4.13 (2025-10-07) - Refactorización de Sistema de Referencias en CashMovement
+**🔧 Optimización de Arquitectura:**
+- **Eliminación de Campo Redundante**: Removido campo `professional_id` de tabla `cash_movements`
+  - Campo era redundante con sistema de referencias polimórficas existente
+  - Generaba complejidad innecesaria en estructura de datos
+
+**✨ Implementación de Referencias Polimórficas:**
+- **Sistema Unificado**: Uso exclusivo de `reference_type` y `reference_id` para todas las referencias
+  - Reintegros a pacientes: `reference_type = 'App\Models\Professional'`
+  - Pagos módulo profesional: `reference_type = 'App\Models\Professional'`
+  - Liquidaciones profesionales: `reference_type = 'App\Models\Professional'`
+  - Otros casos: mantienen sus reference_type específicos
+
+**🔄 Cambios Implementados:**
+- **CashController**:
+  - `addExpense()`: Reintegros usan reference polimórfica en lugar de professional_id
+  - `manualIncomeForm()`: Pagos módulo usan reference polimórfica
+  - `getCashMovementDetails()`: Carga polimórfica unificada de profesional
+  - `dailyCash()`: Eliminada carga eager de relación `professional`
+- **Modelo CashMovement**:
+  - Eliminado `professional_id` de array `$fillable`
+  - Eliminada relación `professional()` (ya no necesaria)
+  - Sistema `morphTo()` maneja todas las referencias
+- **Vista daily.blade.php**:
+  - Detección de reintegros actualizada: `reference_type === 'App\Models\Professional'`
+
+**🎯 Beneficios:**
+- ✅ Modelo de datos más limpio y consistente
+- ✅ Eliminación de redundancia en estructura de base de datos
+- ✅ Aprovechamiento completo del sistema polimórfico de Laravel
+- ✅ Menor complejidad en queries y relaciones
+- ✅ Mayor flexibilidad para referencias futuras
+
+**📁 Archivos Modificados:**
+- `app/Http/Controllers/CashController.php` - Referencias polimórficas implementadas
+- `app/Models/CashMovement.php` - Campo y relación eliminados
+- `resources/views/cash/daily.blade.php` - Detección actualizada
+- `VERSION` - Actualizado a 2.4.13
+
+**⚠️ Nota Técnica:**
+Esta es una refactorización de fondo que no afecta funcionalidad. La migración física de la base de datos se realizará en ambiente de producción de forma separada.
 
 ### v2.4.12 (2025-10-05) - Mejoras en Agenda y Reporte de Caja
 **📅 Visualización de Turnos Pasados:**
