@@ -2,7 +2,7 @@
 
 [![Laravel](https://img.shields.io/badge/Laravel-12.x-red?style=flat&logo=laravel)](https://laravel.com)
 [![PHP](https://img.shields.io/badge/PHP-8.2-blue?style=flat&logo=php)](https://php.net)
-[![Version](https://img.shields.io/badge/Version-2.4.15-green?style=flat)](#changelog)
+[![Version](https://img.shields.io/badge/Version-2.4.16-green?style=flat)](#changelog)
 [![License](https://img.shields.io/badge/License-MIT-yellow?style=flat)](#license)
 
 Sistema integral de gestión médica para clínicas y consultorios, desarrollado con Laravel 12 y tecnologías modernas.
@@ -124,6 +124,41 @@ php artisan config:clear
 - Índices para consultas eficientes
 
 ## 📝 Changelog
+
+### v2.4.16 (2025-10-09) - Mejoras de Visualización y UX
+**📊 Sistema de Paginación:**
+- **Paginación en Pacientes**: Tabla de pacientes ahora muestra 15 registros por página
+  - Implementado `paginate(15)->withQueryString()` en PatientController
+  - Links de paginación con Tailwind CSS
+  - Mantiene filtros activos entre páginas
+  - Mejor rendimiento con grandes volúmenes de datos
+
+- **Paginación en Profesionales**: Tabla de profesionales con paginación idéntica
+  - 15 registros por página para óptima visualización
+  - Conserva búsquedas y filtros al cambiar de página
+  - Interfaz limpia y navegable
+
+**📧 Mejora en Reporte Diario:**
+- **Email en lugar de Consultorio**: Reporte de pacientes a atender ahora muestra:
+  - Línea 1: Teléfono del paciente
+  - Línea 2: **Email del paciente** (antes mostraba consultorio)
+  - Agregado campo `patient_email` en ReportController
+  - Información más útil para contacto con pacientes
+
+**🎯 Beneficios:**
+- ✅ Mejor performance en tablas con muchos registros
+- ✅ Navegación más rápida y fluida
+- ✅ Información de contacto más completa en reportes
+- ✅ Interfaz más profesional y escalable
+
+**📁 Archivos Modificados:**
+- `app/Http/Controllers/PatientController.php` - Paginación implementada
+- `app/Http/Controllers/ProfessionalController.php` - Paginación implementada
+- `resources/views/patients/index.blade.php` - Links de paginación y ajuste Alpine.js
+- `resources/views/professionals/index.blade.php` - Links de paginación y ajuste Alpine.js
+- `app/Http/Controllers/ReportController.php` - Campo patient_email agregado
+- `resources/views/reports/daily-schedule.blade.php` - Muestra email en lugar de consultorio
+- `VERSION` - Actualizado a 2.4.16
 
 ### v2.4.15 (2025-10-09) - Correcciones Críticas de Integridad Contable
 **🔒 Prevención de Apertura sin Cierre Previo:**
