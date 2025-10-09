@@ -110,9 +110,10 @@ class LiquidationController extends Controller
             $totalCollected = $attendedAppointments->sum('final_amount');
             $professionalCommission = $professional->calculateCommission($totalCollected);
 
-            // Obtener reintegros del día para este profesional
+            // Obtener reintegros del día para este profesional (usando referencias polimórficas)
             $refunds = CashMovement::where('type', 'expense')
-                ->where('professional_id', $professional->id)
+                ->where('reference_type', 'App\Models\Professional')
+                ->where('reference_id', $professional->id)
                 ->whereDate('movement_date', $date)
                 ->get();
 

@@ -196,9 +196,10 @@ class ReportController extends Controller
                 $totalAmount = $professional->appointments->sum('final_amount');
                 $professionalCommission = $professional->calculateCommission($totalAmount);
 
-                // Obtener reintegros del día para este profesional
+                // Obtener reintegros del día para este profesional (usando referencias polimórficas)
                 $refunds = \App\Models\CashMovement::where('type', 'expense')
-                    ->where('professional_id', $professional->id)
+                    ->where('reference_type', 'App\Models\Professional')
+                    ->where('reference_id', $professional->id)
                     ->whereDate('movement_date', $selectedDate)
                     ->get();
 
@@ -273,9 +274,10 @@ class ReportController extends Controller
         $totalAmount = $attendedAppointments->sum('final_amount');
         $professionalCommission = $professional->calculateCommission($totalAmount);
 
-        // Obtener reintegros del día para este profesional
+        // Obtener reintegros del día para este profesional (usando referencias polimórficas)
         $refunds = \App\Models\CashMovement::where('type', 'expense')
-            ->where('professional_id', $professionalId)
+            ->where('reference_type', 'App\Models\Professional')
+            ->where('reference_id', $professionalId)
             ->whereDate('movement_date', $selectedDate)
             ->get();
 

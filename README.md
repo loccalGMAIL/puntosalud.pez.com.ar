@@ -2,7 +2,7 @@
 
 [![Laravel](https://img.shields.io/badge/Laravel-12.x-red?style=flat&logo=laravel)](https://laravel.com)
 [![PHP](https://img.shields.io/badge/PHP-8.2-blue?style=flat&logo=php)](https://php.net)
-[![Version](https://img.shields.io/badge/Version-2.4.14-green?style=flat)](#changelog)
+[![Version](https://img.shields.io/badge/Version-2.4.15-green?style=flat)](#changelog)
 [![License](https://img.shields.io/badge/License-MIT-yellow?style=flat)](#license)
 
 Sistema integral de gestión médica para clínicas y consultorios, desarrollado con Laravel 12 y tecnologías modernas.
@@ -124,6 +124,40 @@ php artisan config:clear
 - Índices para consultas eficientes
 
 ## 📝 Changelog
+
+### v2.4.15 (2025-10-09) - Correcciones Críticas de Integridad Contable
+**🔒 Prevención de Apertura sin Cierre Previo:**
+- **Validación de Cierre Obligatorio**: No se permite abrir caja del día actual si hay días anteriores sin cerrar
+  - Validación en `CashController.openCash()` antes de crear apertura
+  - Mensaje específico indicando fecha exacta sin cerrar: "Primero debe cerrar la caja del día {fecha}"
+  - Respuesta JSON incluye campo `unclosed_date` para referencia
+  - Previene inconsistencias contables por apertura prematura
+
+**🔧 Flujo de Validación:**
+1. Primera validación: Verifica días sin cerrar usando `hasUnclosedCash()`
+2. Segunda validación: Verifica que no exista apertura del día actual
+3. Solo si ambas pasan, se permite crear la apertura
+
+**🐛 Corrección de Referencias Polimórficas:**
+- **Fix Error SQL**: Column not found 'professional_id' en reportes de liquidación
+  - Problema: Queries usaban campo `professional_id` eliminado en v2.4.13
+  - Solución: Actualizado a usar `reference_type` + `reference_id`
+- **Controladores Corregidos**:
+  - `ReportController.professionalLiquidation()`: 2 consultas actualizadas
+  - `LiquidationController.processLiquidation()`: 1 consulta actualizada
+  - Todas usan ahora: `where('reference_type', 'App\Models\Professional')`
+
+**🎯 Impacto:**
+- ✅ Elimina posibilidad de apertura sin cierre previo (bug reportado en movimientos 200-201)
+- ✅ Garantiza integridad contable con secuencia obligatoria apertura → cierre
+- ✅ Reportes de liquidación funcionan correctamente con referencias polimórficas
+- ✅ Consultas de reintegros corregidas en todos los controladores
+
+**📁 Archivos Modificados:**
+- `app/Http/Controllers/CashController.php` - Validación de cierre previo en apertura
+- `app/Http/Controllers/ReportController.php` - Referencias polimórficas
+- `app/Http/Controllers/LiquidationController.php` - Referencias polimórficas
+- `VERSION` - Actualizado a 2.4.15
 
 ### v2.4.14 (2025-10-07) - Botón de Reimpresión y Protección de Cajas Históricas
 **🖨️ Nueva Funcionalidad de Reimpresión:**
