@@ -98,7 +98,7 @@
                                 </td>
                                 <td class="px-6 py-4">
                                     <div class="text-sm text-gray-900 dark:text-white">{{ $appointment['patient_phone'] ?: 'No registrado' }}</div>
-                                    <div class="text-sm text-gray-500 dark:text-gray-400">{{ $appointment['office'] }}</div>
+                                    <div class="text-sm text-gray-500 dark:text-gray-400">{{ $appointment['patient_email'] ?: 'Sin email' }}</div>
                                 </td>
                                 <td class="px-6 py-4">
                                     @if($appointment['final_amount'])
