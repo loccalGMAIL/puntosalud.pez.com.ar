@@ -285,6 +285,16 @@ class CashController extends Controller
 
             $today = now()->startOfDay();
 
+            // Verificar que no haya cajas sin cerrar de días anteriores
+            $unclosedDate = CashMovement::hasUnclosedCash();
+            if ($unclosedDate) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "No se puede abrir la caja de hoy. Primero debe cerrar la caja del día {$unclosedDate}.",
+                    'unclosed_date' => $unclosedDate,
+                ], 400);
+            }
+
             // Verificar que no exista ya una apertura para hoy
             $existingOpening = CashMovement::forDate($today)->openingMovements()->first();
             if ($existingOpening) {
