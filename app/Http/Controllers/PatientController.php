@@ -31,7 +31,7 @@ class PatientController extends Controller
             $query->where('health_insurance', 'like', '%'.$request->get('health_insurance').'%');
         }
 
-        $patients = $query->get();
+        $patients = $query->paginate(15)->withQueryString();
 
         // Estadísticas
         $allPatients = Patient::all();

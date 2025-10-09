@@ -290,6 +290,11 @@
                     </tbody>
                 </table>
             </div>
+
+            <!-- Paginación -->
+            <div class="mt-4 px-6 pb-6">
+                {{ $patients->links() }}
+            </div>
         </div>
     </div>
 
@@ -300,7 +305,7 @@
 function patientsPage() {
     return {
         // Data inicial
-        patients: @json($patients),
+        patients: @json($patients->items()),
         stats: @json($stats),
         
         // Estados del modal

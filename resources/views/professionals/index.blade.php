@@ -295,18 +295,23 @@
                         </tbody>
                     </table>
                 </div>
+
+                <!-- Paginación -->
+                <div class="mt-4 px-6 pb-6">
+                    {{ $professionals->links() }}
+                </div>
             </div>
         </div>
     </div>
 
-    @include('professionals.modal') 
+    @include('professionals.modal')
 </div>
 
 <script>
 function professionalsPage() {
     return {
         // Data inicial
-        professionals: @json($professionals),
+        professionals: @json($professionals->items()),
         specialties: @json($specialties),
         stats: @json($stats),
         

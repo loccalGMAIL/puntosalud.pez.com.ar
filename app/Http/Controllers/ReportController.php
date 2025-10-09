@@ -67,6 +67,7 @@ class ReportController extends Controller
                     'time' => $appointment->appointment_date->format('H:i'),
                     'patient_name' => $appointment->patient->full_name,
                     'patient_phone' => $appointment->patient->phone,
+                    'patient_email' => $appointment->patient->email,
                     'patient_dni' => $appointment->patient->dni,
                     'patient_insurance' => $appointment->patient->insurance_company,
                     'estimated_amount' => $appointment->estimated_amount ?? 0,
