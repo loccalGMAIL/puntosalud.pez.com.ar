@@ -37,7 +37,7 @@ class ProfessionalController extends Controller
             $query->where('is_active', $isActive);
         }
 
-        $professionals = $query->get();
+        $professionals = $query->paginate(15)->withQueryString();
         $specialties = Specialty::orderBy('name')->get();
 
         // Estadísticas
