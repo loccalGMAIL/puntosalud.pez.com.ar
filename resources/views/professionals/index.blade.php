@@ -188,19 +188,20 @@
                     <table class="min-w-full divide-y divide-emerald-200/50 dark:divide-emerald-800/30">
                         <thead class="bg-emerald-50/50 dark:bg-emerald-950/20">
                             <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">Profesional</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">Especialidad</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">Contacto</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">DNI</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">Comisión</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">Estado</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">Acciones</th>
+                                <th class="px-2 py-2 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-tight">Profesional</th>
+                                <th class="px-2 py-2 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-tight">DNI</th>
+                                <th class="px-2 py-2 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-tight">Especialidad</th>
+                                <th class="px-2 py-2 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-tight">Email</th>
+                                <th class="px-2 py-2 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-tight">Tel.</th>
+                                <th class="px-2 py-2 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-tight">Com.</th>
+                                <th class="px-2 py-2 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-tight">Estado</th>
+                                <th class="px-2 py-2 text-right text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-tight">Acc.</th>
                             </tr>
                         </thead>
                         <tbody class="bg-white dark:bg-gray-800 divide-y divide-emerald-200/30 dark:divide-emerald-800/30">
                             <!-- Estado vac�o -->
                             <tr x-show="filteredProfessionals.length === 0">
-                                <td colspan="7" class="px-6 py-12 text-center">
+                                <td colspan="8" class="px-6 py-12 text-center">
                                     <div class="flex flex-col items-center gap-3">
                                         <svg class="w-12 h-12 text-gray-400 dark:text-gray-600" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                                             <path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />
@@ -217,74 +218,75 @@
                             <template x-for="professional in filteredProfessionals" :key="professional.id">
                                 <tr class="hover:bg-emerald-50/30 dark:hover:bg-emerald-950/20 transition-colors duration-200">
                                     <!-- Profesional -->
-                                    <td class="px-6 py-4">
-                                        <div>
-                                            <div class="text-sm font-semibold text-gray-900 dark:text-white" x-text="professional.first_name + ' ' + professional.last_name"></div>
-                                            <div class="text-sm text-gray-500 dark:text-gray-400" x-text="'ID: ' + professional.id"></div>
-                                        </div>
+                                    <td class="px-2 py-2 whitespace-nowrap">
+                                        <div class="text-xs font-semibold text-gray-900 dark:text-white" x-text="professional.first_name + ' ' + professional.last_name"></div>
                                     </td>
-                                    
-                                    <!-- Especialidad -->
-                                    <td class="px-6 py-4">
-                                        <span class="inline-flex px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 rounded-full" x-text="professional.specialty.name"></span>
-                                    </td>
-                                    
-                                    <!-- Contacto -->
-                                    <td class="px-6 py-4">
-                                        <div class="text-sm text-gray-900 dark:text-white" x-text="professional.email || 'Sin mail'"></div>
-                                        <div class="text-sm text-gray-500 dark:text-gray-400" x-text="professional.phone || 'Sin teléfono'"></div>
-                                    </td>
-                                    
+
                                     <!-- DNI -->
-                                    <td class="px-6 py-4">
-                                        <span class="text-sm font-mono text-gray-900 dark:text-white" x-text="professional.dni"></span>
+                                    <td class="px-2 py-2 whitespace-nowrap">
+                                        <span class="text-xs font-mono text-gray-900 dark:text-white" x-text="professional.dni"></span>
                                     </td>
-                                    
+
+                                    <!-- Especialidad -->
+                                    <td class="px-2 py-2 whitespace-nowrap">
+                                        <span class="inline-flex px-1.5 py-0.5 text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 rounded" x-text="professional.specialty.name"></span>
+                                    </td>
+
+                                    <!-- Email -->
+                                    <td class="px-2 py-2 whitespace-nowrap max-w-[150px]">
+                                        <span class="text-xs text-gray-900 dark:text-white truncate block" x-text="professional.email || '-'"></span>
+                                    </td>
+
+                                    <!-- Teléfono -->
+                                    <td class="px-2 py-2 whitespace-nowrap">
+                                        <span class="text-xs text-gray-900 dark:text-white" x-text="professional.phone || '-'"></span>
+                                    </td>
+
                                     <!-- Comisi�n -->
-                                    <td class="px-6 py-4">
-                                        <span class="text-sm font-semibold text-emerald-600 dark:text-emerald-400" x-text="professional.commission_percentage + '%'"></span>
+                                    <td class="px-2 py-2 whitespace-nowrap">
+                                        <span class="text-xs font-semibold text-emerald-600 dark:text-emerald-400" x-text="professional.commission_percentage + '%'"></span>
                                     </td>
-                                    
+
                                     <!-- Estado -->
-                                    <td class="px-6 py-4">
-                                        <span :class="professional.is_active ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'" 
-                                              class="inline-flex px-2 py-1 text-xs font-medium rounded-full" 
+                                    <td class="px-2 py-2 whitespace-nowrap">
+                                        <span :class="professional.is_active ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'"
+                                              class="inline-flex px-1.5 py-0.5 text-xs font-medium rounded"
                                               x-text="professional.is_active ? 'Activo' : 'Inactivo'">
                                         </span>
                                     </td>
-                                    
+
                                     <!-- Acciones -->
-                                    <td class="px-6 py-4 text-right">
-                                        <div class="flex items-center justify-end gap-2">
+                                    <td class="px-2 py-2 text-right whitespace-nowrap">
+                                        <div class="flex items-center justify-end gap-1">
                                             <!-- Botón Horarios -->
                                             <a :href="`/professionals/${professional.id}/schedules`"
-                                               class="p-2 text-purple-600 hover:text-purple-800 dark:text-purple-400 dark:hover:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-lg transition-colors"
+                                               class="p-1 text-purple-600 hover:text-purple-800 dark:text-purple-400 dark:hover:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded transition-colors"
                                                title="Configurar horarios">
-                                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                                                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
                                                 </svg>
                                             </a>
 
                                             <!-- Botón Editar -->
-                                            <button @click="openEditModal(professional)" 
-                                                    class="p-2 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                                            <button @click="openEditModal(professional)"
+                                                    class="p-1 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors"
                                                     title="Editar profesional">
-                                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                                                     <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
                                                 </svg>
                                             </button>
 
                                             <!-- Botón Activar/Desactivar -->
-                                            <button @click="toggleStatus(professional)" 
+                                            <button @click="toggleStatus(professional)"
                                                     :class="professional.is_active ? 'text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20' : 'text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300 hover:bg-green-50 dark:hover:bg-green-900/20'"
-                                                    class="p-2 rounded-lg transition-colors"
+                                                    class="p-1 rounded transition-colors"
                                                     :title="professional.is_active ? 'Desactivar profesional' : 'Activar profesional'">
                                                 <!-- Icono Desactivar (cuando está activo) -->
-                                                <svg x-show="professional.is_active" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                                <svg x-show="professional.is_active" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                                                     <path stroke-linecap="round" stroke-linejoin="round" d="M22 10.5h-6m-2.25-4.125a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zM4 19.5a8.25 8.25 0 0116.5 0v.5H4v-.5z" />
                                                 </svg>
                                                 <!-- Icono Activar (cuando está inactivo) -->
-                                                <svg x-show="!professional.is_active" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                                <svg x-show="!professional.is_active" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                                                     <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                                 </svg>
                                             </button>

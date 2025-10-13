@@ -30,12 +30,15 @@
             <!-- Profesional -->
             <div>
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Profesional *</label>
-                <select x-model="form.professional_id" 
+                <select id="professional-select"
+                        x-model="form.professional_id"
                         class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500 dark:bg-gray-700 dark:text-white"
                         required>
                     <option value="">Seleccionar profesional...</option>
                     <template x-for="professional in professionals" :key="professional.id">
-                        <option :value="professional.id" x-text="'Dr. ' + professional.first_name + ' ' + professional.last_name + ' - ' + professional.specialty.name"></option>
+                        <option :value="professional.id"
+                                :data-specialty="professional.specialty.name"
+                                x-text="'Dr. ' + professional.first_name + ' ' + professional.last_name + ' - ' + professional.specialty.name"></option>
                     </template>
                 </select>
             </div>
@@ -43,12 +46,17 @@
             <!-- Paciente -->
             <div>
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Paciente *</label>
-                <select x-model="form.patient_id" 
+                <select id="patient-select"
+                        x-model="form.patient_id"
                         class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500 dark:bg-gray-700 dark:text-white"
                         required>
                     <option value="">Seleccionar paciente...</option>
                     <template x-for="patient in patients" :key="patient.id">
-                        <option :value="patient.id" x-text="patient.last_name + ', ' + patient.first_name + ' - ' + patient.dni"></option>
+                        <option :value="patient.id"
+                                :data-dni="patient.dni"
+                                :data-first-name="patient.first_name"
+                                :data-last-name="patient.last_name"
+                                x-text="patient.last_name + ', ' + patient.first_name + ' - DNI: ' + patient.dni"></option>
                     </template>
                 </select>
             </div>

@@ -22,7 +22,7 @@
              class="relative bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-4xl w-full max-h-[85vh] overflow-y-auto">
             
             <!-- Header -->
-            <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+            <div class="px-6 py-3 border-b border-gray-200 dark:border-gray-700">
                 <div class="flex items-center gap-2">
                     <svg x-show="!editingPatient" class="w-5 h-5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M19 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zM4 19.5a8.25 8.25 0 0116.5 0v.5H4v-.5z" />
@@ -32,17 +32,16 @@
                     </svg>
                     <h3 class="text-lg font-semibold text-gray-900 dark:text-white" x-text="editingPatient ? 'Editar Paciente' : 'Nuevo Paciente'"></h3>
                 </div>
-                <p class="text-sm text-gray-600 dark:text-gray-400 mt-1" x-text="editingPatient ? 'Modifica los datos del paciente' : 'Completa la información para registrar un nuevo paciente'"></p>
-                <button @click="modalOpen = false" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                <button @click="modalOpen = false" class="absolute top-3 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
                     <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
                     </svg>
                 </button>
             </div>
-            
+
             <!-- Body -->
             <form @submit.prevent="submitForm()">
-                <div class="px-6 py-4 space-y-6">
+                <div class="px-6 py-3 space-y-3">
                     
                     <!-- Información Personal -->
                     <div>
@@ -50,19 +49,25 @@
                         <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nombre *</label>
-                                <input x-model="form.first_name" type="text" required placeholder="Juan"
+                                <input x-model="form.first_name"
+                                       @input="form.first_name = form.first_name.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '')"
+                                       type="text" required placeholder="Juan"
                                        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500 dark:bg-gray-700 dark:text-white">
                             </div>
-                            
+
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Apellido *</label>
-                                <input x-model="form.last_name" type="text" required placeholder="Pérez"
+                                <input x-model="form.last_name"
+                                       @input="form.last_name = form.last_name.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '')"
+                                       type="text" required placeholder="Pérez"
                                        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500 dark:bg-gray-700 dark:text-white">
                             </div>
-                            
+
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">DNI *</label>
-                                <input x-model="form.dni" type="text" required placeholder="12.345.678"
+                                <input x-model="form.dni"
+                                       @input="form.dni = form.dni.replace(/[^0-9.]/g, '')"
+                                       type="text" required placeholder="12.345.678"
                                        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500 dark:bg-gray-700 dark:text-white">
                             </div>
                             
@@ -71,7 +76,6 @@
                                 <div class="relative">
                                     <input x-model="form.birth_date" type="date" required :max="getMaxDate()"
                                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500 dark:bg-gray-700 dark:text-white">
-                                    <svg class="absolute right-2 top-2.5 h-4 w-4 text-gray-400 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5a2.25 2.25 0 002.25-2.25m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5a2.25 2.25 0 012.25 2.25v7.5" />
                                     </svg>
                                 </div>
@@ -106,7 +110,6 @@
                     
                     <!-- Información de Obra Social -->
                     <div>
-                        <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Obra Social</h3>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Obra Social</label>

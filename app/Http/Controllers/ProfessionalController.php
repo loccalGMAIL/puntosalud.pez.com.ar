@@ -77,15 +77,21 @@ class ProfessionalController extends Controller
     {
         try {
             $validated = $request->validate([
-                'first_name' => 'required|string|max:255',
-                'last_name' => 'required|string|max:255',
+                'first_name' => ['required', 'string', 'max:255', 'regex:/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/'],
+                'last_name' => ['required', 'string', 'max:255', 'regex:/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/'],
                 'email' => 'nullable|string|email|max:255',
                 'phone' => 'nullable|string|max:255',
-                'dni' => 'required|string|max:20|unique:professionals',
+                'dni' => ['required', 'string', 'max:20', 'unique:professionals', 'regex:/^[0-9.]+$/'],
                 'specialty_id' => 'required|exists:specialties,id',
                 'commission_percentage' => 'required|numeric|min:0|max:100',
+            ], [
+                'first_name.regex' => 'El nombre solo puede contener letras y espacios.',
+                'last_name.regex' => 'El apellido solo puede contener letras y espacios.',
+                'dni.regex' => 'El DNI solo puede contener números y puntos.',
             ]);
 
+            // Formatear DNI con puntos
+            $validated['dni'] = $this->formatDni($validated['dni']);
             $validated['is_active'] = true; // Por defecto activo
 
             Professional::create($validated);
@@ -150,15 +156,22 @@ class ProfessionalController extends Controller
         // Actualización completa del profesional
         try {
             $validated = $request->validate([
-                'first_name' => 'required|string|max:255',
-                'last_name' => 'required|string|max:255',
+                'first_name' => ['required', 'string', 'max:255', 'regex:/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/'],
+                'last_name' => ['required', 'string', 'max:255', 'regex:/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/'],
                 'email' => 'nullable|string|email|max:255',
                 'phone' => 'nullable|string|max:255',
-                'dni' => 'required|string|max:20|unique:professionals,dni,'.$professional->id,
+                'dni' => ['required', 'string', 'max:20', 'unique:professionals,dni,'.$professional->id, 'regex:/^[0-9.]+$/'],
                 'specialty_id' => 'required|exists:specialties,id',
                 'commission_percentage' => 'required|numeric|min:0|max:100',
                 'is_active' => 'required|in:0,1',
+            ], [
+                'first_name.regex' => 'El nombre solo puede contener letras y espacios.',
+                'last_name.regex' => 'El apellido solo puede contener letras y espacios.',
+                'dni.regex' => 'El DNI solo puede contener números y puntos.',
             ]);
+
+            // Formatear DNI con puntos
+            $validated['dni'] = $this->formatDni($validated['dni']);
 
             // Convertir is_active a booleano
             $validated['is_active'] = $validated['is_active'] === '1';
@@ -212,5 +225,34 @@ class ProfessionalController extends Controller
         }
 
         return back()->with('success', $message);
+    }
+
+    /**
+     * Formatear DNI agregando puntos si no los tiene
+     */
+    private function formatDni($dni)
+    {
+        if (empty($dni)) {
+            return $dni;
+        }
+
+        // Remover todos los puntos y espacios existentes
+        $cleanDni = preg_replace('/[.\s]/', '', $dni);
+
+        // Verificar que solo contenga números
+        if (! preg_match('/^\d{7,8}$/', $cleanDni)) {
+            return $dni; // Devolver original si no es válido
+        }
+
+        // Formatear según la longitud
+        if (strlen($cleanDni) === 7) {
+            // 7 dígitos: X.XXX.XXX
+            return substr($cleanDni, 0, 1).'.'.substr($cleanDni, 1, 3).'.'.substr($cleanDni, 4, 3);
+        } elseif (strlen($cleanDni) === 8) {
+            // 8 dígitos: XX.XXX.XXX
+            return substr($cleanDni, 0, 2).'.'.substr($cleanDni, 2, 3).'.'.substr($cleanDni, 5, 3);
+        }
+
+        return $dni; // Devolver original si no coincide con formatos esperados
     }
 }

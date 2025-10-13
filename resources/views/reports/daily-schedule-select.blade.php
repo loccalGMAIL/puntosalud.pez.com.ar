@@ -40,7 +40,7 @@
                 📋 Listado de Pacientes a Atender
             </h1>
             <p class="text-gray-600 dark:text-gray-400">
-                Selecciona un profesional para generar su listado del día
+                Ver listado de pacientes programados por profesional y fecha
             </p>
         </div>
         <a href="{{ route('dashboard') }}"
@@ -52,68 +52,27 @@
         </a>
     </div>
 
-    <!-- Formulario de Selección -->
+    <!-- Selector de Fecha -->
     <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-        <form action="{{ route('reports.daily-schedule') }}" method="GET" class="space-y-4">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <!-- Fecha -->
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        📅 Fecha del Listado
-                    </label>
-                    <input type="date" 
-                           name="date" 
-                           value="{{ $selectedDate->format('Y-m-d') }}"
-                           class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
-                           required>
-                </div>
-
-                <!-- Profesional -->
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        👨‍⚕️ Profesional
-                    </label>
-                    <select name="professional_id" 
-                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
-                            required>
-                        <option value="">Seleccionar profesional...</option>
-                        @foreach($allProfessionals as $professional)
-                            <option value="{{ $professional->id }}">
-                                Dr. {{ $professional->full_name }} - {{ $professional->specialty->name }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
+        <div class="flex items-center justify-center">
+            <div class="w-full max-w-sm">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 text-center">
+                    📅 Fecha del Listado
+                </label>
+                <input type="date"
+                       name="date"
+                       id="dateSelector"
+                       value="{{ $selectedDate->format('Y-m-d') }}"
+                       class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white text-center">
             </div>
-
-            <!-- Botones -->
-            <div class="flex gap-3 pt-4">
-                <button type="submit" 
-                        class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg shadow-sm transition-colors">
-                    <svg class="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c-.621 0-1.125-.504-1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
-                    </svg>
-                    Ver Listado
-                </button>
-                
-                <button type="submit" 
-                        name="print" 
-                        value="1"
-                        class="inline-flex items-center px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-lg shadow-sm transition-colors">
-                    <svg class="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M6.72 13.829c-.24.03-.48.062-.72.096m.72-.096a42.415 42.415 0 0 1 10.56 0m-10.56 0L6.34 18m10.94-4.171c.24.03.48.062.72.096m-.72-.096L17.66 18m0 0 .229 2.523a1.125 1.125 0 0 1-1.12 1.227H7.231c-.662 0-1.18-.568-1.12-1.227L6.34 18m11.318 0h1.091A2.25 2.25 0 0 0 21 15.75V9.456c0-1.081-.768-2.015-1.837-2.175a48.055 48.055 0 0 0-1.913-.247M6.34 18H5.25A2.25 2.25 0 0 1 3 15.75V9.456c0-1.081.768-2.015 1.837-2.175a48.041 48.041 0 0 1 1.913-.247m10.5 0a48.536 48.536 0 0 0-10.5 0m10.5 0V3.375c0-.621-.504-1.125-1.125-1.125h-8.25c-.621 0-1.125.504-1.125 1.125v3.659M18 10.5h.008v.008H18V10.5Zm-3 0h.008v.008H15V10.5Z" />
-                    </svg>
-                    Imprimir Directo
-                </button>
-            </div>
-        </form>
+        </div>
     </div>
 
-    <!-- Acceso Rápido -->
+    <!-- Profesionales con Pacientes -->
     @if($professionalsWithAppointments->count() > 0)
         <div class="mt-8">
             <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                🚀 Acceso Rápido
+                👨‍⚕️ Profesionales con Pacientes Programados
                 <span class="text-sm font-normal text-gray-500 dark:text-gray-400">
                     ({{ $professionalsWithAppointments->count() }} {{ $professionalsWithAppointments->count() === 1 ? 'profesional' : 'profesionales' }} con pacientes hoy)
                 </span>
@@ -129,20 +88,18 @@
                                 <p class="text-sm text-gray-600 dark:text-gray-400">
                                     {{ $professional['specialty']->name }}
                                 </p>
-                                <div class="mt-2 flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
-                                    <span class="flex items-center gap-1">
-                                        <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
-                                        </svg>
-                                        {{ $professional['appointments_count'] }} {{ $professional['appointments_count'] === 1 ? 'paciente' : 'pacientes' }}
-                                    </span>
-                                    <span class="flex items-center gap-1">
-                                        <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-                                        </svg>
-                                        {{ \Carbon\Carbon::parse($professional['first_appointment_time'])->format('H:i') }} - 
-                                        {{ \Carbon\Carbon::parse($professional['last_appointment_time'])->format('H:i') }}
-                                    </span>
+                                <div class="mt-3 space-y-1">
+                                    <div class="flex justify-between text-sm">
+                                        <span class="text-gray-600 dark:text-gray-400">Pacientes:</span>
+                                        <span class="font-medium text-gray-900 dark:text-white">{{ $professional['appointments_count'] }}</span>
+                                    </div>
+                                    <div class="flex justify-between text-sm">
+                                        <span class="text-gray-600 dark:text-gray-400">Horario:</span>
+                                        <span class="font-medium text-gray-900 dark:text-white">
+                                            {{ \Carbon\Carbon::parse($professional['first_appointment_time'])->format('H:i') }} -
+                                            {{ \Carbon\Carbon::parse($professional['last_appointment_time'])->format('H:i') }}
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
                             <div class="flex flex-col gap-1 ml-3">
@@ -156,7 +113,7 @@
                                 </a>
                                 <a href="{{ route('reports.daily-schedule', ['professional_id' => $professional['id'], 'date' => $selectedDate->format('Y-m-d'), 'print' => 1]) }}"
                                    target="_blank"
-                                   class="inline-flex items-center px-3 py-1 bg-emerald-100 hover:bg-emerald-200 text-emerald-800 text-xs font-medium rounded transition-colors">
+                                   class="inline-flex items-center px-3 py-1 bg-blue-100 hover:bg-blue-200 text-blue-800 text-xs font-medium rounded transition-colors print-link">
                                     <svg class="w-3 h-3 mr-1" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M6.72 13.829c-.24.03-.48.062-.72.096m.72-.096a42.415 42.415 0 0 1 10.56 0m-10.56 0L6.34 18m10.94-4.171c.24.03.48.062.72.096m-.72-.096L17.66 18m0 0 .229 2.523a1.125 1.125 0 0 1-1.12 1.227H7.231c-.662 0-1.18-.568-1.12-1.227L6.34 18m11.318 0h1.091A2.25 2.25 0 0 0 21 15.75V9.456c0-1.081-.768-2.015-1.837-2.175a48.055 48.055 0 0 0-1.913-.247M6.34 18H5.25A2.25 2.25 0 0 1 3 15.75V9.456c0-1.081.768-2.015 1.837-2.175a48.041 48.041 0 0 1 1.913-.247m10.5 0a48.536 48.536 0 0 0-10.5 0m10.5 0V3.375c0-.621-.504-1.125-1.125-1.125h-8.25c-.621 0-1.125.504-1.125 1.125v3.659M18 10.5h.008v.008H18V10.5Zm-3 0h.008v.008H15V10.5Z" />
                                     </svg>
@@ -174,11 +131,11 @@
                 <svg class="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5a2.25 2.25 0 0 0 2.25-2.25m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5a2.25 2.25 0 0 1 2.25 2.25v7.5m-9-13.5h.008v.008H12V8.25z" />
                 </svg>
-                <h3 class="mt-4 text-lg font-medium text-gray-900 dark:text-white">No hay profesionales con pacientes</h3>
+                <h3 class="mt-4 text-lg font-medium text-gray-900 dark:text-white">No hay pacientes programados</h3>
                 <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">
                     No se encontraron profesionales con turnos programados para el {{ $selectedDate->format('d/m/Y') }}.
                     <br>
-                    Puedes seleccionar otro día o usar el formulario anterior para generar un reporte específico.
+                    Puedes seleccionar otro día para ver los listados disponibles.
                 </p>
             </div>
         </div>
@@ -187,16 +144,32 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const dateInput = document.querySelector('input[name="date"]');
-    
+    const dateInput = document.querySelector('#dateSelector');
+
     if (dateInput) {
         dateInput.addEventListener('change', function() {
-            // Actualizar la página cuando cambia la fecha para mostrar profesionales del nuevo día
             const currentUrl = new URL(window.location.href);
             currentUrl.searchParams.set('date', this.value);
             window.location.href = currentUrl.toString();
         });
     }
+
+    // Handle print links - auto close after printing
+    document.querySelectorAll('.print-link').forEach(link => {
+        link.addEventListener('click', function(e) {
+            const printWindow = window.open(this.href, '_blank');
+
+            if (printWindow) {
+                printWindow.addEventListener('load', function() {
+                    setTimeout(function() {
+                        printWindow.addEventListener('afterprint', function() {
+                            printWindow.close();
+                        });
+                    }, 1000);
+                });
+            }
+        });
+    });
 });
 </script>
 @endsection

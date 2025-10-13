@@ -64,15 +64,19 @@ class PatientController extends Controller
     {
         try {
             $validated = $request->validate([
-                'first_name' => 'required|string|max:255',
-                'last_name' => 'required|string|max:255',
-                'dni' => 'required|string|max:20|unique:patients',
+                'first_name' => ['required', 'string', 'max:255', 'regex:/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/'],
+                'last_name' => ['required', 'string', 'max:255', 'regex:/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/'],
+                'dni' => ['required', 'string', 'max:20', 'unique:patients', 'regex:/^[0-9.]+$/'],
                 'birth_date' => 'required|date|before:today',
                 'email' => 'nullable|email|max:255',
                 'phone' => 'required|string|max:255',
                 'address' => 'nullable|string|max:500',
                 'health_insurance' => 'nullable|string|max:255',
                 'health_insurance_number' => 'nullable|string|max:255',
+            ], [
+                'first_name.regex' => 'El nombre solo puede contener letras y espacios.',
+                'last_name.regex' => 'El apellido solo puede contener letras y espacios.',
+                'dni.regex' => 'El DNI solo puede contener números y puntos.',
             ]);
 
             // Formatear DNI con puntos
@@ -139,15 +143,19 @@ class PatientController extends Controller
         // Actualización completa del paciente
         try {
             $validated = $request->validate([
-                'first_name' => 'required|string|max:255',
-                'last_name' => 'required|string|max:255',
-                'dni' => 'required|string|max:20|unique:patients,dni,'.$patient->id,
+                'first_name' => ['required', 'string', 'max:255', 'regex:/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/'],
+                'last_name' => ['required', 'string', 'max:255', 'regex:/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/'],
+                'dni' => ['required', 'string', 'max:20', 'unique:patients,dni,'.$patient->id, 'regex:/^[0-9.]+$/'],
                 'birth_date' => 'required|date|before:today',
                 'email' => 'nullable|email|max:255',
                 'phone' => 'required|string|max:255',
                 'address' => 'nullable|string|max:500',
                 'health_insurance' => 'nullable|string|max:255',
                 'health_insurance_number' => 'nullable|string|max:255',
+            ], [
+                'first_name.regex' => 'El nombre solo puede contener letras y espacios.',
+                'last_name.regex' => 'El apellido solo puede contener letras y espacios.',
+                'dni.regex' => 'El DNI solo puede contener números y puntos.',
             ]);
 
             // Formatear DNI con puntos
