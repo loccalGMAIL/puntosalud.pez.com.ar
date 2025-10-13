@@ -778,10 +778,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
 
-            // Sincronizar con Alpine.js
-            professionalSelect.on('change', function() {
-                const event = new CustomEvent('input', { bubbles: true });
-                this.dispatchEvent(event);
+            // Sincronizar con Alpine.js - Actualizar directamente el modelo
+            professionalSelect.on('change', function(e) {
+                const selectedValue = $(this).val();
+                // Buscar el componente Alpine.js y actualizar el form
+                const alpineComponent = Alpine.$data(document.querySelector('[x-data="appointmentModal()"]'));
+                if (alpineComponent) {
+                    alpineComponent.form.professional_id = selectedValue;
+                }
             });
 
             // Autofocus en el campo de búsqueda
@@ -838,10 +842,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
 
-            // Sincronizar con Alpine.js
-            patientSelect.on('change', function() {
-                const event = new CustomEvent('input', { bubbles: true });
-                this.dispatchEvent(event);
+            // Sincronizar con Alpine.js - Actualizar directamente el modelo
+            patientSelect.on('change', function(e) {
+                const selectedValue = $(this).val();
+                // Buscar el componente Alpine.js y actualizar el form
+                const alpineComponent = Alpine.$data(document.querySelector('[x-data="appointmentModal()"]'));
+                if (alpineComponent) {
+                    alpineComponent.form.patient_id = selectedValue;
+                }
             });
 
             // Autofocus en el campo de búsqueda
