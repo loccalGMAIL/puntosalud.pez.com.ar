@@ -790,5 +790,198 @@ function appointmentsPage() {
 
 @push('styles')
 <meta name="csrf-token" content="{{ csrf_token() }}">
+<!-- Select2 CSS -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<style>
+/* Estilos personalizados para Select2 en modo oscuro */
+.select2-container--default .select2-selection--single {
+    background-color: transparent;
+    border: 1px solid rgb(209 213 219);
+    border-radius: 0.375rem;
+    height: 38px;
+}
+.select2-container--default .select2-selection--single .select2-selection__rendered {
+    line-height: 38px;
+    padding-left: 12px;
+}
+.select2-container--default .select2-selection--single .select2-selection__arrow {
+    height: 38px;
+}
+.select2-dropdown {
+    border: 1px solid rgb(209 213 219);
+    border-radius: 0.375rem;
+}
+.select2-container--default .select2-results__option--highlighted[aria-selected] {
+    background-color: rgb(5 150 105);
+}
+.select2-search--dropdown .select2-search__field {
+    border: 1px solid rgb(209 213 219);
+    border-radius: 0.375rem;
+    padding: 0.5rem;
+}
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    .select2-container--default .select2-selection--single {
+        background-color: rgb(55 65 81);
+        border-color: rgb(75 85 99);
+        color: white;
+    }
+    .select2-container--default .select2-selection--single .select2-selection__rendered {
+        color: white;
+    }
+    .select2-dropdown {
+        background-color: rgb(55 65 81);
+        border-color: rgb(75 85 99);
+    }
+    .select2-container--default .select2-results__option {
+        background-color: rgb(55 65 81);
+        color: white;
+    }
+    .select2-container--default .select2-results__option--highlighted[aria-selected] {
+        background-color: rgb(4 120 87);
+    }
+    .select2-search--dropdown .select2-search__field {
+        background-color: rgb(55 65 81);
+        border-color: rgb(75 85 99);
+        color: white;
+    }
+}
+</style>
+@endpush
+
+@push('scripts')
+<!-- Select2 JS -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+// Inicializar Select2 cuando el modal se abre
+document.addEventListener('DOMContentLoaded', () => {
+    let professionalSelect = null;
+    let patientSelect = null;
+    let modalCheckInterval = null;
+
+    // Función para verificar si el modal está abierto
+    function checkModalState() {
+        const modal = document.querySelector('[x-show="modalOpen"]');
+
+        if (modal && modal.style.display !== 'none' && !modal.hasAttribute('hidden')) {
+            // Modal está abierto
+            if (!professionalSelect || !patientSelect) {
+                setTimeout(() => {
+                    initializeSelect2();
+                }, 150);
+            }
+        } else {
+            // Modal está cerrado
+            destroySelect2();
+        }
+    }
+
+    // Verificar el estado del modal cada 300ms
+    modalCheckInterval = setInterval(checkModalState, 300);
+
+    function initializeSelect2() {
+        // Inicializar Select2 para Profesional
+        if (!professionalSelect && $('#professional-select').length) {
+            professionalSelect = $('#professional-select').select2({
+                placeholder: 'Buscar profesional...',
+                allowClear: false,
+                width: '100%',
+                dropdownParent: $('.bg-white.dark\\:bg-gray-800.rounded-lg.shadow-xl').first(),
+                language: {
+                    noResults: function() {
+                        return "No se encontraron resultados";
+                    },
+                    searching: function() {
+                        return "Buscando...";
+                    }
+                }
+            });
+
+            // Sincronizar con Alpine.js
+            professionalSelect.on('change', function() {
+                const event = new CustomEvent('input', { bubbles: true });
+                this.dispatchEvent(event);
+            });
+
+            // Prevenir que el clic en el dropdown cierre el modal
+            professionalSelect.on('select2:open', function() {
+                document.querySelector('.select2-search__field').focus();
+            });
+        }
+
+        // Inicializar Select2 para Paciente con búsqueda por DNI
+        if (!patientSelect && $('#patient-select').length) {
+            patientSelect = $('#patient-select').select2({
+                placeholder: 'Buscar paciente por nombre o DNI...',
+                allowClear: false,
+                width: '100%',
+                dropdownParent: $('.bg-white.dark\\:bg-gray-800.rounded-lg.shadow-xl').first(),
+                language: {
+                    noResults: function() {
+                        return "No se encontraron resultados";
+                    },
+                    searching: function() {
+                        return "Buscando...";
+                    }
+                },
+                matcher: function(params, data) {
+                    // Si no hay término de búsqueda, mostrar todo
+                    if ($.trim(params.term) === '') {
+                        return data;
+                    }
+
+                    // No buscar en el placeholder vacío
+                    if (!data.id) {
+                        return null;
+                    }
+
+                    // Convertir todo a lowercase para búsqueda case-insensitive
+                    const searchTerm = params.term.toLowerCase();
+                    const text = (data.text || '').toLowerCase();
+
+                    // Obtener atributos data del elemento option
+                    const $option = $(data.element);
+                    const dni = ($option.attr('data-dni') || '').toLowerCase();
+                    const firstName = ($option.attr('data-first-name') || '').toLowerCase();
+                    const lastName = ($option.attr('data-last-name') || '').toLowerCase();
+
+                    // Buscar en texto completo, DNI, nombre o apellido
+                    if (text.indexOf(searchTerm) > -1 ||
+                        dni.indexOf(searchTerm) > -1 ||
+                        firstName.indexOf(searchTerm) > -1 ||
+                        lastName.indexOf(searchTerm) > -1) {
+                        return data;
+                    }
+
+                    return null;
+                }
+            });
+
+            // Sincronizar con Alpine.js
+            patientSelect.on('change', function() {
+                const event = new CustomEvent('input', { bubbles: true });
+                this.dispatchEvent(event);
+            });
+
+            // Prevenir que el clic en el dropdown cierre el modal y hacer autofocus
+            patientSelect.on('select2:open', function() {
+                document.querySelector('.select2-search__field').focus();
+            });
+        }
+    }
+
+    function destroySelect2() {
+        if (professionalSelect) {
+            professionalSelect.select2('destroy');
+            professionalSelect = null;
+        }
+        if (patientSelect) {
+            patientSelect.select2('destroy');
+            patientSelect = null;
+        }
+    }
+});
+</script>
 @endpush
 @endsection

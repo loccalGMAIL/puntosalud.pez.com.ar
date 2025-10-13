@@ -20,16 +20,18 @@
         
         <div class="flex flex-col sm:flex-row gap-3">
             <!-- Professional Selector -->
-            <form method="GET" action="{{ route('agenda.index') }}" class="flex gap-2">
+            <form method="GET" action="{{ route('agenda.index') }}" class="flex gap-2 flex-1" id="professional-form">
                 <input type="hidden" name="month" value="{{ $currentMonth }}">
-                <select name="professional_id" 
-                        onchange="this.form.submit()"
+                <select name="professional_id"
+                        id="agenda-professional-select"
+                        style="width: 500px;"
                         class="rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-blue-500 focus:ring-blue-500">
                     <option value="">Seleccionar profesional</option>
                     @foreach($professionals as $professional)
-                        <option value="{{ $professional->id }}" 
+                        <option value="{{ $professional->id }}"
+                                data-specialty="{{ $professional->specialty->name }}"
                                 {{ $selectedProfessional == $professional->id ? 'selected' : '' }}>
-                            {{ $professional->full_name }}
+                            Dr. {{ $professional->full_name }} - {{ $professional->specialty->name }}
                         </option>
                     @endforeach
                 </select>
@@ -645,5 +647,221 @@ document.addEventListener('alpine:init', () => {
 
 @push('styles')
 <meta name="csrf-token" content="{{ csrf_token() }}">
+<!-- Select2 CSS -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<style>
+/* Estilos personalizados para Select2 */
+.select2-container--default .select2-selection--single {
+    background-color: transparent;
+    border: 1px solid rgb(209 213 219);
+    border-radius: 0.5rem;
+    height: 42px;
+}
+.select2-container--default .select2-selection--single .select2-selection__rendered {
+    line-height: 42px;
+    padding-left: 12px;
+}
+.select2-container--default .select2-selection--single .select2-selection__arrow {
+    height: 42px;
+}
+.select2-dropdown {
+    border: 1px solid rgb(209 213 219);
+    border-radius: 0.5rem;
+}
+.select2-container--default .select2-results__option--highlighted[aria-selected] {
+    background-color: rgb(37 99 235);
+}
+.select2-search--dropdown .select2-search__field {
+    border: 1px solid rgb(209 213 219);
+    border-radius: 0.5rem;
+    padding: 0.5rem;
+}
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    .select2-container--default .select2-selection--single {
+        background-color: rgb(55 65 81);
+        border-color: rgb(75 85 99);
+        color: white;
+    }
+    .select2-container--default .select2-selection--single .select2-selection__rendered {
+        color: white;
+    }
+    .select2-dropdown {
+        background-color: rgb(55 65 81);
+        border-color: rgb(75 85 99);
+    }
+    .select2-container--default .select2-results__option {
+        background-color: rgb(55 65 81);
+        color: white;
+    }
+    .select2-container--default .select2-results__option--highlighted[aria-selected] {
+        background-color: rgb(29 78 216);
+    }
+    .select2-search--dropdown .select2-search__field {
+        background-color: rgb(55 65 81);
+        border-color: rgb(75 85 99);
+        color: white;
+    }
+}
+</style>
+@endpush
+
+@push('scripts')
+<!-- Select2 JS -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // Inicializar Select2 para el selector de profesionales en la agenda
+    if ($('#agenda-professional-select').length) {
+        const agendaProfessionalSelect = $('#agenda-professional-select').select2({
+            placeholder: 'Buscar profesional...',
+            allowClear: true,
+            width: '500px',
+            dropdownAutoWidth: true,
+            language: {
+                noResults: function() {
+                    return "No se encontraron resultados";
+                },
+                searching: function() {
+                    return "Buscando...";
+                }
+            }
+        });
+
+        // Submit form cuando cambia la selección
+        agendaProfessionalSelect.on('change', function() {
+            document.getElementById('professional-form').submit();
+        });
+    }
+
+    // Variables para los selects del modal
+    let professionalSelect = null;
+    let patientSelect = null;
+    let modalCheckInterval = null;
+
+    // Función para verificar si el modal está abierto
+    function checkModalState() {
+        const modal = document.querySelector('[x-show="modalOpen"]');
+
+        if (modal && modal.style.display !== 'none' && !modal.hasAttribute('hidden')) {
+            // Modal está abierto
+            if (!professionalSelect || !patientSelect) {
+                setTimeout(() => {
+                    initializeSelect2();
+                }, 150);
+            }
+        } else {
+            // Modal está cerrado
+            destroySelect2();
+        }
+    }
+
+    // Verificar el estado del modal cada 300ms
+    modalCheckInterval = setInterval(checkModalState, 300);
+
+    function initializeSelect2() {
+        // Inicializar Select2 para Profesional en el modal
+        if (!professionalSelect && $('#professional-select').length) {
+            professionalSelect = $('#professional-select').select2({
+                placeholder: 'Buscar profesional...',
+                allowClear: false,
+                width: '100%',
+                dropdownParent: $('.bg-white.dark\\:bg-gray-800.rounded-lg.shadow-xl').first(),
+                language: {
+                    noResults: function() {
+                        return "No se encontraron resultados";
+                    },
+                    searching: function() {
+                        return "Buscando...";
+                    }
+                }
+            });
+
+            // Sincronizar con Alpine.js
+            professionalSelect.on('change', function() {
+                const event = new CustomEvent('input', { bubbles: true });
+                this.dispatchEvent(event);
+            });
+
+            // Autofocus en el campo de búsqueda
+            professionalSelect.on('select2:open', function() {
+                document.querySelector('.select2-search__field').focus();
+            });
+        }
+
+        // Inicializar Select2 para Paciente con búsqueda por DNI en el modal
+        if (!patientSelect && $('#patient-select').length) {
+            patientSelect = $('#patient-select').select2({
+                placeholder: 'Buscar paciente por nombre o DNI...',
+                allowClear: false,
+                width: '100%',
+                dropdownParent: $('.bg-white.dark\\:bg-gray-800.rounded-lg.shadow-xl').first(),
+                language: {
+                    noResults: function() {
+                        return "No se encontraron resultados";
+                    },
+                    searching: function() {
+                        return "Buscando...";
+                    }
+                },
+                matcher: function(params, data) {
+                    // Si no hay término de búsqueda, mostrar todo
+                    if ($.trim(params.term) === '') {
+                        return data;
+                    }
+
+                    // No buscar en el placeholder vacío
+                    if (!data.id) {
+                        return null;
+                    }
+
+                    // Convertir todo a lowercase para búsqueda case-insensitive
+                    const searchTerm = params.term.toLowerCase();
+                    const text = (data.text || '').toLowerCase();
+
+                    // Obtener atributos data del elemento option
+                    const $option = $(data.element);
+                    const dni = ($option.attr('data-dni') || '').toLowerCase();
+                    const firstName = ($option.attr('data-first-name') || '').toLowerCase();
+                    const lastName = ($option.attr('data-last-name') || '').toLowerCase();
+
+                    // Buscar en texto completo, DNI, nombre o apellido
+                    if (text.indexOf(searchTerm) > -1 ||
+                        dni.indexOf(searchTerm) > -1 ||
+                        firstName.indexOf(searchTerm) > -1 ||
+                        lastName.indexOf(searchTerm) > -1) {
+                        return data;
+                    }
+
+                    return null;
+                }
+            });
+
+            // Sincronizar con Alpine.js
+            patientSelect.on('change', function() {
+                const event = new CustomEvent('input', { bubbles: true });
+                this.dispatchEvent(event);
+            });
+
+            // Autofocus en el campo de búsqueda
+            patientSelect.on('select2:open', function() {
+                document.querySelector('.select2-search__field').focus();
+            });
+        }
+    }
+
+    function destroySelect2() {
+        if (professionalSelect) {
+            professionalSelect.select2('destroy');
+            professionalSelect = null;
+        }
+        if (patientSelect) {
+            patientSelect.select2('destroy');
+            patientSelect = null;
+        }
+    }
+});
+</script>
 @endpush
 @endsection

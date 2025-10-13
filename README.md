@@ -2,7 +2,7 @@
 
 [![Laravel](https://img.shields.io/badge/Laravel-12.x-red?style=flat&logo=laravel)](https://laravel.com)
 [![PHP](https://img.shields.io/badge/PHP-8.2-blue?style=flat&logo=php)](https://php.net)
-[![Version](https://img.shields.io/badge/Version-2.4.16-green?style=flat)](#changelog)
+[![Version](https://img.shields.io/badge/Version-2.4.17-green?style=flat)](#changelog)
 [![License](https://img.shields.io/badge/License-MIT-yellow?style=flat)](#license)
 
 Sistema integral de gestión médica para clínicas y consultorios, desarrollado con Laravel 12 y tecnologías modernas.
@@ -124,6 +124,119 @@ php artisan config:clear
 - Índices para consultas eficientes
 
 ## 📝 Changelog
+
+### v2.4.17 (2025-10-13) - Mejoras de UI/UX y Selectores Avanzados
+**🎨 Mejoras en Modal de Profesionales:**
+- **Tamaño y Diseño Actualizado**: Modal de profesionales ahora coincide con el de pacientes
+  - Ancho ampliado de `max-w-md` a `max-w-4xl` para mejor visualización
+  - Padding reducido: `py-4` → `py-3`, `space-y-4` → `space-y-3` para más compacto
+  - Iconos agregados en encabezado: ➕ para crear, ✏️ para editar
+  - Grid system de 12 columnas para distribución optimizada de campos
+
+- **Botón de Especialidad Reposicionado**: Botón "+" para nueva especialidad ya no se superpone
+  - Layout `flex gap-2` en lugar de posicionamiento absoluto
+  - Botón al lado del select, no encima
+
+- **Validaciones de Datos Mejoradas**: Frontend y backend sincronizados
+  - Nombres y apellidos: solo letras y espacios (incluye caracteres españoles)
+  - DNI: solo números y puntos
+  - Validación Alpine.js en tiempo real: `@input="form.first_name = form.first_name.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '')"`
+  - Mensajes de error en español personalizados
+
+**📊 Optimización de Tabla de Profesionales:**
+- **Diseño Compacto**: Reducción de elementos para evitar scroll horizontal
+  - Padding: `px-6 py-4` → `px-2 py-2`
+  - Fuentes: `text-sm` → `text-xs`
+  - Iconos: `w-4 h-4` → `w-3.5 h-3.5`
+  - Botones: `p-2` → `p-1`
+  - Headers abreviados: "Teléfono" → "Tel.", "Comisión" → "Com.", "Acciones" → "Acc."
+
+- **Reorganización de Columnas**: Todo en una línea sin elementos multi-fila
+  - Columnas finales: Profesional, DNI, Especialidad, Email, Tel., Com., Estado, Acc.
+  - Email con truncado: `max-w-[150px] truncate` para nombres largos
+  - Badges compactos con `rounded` en lugar de `rounded-full`
+
+**📋 Simplificación de Reportes Diarios:**
+- **Vista daily-schedule Rediseñada**: Similar al diseño de professional-liquidation
+  - Container reducido a `max-w-4xl` para mejor enfoque
+  - Card de información del profesional con grid 3 columnas
+  - Eliminados 4-card statistics section redundante
+  - Botones reordenados: "Volver" (gris) primero, "Imprimir" (azul) segundo
+
+- **Contenido Simplificado**: Foco en información operativa
+  - **Datos Removidos**: Aranceles, total cobrado, datos de contacto (teléfono/email)
+  - **Columnas Finales**: Hora, Paciente (con DNI y obra social), Estado, Observaciones
+  - Estadísticas en header: total de turnos y programados (en lugar de pagados)
+
+- **Vista daily-schedule-select Actualizada**: Consistencia con liquidación
+  - Descripción mejorada: "Ver listado de pacientes programados por profesional y fecha"
+  - Date selector centrado con `max-w-sm`
+  - Título: "Acceso Rápido" → "Profesionales con Pacientes Programados"
+  - Cards reorganizadas con formato `flex justify-between`
+  - Ambos botones en azul para consistencia visual
+
+**🔍 Selectores con Búsqueda Avanzada (Select2):**
+- **Implementación de Select2 4.1.0**: Búsqueda inteligente en profesionales y pacientes
+  - CDN: CSS y JS de Select2 integrados
+  - jQuery 3.6.0 agregado como dependencia
+  - Estilos personalizados para dark mode
+
+- **Búsqueda Multi-campo en Pacientes**:
+  - Busca por: nombre, apellido y **DNI simultáneamente**
+  - Custom matcher usando `attr('data-dni')` en lugar de `.data()` para Alpine.js
+  - Placeholder: "Buscar paciente por nombre o DNI..."
+  - Autofocus en campo de búsqueda al abrir dropdown
+
+- **Búsqueda en Profesionales**:
+  - Busca por: nombre, apellido y especialidad
+  - Data attributes: `data-specialty` para filtrado ampliado
+  - Placeholder: "Buscar profesional..."
+
+- **Integración con Modales**:
+  - `dropdownParent` configurado para renderizar dentro del modal
+  - Previene cierre de modal al abrir dropdown (Alpine.js `@click.away`)
+  - Evento `select2:open` para autofocus en search field
+  - Sincronización bidireccional con Alpine.js usando eventos custom
+
+- **Vistas Actualizadas**:
+  - **appointments/index.blade.php**: Selects de profesional y paciente en modal
+  - **agenda/index.blade.php**:
+    - Select de header con ancho fijo de 500px para mejor legibilidad
+    - Select2 en modal de turnos (profesional y paciente)
+    - Auto-submit de formulario al cambiar profesional
+    - Config: `width: '500px'` y `dropdownAutoWidth: true`
+
+**🐛 Correcciones Técnicas:**
+- **Fix Modal Closing**: Reemplazado MutationObserver por setInterval (300ms)
+  - MutationObserver detectaba cambios DOM de Select2 y cerraba modal
+  - setInterval verifica estado de modal sin interferir con Select2
+
+- **Fix Patient Search Filtering**: Cambio de `.data()` a `.attr()`
+  - jQuery `.data()` no accede a atributos generados dinámicamente por Alpine.js
+  - Solución: `$option.attr('data-dni')` accede correctamente
+
+- **Fix Agenda Professional Select Width**: De `min-w-[400px]` a `width: 500px`
+  - Inline style en elemento + config Select2 para aplicar correctamente
+  - `flex-1` en form container para mejor adaptación
+
+**🎯 Beneficios:**
+- ✅ Interfaz más consistente entre módulos de profesionales y pacientes
+- ✅ Búsqueda rápida y eficiente en selectores con grandes volúmenes de datos
+- ✅ Reportes más claros enfocados en información operativa
+- ✅ Reducción significativa de scroll horizontal en tablas
+- ✅ Mejor experiencia de usuario con búsqueda multi-campo
+- ✅ DNI search permite localizar pacientes rápidamente por documento
+
+**📁 Archivos Modificados:**
+- `resources/views/professionals/modal.blade.php` - Diseño, validaciones y grid
+- `app/Http/Controllers/ProfessionalController.php` - Validaciones backend
+- `resources/views/professionals/index.blade.php` - Tabla compacta
+- `resources/views/reports/daily-schedule.blade.php` - Simplificación y limpieza
+- `resources/views/reports/daily-schedule-select.blade.php` - Rediseño
+- `resources/views/appointments/modal.blade.php` - IDs y data attributes para Select2
+- `resources/views/appointments/index.blade.php` - Select2 CSS/JS e inicialización
+- `resources/views/agenda/index.blade.php` - Select2 en header y modal con ancho ampliado
+- `README.md` - Actualizado badge y changelog
 
 ### v2.4.16 (2025-10-09) - Mejoras de Visualización y UX
 **📊 Sistema de Paginación:**
