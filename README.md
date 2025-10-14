@@ -175,6 +175,59 @@ php artisan config:clear
 - Base de datos siempre usó formato `YYYYMMNNNN` desde el inicio
 - Esta versión elimina la inconsistencia entre modelo y controladores
 
+### v2.4.18 (2025-10-14) - Optimización de Reportes y Búsqueda de Pacientes
+
+**📋 Optimización de Impresión de Reportes:**
+- **Eliminación de Pestañas al Imprimir**: Implementado sistema de impresión directa
+  - Botones cambiados de `<a target="_blank">` a `<button onclick="window.print()">`
+  - Patrón sessionStorage para auto-impresión desde vistas selectoras
+  - Función `navigateAndPrint()` que marca flag y navega a detalle
+  - Detección automática de flag para disparar `window.print()` al cargar
+- **CSS @media print Mejorado**: Oculta sidebar y navegación al imprimir
+  - Selectores específicos: `[x-data]:first-of-type > div:first-child`, `.fixed.left-0.top-0`
+  - Reset de margin-left: `[class*="lg:ml-"]` para contenido principal
+  - Preservación de colores: `-webkit-print-color-adjust: exact` para badges
+- **Vistas Actualizadas**:
+  - `daily-schedule.blade.php` y `daily-schedule-select.blade.php`
+  - `professional-liquidation.blade.php` y `professional-liquidation-select.blade.php`
+  - Experiencia fluida sin ventanas emergentes innecesarias
+
+**🔍 Búsqueda de Pacientes en Tiempo Real:**
+- **Búsqueda Backend Implementada**: La búsqueda ahora consulta toda la base de datos
+  - Antes: Filtrado solo en página actual (15-20 registros)
+  - Ahora: Búsqueda en todos los pacientes mediante AJAX
+  - Debounce de 500ms para optimizar peticiones al servidor
+- **Filtros Expandidos en Backend**:
+  - Filtro de estado (activo/inactivo) agregado al controlador
+  - Filtro de obra social mejorado: incluye opción "sin obra social"
+  - Búsqueda multi-campo: nombre, apellido, DNI, email, teléfono
+- **Paginación Aumentada**: De 15 a 50 resultados por página
+  - Mejor rendimiento con menos peticiones
+  - Más resultados visibles simultáneamente
+- **Watchers de Alpine.js**: Detección automática de cambios en filtros
+  - `$watch` para búsqueda (con debounce)
+  - `$watch` para filtros de obra social y estado (inmediato)
+  - Actualización automática de tabla sin recargar página
+- **Recarga Después de Crear**: `window.location.reload()` después de crear/editar paciente
+  - Garantiza que el nuevo paciente aparezca en resultados inmediatamente
+  - Soluciona problema de caché de datos iniciales
+
+**🎯 Beneficios:**
+- ✅ Impresión más rápida y profesional sin ventanas extra
+- ✅ Búsqueda eficiente en bases de datos grandes
+- ✅ Mejor experiencia de usuario con búsqueda en tiempo real
+- ✅ Resultados precisos sin importar el tamaño de la BD
+- ✅ Filtros más potentes y flexibles
+
+**📁 Archivos Modificados:**
+- `app/Http/Controllers/PatientController.php` - Filtros backend y respuesta AJAX mejorada
+- `resources/views/patients/index.blade.php` - Búsqueda en tiempo real con watchers
+- `resources/views/reports/daily-schedule.blade.php` - Botón window.print() + CSS
+- `resources/views/reports/daily-schedule-select.blade.php` - Función navigateAndPrint()
+- `resources/views/reports/daily-schedule-print.blade.php` - Normalización con vista web
+- `resources/views/reports/professional-liquidation.blade.php` - Botón window.print() + CSS
+- `resources/views/reports/professional-liquidation-select.blade.php` - Función navigateAndPrint()
+
 ### v2.4.17 (2025-10-13) - Mejoras de UI/UX y Selectores Avanzados
 **🎨 Mejoras en Modal de Profesionales:**
 - **Tamaño y Diseño Actualizado**: Modal de profesionales ahora coincide con el de pacientes
