@@ -28,10 +28,18 @@ class PatientController extends Controller
         }
 
         if ($request->filled('health_insurance') && $request->get('health_insurance') !== 'all') {
-            $query->where('health_insurance', 'like', '%'.$request->get('health_insurance').'%');
+            if ($request->get('health_insurance') === 'none') {
+                $query->whereNull('health_insurance')->orWhere('health_insurance', '');
+            } else {
+                $query->where('health_insurance', 'like', '%'.$request->get('health_insurance').'%');
+            }
         }
 
-        $patients = $query->paginate(15)->withQueryString();
+        if ($request->filled('status') && $request->get('status') !== 'all') {
+            $query->where('activo', $request->get('status') === 'active' ? 1 : 0);
+        }
+
+        $patients = $query->paginate(50)->withQueryString();
 
         // Estadísticas
         $allPatients = Patient::all();
@@ -49,8 +57,14 @@ class PatientController extends Controller
         // Si es una petición AJAX, devolver JSON
         if ($request->ajax()) {
             return response()->json([
-                'patients' => $patients,
+                'patients' => $patients->items(),
                 'stats' => $stats,
+                'pagination' => [
+                    'current_page' => $patients->currentPage(),
+                    'last_page' => $patients->lastPage(),
+                    'per_page' => $patients->perPage(),
+                    'total' => $patients->total(),
+                ],
             ]);
         }
 
