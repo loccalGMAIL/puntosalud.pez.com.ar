@@ -51,6 +51,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/agenda', [AgendaController::class, 'index'])->name('agenda.index');
 
     Route::resource('payments', PaymentController::class);
+    Route::get('/payments/{payment}/print-receipt', [PaymentController::class, 'printReceipt'])->name('payments.print-receipt');
     Route::get('/payments/search-patients', [PaymentController::class, 'searchPatients'])->name('payments.search-patients');
     Route::get('/payments/patients/{patient}/pending-appointments', [PaymentController::class, 'getPendingAppointments'])->name('payments.pending-appointments');
 
