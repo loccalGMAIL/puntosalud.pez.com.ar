@@ -58,7 +58,7 @@
         
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            grid-template-columns: repeat(2, 1fr);
             gap: 10px;
             margin-bottom: 20px;
         }
@@ -110,25 +110,16 @@
         }
         
         .patient-column {
-            width: 25%;
+            width: 30%;
         }
-        
-        .contact-column {
-            width: 20%;
-        }
-        
-        .amount-column {
-            width: 80px;
-            text-align: right;
-        }
-        
+
         .status-column {
-            width: 80px;
+            width: 100px;
             text-align: center;
         }
-        
+
         .notes-column {
-            width: 25%;
+            width: 40%;
             font-size: 10px;
         }
         
@@ -159,12 +150,7 @@
             background-color: #e2e3e5;
             color: #41464b;
         }
-        
-        .paid-indicator {
-            color: #28a745;
-            font-weight: bold;
-        }
-        
+
         .footer {
             margin-top: 30px;
             padding-top: 15px;
@@ -254,14 +240,6 @@
             <div class="stat-number">{{ $reportData['stats']['scheduled'] }}</div>
             <div class="stat-label">Programados</div>
         </div>
-        <div class="stat-card">
-            <div class="stat-number">{{ $reportData['stats']['paid_appointments'] }}</div>
-            <div class="stat-label">Pagados</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-number">${{ number_format($reportData['stats']['total_estimated'], 0, ',', '.') }}</div>
-            <div class="stat-label">Total Estimado</div>
-        </div>
     </div>
     
     <!-- Appointments Table -->
@@ -271,8 +249,6 @@
                 <tr>
                     <th class="time-column">Hora</th>
                     <th class="patient-column">Paciente</th>
-                    <th class="contact-column">Contacto</th>
-                    <th class="amount-column">Monto</th>
                     <th class="status-column">Estado</th>
                     <th class="notes-column">Observaciones</th>
                 </tr>
@@ -286,36 +262,9 @@
                             <div style="font-size: 9px; color: #666;">
                                 DNI: {{ $appointment['patient_dni'] }}
                                 @if($appointment['patient_insurance'])
-                                    <br>{{ $appointment['patient_insurance'] }}
+                                    | {{ $appointment['patient_insurance'] }}
                                 @endif
                             </div>
-                        </td>
-                        <td class="contact-column">
-                            <div>{{ $appointment['patient_phone'] ?: 'No registrado' }}</div>
-                            <div style="font-size: 9px; color: #666;">{{ $appointment['office'] }}</div>
-                        </td>
-                        <td class="amount-column">
-                            @if($appointment['final_amount'])
-                                <strong>${{ number_format($appointment['final_amount'], 0, ',', '.') }}</strong>
-                            @elseif($appointment['estimated_amount'])
-                                <span style="color: #666;">${{ number_format($appointment['estimated_amount'], 0, ',', '.') }}</span>
-                            @else
-                                <span style="color: #ccc;">-</span>
-                            @endif
-                            
-                            @if($appointment['is_paid'])
-                                <div class="paid-indicator" style="font-size: 9px;">✓ Pagado</div>
-                                @if($appointment['payment_method'])
-                                    <div style="font-size: 8px; color: #666;">
-                                        {{ match($appointment['payment_method']) {
-                                            'cash' => 'Efectivo',
-                                            'transfer' => 'Transferencia', 
-                                            'card' => 'Tarjeta',
-                                            default => $appointment['payment_method']
-                                        } }}
-                                    </div>
-                                @endif
-                            @endif
                         </td>
                         <td class="status-column">
                             <span class="status-badge status-{{ $appointment['status'] }}">

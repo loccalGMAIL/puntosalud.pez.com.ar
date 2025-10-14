@@ -227,6 +227,7 @@ php artisan config:clear
 - `resources/views/reports/daily-schedule-print.blade.php` - Normalización con vista web
 - `resources/views/reports/professional-liquidation.blade.php` - Botón window.print() + CSS
 - `resources/views/reports/professional-liquidation-select.blade.php` - Función navigateAndPrint()
+- `README.md` - Actualizado changelog
 
 ### v2.4.17 (2025-10-13) - Mejoras de UI/UX y Selectores Avanzados
 **🎨 Mejoras en Modal de Profesionales:**
