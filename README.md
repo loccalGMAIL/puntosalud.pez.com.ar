@@ -2,7 +2,7 @@
 
 [![Laravel](https://img.shields.io/badge/Laravel-12.x-red?style=flat&logo=laravel)](https://laravel.com)
 [![PHP](https://img.shields.io/badge/PHP-8.2-blue?style=flat&logo=php)](https://php.net)
-[![Version](https://img.shields.io/badge/Version-2.4.17-green?style=flat)](#changelog)
+[![Version](https://img.shields.io/badge/Version-2.5.0-green?style=flat)](#changelog)
 [![License](https://img.shields.io/badge/License-MIT-yellow?style=flat)](#license)
 
 Sistema integral de gestión médica para clínicas y consultorios, desarrollado con Laravel 12 y tecnologías modernas.
@@ -124,6 +124,56 @@ php artisan config:clear
 - Índices para consultas eficientes
 
 ## 📝 Changelog
+
+### v2.5.0 (2025-10-14) - Sincronización y Mejora del Sistema de Recibos
+
+**🔄 Sincronización del Sistema de Números de Recibo:**
+- **Unificación de Implementaciones**: El modelo `Payment` ahora genera números de recibo con el mismo formato que los controladores
+  - Formato estándar: `YYYYMMNNNN` (10 dígitos numéricos)
+  - Ejemplo: `2025100149` = Año 2025, Mes 10 (Octubre), Recibo #149 del mes
+  - La secuencia se reinicia cada mes (no cada año)
+  - Capacidad: hasta 9,999 recibos por mes
+
+**📋 Detalles del Formato:**
+- **YYYY** (4 dígitos): Año completo
+- **MM** (2 dígitos): Mes (01-12)
+- **NNNN** (4 dígitos): Número secuencial del mes con padding de ceros
+
+**🔧 Cambios Técnicos:**
+- **Payment Model Actualizado**: Método `generateReceiptNumber()` sincronizado
+  - Cambio de reinicio anual a reinicio mensual
+  - Query actualizada: usa `payment_date` en lugar de `created_at`
+  - Filtrado por año Y mes (whereYear + whereMonth)
+  - Ordenamiento por `receipt_number` descendente
+  - Extrae últimos 4 dígitos para calcular siguiente número
+- **Documentación Completa**: Agregados comentarios PHPDoc explicativos
+  - Descripción del formato con ejemplos
+  - Explicación de la lógica de reinicio mensual
+
+**🎯 Estado del Sistema:**
+- ✅ Modelo sincronizado con controladores (antes desincronizado)
+- ✅ Formato consistente en toda la aplicación
+- ✅ Sin cambios en base de datos (campo `receipt_number` VARCHAR(50) sin modificar)
+- ✅ Compatible con datos existentes
+- ⚠️ Código duplicado en 3 controladores (pendiente de refactorización en v2.6.0)
+
+**🔮 Próximos Pasos (v2.6.0):**
+- Deprecar métodos duplicados en PaymentController, DashboardController y AppointmentController
+- Centralizar toda la lógica en el modelo Payment
+- Implementar lock pesimista (`lockForUpdate()`) para prevenir condiciones de carrera
+- Agregar tests unitarios para generación de recibos
+- Considerar índice compuesto: `(payment_date, receipt_number)`
+
+**📁 Archivos Modificados:**
+- `app/Models/Payment.php` (líneas 197-215) - Método generateReceiptNumber() sincronizado y documentado
+- `README.md` - Actualizado badge de versión y changelog
+- `VERSION` - Actualizado a 2.5.0
+
+**🔍 Contexto Histórico:**
+- Versiones anteriores tenían implementación duplicada en 3 controladores
+- El modelo Payment tenía formato diferente (`REC-2025-000001`) que nunca se usó en producción
+- Base de datos siempre usó formato `YYYYMMNNNN` desde el inicio
+- Esta versión elimina la inconsistencia entre modelo y controladores
 
 ### v2.4.17 (2025-10-13) - Mejoras de UI/UX y Selectores Avanzados
 **🎨 Mejoras en Modal de Profesionales:**

@@ -184,16 +184,33 @@ class Payment extends Model
 
     /**
      * Generate receipt number
+     *
+     * Formato: YYYYMMNNNN (10 dígitos)
+     * - YYYY: Año (4 dígitos)
+     * - MM: Mes (2 dígitos)
+     * - NNNN: Número secuencial del mes (4 dígitos, desde 0001 hasta 9999)
+     *
+     * Ejemplo: 2025100149 = Año 2025, Mes 10 (Octubre), Recibo #149 del mes
+     *
+     * La secuencia se reinicia cada mes.
      */
     public static function generateReceiptNumber()
     {
         $year = date('Y');
-        $lastPayment = self::whereYear('created_at', $year)
-            ->orderBy('id', 'desc')
+        $month = date('m');
+
+        $lastPayment = self::whereYear('payment_date', $year)
+            ->whereMonth('payment_date', $month)
+            ->orderBy('receipt_number', 'desc')
             ->first();
 
-        $number = $lastPayment ? (intval(substr($lastPayment->receipt_number, -6)) + 1) : 1;
+        if ($lastPayment && $lastPayment->receipt_number) {
+            $lastNumber = intval(substr($lastPayment->receipt_number, -4));
+            $newNumber = $lastNumber + 1;
+        } else {
+            $newNumber = 1;
+        }
 
-        return sprintf('REC-%s-%06d', $year, $number);
+        return $year . $month . str_pad($newNumber, 4, '0', STR_PAD_LEFT);
     }
 }
