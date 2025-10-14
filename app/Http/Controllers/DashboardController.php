@@ -329,7 +329,7 @@ class DashboardController extends Controller
                     'canMarkCompleted' => false,
                     'monto' => $validated['final_amount'],
                 ],
-                'payment' => $payment,
+                'payment_id' => $payment->id,
                 'receipt_number' => $receiptNumber,
             ]);
 

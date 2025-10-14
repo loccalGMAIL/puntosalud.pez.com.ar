@@ -410,6 +410,20 @@ class PaymentController extends Controller
         }
     }
 
+    public function printReceipt(Payment $payment)
+    {
+        // Cargar relaciones necesarias
+        $payment->load(['patient', 'paymentAppointments.appointment.professional.specialty']);
+
+        // Obtener profesionales únicos asociados al pago
+        $professionals = $payment->paymentAppointments
+            ->map(fn($pa) => $pa->appointment->professional)
+            ->unique('id')
+            ->values();
+
+        return view('receipts.print', compact('payment', 'professionals'));
+    }
+
     // Métodos privados
     private function generateReceiptNumber()
     {

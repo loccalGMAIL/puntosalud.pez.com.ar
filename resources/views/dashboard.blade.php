@@ -170,7 +170,7 @@
         @endif
 
         <!-- Métricas principales -->
-        <div class="grid auto-rows-min gap-4 md:grid-cols-3">
+        <div class="grid auto-rows-min gap-4 md:grid-cols-4">
             
             <!-- Card 1: Consultas del día -->
             <div class="group relative overflow-hidden rounded-xl border border-emerald-200/50 bg-gradient-to-br from-white to-emerald-50/50 p-4 shadow-sm transition-all duration-300 hover:shadow-lg hover:shadow-emerald-100/50 dark:border-emerald-800/30 dark:from-gray-900 dark:to-emerald-950/20 dark:hover:shadow-emerald-900/20">
@@ -180,7 +180,7 @@
                         <div class="mt-1 flex items-baseline gap-2">
                             <p class="text-2xl font-bold text-gray-900 dark:text-white transition-all duration-300 group-hover:scale-105">{{ $dashboardData['consultasHoy']['total'] }}</p>
                         </div>
-                        <div class="mt-2 grid grid-cols-2 gap-2 text-xs">
+                        <div class="mt-2 grid grid-cols-1 gap-2 text-xs">
                             <div class="flex items-center gap-1">
                                 <svg class="h-3 w-3 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -243,6 +243,123 @@
                 <!-- Decorative gradient -->
                 <div class="absolute inset-0 bg-gradient-to-r from-emerald-600/5 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100"></div>
             </div>
+            <!-- Card 3: Accesos rápidos -->
+            <div x-data="patientsModalDashboard()" class="bg-white dark:bg-gray-800 rounded-xl border border-emerald-200/50 p-4 shadow-sm dark:border-emerald-800/30 flex flex-col gap-3">
+                <a href="#" @click.prevent="openCreateModal()" class="flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-emerald-50 to-emerald-100 hover:from-emerald-100 hover:to-emerald-200 border border-emerald-200 dark:from-emerald-900/20 dark:to-emerald-800/20 dark:border-emerald-700 transition-all duration-200 group">
+                    <div class="flex items-center gap-3">
+                        <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500 text-white">
+                            <!-- Icono usuario -->
+                            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.75 18a6.25 6.25 0 1112.5 0v.75a.75.75 0 01-.75.75H5.5a.75.75 0 01-.75-.75V18z" />
+                            </svg>
+                        </div>
+                        <div>
+                            <div class="text-sm font-medium text-emerald-900 dark:text-emerald-100">Nuevo Paciente</div>
+                            <div class="text-xs text-emerald-700 dark:text-emerald-300">Registrar paciente</div>
+                        </div>
+                    </div>
+                    <svg class="h-4 w-4 text-emerald-600 dark:text-emerald-400 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                    </svg>
+                </a>
+                <a href="#" class="flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-red-50 to-red-100 hover:from-red-100 hover:to-red-200 border border-red-200 dark:from-red-900/20 dark:to-red-800/20 dark:border-red-700 transition-all duration-200 group">
+                    <div class="flex items-center gap-3">
+                        <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-red-500 text-white">
+                            <!-- Icono cruz -->
+                            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </div>
+                        <div>
+                            <div class="text-sm font-medium text-red-900 dark:text-red-100">EntreTurno / Urgencia</div>
+                        </div>
+                    </div>
+                    <svg class="h-4 w-4 text-red-600 dark:text-red-400 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                    </svg>
+                </a>
+
+                @include('patients.modal')
+            </div>
+<script>
+function patientsModalDashboard() {
+    return {
+        modalOpen: false,
+        editingPatient: false,
+        form: {
+            first_name: '',
+            last_name: '',
+            dni: '',
+            birth_date: '',
+            phone: '',
+            email: '',
+            address: '',
+            health_insurance: '',
+            health_insurance_number: ''
+        },
+        loading: false,
+        openCreateModal() {
+            this.editingPatient = false;
+            this.modalOpen = true;
+            this.form = {
+                first_name: '',
+                last_name: '',
+                dni: '',
+                birth_date: '',
+                phone: '',
+                email: '',
+                address: '',
+                health_insurance: '',
+                health_insurance_number: ''
+            };
+        },
+        async submitForm() {
+            this.loading = true;
+            try {
+                const response = await fetch("{{ route('patients.store') }}", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: JSON.stringify(this.form)
+                });
+                const result = await response.json();
+                if (result.success) {
+                    this.loading = false;
+                    this.modalOpen = false;
+                    alert(result.message || 'Paciente creado exitosamente.');
+                } else {
+                    this.loading = false;
+                    let msg = result.message || 'Error al crear paciente.';
+                    if (result.errors) {
+                        msg += '\n' + Object.values(result.errors).map(e => e.join(', ')).join('\n');
+                    }
+                    alert(msg);
+                }
+            } catch (error) {
+                this.loading = false;
+                alert('Error inesperado al crear paciente.');
+            }
+        },
+        getMaxDate() {
+            return new Date().toISOString().split('T')[0];
+        },
+        calculateAge(date) {
+            if (!date) return '';
+            const today = new Date();
+            const birth = new Date(date);
+            let age = today.getFullYear() - birth.getFullYear();
+            const m = today.getMonth() - birth.getMonth();
+            if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) {
+                age--;
+            }
+            return age;
+        }
+    };
+}
+</script>
 
             <!-- Card 3: Acceso Rápido a Reportes -->
             <div class="bg-white dark:bg-gray-800 rounded-xl border border-emerald-200/50 p-4 shadow-sm dark:border-emerald-800/30">
@@ -274,8 +391,7 @@
                                 </svg>
                             </div>
                             <div>
-                                <div class="text-sm font-medium text-amber-900 dark:text-amber-100">Liquidación</div>
-                                <div class="text-xs text-amber-700 dark:text-amber-300">Reporte para profesional</div>
+                                <div class="text-sm font-medium text-amber-900 dark:text-amber-100">Liquidación para Profesionales</div>
                             </div>
                         </div>
                         <svg class="h-4 w-4 text-amber-600 dark:text-amber-400 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
