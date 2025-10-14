@@ -160,8 +160,9 @@
                 <!-- Contador de resultados -->
                 <div class="flex items-end">
                     <div class="text-sm text-gray-600 dark:text-gray-400">
-                        <strong x-text="filteredPatients.length"></strong> de 
-                        <strong>{{ $stats['total'] }}</strong> pacientes
+                        <strong x-text="filteredPatients.length"></strong>
+                        <span x-show="hasActiveFilters">resultados encontrados</span>
+                        <span x-show="!hasActiveFilters">pacientes en total</span>
                     </div>
                 </div>
             </div>
@@ -319,6 +320,9 @@ function patientsPage() {
             healthInsurance: 'all',
             status: 'all'
         },
+
+        // Debounce timer
+        searchTimeout: null,
         
         // Formulario
         form: {
@@ -335,22 +339,8 @@ function patientsPage() {
         
         // Computed
         get filteredPatients() {
-            return this.patients.filter(patient => {
-                const searchMatch = this.filters.search === '' || 
-                    (patient.first_name + ' ' + patient.last_name).toLowerCase().includes(this.filters.search.toLowerCase()) ||
-                    patient.dni.toLowerCase().includes(this.filters.search.toLowerCase()) ||
-                    (patient.email && patient.email.toLowerCase().includes(this.filters.search.toLowerCase()));
-
-                const insuranceMatch = this.filters.healthInsurance === 'all' || 
-                    (this.filters.healthInsurance === 'none' && !patient.health_insurance) ||
-                    (patient.health_insurance && patient.health_insurance.includes(this.filters.healthInsurance));
-
-                const statusMatch = this.filters.status === 'all' || 
-                    (this.filters.status === 'active' && patient.is_active) ||
-                    (this.filters.status === 'inactive' && !patient.is_active);
-
-                return searchMatch && insuranceMatch && statusMatch;
-            });
+            // Simplemente retornamos los pacientes ya que el filtrado se hace en backend
+            return this.patients;
         },
         
         get hasActiveFilters() {
@@ -368,7 +358,56 @@ function patientsPage() {
             return insurances;
         },
         
+        // Init
+        init() {
+            // Watch para búsqueda con debounce
+            this.$watch('filters.search', () => {
+                clearTimeout(this.searchTimeout);
+                this.searchTimeout = setTimeout(() => {
+                    this.applyFilters();
+                }, 500); // Espera 500ms después de que el usuario deje de escribir
+            });
+
+            // Watch para filtros sin debounce
+            this.$watch('filters.healthInsurance', () => {
+                this.applyFilters();
+            });
+
+            this.$watch('filters.status', () => {
+                this.applyFilters();
+            });
+        },
+
         // Methods
+        async applyFilters() {
+            try {
+                const params = new URLSearchParams();
+
+                if (this.filters.search) {
+                    params.append('search', this.filters.search);
+                }
+                if (this.filters.healthInsurance !== 'all') {
+                    params.append('health_insurance', this.filters.healthInsurance);
+                }
+                if (this.filters.status !== 'all') {
+                    params.append('status', this.filters.status);
+                }
+
+                const response = await fetch(`/patients?${params.toString()}`, {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+                this.patients = data.patients;
+                this.stats = data.stats;
+            } catch (error) {
+                console.error('Error applying filters:', error);
+            }
+        },
+
         openCreateModal() {
             this.editingPatient = null;
             this.resetForm();
@@ -456,18 +495,8 @@ function patientsPage() {
         },
         
         async refreshData() {
-            try {
-                const response = await fetch('/patients', {
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
-                });
-                const data = await response.json();
-                this.patients = data.patients;
-                this.stats = data.stats;
-            } catch (error) {
-                console.error('Error refreshing data:', error);
-            }
+            // Recargar la página para reflejar los cambios
+            window.location.reload();
         },
         
         clearFilters() {
@@ -476,6 +505,7 @@ function patientsPage() {
                 healthInsurance: 'all',
                 status: 'all'
             };
+            // Los watchers se encargarán de aplicar los filtros automáticamente
         },
         
         calculateAge(birthDate) {
