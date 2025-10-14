@@ -22,14 +22,13 @@
                 </svg>
                 Volver
             </a>
-            <a href="{{ route('reports.daily-schedule', ['professional_id' => $reportData['professional']->id, 'date' => $reportData['date']->format('Y-m-d'), 'print' => 1]) }}"
-               target="_blank"
+            <button onclick="window.print()"
                class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg shadow-sm transition-colors">
                 <svg class="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M6.72 13.829c-.24.03-.48.062-.72.096m.72-.096a42.415 42.415 0 0 1 10.56 0m-10.56 0L6.34 18m10.94-4.171c.24.03.48.062.72.096m-.72-.096L17.66 18m0 0 .229 2.523a1.125 1.125 0 0 1-1.12 1.227H7.231c-.662 0-1.18-.568-1.12-1.227L6.34 18m11.318 0h1.091A2.25 2.25 0 0 0 21 15.75V9.456c0-1.081-.768-2.015-1.837-2.175a48.055 48.055 0 0 0-1.913-.247M6.34 18H5.25A2.25 2.25 0 0 1 3 15.75V9.456c0-1.081.768-2.015 1.837-2.175a48.041 48.041 0 0 1 1.913-.247m10.5 0a48.536 48.536 0 0 0-10.5 0m10.5 0V3.375c0-.621-.504-1.125-1.125-1.125h-8.25c-.621 0-1.125.504-1.125 1.125v3.659M18 10.5h.008v.008H18V10.5Zm-3 0h.008v.008H15V10.5Z" />
                 </svg>
                 Imprimir
-            </a>
+            </button>
         </div>
     </div>
 
@@ -124,4 +123,85 @@
         @endif
     </div>
 </div>
+
+<style>
+@media print {
+    /* Ocultar sidebar y elementos de navegación */
+    [x-data]:first-of-type > div:first-child,  /* Sidebar container */
+    .fixed.left-0.top-0,  /* Sidebar fixed */
+    .fixed.inset-0.z-40,  /* Overlay mobile */
+    nav,
+    .no-print,
+    button,
+    .bg-gray-600,
+    header,
+    aside,
+    .lg\:hidden {  /* Mobile header */
+        display: none !important;
+    }
+
+    /* Resetear el margin-left del contenido principal */
+    [class*="lg:ml-"] {
+        margin-left: 0 !important;
+    }
+
+    /* Ajustar el container para impresión */
+    .container {
+        max-width: 100% !important;
+        padding: 0 !important;
+    }
+
+    /* Resetear colores de fondo para impresión */
+    body {
+        background: white !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    /* Asegurar que los badges se vean bien */
+    .bg-yellow-100,
+    .bg-green-100,
+    .bg-red-100,
+    .bg-gray-100 {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    /* Ocultar botones del header */
+    .mb-6.flex.items-center.justify-between > div:last-child {
+        display: none !important;
+    }
+
+    /* Ajustar tamaños de fuente para impresión */
+    body {
+        font-size: 12pt;
+    }
+
+    h1 {
+        font-size: 18pt;
+    }
+
+    table {
+        page-break-inside: avoid;
+    }
+
+    tr {
+        page-break-inside: avoid;
+    }
+}
+</style>
+
+<script>
+// Auto-imprimir si viene desde el selector de reportes
+document.addEventListener('DOMContentLoaded', function() {
+    if (sessionStorage.getItem('autoPrint') === 'true') {
+        sessionStorage.removeItem('autoPrint');
+        // Pequeño delay para que la página cargue completamente
+        setTimeout(function() {
+            window.print();
+        }, 500);
+    }
+});
+</script>
+
 @endsection
