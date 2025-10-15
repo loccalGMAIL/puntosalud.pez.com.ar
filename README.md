@@ -2,7 +2,7 @@
 
 [![Laravel](https://img.shields.io/badge/Laravel-12.x-red?style=flat&logo=laravel)](https://laravel.com)
 [![PHP](https://img.shields.io/badge/PHP-8.2-blue?style=flat&logo=php)](https://php.net)
-[![Version](https://img.shields.io/badge/Version-2.5.0-green?style=flat)](#changelog)
+[![Version](https://img.shields.io/badge/Version-2.5.1-green?style=flat)](#changelog)
 [![License](https://img.shields.io/badge/License-MIT-yellow?style=flat)](#license)
 
 Sistema integral de gestión médica para clínicas y consultorios, desarrollado con Laravel 12 y tecnologías modernas.
@@ -124,6 +124,186 @@ php artisan config:clear
 - Índices para consultas eficientes
 
 ## 📝 Changelog
+
+### v2.5.1 (2025-10-14) - Sistema de Impresión de Recibos A5
+
+**🖨️ Nueva Funcionalidad de Recibos Impresos:**
+- **Vista de Impresión A5**: Plantilla completa para imprimir recibos en formato A5 (148mm x 210mm)
+  - Diseño profesional con header de clínica y número de recibo destacado
+  - Información completa del paciente: nombre, DNI, obra social
+  - Detalles del pago: monto, tipo (individual/paquete/reintegro), método (efectivo/transferencia/tarjeta)
+  - Para paquetes: muestra sesiones usadas y restantes
+  - Lista de profesionales asociados al pago con sus especialidades
+  - Sección de concepto con descripción del pago
+  - Espacio para firma y aclaración
+  - Footer con fecha/hora de impresión
+
+**📄 CSS Optimizado para Impresión:**
+- **@media print**: Configuración específica para impresión A5
+  - Tamaño de página: `@page { size: A5; margin: 0; }`
+  - Ajuste automático de colores: `-webkit-print-color-adjust: exact`
+  - Oculta botón de impresión al imprimir
+  - Padding y márgenes optimizados: 15mm de padding interno
+
+**⚡ Auto-impresión con JavaScript:**
+- **Parámetro `?print=1`**: Dispara impresión automáticamente al cargar
+  - Retraso de 500ms para asegurar carga completa de estilos
+  - Función `window.print()` para abrir diálogo de impresión del navegador
+
+**🔗 Integración con Sistema de Cobros:**
+- **Dashboard Controller Actualizado**: Retorna `payment_id` en respuesta de cobros
+  - Método `markCompletedAndPaid()` ahora incluye `payment_id` en JSON
+  - Permite construir URL del recibo: `/payments/{id}/print-receipt`
+
+**💬 Modal de Confirmación Post-Cobro:**
+- **Pregunta Automática**: Al cobrar desde dashboard, pregunta "¿Desea imprimir el recibo?"
+  - Usa `confirm()` nativo del navegador
+  - Si acepta: abre recibo en nueva ventana con `?print=1`
+  - Si rechaza: continúa con recarga de página
+  - No bloquea el flujo normal de cobro
+
+**🎨 Diseño del Recibo:**
+- **Header Destacado**: Nombre de clínica, subtítulo y número de recibo
+  - Recibo number en azul con fuente grande y bold
+  - Border inferior para separación visual
+
+**📋 Secciones del Recibo:**
+1. **Información del Recibo**: Fecha, paciente, DNI, obra social
+2. **Monto Total**: Destacado en caja azul con fuente grande
+3. **Detalles del Pago**: Tipo y método con badges de colores
+4. **Sesiones de Paquete** (si aplica): Usadas y restantes
+5. **Concepto**: Descripción del pago
+6. **Profesionales**: Lista de médicos asociados
+7. **Firma**: Línea para firma y aclaración
+8. **Footer**: Validez y timestamp de impresión
+
+**🎯 Flujo de Usuario:**
+1. Recepcionista cobra consulta desde dashboard
+2. Sistema muestra notificación de éxito con número de recibo
+3. Aparece modal: "¿Desea imprimir el recibo?"
+4. Si confirma → abre ventana nueva con recibo y diálogo de impresión
+5. Usuario imprime o guarda como PDF
+6. Dashboard se recarga automáticamente
+
+**📁 Archivos Creados:**
+- `resources/views/receipts/print.blade.php` - Vista de impresión A5
+
+**📁 Archivos Modificados:**
+- `routes/web.php` - Ruta `/payments/{payment}/print-receipt` agregada
+- `app/Http/Controllers/PaymentController.php` - Método `printReceipt()` agregado
+- `app/Http/Controllers/DashboardController.php` - Retorna `payment_id` en cobros
+- `resources/views/dashboard/dashboard.blade.php` - Modal de confirmación post-cobro
+- `README.md` - Badge de versión y changelog actualizado
+- `VERSION` - Actualizado a 2.5.1
+
+**✅ Beneficios:**
+- ✅ Recibos profesionales para entrega a pacientes
+- ✅ Formato A5 estándar para archivado
+- ✅ Impresión rápida con un solo clic
+- ✅ Información completa y trazable
+- ✅ Compatible con impresoras térmicas y láser
+- ✅ Opción de guardar como PDF desde diálogo de impresión
+- ✅ No interrumpe flujo de trabajo (ventana separada)
+- ✅ Auto-impresión opcional sin pasos adicionales
+
+**🎨 Colores y Badges:**
+- **Verde**: Pago Individual
+- **Azul**: Paquete de Tratamiento
+- **Amarillo**: Reintegro
+- **Métodos**: 💵 Efectivo | 🏦 Transferencia | 💳 Tarjeta
+
+**📝 Nota Técnica:**
+- Los recibos se generan desde registros de `Payment` existentes
+- Ingresos manuales (que no crean `Payment`) no tienen recibo imprimible
+- El sistema usa relaciones Eloquent para cargar paciente y profesionales
+- El número de recibo ya existente en el sistema se muestra en formato legible
+
+**🔧 Mejoras Adicionales v2.5.1:**
+
+**📐 Optimización del Formato de Recibo:**
+- **Formato Final**: Cambiado de A5 a formato personalizado 12cm × 18cm
+  - Sistema viewport-based con flexbox para posicionamiento en lado derecho
+  - Margen derecho de 1cm para mejor alineación en impresoras
+  - Body con `display: flex; justify-content: flex-end` para posicionamiento automático
+- **Tipografía Mejorada**: Aumentos significativos en tamaños de fuente
+  - Body: 11px → 13px para mejor legibilidad
+  - Labels: 12px → 14px con font-weight 600
+  - Valores: 12px → 14px con font-weight 400
+  - Títulos: 14px → 16px con font-weight 700
+  - Monto total: 24px con font-weight 700 en color azul
+- **CSS Classes Agregadas**: Estructura de estilos más robusta
+  - `.info-row`: Flexbox con justify-between para alineación
+  - `.amount-row`: Layout específico para sección de monto total
+  - `.divider`: Separadores visuales de 2px con color negro
+  - Mejor jerarquía visual y espaciado consistente
+
+**🖨️ Funcionalidad de Reimpresión:**
+- **Botón en Vista de Caja Diaria** (`cash/daily.blade.php`):
+  - Icono de impresora morado en movimientos de tipo `patient_payment`
+  - Condicional: solo visible cuando `reference_id` existe
+  - Target `_blank` con parámetro `?print=1` para auto-impresión
+- **Botón en Dashboard de Turnos** (`dashboard-appointments.blade.php`):
+  - Nuevo botón "Imprimir recibo" junto a "Ver detalle" en turnos pagados
+  - Color morado distintivo (`bg-purple-600`) para identificación
+  - Condicional `@if($consulta['isPaid'])` para mostrar solo en pagos completados
+
+**🪟 Auto-cierre de Ventana:**
+- **JavaScript Mejorado**: Sistema automático de cierre post-impresión
+  - Detecta parámetro `?print=1` en URL
+  - Delay de 500ms para garantizar carga completa de estilos
+  - Llama `window.print()` automáticamente
+  - Cierra ventana emergente 100ms después de mostrar diálogo
+  - Mejora UX sin intervención manual del usuario
+
+**🎨 Sistema de Modales Unificado:**
+- **Reemplazo de Alerts Nativos**: Migración completa a `SystemModal`
+  - `dashboard.blade.php`: Todos los `confirm()` reemplazados por `SystemModal.confirm()`
+  - `dashboard-appointments.blade.php`: Idem con confirmaciones de pago e impresión
+  - Tipos implementados: `success`, `error`, `warning`, `confirm`
+  - Promises para manejo asíncrono: `await SystemModal.confirm()`
+- **Flujo de Pago Mejorado**:
+  - Cierra modal de pago ANTES de mostrar confirmación de impresión
+  - Eliminado mensaje intermedio de "turno finalizado y cobrado"
+  - Flujo directo: pago → cierra modal → pregunta imprimir → recarga
+- **Opacidad Ajustada**: Background modal de sistema sincronizado con payment-modal
+  - Antes: `bg-opacity-20` (demasiado claro)
+  - Ahora: `rgba(0, 0, 0, 0.5)` inline style (consistente con otros modales)
+
+**💰 Correcciones en Reportes de Caja:**
+- **Exclusión de Movimientos Administrativos**:
+  - `cash/daily.blade.php`: Filtro `whereNotIn('type', ['cash_opening', 'cash_closing'])`
+  - Ingresos y egresos calculados sin incluir apertura/cierre
+  - Totales reflejan movimientos operativos reales del día
+  - Grouping por tipo también excluye apertura/cierre
+- **Fix Cálculo de Saldo Teórico** (`CashController.php`):
+  - **Problema crítico resuelto**: Balance en cierre de caja mostraba saldo incorrecto
+  - **Causa**: Ordenamiento por `movement_date DESC` ignoraba liquidaciones retroactivas
+  - **Solución**: Cambio a ordenamiento por `id DESC` en método `closeCash()`
+  - Ahora considera movimientos en orden cronológico de creación, no de fecha asignada
+  - Liquidaciones profesionales con `movement_date` anterior se contabilizan correctamente
+
+**🔍 Mejoras de Interfaz:**
+- **Vista de Detalle de Pago** (`payments/show.blade.php`):
+  - Anulado enlace "Ver perfil del paciente" (funcionalidad removida)
+  - Simplificación de navegación en vista de detalles
+
+**📁 Archivos Modificados Adicionales:**
+- `resources/views/receipts/print.blade.php` - Formato, tipografía y CSS optimizado
+- `resources/views/cash/daily.blade.php` - Botón reimpresión y exclusión de totales
+- `resources/views/dashboard/dashboard-appointments.blade.php` - Botón reimpresión y SystemModal
+- `resources/views/dashboard/dashboard.blade.php` - SystemModal y flujo de pago
+- `resources/views/components/system-modal.blade.php` - Ajuste de opacidad
+- `app/Http/Controllers/CashController.php` - Ordenamiento por ID y exclusión de totales
+- `app/Models/CashMovement.php` - Método `getCurrentBalanceWithLock()` con orden por ID
+- `resources/views/payments/show.blade.php` - Perfil de paciente anulado
+
+**🎯 Impacto de las Mejoras:**
+- ✅ Recibos con formato profesional optimizado para impresión
+- ✅ Reimpresión rápida desde múltiples puntos del sistema
+- ✅ Modales consistentes en toda la aplicación sin alerts nativos
+- ✅ Cálculos de caja precisos sin movimientos administrativos
+- ✅ Balance teórico correcto considerando liquidaciones retroactivas
+- ✅ Mejor experiencia de usuario con auto-impresión y cierre automático
 
 ### v2.5.0 (2025-10-14) - Sincronización y Mejora del Sistema de Recibos
 

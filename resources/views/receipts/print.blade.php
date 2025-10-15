@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -13,88 +14,114 @@
 
         body {
             font-family: Arial, sans-serif;
-            font-size: 11px;
-            line-height: 1.4;
+            font-size: 13px;
+            line-height: 1.6;
             color: #000;
             background: white;
             padding: 0;
             margin: 0;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            justify-content: flex-end;
+            align-items: flex-start;
         }
 
         .receipt-container {
-            width: 148mm;
-            height: 210mm;
-            padding: 15mm;
-            margin: 0 auto;
+            width: 12cm;
+            min-height: 18cm;
+            max-width: 12cm;
+            max-height: 18cm;
+            padding: 10mm 8mm;
+            margin: 0 1cm 0 0;
             background: white;
+            page-break-after: always;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
         }
 
         .header {
             text-align: center;
-            margin-bottom: 15px;
-            padding-bottom: 10px;
+            margin-bottom: 10px;
+            padding-bottom: 8px;
             border-bottom: 2px solid #000;
+        }
+
+        .logo {
+            width: 50px;
+            height: 50px;
+            margin: 0 auto 8px;
         }
 
         .clinic-name {
             font-size: 20px;
-            font-weight: bold;
-            margin-bottom: 3px;
+            font-weight: 700;
+            margin-bottom: 4px;
             text-transform: uppercase;
+            color: #2563eb;
         }
 
-        .clinic-subtitle {
-            font-size: 12px;
-            color: #333;
-            margin-bottom: 8px;
+        .clinic-info {
+            font-size: 10px;
+            color: #666;
+            margin-bottom: 2px;
+            font-weight: 400;
         }
 
         .receipt-title {
             font-size: 16px;
-            font-weight: bold;
+            font-weight: 700;
             margin-top: 8px;
-            letter-spacing: 2px;
+            letter-spacing: 1.5px;
         }
 
         .receipt-number {
-            font-size: 14px;
-            font-weight: bold;
-            margin-top: 5px;
+            font-size: 15px;
+            font-weight: 700;
+            margin-top: 4px;
             color: #2563eb;
         }
 
-        .info-section {
-            margin-bottom: 15px;
+        .info-section,
+        .payment-details,
+        .concept-section {
+            margin-bottom: 10px;
         }
 
         .info-row {
             display: flex;
             justify-content: space-between;
+            align-items: center;
             margin-bottom: 6px;
             padding: 3px 0;
         }
 
         .info-label {
-            font-weight: bold;
-            width: 35%;
+            font-size: 14px;
+            font-weight: 600;
+            color: #333;
         }
 
         .info-value {
-            width: 65%;
+            font-size: 14px;
+            font-weight: 400;
+            color: #000;
             text-align: right;
         }
 
         .divider {
-            border-top: 1px solid #ccc;
+            border-top: 2px solid #000000;
             margin: 12px 0;
         }
 
         .amount-section {
+            margin: 12px 0;
+            padding: 10px;
             background-color: #f8f9fa;
-            padding: 12px;
-            margin: 15px 0;
             border: 2px solid #2563eb;
-            border-radius: 5px;
+            border-radius: 4px;
         }
 
         .amount-row {
@@ -105,69 +132,56 @@
 
         .amount-label {
             font-size: 14px;
-            font-weight: bold;
+            font-weight: 700;
         }
 
         .amount-value {
             font-size: 24px;
-            font-weight: bold;
+            font-weight: 700;
             color: #2563eb;
         }
 
         .payment-details {
-            margin: 15px 0;
+            margin: 8px 0;
         }
 
         .detail-row {
             display: flex;
             justify-content: space-between;
+            align-items: center;
             padding: 4px 0;
-            font-size: 10px;
+            font-size: 13px;
         }
 
         .detail-label {
-            color: #666;
+            color: #555;
+            font-weight: 600;
+            font-size: 13px;
+        }
+
+        .detail-row span {
+            font-size: 13px;
+            font-weight: 400;
         }
 
         .concept-section {
-            margin: 15px 0;
-            padding: 10px;
+            margin: 10px 0;
+            padding: 8px;
             background-color: #f8f9fa;
-            border-left: 3px solid #2563eb;
+            border-left: 4px solid #2563eb;
         }
 
         .concept-title {
-            font-weight: bold;
-            margin-bottom: 5px;
-            font-size: 11px;
+            font-weight: 700;
+            margin-bottom: 4px;
+            font-size: 13px;
+            color: #2563eb;
         }
 
         .concept-text {
-            font-size: 10px;
+            font-size: 12px;
             color: #333;
-        }
-
-        .footer {
-            margin-top: 25px;
-            padding-top: 15px;
-            border-top: 1px solid #ccc;
-            text-align: center;
-            font-size: 9px;
-            color: #666;
-        }
-
-        .signature-section {
-            margin-top: 30px;
-            padding-top: 20px;
-        }
-
-        .signature-line {
-            border-top: 1px solid #000;
-            width: 60%;
-            margin: 0 auto;
-            padding-top: 5px;
-            text-align: center;
-            font-size: 10px;
+            line-height: 1.5;
         }
 
         .print-button {
@@ -182,7 +196,7 @@
             cursor: pointer;
             font-size: 14px;
             z-index: 1000;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
         }
 
         .print-button:hover {
@@ -193,13 +207,27 @@
             body {
                 -webkit-print-color-adjust: exact;
                 print-color-adjust: exact;
+                margin: 0 !important;
+                padding: 0 !important;
+                width: 100vw;
+                height: 100vh;
+                overflow: hidden;
+                display: flex;
+                justify-content: flex-end;
+                align-items: flex-start;
             }
 
             .receipt-container {
-                width: 148mm;
-                height: 210mm;
-                padding: 15mm;
-                margin: 0;
+                width: 12cm;
+                min-height: 18cm;
+                max-width: 12cm;
+                max-height: 18cm;
+                padding: 10mm 8mm;
+                margin: 0 1cm 0 0;
+                background: white;
+                display: flex;
+                flex-direction: column;
+                justify-content: flex-start;
             }
 
             .print-button {
@@ -211,7 +239,7 @@
             }
 
             @page {
-                size: A5;
+                size: A4 landscape;
                 margin: 0;
             }
         }
@@ -220,8 +248,8 @@
             display: inline-block;
             padding: 3px 8px;
             border-radius: 3px;
-            font-size: 9px;
-            font-weight: bold;
+            font-size: 10px;
+            font-weight: 600;
         }
 
         .badge-green {
@@ -240,14 +268,27 @@
         }
     </style>
 </head>
+
 <body>
     <button class="print-button" onclick="window.print()">🖨️ Imprimir Recibo</button>
 
     <div class="receipt-container">
         <!-- Header -->
         <div class="header">
+            <!-- Logo (placeholder - agregar imagen real) -->
+            <div class="logo">
+                <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="50" cy="50" r="45" fill="#2563eb" opacity="0.1" />
+                    <path d="M50 20 L50 80 M20 50 L80 50" stroke="#2563eb" stroke-width="8" stroke-linecap="round" />
+                    <circle cx="50" cy="50" r="8" fill="#f59e0b" />
+                </svg>
+            </div>
+
             <div class="clinic-name">Punto Salud</div>
-            <div class="clinic-subtitle">Centro de Atención Médica</div>
+            <div class="clinic-info">Centro de Atención Médica</div>
+            <div class="clinic-info">Dirección: Tucumán 925, Cosquín</div>
+            <div class="clinic-info">Tel: (3541) 705-281 | Email: info@puntosalud.com</div>
+
             <div class="receipt-title">RECIBO DE PAGO</div>
             <div class="receipt-number">N° {{ $payment->receipt_number }}</div>
         </div>
@@ -266,15 +307,44 @@
                 <span class="info-label">DNI:</span>
                 <span class="info-value">{{ $payment->patient->dni }}</span>
             </div>
-            @if($payment->patient->health_insurance)
-            <div class="info-row">
-                <span class="info-label">Obra Social:</span>
-                <span class="info-value">{{ $payment->patient->health_insurance }}</span>
-            </div>
-            @endif
         </div>
 
         <div class="divider"></div>
+
+        <!-- Concepto y Profesionales -->
+        @if ($payment->concept || $professionals->count() > 0)
+            <div class="concept-section">
+                @if ($payment->concept)
+                    <div class="concept-title">Concepto:</div>
+                    <div class="concept-text">{{ $payment->concept }}</div>
+                @endif
+
+                <!-- Profesionales Asociados -->
+                @if ($professionals->count() > 0)
+                    <div class="concept-title" style="margin-top: {{ $payment->concept ? '12px' : '0' }};">Profesionales:</div>
+                    @foreach ($professionals as $professional)
+                        <div class="concept-text" style="margin-bottom: 4px;">
+                            • Dr. {{ $professional->full_name }} - {{ $professional->specialty->name }}
+                        </div>
+                    @endforeach
+                @endif
+            </div>
+        @endif
+
+
+        <div class="divider"></div>
+        <div class="detail-row">
+            <span class="detail-label">Método de Pago:</span>
+            <span>
+                @if ($payment->payment_method === 'cash')
+                    💵 Efectivo
+                @elseif($payment->payment_method === 'transfer')
+                    🏦 Transferencia
+                @elseif($payment->payment_method === 'card')
+                    💳 Tarjeta
+                @endif
+            </span>
+        </div>
 
         <!-- Monto Total -->
         <div class="amount-section">
@@ -282,81 +352,6 @@
                 <span class="amount-label">MONTO TOTAL:</span>
                 <span class="amount-value">${{ number_format($payment->amount, 2, ',', '.') }}</span>
             </div>
-        </div>
-
-        <!-- Detalles del Pago -->
-        <div class="payment-details">
-            <div class="detail-row">
-                <span class="detail-label">Tipo de Pago:</span>
-                <span>
-                    @if($payment->payment_type === 'single')
-                        <span class="badge badge-green">Pago Individual</span>
-                    @elseif($payment->payment_type === 'package')
-                        <span class="badge badge-blue">Paquete de Tratamiento ({{ $payment->sessions_included }} sesiones)</span>
-                    @elseif($payment->payment_type === 'refund')
-                        <span class="badge badge-yellow">Reintegro</span>
-                    @endif
-                </span>
-            </div>
-            <div class="detail-row">
-                <span class="detail-label">Método de Pago:</span>
-                <span>
-                    @if($payment->payment_method === 'cash')
-                        💵 Efectivo
-                    @elseif($payment->payment_method === 'transfer')
-                        🏦 Transferencia
-                    @elseif($payment->payment_method === 'card')
-                        💳 Tarjeta
-                    @endif
-                </span>
-            </div>
-
-            @if($payment->payment_type === 'package')
-            <div class="detail-row">
-                <span class="detail-label">Sesiones Usadas:</span>
-                <span>{{ $payment->sessions_used }} de {{ $payment->sessions_included }}</span>
-            </div>
-            <div class="detail-row">
-                <span class="detail-label">Sesiones Restantes:</span>
-                <span><strong>{{ $payment->sessions_remaining }}</strong></span>
-            </div>
-            @endif
-        </div>
-
-        <!-- Concepto -->
-        @if($payment->concept)
-        <div class="concept-section">
-            <div class="concept-title">Concepto:</div>
-            <div class="concept-text">{{ $payment->concept }}</div>
-        </div>
-        @endif
-
-        <!-- Profesionales Asociados -->
-        @if($professionals->count() > 0)
-        <div class="divider"></div>
-        <div class="info-section">
-            <div style="font-weight: bold; margin-bottom: 8px; font-size: 11px;">Profesionales:</div>
-            @foreach($professionals as $professional)
-            <div class="detail-row">
-                <span class="detail-label">• Dr. {{ $professional->full_name }}</span>
-                <span>{{ $professional->specialty->name }}</span>
-            </div>
-            @endforeach
-        </div>
-        @endif
-
-        <!-- Firma -->
-        <div class="signature-section">
-            <div class="signature-line">
-                Firma y Aclaración
-            </div>
-        </div>
-
-        <!-- Footer -->
-        <div class="footer">
-            <div>Punto Salud - Sistema de Gestión Médica</div>
-            <div>Este recibo es válido como comprobante de pago</div>
-            <div style="margin-top: 5px;">Impreso el {{ now()->format('d/m/Y H:i:s') }}</div>
         </div>
     </div>
 
@@ -366,9 +361,15 @@
             window.onload = function() {
                 setTimeout(function() {
                     window.print();
+
+                    // Cerrar la ventana después de imprimir o cancelar
+                    setTimeout(function() {
+                        window.close();
+                    }, 100);
                 }, 500);
             }
         }
     </script>
 </body>
+
 </html>
