@@ -1,5 +1,6 @@
 @extends('layouts.app')
 
+
 @section('title', 'Todas las Consultas - ' . config('app.name'))
 @section('mobileTitle', 'Consultas del Día')
 
@@ -102,6 +103,14 @@
                                                 <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                             </svg>
                                         </a>
+                                        <a href="{{ route('payments.print-receipt', $consulta['paymentId']) }}?print=1"
+                                           target="_blank"
+                                           class="p-1.5 text-xs bg-purple-600 hover:bg-purple-700 text-white rounded-md transition-colors duration-200"
+                                           title="Imprimir recibo">
+                                            <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M6.72 13.829c-.24.03-.48.062-.72.096m.72-.096a42.415 42.415 0 0110.56 0m-10.56 0L6.34 18m10.94-4.171c.24.03.48.062.72.096m-.72-.096L17.66 18m0 0l.229 2.523a1.125 1.125 0 01-1.12 1.227H7.231c-.662 0-1.18-.568-1.12-1.227L6.34 18m11.318 0h1.091A2.25 2.25 0 0021 15.75V9.456c0-1.081-.768-2.015-1.837-2.175a48.055 48.055 0 00-1.913-.247M6.34 18H5.25A2.25 2.25 0 013 15.75V9.456c0-1.081.768-2.015 1.837-2.175a48.041 48.041 0 011.913-.247m10.5 0a48.536 48.536 0 00-10.5 0m10.5 0V3.375c0-.621-.504-1.125-1.125-1.125h-8.25c-.621 0-1.125.504-1.125 1.125v3.659M18 10.5h.008v.008H18V10.5zm-3 0h.008v.008H15V10.5z" />
+                                            </svg>
+                                        </a>
                                     @endif
 
                                     @if($consulta['canMarkAttended'])
@@ -153,6 +162,9 @@
 <!-- Modal para finalizar y cobrar -->
 <x-payment-modal />
 
+<!-- Modal del sistema para notificaciones y confirmaciones -->
+<x-system-modal />
+
 <script>
 // Dashboard Management - Modern ES6+ approach
 const DashboardAPI = {
@@ -177,9 +189,10 @@ const DashboardAPI = {
         return result;
     },
 
-    showNotification(message, type = 'info') {
-        const icon = type === 'error' ? '❌' : type === 'success' ? '✅' : 'ℹ️';
-        alert(`${icon} ${message}`);
+    async showNotification(message, type = 'info') {
+        const modalType = type === 'error' ? 'error' : type === 'success' ? 'success' : 'confirm';
+        const title = type === 'error' ? 'Error' : type === 'success' ? 'Éxito' : 'Información';
+        await SystemModal.show(modalType, title, message, 'Aceptar', false);
     },
 
     reloadPage(delay = 500) {
@@ -204,10 +217,10 @@ function appointmentActions(appointmentId, estimatedAmount = 0) {
                     method: 'POST'
                 });
 
-                DashboardAPI.showNotification('Turno marcado como atendido exitosamente', 'success');
+                await DashboardAPI.showNotification('Turno marcado como atendido exitosamente', 'success');
                 DashboardAPI.reloadPage();
             } catch (error) {
-                DashboardAPI.showNotification(error.message, 'error');
+                await DashboardAPI.showNotification(error.message, 'error');
                 this.loading = false;
             }
         },
@@ -217,7 +230,14 @@ function appointmentActions(appointmentId, estimatedAmount = 0) {
         },
 
         async markAbsent() {
-            if (!confirm('¿Está seguro de marcar este turno como ausente?')) return;
+            const confirmed = await SystemModal.confirm(
+                'Confirmar ausencia',
+                '¿Está seguro de marcar este turno como ausente?',
+                'Sí, marcar ausente',
+                'Cancelar'
+            );
+
+            if (!confirmed) return;
             if (this.loading) return;
 
             this.loading = true;
@@ -227,10 +247,10 @@ function appointmentActions(appointmentId, estimatedAmount = 0) {
                     method: 'POST'
                 });
 
-                DashboardAPI.showNotification('Turno marcado como ausente', 'success');
+                await DashboardAPI.showNotification('Turno marcado como ausente', 'success');
                 DashboardAPI.reloadPage();
             } catch (error) {
-                DashboardAPI.showNotification(error.message, 'error');
+                await DashboardAPI.showNotification(error.message, 'error');
                 this.loading = false;
             }
         }
@@ -270,7 +290,7 @@ function paymentModal() {
 
             // Validation
             if (!this.paymentForm.final_amount || !this.paymentForm.payment_method) {
-                DashboardAPI.showNotification('Complete todos los campos requeridos', 'error');
+                await DashboardAPI.showNotification('Complete todos los campos requeridos', 'error');
                 return;
             }
 
@@ -285,14 +305,26 @@ function paymentModal() {
                     }
                 );
 
+                // Cerrar el modal de pago primero
                 this.hide();
-                DashboardAPI.showNotification(
-                    `Turno finalizado y cobrado. Recibo #${result.receipt_number}`,
-                    'success'
-                );
+
+                // Preguntar si desea imprimir el recibo
+                if (result.payment_id) {
+                    const printReceipt = await SystemModal.confirm(
+                        'Imprimir recibo',
+                        '¿Desea imprimir el recibo ahora?',
+                        'Sí, imprimir',
+                        'No'
+                    );
+
+                    if (printReceipt) {
+                        window.open(`/payments/${result.payment_id}/print-receipt?print=1`, '_blank');
+                    }
+                }
+
                 DashboardAPI.reloadPage();
             } catch (error) {
-                DashboardAPI.showNotification(error.message, 'error');
+                await DashboardAPI.showNotification(error.message, 'error');
                 this.loading = false;
             }
         }

@@ -25,6 +25,7 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 // Protected routes
 Route::middleware(['auth'])->group(function () {
 
+    // Rutas del dashboard actualizadas para nuevas ubicaciones de vistas
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/dashboard/appointments', [DashboardController::class, 'appointments'])->name('dashboard.appointments');
 

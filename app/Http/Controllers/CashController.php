@@ -36,8 +36,10 @@ class CashController extends Controller
         $movements = $query->orderBy('created_at', 'desc')
             ->get();
 
-        $inflows = $movements->where('amount', '>', 0)->sum('amount');
-        $outflows = $movements->where('amount', '<', 0)->sum('amount');
+        // Calcular totales excluyendo apertura y cierre de caja
+        $movementsForTotals = $movements->whereNotIn('type', ['cash_opening', 'cash_closing']);
+        $inflows = $movementsForTotals->where('amount', '>', 0)->sum('amount');
+        $outflows = $movementsForTotals->where('amount', '<', 0)->sum('amount');
         $finalBalance = $initialBalance + $inflows + $outflows;
 
         $lastMovement = $movements->first();
@@ -59,14 +61,18 @@ class CashController extends Controller
             'movements_count' => $movements->count(),
         ];
 
-        $movementsByType = $movements->groupBy('type')->map(function ($group, $type) {
-            return [
-                'type' => $type,
-                'inflows' => $group->where('amount', '>', 0)->sum('amount'),
-                'outflows' => abs($group->where('amount', '<', 0)->sum('amount')),
-                'count' => $group->count(),
-            ];
-        });
+        // Agrupar por tipo de movimiento excluyendo apertura y cierre
+        $movementsByType = $movements
+            ->whereNotIn('type', ['cash_opening', 'cash_closing'])
+            ->groupBy('type')
+            ->map(function ($group, $type) {
+                return [
+                    'type' => $type,
+                    'inflows' => $group->where('amount', '>', 0)->sum('amount'),
+                    'outflows' => abs($group->where('amount', '<', 0)->sum('amount')),
+                    'count' => $group->count(),
+                ];
+            });
 
         if ($request->ajax()) {
             return response()->json([
@@ -379,7 +385,7 @@ class CashController extends Controller
 
             // Obtener el saldo actual antes del cierre con lock pesimista
             $lastMovement = CashMovement::whereDate('movement_date', '<=', $closeDate)
-                ->orderBy('movement_date', 'desc')
+                ->orderBy('id', 'desc')
                 ->orderBy('created_at', 'desc')
                 ->lockForUpdate()
                 ->first();

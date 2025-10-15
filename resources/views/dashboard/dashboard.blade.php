@@ -262,22 +262,22 @@
                         <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
                     </svg>
                 </a>
-                <a href="#" class="flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-red-50 to-red-100 hover:from-red-100 hover:to-red-200 border border-red-200 dark:from-red-900/20 dark:to-red-800/20 dark:border-red-700 transition-all duration-200 group">
+                {{-- <a href="#" class="flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-red-50 to-red-100 hover:from-red-100 hover:to-red-200 border border-red-200 dark:from-red-900/20 dark:to-red-800/20 dark:border-red-700 transition-all duration-200 group">
                     <div class="flex items-center gap-3">
                         <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-red-500 text-white">
-                            <!-- Icono cruz -->
+                            <!-- Icono cruz vertical -->
                             <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14M5 12h14" />
                             </svg>
                         </div>
                         <div>
-                            <div class="text-sm font-medium text-red-900 dark:text-red-100">EntreTurno / Urgencia</div>
+                            <div class="text-sm font-medium text-red-900 dark:text-red-100">Entreturno / Urgencia</div>
                         </div>
                     </div>
                     <svg class="h-4 w-4 text-red-600 dark:text-red-400 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
                     </svg>
-                </a>
+                </a> --}}
 
                 @include('patients.modal')
             </div>
@@ -329,18 +329,18 @@ function patientsModalDashboard() {
                 if (result.success) {
                     this.loading = false;
                     this.modalOpen = false;
-                    alert(result.message || 'Paciente creado exitosamente.');
+                    await SystemModal.show('success', 'Éxito', result.message || 'Paciente creado exitosamente.', 'Aceptar', false);
                 } else {
                     this.loading = false;
                     let msg = result.message || 'Error al crear paciente.';
                     if (result.errors) {
                         msg += '\n' + Object.values(result.errors).map(e => e.join(', ')).join('\n');
                     }
-                    alert(msg);
+                    await SystemModal.show('error', 'Error', msg, 'Aceptar', false);
                 }
             } catch (error) {
                 this.loading = false;
-                alert('Error inesperado al crear paciente.');
+                await SystemModal.show('error', 'Error', 'Error inesperado al crear paciente.', 'Aceptar', false);
             }
         },
         getMaxDate() {
@@ -624,6 +624,9 @@ function patientsModalDashboard() {
     <!-- Modal para finalizar y cobrar -->
     <x-payment-modal />
 
+    <!-- Modal del sistema para notificaciones y confirmaciones -->
+    <x-system-modal />
+
     <script>
     // Dashboard Management - Modern ES6+ approach
     const DashboardAPI = {
@@ -648,9 +651,10 @@ function patientsModalDashboard() {
             return result;
         },
         
-        showNotification(message, type = 'info') {
-            const icon = type === 'error' ? '❌' : type === 'success' ? '✅' : 'ℹ️';
-            alert(`${icon} ${message}`);
+        async showNotification(message, type = 'info') {
+            const modalType = type === 'error' ? 'error' : type === 'success' ? 'success' : 'confirm';
+            const title = type === 'error' ? 'Error' : type === 'success' ? 'Éxito' : 'Información';
+            await SystemModal.show(modalType, title, message, 'Aceptar', false);
         },
         
         reloadPage(delay = 500) {
@@ -669,39 +673,46 @@ function patientsModalDashboard() {
             async markAttended() {
                 if (this.loading) return;
                 this.loading = true;
-                
+
                 try {
                     await DashboardAPI.makeRequest(`/dashboard/appointments/${appointmentId}/mark-attended`, {
                         method: 'POST'
                     });
-                    
-                    DashboardAPI.showNotification('Turno marcado como atendido exitosamente', 'success');
+
+                    await DashboardAPI.showNotification('Turno marcado como atendido exitosamente', 'success');
                     DashboardAPI.reloadPage();
                 } catch (error) {
-                    DashboardAPI.showNotification(error.message, 'error');
+                    await DashboardAPI.showNotification(error.message, 'error');
                     this.loading = false;
                 }
             },
-            
+
             markCompletedAndPaid() {
                 globalPaymentModal?.showModal(appointmentId, estimatedAmount);
             },
-            
+
             async markAbsent() {
-                if (!confirm('¿Está seguro de marcar este turno como ausente?')) return;
+                const confirmed = await SystemModal.confirm(
+                    'Confirmar ausencia',
+                    '¿Está seguro de marcar este turno como ausente?',
+                    'Sí, marcar ausente',
+                    'Cancelar'
+                );
+
+                if (!confirmed) return;
                 if (this.loading) return;
-                
+
                 this.loading = true;
-                
+
                 try {
                     await DashboardAPI.makeRequest(`/dashboard/appointments/${appointmentId}/mark-absent`, {
                         method: 'POST'
                     });
-                    
-                    DashboardAPI.showNotification('Turno marcado como ausente', 'success');
+
+                    await DashboardAPI.showNotification('Turno marcado como ausente', 'success');
                     DashboardAPI.reloadPage();
                 } catch (error) {
-                    DashboardAPI.showNotification(error.message, 'error');
+                    await DashboardAPI.showNotification(error.message, 'error');
                     this.loading = false;
                 }
             }
@@ -738,15 +749,15 @@ function patientsModalDashboard() {
             
             async submitPayment() {
                 if (this.loading) return;
-                
+
                 // Validation
                 if (!this.paymentForm.final_amount || !this.paymentForm.payment_method) {
-                    DashboardAPI.showNotification('Complete todos los campos requeridos', 'error');
+                    await DashboardAPI.showNotification('Complete todos los campos requeridos', 'error');
                     return;
                 }
-                
+
                 this.loading = true;
-                
+
                 try {
                     const result = await DashboardAPI.makeRequest(
                         `/dashboard/appointments/${this.currentAppointmentId}/mark-completed-paid`,
@@ -755,15 +766,27 @@ function patientsModalDashboard() {
                             body: JSON.stringify(this.paymentForm)
                         }
                     );
-                    
+
+                    // Cerrar el modal de pago primero
                     this.hide();
-                    DashboardAPI.showNotification(
-                        `Turno finalizado y cobrado. Recibo #${result.receipt_number}`,
-                        'success'
-                    );
+
+                    // Preguntar si desea imprimir el recibo
+                    if (result.payment_id) {
+                        const printReceipt = await SystemModal.confirm(
+                            'Imprimir recibo',
+                            '¿Desea imprimir el recibo ahora?',
+                            'Sí, imprimir',
+                            'No'
+                        );
+
+                        if (printReceipt) {
+                            window.open(`/payments/${result.payment_id}/print-receipt?print=1`, '_blank');
+                        }
+                    }
+
                     DashboardAPI.reloadPage();
                 } catch (error) {
-                    DashboardAPI.showNotification(error.message, 'error');
+                    await DashboardAPI.showNotification(error.message, 'error');
                     this.loading = false;
                 }
             }
@@ -824,58 +847,58 @@ function patientsModalDashboard() {
                 if (this.openCashLoading) return;
 
                 this.openCashLoading = true;
-                
+
                 try {
                     await DashboardAPI.makeRequest('/cash/open', {
                         method: 'POST',
                         body: JSON.stringify(this.openCashForm)
                     });
-                    
+
                     this.closeOpenCashModal();
-                    DashboardAPI.showNotification('Caja abierta exitosamente', 'success');
+                    await DashboardAPI.showNotification('Caja abierta exitosamente', 'success');
                     DashboardAPI.reloadPage();
                 } catch (error) {
-                    DashboardAPI.showNotification(error.message, 'error');
+                    await DashboardAPI.showNotification(error.message, 'error');
                     this.openCashLoading = false;
                 }
             },
-            
+
             async submitCloseCash() {
                 if (this.closeCashLoading) return;
-                
+
                 if (!this.closeCashForm.closing_amount) {
-                    DashboardAPI.showNotification('Complete el monto contado', 'error');
+                    await DashboardAPI.showNotification('Complete el monto contado', 'error');
                     return;
                 }
-                
+
                 this.closeCashLoading = true;
-                
+
                 try {
                     const result = await DashboardAPI.makeRequest('/cash/close', {
                         method: 'POST',
                         body: JSON.stringify(this.closeCashForm)
                     });
-                    
+
                     this.closeCloseCashModal();
-                    
+
                     // Mostrar resumen del cierre
                     const summary = result.summary;
                     const theoreticalBalance = parseFloat(summary.theoretical_balance) || 0;
                     const countedAmount = parseFloat(summary.counted_amount) || 0;
                     const difference = parseFloat(summary.difference) || 0;
-                    
-                    let message = `Caja cerrada para el ${summary.date}. `;
-                    message += `Teórico: $${theoreticalBalance.toFixed(2)}, `;
+
+                    let message = `Caja cerrada para el ${summary.date}.\n`;
+                    message += `Teórico: $${theoreticalBalance.toFixed(2)}\n`;
                     message += `Contado: $${countedAmount.toFixed(2)}`;
-                    
+
                     if (Math.abs(difference) > 0.01) {
-                        message += `. Diferencia: $${difference.toFixed(2)}`;
+                        message += `\nDiferencia: $${difference.toFixed(2)}`;
                     }
-                    
-                    DashboardAPI.showNotification(message, 'success');
+
+                    await DashboardAPI.showNotification(message, 'success');
                     DashboardAPI.reloadPage();
                 } catch (error) {
-                    DashboardAPI.showNotification(error.message, 'error');
+                    await DashboardAPI.showNotification(error.message, 'error');
                     this.closeCashLoading = false;
                 }
             }

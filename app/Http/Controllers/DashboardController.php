@@ -150,7 +150,7 @@ class DashboardController extends Controller
             'cashStatus' => $cashStatus,
         ];
 
-        return view('dashboard', compact('dashboardData'));
+    return view('dashboard.dashboard', compact('dashboardData'));
     }
 
     public function appointments()
@@ -190,7 +190,7 @@ class DashboardController extends Controller
             'fecha' => $today->format('d/m/Y'),
         ];
 
-        return view('dashboard-appointments', compact('data'));
+    return view('dashboard.dashboard-appointments', compact('data'));
     }
 
     public function markAttended(Request $request, Appointment $appointment)
@@ -412,7 +412,7 @@ class DashboardController extends Controller
             'reference_type' => 'payment',
             'reference_id' => $payment->id,
             'balance_after' => $newBalance,
-            'user_id' => auth()->id(),
+            'user_id' => request()->user()->id,
         ]);
     }
 

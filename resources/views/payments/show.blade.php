@@ -247,12 +247,12 @@
                         @endif
                     </div>
                     
-                    <div class="mt-4">
+                    {{-- <div class="mt-4">
                         <a href="{{ route('patients.show', $payment->patient) }}" 
                            class="text-sm text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-300 font-medium">
                             Ver perfil completo →
                         </a>
-                    </div>
+                    </div> --}}
                 </div>
             </div>
 
