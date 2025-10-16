@@ -733,6 +733,11 @@ document.addEventListener('DOMContentLoaded', () => {
         agendaProfessionalSelect.on('change', function() {
             document.getElementById('professional-form').submit();
         });
+
+        // Autofocus en el campo de búsqueda
+        agendaProfessionalSelect.on('select2:open', function() {
+            document.querySelector('.select2-search__field').focus();
+        });
     }
 
     // Variables para los selects del modal
