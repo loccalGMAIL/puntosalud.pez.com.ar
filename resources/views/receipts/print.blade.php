@@ -45,14 +45,23 @@
         .header {
             text-align: center;
             margin-bottom: 10px;
-            padding-bottom: 8px;
+            padding-bottom: 4px;
             border-bottom: 2px solid #000;
         }
 
         .logo {
-            width: 50px;
-            height: 50px;
-            margin: 0 auto 8px;
+            width: 100px;
+            height: 100px;
+            margin: 0 auto 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .logo img {
+            width: 180%;
+            height: 180%;
+            object-fit: contain;
         }
 
         .clinic-name {
@@ -275,19 +284,14 @@
     <div class="receipt-container">
         <!-- Header -->
         <div class="header">
-            <!-- Logo (placeholder - agregar imagen real) -->
+            <!-- Logo -->
             <div class="logo">
-                <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-                    <circle cx="50" cy="50" r="45" fill="#2563eb" opacity="0.1" />
-                    <path d="M50 20 L50 80 M20 50 L80 50" stroke="#2563eb" stroke-width="8" stroke-linecap="round" />
-                    <circle cx="50" cy="50" r="8" fill="#f59e0b" />
-                </svg>
+                <img src="{{ asset('logo.png') }}" alt="Logo Punto Salud">
             </div>
 
-            <div class="clinic-name">Punto Salud</div>
             <div class="clinic-info">Centro de Atención Médica</div>
             <div class="clinic-info">Dirección: Tucumán 925, Cosquín</div>
-            <div class="clinic-info">Tel: (3541) 705-281 | Email: info@puntosalud.com</div>
+            <div class="clinic-info">Tel: (3541) 705-281 | Email: puntosalud94@gmail.com</div>
 
             <div class="receipt-title">RECIBO DE PAGO</div>
             <div class="receipt-number">N° {{ $payment->receipt_number }}</div>
