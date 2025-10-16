@@ -524,12 +524,33 @@ class CashController extends Controller
         // Resumen por usuario - simplificado para debug
         $userSummary = collect(); // Temporalmente vacío para evitar errores
 
+        // Obtener liquidaciones del día desde la tabla de liquidaciones
+        $professionalLiquidations = \App\Models\ProfessionalLiquidation::with(['professional.specialty'])
+            ->whereDate('liquidation_date', $selectedDate)
+            ->orderBy('professional_id')
+            ->get();
+
+        // Formatear datos de liquidaciones
+        $professionalIncome = $professionalLiquidations->map(function ($liquidation) {
+            return [
+                'professional' => $liquidation->professional,
+                'full_name' => "Dr. {$liquidation->professional->first_name} {$liquidation->professional->last_name}",
+                'specialty' => $liquidation->professional->specialty->name ?? 'N/A',
+                'commission_percentage' => $liquidation->professional->commission_percentage ?? 0,
+                'total_collected' => $liquidation->total_collected,
+                'professional_amount' => $liquidation->professional_commission,
+                'clinic_amount' => $liquidation->clinic_amount,
+                'count' => $liquidation->appointments_attended,
+            ];
+        });
+
         return view('cash.daily-report', compact(
             'selectedDate',
             'summary',
             'movements',
             'movementsByType',
-            'userSummary'
+            'userSummary',
+            'professionalIncome'
         ));
     }
 
