@@ -305,6 +305,23 @@ php artisan config:clear
 - ✅ Balance teórico correcto considerando liquidaciones retroactivas
 - ✅ Mejor experiencia de usuario con auto-impresión y cierre automático
 
+**🔧 Correcciones Adicionales:**
+- **Reporte de Cierre de Caja Optimizado**:
+  - Datos de liquidación obtenidos desde tabla `professional_liquidations` (no calculados desde pagos)
+  - Logo de clínica agregado en encabezado del reporte (tamaño 192px pantalla / 144px impresión)
+  - Optimización de espacios para caber en una hoja: padding reducido, tipografía más pequeña
+  - Auto-cierre de ventana después de imprimir con JavaScript
+  - Estado de cierre compactado con formato inline
+  - Cards del resumen financiero con tipografía reducida (text-xs para labels, text-base para valores)
+  - Tablas optimizadas con padding `py-0.5` y fuente `text-xs` en impresión
+  - Agregado icono para tipo de movimiento "otros" (📝 Otros Ingresos)
+  - Abreviaciones en headers de tablas: "Consultas" → "Cons.", "Cantidad" → "Cant."
+- **Beneficios**: Mejor legibilidad, formato profesional, impresión en una sola página
+
+**📁 Archivos Modificados (correcciones):**
+- `app/Http/Controllers/CashController.php` - Liquidaciones desde DB
+- `resources/views/cash/daily-report.blade.php` - Logo, optimización de espacios y tipografía
+
 ### v2.5.0 (2025-10-14) - Sincronización y Mejora del Sistema de Recibos
 
 **🔄 Sincronización del Sistema de Números de Recibo:**
