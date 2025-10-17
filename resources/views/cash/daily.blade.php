@@ -108,8 +108,8 @@
                     </svg>
                 </div>
                 <div class="ml-4">
-                    <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Saldo Inicial</p>
-                    <p class="text-2xl font-bold text-gray-900 dark:text-white">
+                    <p class="text-xs font-medium text-gray-600 dark:text-gray-400">Saldo Inicial</p>
+                    <p class="text-lg font-bold text-gray-900 dark:text-white">
                         ${{ number_format($cashSummary['initial_balance'], 2) }}
                     </p>
                 </div>
@@ -125,9 +125,9 @@
                     </svg>
                 </div>
                 <div class="ml-4">
-                    <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Ingresos</p>
-                    <p class="text-2xl font-bold text-green-600 dark:text-green-400">
-                        +${{ number_format($cashSummary['total_inflows'], 2) }}
+                    <p class="text-xs font-medium text-gray-600 dark:text-gray-400">Ingresos</p>
+                    <p class="text-lg font-bold text-green-600 dark:text-green-400">
+                        ${{ number_format($cashSummary['total_inflows'], 2) }}
                     </p>
                 </div>
             </div>
@@ -142,8 +142,8 @@
                     </svg>
                 </div>
                 <div class="ml-4">
-                    <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Egresos</p>
-                    <p class="text-2xl font-bold text-red-600 dark:text-red-400">
+                    <p class="text-xs font-medium text-gray-600 dark:text-gray-400">Egresos</p>
+                    <p class="text-lg font-bold text-red-600 dark:text-red-400">
                         -${{ number_format($cashSummary['total_outflows'], 2) }}
                     </p>
                 </div>
@@ -159,8 +159,8 @@
                     </svg>
                 </div>
                 <div class="ml-4">
-                    <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Saldo Final</p>
-                    <p class="text-2xl font-bold text-gray-900 dark:text-white">
+                    <p class="text-xs font-medium text-gray-600 dark:text-gray-400">Saldo Final</p>
+                    <p class="text-lg font-bold text-gray-900 dark:text-white">
                         ${{ number_format($cashSummary['final_balance'], 2) }}
                     </p>
                 </div>
