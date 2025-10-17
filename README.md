@@ -2,7 +2,7 @@
 
 [![Laravel](https://img.shields.io/badge/Laravel-12.x-red?style=flat&logo=laravel)](https://laravel.com)
 [![PHP](https://img.shields.io/badge/PHP-8.2-blue?style=flat&logo=php)](https://php.net)
-[![Version](https://img.shields.io/badge/Version-2.5.1-green?style=flat)](#changelog)
+[![Version](https://img.shields.io/badge/Version-2.5.2-green?style=flat)](#changelog)
 [![License](https://img.shields.io/badge/License-MIT-yellow?style=flat)](#license)
 
 Sistema integral de gestión médica para clínicas y consultorios, desarrollado con Laravel 12 y tecnologías modernas.
@@ -20,6 +20,12 @@ Sistema integral de gestión médica para clínicas y consultorios, desarrollado
 
 ### 🎯 **Gestión de Turnos**
 - Programación de citas médicas con validación de disponibilidad
+- **Sistema de Entreturnos/Urgencias** *(v2.5.2)*: Atención inmediata sin horario programado
+  - Registro rápido desde dashboard con modal optimizado
+  - Valor por defecto $0 para modificar según necesidad
+  - Búsqueda avanzada con Select2: profesionales y pacientes por DNI
+  - Destacado visual en ROJO en todos los listados del sistema
+  - Incluido en reportes de liquidación profesional
 - **Sistema dual de pagos anticipados** (individual y paquetes)
 - Control de estados: programado → atendido → cobrado
 - Asignación automática de pagos a turnos
@@ -124,6 +130,119 @@ php artisan config:clear
 - Índices para consultas eficientes
 
 ## 📝 Changelog
+
+### v2.5.2 (2025-10-17) - Sistema de Entreturnos/Urgencias
+
+**🚨 Nueva Funcionalidad de Atención Urgente:**
+- **Modal de Entreturno/Urgencia**: Nuevo sistema para registrar atenciones inmediatas sin horario programado
+  - Acceso rápido desde Card 3 del dashboard: "Accesos rápidos"
+  - Botón distintivo en rojo con ícono de cruz (+)
+  - Modal optimizado sin scroll, elementos compactos y bien distribuidos
+  - Fondo del modal con opacidad reducida (30%) para mejor visualización
+
+**🔍 Búsqueda Avanzada con Select2:**
+- **Selectores Inteligentes**: Implementación de Select2 4.1.0 para búsqueda profesionales y pacientes
+  - **Búsqueda de Profesionales**: Por nombre, apellido y especialidad
+  - **Búsqueda de Pacientes**: Por nombre, apellido y **DNI** simultáneamente
+  - Custom matcher para búsqueda multi-campo en tiempo real
+  - Placeholder en español: "Buscar paciente por nombre o DNI..."
+  - Auto-focus en campo de búsqueda al abrir dropdown
+  - Sincronización bidireccional con Alpine.js mediante eventos
+- **Estilos Personalizados**:
+  - CSS adaptado a TailwindCSS con colores rojos para urgencias
+  - Soporte completo de modo oscuro (dark mode)
+  - z-index apropiado para funcionar dentro de modales
+  - Highlight en rojo (#ef4444) al seleccionar opciones
+
+**💰 Configuración del Formulario:**
+- **Monto por defecto**: Campo inicializado en "0" para modificar según necesidad
+  - Valor HTML `value="0"` y JavaScript `estimated_amount: '0'`
+  - Facilita entrada rápida de urgencias sin costo
+- **Layout Optimizado**: Monto y Consultorio en la misma línea (grid 2 columnas)
+  - Mejor aprovechamiento del espacio vertical
+  - Reduce necesidad de scroll en modal
+- **Información Contextual**: Aviso de "Atención inmediata" movido al header
+  - Reemplaza subtítulo para mayor visibilidad
+  - Badge destacado con ícono de advertencia
+  - Texto compacto: "Registro con fecha y hora actual"
+
+**🎨 Destacado Visual en Rojo:**
+- **Dashboard**: Urgencias destacadas en rojo con badge "🚨 URGENCIA"
+  - Borde rojo (`border-red-300`) y fondo rojo claro (`bg-red-50/50`)
+  - Prioridad visual: urgencias ordenadas primero en listado
+- **Lista de Turnos** (`appointments/index.blade.php`): Mismo destacado visual
+- **Agenda** (`agenda/index.blade.php`): Eventos en rojo en calendario
+- **Reportes de Liquidación**: Filas con emoji 🚨 y fondo rojo en tablas
+
+**🔧 Implementación Técnica:**
+- **Identificación sin Migración**: Usa campo `duration = 0` para identificar urgencias
+  - Evita cambios en estructura de base de datos
+  - Scopes en modelo Appointment: `scopeUrgency()` y `scopeRegular()`
+  - Accessor `getIsUrgencyAttribute()` para fácil detección
+- **Controlador Específico**: Método `storeUrgency()` en AppointmentController
+  - Validaciones personalizadas sin requerir horario
+  - Registro con `appointment_date = now()` (fecha/hora actual)
+  - Estado inicial "scheduled" para flujo estándar de atención
+- **Ruta Específica**: `POST /appointments/urgency` antes de routes resource
+  - Orden crítico: rutas específicas ANTES de `Route::resource`
+  - Limpieza de cachés: route:clear, config:clear, view:clear
+
+**📋 Integración Completa:**
+- **DashboardController**: Campo `isUrgency` agregado a consultas (líneas 109, 184)
+- **ReportController**: Campos `is_urgency` y `duration` en reportes (líneas 271-272)
+- **Orden de Prioridad**: Urgencias aparecen primero en dashboard mediante sorting
+
+**📁 Archivos Creados:**
+- `resources/views/appointments/modal-urgency.blade.php` - Modal de urgencias
+
+**📁 Archivos Modificados:**
+- `app/Models/Appointment.php` - Scopes y accessor para urgencias
+- `app/Http/Controllers/AppointmentController.php` - Método storeUrgency()
+- `app/Http/Controllers/DashboardController.php` - Campo isUrgency en vistas
+- `app/Http/Controllers/ReportController.php` - Urgencias en liquidación
+- `resources/views/dashboard/dashboard.blade.php` - Modal, Select2, Alpine.js
+- `resources/views/appointments/index.blade.php` - Destacado rojo
+- `resources/views/agenda/index.blade.php` - Eventos rojos en calendario
+- `resources/views/reports/professional-liquidation.blade.php` - Badge urgencias
+- `routes/web.php` - Ruta específica para urgencias
+- `README.md` - Badge de versión, características y changelog
+- `VERSION` - Actualizado a 2.5.2
+
+**✅ Beneficios:**
+- ✅ Atención inmediata sin restricciones de horario
+- ✅ Búsqueda rápida de pacientes por DNI
+- ✅ Registro en menos de 30 segundos
+- ✅ Identificación visual instantánea en TODO el sistema
+- ✅ Trazabilidad completa en reportes de liquidación
+- ✅ Sin cambios en estructura de base de datos
+- ✅ Modal optimizado sin scroll innecesario
+- ✅ Modo oscuro totalmente compatible
+
+**🎯 Flujo de Uso:**
+1. Recepcionista hace clic en "Entreturno / Urgencia" (botón rojo en dashboard)
+2. Modal se abre con Select2 inicializado automáticamente
+3. Busca profesional por nombre o especialidad
+4. Busca paciente por nombre o DNI (ej: escribe "12345" y encuentra al paciente)
+5. Monto viene por defecto en "0", lo modifica si corresponde
+6. Selecciona consultorio (opcional) y agrega notas
+7. Click en "Registrar Urgencia"
+8. Urgencia aparece destacada en ROJO en toda la interfaz
+9. Se incluye automáticamente en reportes de liquidación del profesional
+
+**🎨 Diseño del Modal:**
+- Header compacto con título y badge de advertencia
+- 4 campos principales: Profesional, Paciente, Monto, Consultorio
+- Campo de notas reducido a 2 filas para economizar espacio
+- Footer con botones: Cancelar (gris) y Registrar (rojo)
+- Altura máxima optimizada: 85vh para evitar scroll
+
+**🔍 Select2 - Características Técnicas:**
+- jQuery 3.7.1 como dependencia
+- Select2 4.1.0-rc.0 desde CDN
+- Inicialización condicional mediante Alpine.js `$watch`
+- Cleanup automático con `select2('destroy')` al cerrar modal
+- Configuración `dropdownParent` para prevenir cierre de modal
+- Width: 100% para adaptarse al contenedor
 
 ### v2.5.1 (2025-10-14) - Sistema de Impresión de Recibos A5
 

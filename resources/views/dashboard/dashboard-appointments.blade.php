@@ -37,7 +37,8 @@
             <div class="space-y-3">
                 @forelse($data['consultasDetalle'] as $consulta)
                     <div class="group flex items-center justify-between p-4 rounded-lg border bg-white/80 transition-all duration-200 hover:shadow-md dark:bg-gray-800/50
-                        @if($consulta['status'] === 'attended') border-emerald-100 hover:border-emerald-200 dark:border-emerald-800/30 dark:hover:border-emerald-700/50
+                        @if($consulta['isUrgency']) border-red-300 hover:border-red-400 bg-red-50/50 dark:border-red-700 dark:hover:border-red-600 dark:bg-red-900/10
+                        @elseif($consulta['status'] === 'attended') border-emerald-100 hover:border-emerald-200 dark:border-emerald-800/30 dark:hover:border-emerald-700/50
                         @elseif($consulta['status'] === 'scheduled') border-blue-100 hover:border-blue-200 dark:border-blue-800/30 dark:hover:border-blue-700/50
                         @elseif($consulta['status'] === 'cancelled') border-red-100 hover:border-red-200 dark:border-red-800/30 dark:hover:border-red-700/50
                         @else border-amber-100 hover:border-amber-200 dark:border-amber-800/30 dark:hover:border-amber-700/50 @endif">
@@ -76,7 +77,12 @@
                             <div class="flex items-center gap-3">
                                 <div>
                                     <p class="font-semibold text-gray-900 dark:text-white">${{ number_format($consulta['monto'], 0, ',', '.') }}</p>
-                                    <div class="flex items-center gap-1">
+                                    <div class="flex items-center gap-1 flex-wrap">
+                                        @if($consulta['isUrgency'])
+                                            <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-bold bg-red-100 text-red-800 border border-red-300 dark:bg-red-900/40 dark:text-red-300 dark:border-red-700">
+                                                🚨 URGENCIA
+                                            </span>
+                                        @endif
                                         <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium
                                             @if($consulta['status'] === 'attended') bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400
                                             @elseif($consulta['status'] === 'scheduled') bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400

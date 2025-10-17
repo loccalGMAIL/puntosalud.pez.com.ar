@@ -244,43 +244,49 @@
                 <div class="absolute inset-0 bg-gradient-to-r from-emerald-600/5 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100"></div>
             </div>
             <!-- Card 3: Accesos rápidos -->
-            <div x-data="patientsModalDashboard()" class="bg-white dark:bg-gray-800 rounded-xl border border-emerald-200/50 p-4 shadow-sm dark:border-emerald-800/30 flex flex-col gap-3">
-                <a href="#" @click.prevent="openCreateModal()" class="flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-emerald-50 to-emerald-100 hover:from-emerald-100 hover:to-emerald-200 border border-emerald-200 dark:from-emerald-900/20 dark:to-emerald-800/20 dark:border-emerald-700 transition-all duration-200 group">
-                    <div class="flex items-center gap-3">
-                        <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500 text-white">
-                            <!-- Icono usuario -->
-                            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.75 18a6.25 6.25 0 1112.5 0v.75a.75.75 0 01-.75.75H5.5a.75.75 0 01-.75-.75V18z" />
-                            </svg>
+            <div class="bg-white dark:bg-gray-800 rounded-xl border border-emerald-200/50 p-4 shadow-sm dark:border-emerald-800/30 flex flex-col gap-3">
+                <!-- Nuevo Paciente -->
+                <div x-data="patientsModalDashboard()">
+                    <a href="#" @click.prevent="openCreateModal()" class="flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-emerald-50 to-emerald-100 hover:from-emerald-100 hover:to-emerald-200 border border-emerald-200 dark:from-emerald-900/20 dark:to-emerald-800/20 dark:border-emerald-700 transition-all duration-200 group">
+                        <div class="flex items-center gap-3">
+                            <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500 text-white">
+                                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.75 18a6.25 6.25 0 1112.5 0v.75a.75.75 0 01-.75.75H5.5a.75.75 0 01-.75-.75V18z" />
+                                </svg>
+                            </div>
+                            <div>
+                                <div class="text-sm font-medium text-emerald-900 dark:text-emerald-100">Nuevo Paciente</div>
+                                <div class="text-xs text-emerald-700 dark:text-emerald-300">Registrar paciente</div>
+                            </div>
                         </div>
-                        <div>
-                            <div class="text-sm font-medium text-emerald-900 dark:text-emerald-100">Nuevo Paciente</div>
-                            <div class="text-xs text-emerald-700 dark:text-emerald-300">Registrar paciente</div>
-                        </div>
-                    </div>
-                    <svg class="h-4 w-4 text-emerald-600 dark:text-emerald-400 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-                    </svg>
-                </a>
-                {{-- <a href="#" class="flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-red-50 to-red-100 hover:from-red-100 hover:to-red-200 border border-red-200 dark:from-red-900/20 dark:to-red-800/20 dark:border-red-700 transition-all duration-200 group">
-                    <div class="flex items-center gap-3">
-                        <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-red-500 text-white">
-                            <!-- Icono cruz vertical -->
-                            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14M5 12h14" />
-                            </svg>
-                        </div>
-                        <div>
-                            <div class="text-sm font-medium text-red-900 dark:text-red-100">Entreturno / Urgencia</div>
-                        </div>
-                    </div>
-                    <svg class="h-4 w-4 text-red-600 dark:text-red-400 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-                    </svg>
-                </a> --}}
+                        <svg class="h-4 w-4 text-emerald-600 dark:text-emerald-400 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                        </svg>
+                    </a>
+                    @include('patients.modal')
+                </div>
 
-                @include('patients.modal')
+                <!-- Entreturno / Urgencia -->
+                <div x-data="urgencyModalDashboard()" x-init="init()">
+                    <a href="#" @click.prevent="openUrgencyModal()" class="flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-red-50 to-red-100 hover:from-red-100 hover:to-red-200 border border-red-200 dark:from-red-900/20 dark:to-red-800/20 dark:border-red-700 transition-all duration-200 group">
+                        <div class="flex items-center gap-3">
+                            <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-red-500 text-white">
+                                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14M5 12h14" />
+                                </svg>
+                            </div>
+                            <div>
+                                <div class="text-sm font-medium text-red-900 dark:text-red-100">Entreturno / Urgencia</div>
+                            </div>
+                        </div>
+                        <svg class="h-4 w-4 text-red-600 dark:text-red-400 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                        </svg>
+                    </a>
+                    @include('appointments.modal-urgency')
+                </div>
             </div>
+
 <script>
 function patientsModalDashboard() {
     return {
@@ -359,6 +365,182 @@ function patientsModalDashboard() {
         }
     };
 }
+
+// Alpine.js para modal de urgencia en dashboard
+function urgencyModalDashboard() {
+    return {
+        urgencyModalOpen: false,
+        urgencyLoading: false,
+        professionals: [],
+        patients: [],
+        offices: [],
+        urgencyForm: {
+            professional_id: '',
+            patient_id: '',
+            estimated_amount: '0',
+            office_id: '',
+            notes: ''
+        },
+        async init() {
+            await this.loadData();
+            this.initializeSelect2();
+        },
+        async loadData() {
+            try {
+                const response = await fetch('/appointments?ajax=1', {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+                const data = await response.json();
+                this.professionals = data.professionals || [];
+                this.patients = data.patients || [];
+                this.offices = data.offices || [];
+            } catch (error) {
+                console.error('Error loading data:', error);
+            }
+        },
+        initializeSelect2() {
+            const self = this;
+            let urgencyProfessionalSelect = null;
+            let urgencyPatientSelect = null;
+
+            // Verificar cuando el modal se abre para inicializar Select2
+            this.$watch('urgencyModalOpen', function(isOpen) {
+                if (isOpen) {
+                    setTimeout(() => {
+                        // Inicializar Select2 para profesional
+                        if (!urgencyProfessionalSelect && $('#urgency-professional-select').length) {
+                            urgencyProfessionalSelect = $('#urgency-professional-select').select2({
+                                placeholder: 'Buscar profesional...',
+                                allowClear: false,
+                                width: '100%',
+                                dropdownParent: $('#urgency-professional-select').closest('.bg-white'),
+                                language: {
+                                    noResults: function() { return "No se encontraron resultados"; },
+                                    searching: function() { return "Buscando..."; }
+                                }
+                            });
+
+                            urgencyProfessionalSelect.on('change', function(e) {
+                                self.urgencyForm.professional_id = $(this).val();
+                            });
+
+                            urgencyProfessionalSelect.on('select2:open', function() {
+                                document.querySelector('.select2-search__field').focus();
+                            });
+                        }
+
+                        // Inicializar Select2 para paciente con búsqueda por DNI
+                        if (!urgencyPatientSelect && $('#urgency-patient-select').length) {
+                            urgencyPatientSelect = $('#urgency-patient-select').select2({
+                                placeholder: 'Buscar paciente por nombre o DNI...',
+                                allowClear: false,
+                                width: '100%',
+                                dropdownParent: $('#urgency-patient-select').closest('.bg-white'),
+                                language: {
+                                    noResults: function() { return "No se encontraron resultados"; },
+                                    searching: function() { return "Buscando..."; }
+                                },
+                                matcher: function(params, data) {
+                                    if ($.trim(params.term) === '') {
+                                        return data;
+                                    }
+                                    if (!data.id) {
+                                        return null;
+                                    }
+
+                                    const searchTerm = params.term.toLowerCase();
+                                    const text = (data.text || '').toLowerCase();
+                                    const $option = $(data.element);
+                                    const dni = ($option.attr('data-dni') || '').toLowerCase();
+                                    const firstName = ($option.attr('data-first-name') || '').toLowerCase();
+                                    const lastName = ($option.attr('data-last-name') || '').toLowerCase();
+
+                                    if (text.indexOf(searchTerm) > -1 ||
+                                        dni.indexOf(searchTerm) > -1 ||
+                                        firstName.indexOf(searchTerm) > -1 ||
+                                        lastName.indexOf(searchTerm) > -1) {
+                                        return data;
+                                    }
+
+                                    return null;
+                                }
+                            });
+
+                            urgencyPatientSelect.on('change', function(e) {
+                                self.urgencyForm.patient_id = $(this).val();
+                            });
+
+                            urgencyPatientSelect.on('select2:open', function() {
+                                document.querySelector('.select2-search__field').focus();
+                            });
+                        }
+                    }, 150);
+                } else {
+                    // Limpiar Select2 cuando se cierra el modal
+                    if (urgencyProfessionalSelect) {
+                        urgencyProfessionalSelect.select2('destroy');
+                        urgencyProfessionalSelect = null;
+                    }
+                    if (urgencyPatientSelect) {
+                        urgencyPatientSelect.select2('destroy');
+                        urgencyPatientSelect = null;
+                    }
+                }
+            });
+        },
+        openUrgencyModal() {
+            this.urgencyModalOpen = true;
+            this.urgencyForm = {
+                professional_id: '',
+                patient_id: '',
+                estimated_amount: '0',
+                office_id: '',
+                notes: ''
+            };
+        },
+        closeUrgencyModal() {
+            this.urgencyModalOpen = false;
+        },
+        async submitUrgencyForm() {
+            if (this.urgencyLoading) return;
+            if (!this.urgencyForm.professional_id || !this.urgencyForm.patient_id || !this.urgencyForm.estimated_amount) {
+                await SystemModal.show('error', 'Error', 'Complete todos los campos requeridos (Profesional, Paciente y Monto).', 'Aceptar', false);
+                return;
+            }
+            this.urgencyLoading = true;
+            try {
+                const response = await fetch("{{ route('appointments.urgency.store') }}", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name=\"csrf-token\"]').getAttribute('content'),
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: JSON.stringify(this.urgencyForm)
+                });
+                const result = await response.json();
+                if (result.success) {
+                    this.urgencyLoading = false;
+                    this.urgencyModalOpen = false;
+                    await SystemModal.show('success', 'Éxito', result.message || 'Urgencia registrada exitosamente.', 'Aceptar', false);
+                    location.reload();
+                } else {
+                    this.urgencyLoading = false;
+                    let msg = result.message || 'Error al registrar la urgencia.';
+                    if (result.errors) {
+                        msg += '\n' + Object.values(result.errors).map(e => e.join(', ')).join('\n');
+                    }
+                    await SystemModal.show('error', 'Error', msg, 'Aceptar', false);
+                }
+            } catch (error) {
+                this.urgencyLoading = false;
+                await SystemModal.show('error', 'Error', 'Error inesperado al registrar la urgencia.', 'Aceptar', false);
+            }
+        }
+    };
+}
 </script>
 
             <!-- Card 3: Acceso Rápido a Reportes -->
@@ -422,10 +604,20 @@ function patientsModalDashboard() {
                 </div>
                 
                 <div class="space-y-3">
-                    @forelse($dashboardData['consultasDetalle'] as $consulta)
+                    @php
+                        $consultasDetalleOrdenadas = collect($dashboardData['consultasDetalle'])
+                            ->sortByDesc(function($consulta) {
+                                // Prioridad: urgencias primero, luego atendidas, luego el resto
+                                return ($consulta['isUrgency'] ? 2 : 0) + ($consulta['status'] === 'attended' ? 1 : 0);
+                            })
+                            ->values();
+                    @endphp
+
+                    @forelse($consultasDetalleOrdenadas as $consulta)
                         @if(!($consulta['status'] === 'attended' && $consulta['isPaid']) && $consulta['status'] !== 'absent')
-                        <div class="group flex items-center justify-between p-4 rounded-lg border bg-white/80 transition-all duration-200 hover:shadow-md dark:bg-gray-800/50 
-                            @if($consulta['status'] === 'attended') border-emerald-100 hover:border-emerald-200 dark:border-emerald-800/30 dark:hover:border-emerald-700/50
+                        <div class="group flex items-center justify-between p-4 rounded-lg border bg-white/80 transition-all duration-200 hover:shadow-md dark:bg-gray-800/50
+                            @if($consulta['isUrgency']) border-red-300 hover:border-red-400 bg-red-50/50 dark:border-red-700 dark:hover:border-red-600 dark:bg-red-900/10
+                            @elseif($consulta['status'] === 'attended') border-emerald-100 hover:border-emerald-200 dark:border-emerald-800/30 dark:hover:border-emerald-700/50
                             @elseif($consulta['status'] === 'scheduled') border-blue-100 hover:border-blue-200 dark:border-blue-800/30 dark:hover:border-blue-700/50
                             @elseif($consulta['status'] === 'cancelled') border-red-100 hover:border-red-200 dark:border-red-800/30 dark:hover:border-red-700/50
                             @else border-amber-100 hover:border-amber-200 dark:border-amber-800/30 dark:hover:border-amber-700/50 @endif">
@@ -443,7 +635,7 @@ function patientsModalDashboard() {
                                         </svg>
                                     @elseif($consulta['status'] === 'scheduled')
                                         <svg class="h-5 w-5 text-blue-600 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.897-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                         </svg>
                                     @elseif($consulta['status'] === 'cancelled')
                                         <svg class="h-5 w-5 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
@@ -464,7 +656,12 @@ function patientsModalDashboard() {
                                 <div class="flex items-center gap-3">
                                     <div>
                                         <p class="font-semibold text-gray-900 dark:text-white">${{ number_format($consulta['monto'], 0, ',', '.') }}</p>
-                                        <div class="flex items-center gap-1">
+                                        <div class="flex items-center gap-1 flex-wrap">
+                                            @if($consulta['isUrgency'])
+                                                <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-bold bg-red-100 text-red-800 border border-red-300 dark:bg-red-900/40 dark:text-red-300 dark:border-red-700">
+                                                    🚨 URGENCIA
+                                                </span>
+                                            @endif
                                             <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium
                                                 @if($consulta['status'] === 'attended') bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400
                                                 @elseif($consulta['status'] === 'scheduled') bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400
@@ -909,9 +1106,11 @@ function patientsModalDashboard() {
 
     @push('styles')
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <!-- Select2 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <style>
         [x-cloak] { display: none !important; }
-        
+
         /* Asegurar que el modal esté por encima de todo */
         .modal-overlay {
             z-index: 10000 !important;
@@ -921,11 +1120,89 @@ function patientsModalDashboard() {
             width: 100% !important;
             height: 100% !important;
         }
-        
+
         .modal-content {
             position: relative !important;
             z-index: 10001 !important;
         }
+
+        /* Select2 Custom Styles */
+        .select2-container--default .select2-selection--single {
+            height: 42px !important;
+            padding: 8px 12px !important;
+            border: 1px solid #d1d5db !important;
+            border-radius: 0.375rem !important;
+        }
+
+        .select2-container--default .select2-selection--single .select2-selection__rendered {
+            line-height: 24px !important;
+            color: #1f2937 !important;
+        }
+
+        .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: 40px !important;
+        }
+
+        .select2-dropdown {
+            border: 1px solid #d1d5db !important;
+            border-radius: 0.375rem !important;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
+        }
+
+        .select2-container--default .select2-results__option--highlighted[aria-selected] {
+            background-color: #ef4444 !important;
+        }
+
+        .select2-container--default .select2-search--dropdown .select2-search__field {
+            border: 1px solid #d1d5db !important;
+            border-radius: 0.375rem !important;
+            padding: 6px 12px !important;
+        }
+
+        /* Dark mode styles for Select2 */
+        .dark .select2-container--default .select2-selection--single {
+            background-color: #374151 !important;
+            border-color: #4b5563 !important;
+        }
+
+        .dark .select2-container--default .select2-selection--single .select2-selection__rendered {
+            color: #f9fafb !important;
+        }
+
+        .dark .select2-dropdown {
+            background-color: #374151 !important;
+            border-color: #4b5563 !important;
+        }
+
+        .dark .select2-container--default .select2-results__option {
+            background-color: #374151 !important;
+            color: #f9fafb !important;
+        }
+
+        .dark .select2-container--default .select2-results__option--highlighted[aria-selected] {
+            background-color: #dc2626 !important;
+        }
+
+        .dark .select2-container--default .select2-search--dropdown .select2-search__field {
+            background-color: #1f2937 !important;
+            border-color: #4b5563 !important;
+            color: #f9fafb !important;
+        }
+
+        .select2-container {
+            z-index: 10002 !important;
+        }
+
+        .select2-dropdown {
+            z-index: 10003 !important;
+        }
     </style>
+    @endpush
+
+    @push('scripts')
+    <!-- jQuery (required for Select2) -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <!-- Select2 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     @endpush
 @endsection

@@ -405,6 +405,85 @@ class AppointmentController extends Controller
     }
 
     /**
+     * Store a new urgency appointment (entreturno)
+     */
+    public function storeUrgency(Request $request)
+    {
+        try {
+            $validated = $request->validate([
+                'professional_id' => 'required|exists:professionals,id',
+                'patient_id' => 'required|exists:patients,id',
+                'estimated_amount' => 'required|numeric|min:0',
+                'office_id' => 'nullable|exists:offices,id',
+                'notes' => 'nullable|string|max:500',
+            ], [
+                'professional_id.required' => 'Debe seleccionar un profesional.',
+                'professional_id.exists' => 'El profesional seleccionado no existe.',
+                'patient_id.required' => 'Debe seleccionar un paciente.',
+                'patient_id.exists' => 'El paciente seleccionado no existe.',
+                'estimated_amount.required' => 'El monto es obligatorio.',
+                'estimated_amount.numeric' => 'El monto debe ser un número válido.',
+                'estimated_amount.min' => 'El monto debe ser mayor o igual a 0.',
+            ]);
+
+            // Limpiar campos opcionales vacíos
+            if (empty($validated['office_id'])) {
+                $validated['office_id'] = null;
+            }
+            if (empty($validated['notes'])) {
+                $validated['notes'] = null;
+            }
+
+            DB::beginTransaction();
+
+            // Crear turno de urgencia con duration = 0 y fecha/hora actual
+            $appointment = Appointment::create([
+                'professional_id' => $validated['professional_id'],
+                'patient_id' => $validated['patient_id'],
+                'appointment_date' => now(), // Fecha y hora actual
+                'duration' => 0, // duration = 0 indica urgencia
+                'office_id' => $validated['office_id'],
+                'notes' => $validated['notes'],
+                'estimated_amount' => $validated['estimated_amount'],
+                'status' => 'scheduled',
+            ]);
+
+            DB::commit();
+
+            $message = 'Urgencia registrada exitosamente.';
+
+            if ($request->ajax()) {
+                return response()->json(['success' => true, 'message' => $message]);
+            }
+
+            return redirect()->route('appointments.index')->with('success', $message);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            if ($e instanceof \Illuminate\Validation\ValidationException) {
+                if ($request->ajax()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Error de validación',
+                        'errors' => $e->errors(),
+                    ], 422);
+                }
+                throw $e;
+            }
+
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Error al registrar la urgencia: '.$e->getMessage(),
+                ], 500);
+            }
+
+            return redirect()->back()->withErrors(['error' => 'Error al registrar la urgencia: '.$e->getMessage()]);
+        }
+    }
+
+    /**
      * Get available time slots for a professional on a specific date
      */
     public function availableSlots(Request $request)

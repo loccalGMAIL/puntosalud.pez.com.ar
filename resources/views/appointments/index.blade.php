@@ -250,7 +250,8 @@
                         
                         <!-- Filas de turnos -->
                         <template x-for="appointment in filteredAppointments" :key="appointment.id">
-                            <tr class="hover:bg-emerald-50/30 dark:hover:bg-emerald-950/20 transition-colors duration-200">
+                            <tr class="transition-colors duration-200"
+                                :class="appointment.duration === 0 ? 'bg-red-50/50 dark:bg-red-900/10 hover:bg-red-100/50 dark:hover:bg-red-900/20 border-l-4 border-l-red-500' : 'hover:bg-emerald-50/30 dark:hover:bg-emerald-950/20'">
                                 <!-- Fecha/Hora -->
                                 <td class="px-3 py-2 whitespace-nowrap">
                                     <div class="text-xs font-medium text-gray-900 dark:text-white" x-text="formatDate(appointment.appointment_date)"></div>
@@ -271,7 +272,14 @@
 
                                 <!-- Duración -->
                                 <td class="px-3 py-2 whitespace-nowrap">
-                                    <span class="text-xs text-gray-900 dark:text-white" x-text="appointment.duration + ' min'"></span>
+                                    <template x-if="appointment.duration === 0">
+                                        <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-bold bg-red-100 text-red-800 border border-red-300 dark:bg-red-900/40 dark:text-red-300 dark:border-red-700">
+                                            🚨 URGENCIA
+                                        </span>
+                                    </template>
+                                    <template x-if="appointment.duration > 0">
+                                        <span class="text-xs text-gray-900 dark:text-white" x-text="appointment.duration + ' min'"></span>
+                                    </template>
                                 </td>
 
                                 <!-- Estado -->

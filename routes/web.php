@@ -46,8 +46,12 @@ Route::middleware(['auth'])->group(function () {
 
     Route::resource('patients', PatientController::class);
 
-    Route::resource('appointments', AppointmentController::class);
+    // Appointment specific routes (must be before resource route)
     Route::get('/appointments/available-slots', [AppointmentController::class, 'availableSlots'])->name('appointments.available-slots');
+    Route::post('/appointments/urgency', [AppointmentController::class, 'storeUrgency'])->name('appointments.urgency.store');
+
+    // Appointment resource routes
+    Route::resource('appointments', AppointmentController::class);
 
     Route::get('/agenda', [AgendaController::class, 'index'])->name('agenda.index');
 
