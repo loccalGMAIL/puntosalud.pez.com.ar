@@ -167,12 +167,20 @@
                                 
                                 @foreach($visibleAppointments as $appointment)
                                     @php
-                                        $statusColors = [
-                                            'scheduled' => 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 hover:bg-blue-200 dark:hover:bg-blue-900/50',
-                                            'attended' => 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/50',
-                                            'absent' => 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/50',
-                                        ];
-                                        $statusColor = $statusColors[$appointment->status] ?? 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600';
+                                        // Check if appointment is urgency (duration = 0)
+                                        $isUrgency = $appointment->is_urgency;
+
+                                        if ($isUrgency) {
+                                            $statusColor = 'bg-red-100 text-red-800 border-2 border-red-400 dark:bg-red-900/40 dark:text-red-300 dark:border-red-600 hover:bg-red-200 dark:hover:bg-red-900/60 font-bold';
+                                        } else {
+                                            $statusColors = [
+                                                'scheduled' => 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 hover:bg-blue-200 dark:hover:bg-blue-900/50',
+                                                'attended' => 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/50',
+                                                'absent' => 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/50',
+                                            ];
+                                            $statusColor = $statusColors[$appointment->status] ?? 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600';
+                                        }
+
                                         $appointmentIsPast = $appointment->appointment_date->isPast();
                                     @endphp
                                     
@@ -287,13 +295,21 @@
                 <!-- Appointments List -->
                 <div class="space-y-3" x-show="dayAppointments.length > 0">
                     <template x-for="appointment in dayAppointments" :key="appointment.id">
-                        <div class="border border-gray-200 dark:border-gray-600 rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                        <div class="rounded-lg p-4 transition-colors"
+                             :class="appointment.duration === 0 ?
+                                'border-2 border-red-400 dark:border-red-600 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30' :
+                                'border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700/50'">
                             <div class="flex items-center justify-between">
                                 <div class="flex-1">
-                                    <div class="flex items-center gap-3">
+                                    <div class="flex items-center gap-3 flex-wrap">
                                         <span class="font-medium text-gray-900 dark:text-white" x-text="formatTime(appointment.appointment_date)"></span>
-                                        <span :class="getStatusBadgeClass(appointment.status)" 
-                                              class="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full" 
+                                        <template x-if="appointment.duration === 0">
+                                            <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-bold bg-red-100 text-red-800 border border-red-300 dark:bg-red-900/40 dark:text-red-300 dark:border-red-700">
+                                                🚨 URGENCIA
+                                            </span>
+                                        </template>
+                                        <span :class="getStatusBadgeClass(appointment.status)"
+                                              class="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full"
                                               x-text="getStatusText(appointment.status)">
                                         </span>
                                     </div>

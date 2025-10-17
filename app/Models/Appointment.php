@@ -115,6 +115,16 @@ class Appointment extends Model
             ->whereDoesntHave('paymentAppointments');
     }
 
+    public function scopeUrgency($query)
+    {
+        return $query->where('duration', 0);
+    }
+
+    public function scopeRegular($query)
+    {
+        return $query->where('duration', '>', 0);
+    }
+
     /**
      * Accessors
      */
@@ -143,6 +153,11 @@ class Appointment extends Model
         $amountPaid = $this->amount_paid ?? 0;
 
         return $finalAmount - $amountPaid;
+    }
+
+    public function getIsUrgencyAttribute()
+    {
+        return $this->duration === 0;
     }
 
     /**

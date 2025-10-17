@@ -268,6 +268,8 @@ class ReportController extends Controller
                     'is_prepaid' => $isPrepaid,
                     'payment_type' => $payment ? $payment->payment_type : null,
                     'receipt_number' => $payment ? $payment->receipt_number : null,
+                    'is_urgency' => $appointment->is_urgency,
+                    'duration' => $appointment->duration,
                 ];
             });
 

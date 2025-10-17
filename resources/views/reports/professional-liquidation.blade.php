@@ -116,8 +116,17 @@
                         </thead>
                         <tbody>
                             @foreach($liquidationData['prepaid_appointments'] as $appointment)
-                                <tr class="border-b border-gray-100 dark:border-gray-700">
-                                    <td class="py-3 px-3 font-medium text-gray-900 dark:text-white">{{ $appointment['time'] }}</td>
+                                <tr class="border-b border-gray-100 dark:border-gray-700 @if($appointment['is_urgency']) bg-red-50/30 dark:bg-red-900/10 @endif">
+                                    <td class="py-3 px-3">
+                                        <div class="flex items-center gap-2">
+                                            @if($appointment['is_urgency'])
+                                                <span class="inline-flex items-center rounded px-1 py-0.5 text-xs font-bold bg-red-100 text-red-800 border border-red-300 dark:bg-red-900/40 dark:text-red-300 dark:border-red-700" title="Urgencia">
+                                                    🚨
+                                                </span>
+                                            @endif
+                                            <span class="font-medium text-gray-900 dark:text-white">{{ $appointment['time'] }}</span>
+                                        </div>
+                                    </td>
                                     <td class="py-3 px-3">
                                         <div class="font-medium text-gray-900 dark:text-white">{{ $appointment['patient_name'] }}</div>
                                         <div class="text-xs text-gray-500 dark:text-gray-400">DNI: {{ $appointment['patient_dni'] }}</div>
@@ -171,8 +180,17 @@
                         </thead>
                         <tbody>
                             @foreach($liquidationData['today_paid_appointments'] as $appointment)
-                                <tr class="border-b border-gray-100 dark:border-gray-700">
-                                    <td class="py-3 px-3 font-medium text-gray-900 dark:text-white">{{ $appointment['time'] }}</td>
+                                <tr class="border-b border-gray-100 dark:border-gray-700 @if($appointment['is_urgency']) bg-red-50/30 dark:bg-red-900/10 @endif">
+                                    <td class="py-3 px-3">
+                                        <div class="flex items-center gap-2">
+                                            @if($appointment['is_urgency'])
+                                                <span class="inline-flex items-center rounded px-1 py-0.5 text-xs font-bold bg-red-100 text-red-800 border border-red-300 dark:bg-red-900/40 dark:text-red-300 dark:border-red-700" title="Urgencia">
+                                                    🚨
+                                                </span>
+                                            @endif
+                                            <span class="font-medium text-gray-900 dark:text-white">{{ $appointment['time'] }}</span>
+                                        </div>
+                                    </td>
                                     <td class="py-3 px-3">
                                         <div class="font-medium text-gray-900 dark:text-white">{{ $appointment['patient_name'] }}</div>
                                         <div class="text-xs text-gray-500 dark:text-gray-400">DNI: {{ $appointment['patient_dni'] }}</div>
@@ -225,8 +243,17 @@
                         </thead>
                         <tbody>
                             @foreach($liquidationData['unpaid_appointments'] as $appointment)
-                                <tr class="border-b border-gray-100 dark:border-gray-700">
-                                    <td class="py-3 px-3 font-medium text-gray-900 dark:text-white">{{ $appointment['time'] }}</td>
+                                <tr class="border-b border-gray-100 dark:border-gray-700 @if($appointment['is_urgency']) bg-red-50/30 dark:bg-red-900/10 @endif">
+                                    <td class="py-3 px-3">
+                                        <div class="flex items-center gap-2">
+                                            @if($appointment['is_urgency'])
+                                                <span class="inline-flex items-center rounded px-1 py-0.5 text-xs font-bold bg-red-100 text-red-800 border border-red-300 dark:bg-red-900/40 dark:text-red-300 dark:border-red-700" title="Urgencia">
+                                                    🚨
+                                                </span>
+                                            @endif
+                                            <span class="font-medium text-gray-900 dark:text-white">{{ $appointment['time'] }}</span>
+                                        </div>
+                                    </td>
                                     <td class="py-3 px-3">
                                         <div class="font-medium text-gray-900 dark:text-white">{{ $appointment['patient_name'] }}</div>
                                         <div class="text-xs text-gray-500 dark:text-gray-400">DNI: {{ $appointment['patient_dni'] }}</div>
