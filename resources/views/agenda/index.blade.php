@@ -666,6 +666,8 @@ document.addEventListener('alpine:init', () => {
 <!-- Select2 CSS -->
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 <style>
+[x-cloak] { display: none !important; }
+
 /* Estilos personalizados para Select2 */
 .select2-container--default .select2-selection--single {
     background-color: transparent;
@@ -724,9 +726,9 @@ document.addEventListener('alpine:init', () => {
 
 @push('scripts')
 <!-- Select2 JS -->
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-<script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js" defer></script>
+<script defer>
 document.addEventListener('DOMContentLoaded', () => {
     // Inicializar Select2 para el selector de profesionales en la agenda
     if ($('#agenda-professional-select').length) {

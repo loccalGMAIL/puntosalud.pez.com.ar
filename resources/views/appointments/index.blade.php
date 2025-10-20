@@ -801,6 +801,8 @@ function appointmentsPage() {
 <!-- Select2 CSS -->
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 <style>
+[x-cloak] { display: none !important; }
+
 /* Estilos personalizados para Select2 en modo oscuro */
 .select2-container--default .select2-selection--single {
     background-color: transparent;
@@ -859,9 +861,9 @@ function appointmentsPage() {
 
 @push('scripts')
 <!-- Select2 JS -->
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-<script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js" defer></script>
+<script defer>
 // Inicializar Select2 cuando el modal se abre
 document.addEventListener('DOMContentLoaded', () => {
     let professionalSelect = null;

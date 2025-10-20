@@ -18,13 +18,13 @@ $user = $user ?? auth()->user();
         </div>
         
         <!-- User Info -->
-        <div x-show="!collapsed" class="flex-1 text-left min-w-0">
+        <div x-show="!collapsed" x-cloak class="flex-1 text-left min-w-0">
             <div class="font-medium text-gray-900 dark:text-white truncate">{{ $user->name }}</div>
             <div class="text-xs text-gray-500 dark:text-gray-400 truncate">{{ $user->email }}</div>
         </div>
-        
+
         <!-- Chevron -->
-        <svg x-show="!collapsed" 
+        <svg x-show="!collapsed" x-cloak 
              :class="{ 'rotate-180': open }" 
              class="w-4 h-4 ml-2 transition-transform duration-200 flex-shrink-0" 
              fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
@@ -33,7 +33,8 @@ $user = $user ?? auth()->user();
     </button>
 
     <!-- Dropdown Menu -->
-    <div x-show="open && !collapsed" 
+    <div x-show="open && !collapsed"
+         x-cloak
          x-transition:enter="transition ease-out duration-200"
          x-transition:enter-start="opacity-0 scale-95"
          x-transition:enter-end="opacity-100 scale-100"
@@ -76,6 +77,7 @@ $user = $user ?? auth()->user();
 
     <!-- Tooltip for collapsed state -->
     <div x-show="collapsed && open"
+         x-cloak
          x-transition:enter="transition ease-out duration-200"
          x-transition:enter-start="opacity-0 translate-x-2"
          x-transition:enter-end="opacity-100 translate-x-0"
