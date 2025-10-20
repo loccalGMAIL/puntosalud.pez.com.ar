@@ -1,5 +1,6 @@
 <!-- Modal -->
-<div x-show="modalOpen" 
+<div x-show="modalOpen"
+     x-cloak
      x-transition:enter="transition ease-out duration-300"
      x-transition:enter-start="opacity-0"
      x-transition:enter-end="opacity-100"
