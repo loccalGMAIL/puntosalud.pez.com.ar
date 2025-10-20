@@ -2,7 +2,7 @@
 
 <div class="px-2 py-4">
     <!-- Group Label -->
-    <div class="px-3 py-2" x-show="!collapsed">
+    <div class="px-3 py-2" x-show="!collapsed" x-cloak>
         <h2 class="mb-2 px-2 text-xs font-semibold tracking-tight text-gray-500 dark:text-gray-400 uppercase">
             Menú
         </h2>
@@ -26,10 +26,11 @@
                 </div>
                 
                 <!-- Text -->
-                <span x-show="!collapsed" class="flex-1">{{ $item['title'] }}</span>
+                <span x-show="!collapsed" x-cloak class="flex-1">{{ $item['title'] }}</span>
                 
                 <!-- Tooltip for collapsed state -->
                 <div x-show="collapsed && tooltip"
+                     x-cloak
                      x-transition:enter="transition ease-out duration-200"
                      x-transition:enter-start="opacity-0 translate-x-2"
                      x-transition:enter-end="opacity-100 translate-x-0"
