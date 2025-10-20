@@ -383,6 +383,33 @@ class CashController extends Controller
                 ], 400);
             }
 
+            // Verificar que todos los profesionales con turnos atendidos del día hayan sido liquidados
+            $professionalsWithAppointments = \App\Models\Professional::whereHas('appointments', function ($query) use ($closeDate) {
+                $query->whereDate('appointment_date', $closeDate)
+                      ->where('status', 'attended');
+            })->get();
+
+            $professionalsNotLiquidated = $professionalsWithAppointments->filter(function ($professional) use ($closeDate) {
+                // Verificar si existe liquidación para este profesional en esta fecha
+                $hasLiquidation = \App\Models\ProfessionalLiquidation::where('professional_id', $professional->id)
+                    ->whereDate('liquidation_date', $closeDate)
+                    ->exists();
+
+                return !$hasLiquidation; // Retorna true si NO tiene liquidación
+            });
+
+            if ($professionalsNotLiquidated->isNotEmpty()) {
+                $professionalNames = $professionalsNotLiquidated->map(function ($professional) {
+                    return "Dr. {$professional->first_name} {$professional->last_name}";
+                })->join(', ');
+
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No se puede cerrar la caja. Los siguientes profesionales tienen turnos atendidos sin liquidar: ' . $professionalNames . '. Por favor, liquide a todos los profesionales antes de cerrar la caja.',
+                    'professionals_not_liquidated' => $professionalsNotLiquidated->values(),
+                ], 400);
+            }
+
             // Obtener el saldo actual antes del cierre con lock pesimista
             $lastMovement = CashMovement::whereDate('movement_date', '<=', $closeDate)
                 ->orderBy('id', 'desc')

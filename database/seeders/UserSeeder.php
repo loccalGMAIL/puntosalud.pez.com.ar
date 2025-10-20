@@ -27,5 +27,14 @@ class UserSeeder extends Seeder
             'role' => 'receptionist',
             'is_active' => true,
         ]);
+
+        // Usuario recepcionista - Priscila
+        User::create([
+            'name' => 'Priscila',
+            'email' => 'gomezpri20@gmail.com',
+            'password' => Hash::make('password123'),
+            'role' => 'receptionist',
+            'is_active' => true,
+        ]);
     }
 }

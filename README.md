@@ -2,7 +2,7 @@
 
 [![Laravel](https://img.shields.io/badge/Laravel-12.x-red?style=flat&logo=laravel)](https://laravel.com)
 [![PHP](https://img.shields.io/badge/PHP-8.2-blue?style=flat&logo=php)](https://php.net)
-[![Version](https://img.shields.io/badge/Version-2.5.2-green?style=flat)](#changelog)
+[![Version](https://img.shields.io/badge/Version-2.5.3-green?style=flat)](#changelog)
 [![License](https://img.shields.io/badge/License-MIT-yellow?style=flat)](#license)
 
 Sistema integral de gestión médica para clínicas y consultorios, desarrollado con Laravel 12 y tecnologías modernas.
@@ -130,6 +130,102 @@ php artisan config:clear
 - Índices para consultas eficientes
 
 ## 📝 Changelog
+
+### v2.5.3 (2025-10-17) - Validación de Liquidaciones Pendientes en Cierre de Caja
+
+**🔒 Nueva Validación de Integridad Financiera:**
+- **Bloqueo de Cierre con Liquidaciones Pendientes**: El sistema ahora impide cerrar la caja si existen liquidaciones profesionales sin pagar
+  - Validación automática al intentar cerrar caja
+  - Verifica liquidaciones del día con `payment_status = 'pending'`
+  - Mensaje de error descriptivo con nombres de profesionales pendientes
+  - Garantiza que todos los profesionales estén liquidados antes del cierre
+
+**💰 Flujo de Validación:**
+1. Usuario intenta cerrar caja desde dashboard
+2. Sistema verifica que no exista cierre previo
+3. **NUEVO**: Sistema consulta liquidaciones pendientes de la fecha
+4. Si hay pendientes: muestra error con lista de profesionales
+5. Si no hay pendientes: permite continuar con el cierre
+
+**🔧 Implementación Técnica:**
+- **CashController.closeCash()**: Validación agregada antes de crear movimiento de cierre
+  - Query con relación `professional` cargada (eager loading)
+  - Filtro por fecha y estado pendiente
+  - Generación dinámica de mensaje con nombres de profesionales
+  - Respuesta HTTP 400 con datos de liquidaciones pendientes
+- **Frontend**: Manejo automático de errores
+  - `DashboardAPI.showNotification()` muestra el mensaje de error
+  - Modal de cierre se mantiene abierto para correcciones
+  - Usuario puede ir a liquidar antes de intentar cerrar nuevamente
+
+**📋 Mensaje de Error:**
+```
+No se puede cerrar la caja. Hay liquidaciones pendientes de pago para:
+Dr. Juan Pérez, Dr. María González.
+Por favor, liquide a los profesionales antes de cerrar la caja.
+```
+
+**🎯 Beneficios:**
+- ✅ Previene cierre de caja con deudas profesionales pendientes
+- ✅ Garantiza consistencia financiera del sistema
+- ✅ Evita errores contables por liquidaciones olvidadas
+- ✅ Mensaje claro indicando exactamente qué falta liquidar
+- ✅ Trazabilidad completa del flujo de cierre
+
+**📁 Archivos Modificados:**
+- `app/Http/Controllers/CashController.php` - Validación de liquidaciones pendientes (líneas 386-402)
+
+**✅ Escenarios Cubiertos:**
+- ✅ Cierre permitido: Sin liquidaciones pendientes
+- ✅ Cierre bloqueado: Con liquidaciones pendientes (muestra nombres)
+- ✅ Cierre bloqueado: Liquidaciones parciales (muestra solo pendientes)
+- ✅ Frontend: Error mostrado automáticamente al usuario
+
+**🔮 Próximos Pasos:**
+- Botón directo desde modal de error a vista de liquidaciones
+- Indicador visual en dashboard de liquidaciones pendientes
+- Resumen de montos pendientes de liquidar en alerta
+
+### v2.5.3 (2025-10-20) - Mejoras en UX y Validaciones de Caja
+
+**⚡ Auto-submit en Selector de Fecha (Cash/Daily):**
+- **Filtrado Automático**: El selector de fecha ahora recarga los datos automáticamente al cambiar
+  - Evento `@change="filterByDate()"` agregado al input de fecha
+  - Elimina necesidad de hacer clic en el botón "Filtrar"
+  - Botones "Hoy" y "Filtrar" siguen disponibles para uso manual
+  - Mejora significativa en UX y velocidad de navegación
+
+**🔧 Corrección en Validación de Liquidaciones:**
+- **Ajuste de Lógica**: Corrección en validación de cierre de caja
+  - Cambio de enfoque: verificación por existencia de liquidaciones, no por payment_status
+  - Las liquidaciones se crean con `payment_status='paid'` inmediatamente
+  - Nueva validación detecta profesionales con turnos atendidos sin liquidación creada
+  - Query optimizado: busca profesionales con appointments `status='attended'`
+  - Filtra profesionales sin registro en `ProfessionalLiquidation` para la fecha
+
+**📋 Mensaje de Error Actualizado:**
+```
+No se puede cerrar la caja. Los siguientes profesionales tienen turnos atendidos sin liquidar:
+Dr. Juan Pérez, Dr. María González.
+Por favor, liquide a todos los profesionales antes de cerrar la caja.
+```
+
+**👥 Datos de Producción en Seeders:**
+- **Usuario Priscila**: Agregado al UserSeeder para entornos de desarrollo
+  - Email: gomezpri20@gmail.com
+  - Rol: receptionist
+  - Datos recuperados de base de datos de producción
+
+**🎯 Beneficios:**
+- ✅ Validación correcta de liquidaciones pendientes antes de cierre
+- ✅ UX mejorada con filtrado automático por fecha
+- ✅ Seeders más completos con datos reales de usuarios
+- ✅ Mensajes de error más precisos y accionables
+
+**📁 Archivos Modificados:**
+- `app/Http/Controllers/CashController.php` - Corrección de validación de liquidaciones (líneas 355-392)
+- `resources/views/cash/daily.blade.php` - Auto-submit en selector de fecha (línea 84)
+- `database/seeders/UserSeeder.php` - Usuario Priscila agregado (líneas 31-38)
 
 ### v2.5.2 (2025-10-17) - Sistema de Entreturnos/Urgencias
 
