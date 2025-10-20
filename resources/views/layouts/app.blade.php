@@ -12,10 +12,13 @@
     
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.bunny.net">
-    <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600" rel="stylesheet" />
+    <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600&display=swap" rel="stylesheet" />
     
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <style>
+        [x-cloak] { display: none !important; }
+    </style>
     @stack('styles')
 </head>
 <body class="bg-gray-50 dark:bg-gray-900 min-h-screen">
@@ -69,11 +72,11 @@
     @endphp
 
     <!-- Sidebar Container -->
-    <div x-data="{ 
-        collapsed: false,
+    <div x-data="{
+        collapsed: window.innerWidth < 768,
         isMobile: window.innerWidth < 768,
         toggle() { this.collapsed = !this.collapsed }
-    }" 
+    }"
     x-init="
         window.addEventListener('resize', () => {
             isMobile = window.innerWidth < 768;
@@ -81,7 +84,8 @@
         })
     ">
         <!-- Overlay for mobile -->
-        <div x-show="!collapsed && isMobile" 
+        <div x-show="!collapsed && isMobile"
+             x-cloak
              x-transition:enter="transition-opacity ease-out duration-300"
              x-transition:enter-start="opacity-0"
              x-transition:enter-end="opacity-100"

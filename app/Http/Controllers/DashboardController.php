@@ -38,61 +38,72 @@ class DashboardController extends Controller
             'unclosed_date' => CashMovement::hasUnclosedCash(),
         ];
 
-        // Consultas del día
+        // Consultas del día - Optimizado: 1 query en lugar de 5
+        $consultasStats = Appointment::forDate($today)
+            ->selectRaw('
+                COUNT(*) as total,
+                SUM(CASE WHEN status = "attended" THEN 1 ELSE 0 END) as completadas,
+                SUM(CASE WHEN status = "scheduled" THEN 1 ELSE 0 END) as pendientes,
+                SUM(CASE WHEN status = "cancelled" THEN 1 ELSE 0 END) as canceladas,
+                SUM(CASE WHEN status = "absent" THEN 1 ELSE 0 END) as ausentes
+            ')
+            ->first();
+
         $consultasHoy = [
-            'total' => Appointment::forDate($today)->count(),
-            'completadas' => Appointment::forDate($today)->attended()->count(),
-            'pendientes' => Appointment::forDate($today)->pending()->count(),
-            'canceladas' => Appointment::forDate($today)->cancelled()->count(),
-            'ausentes' => Appointment::forDate($today)->where('status', 'absent')->count(),
+            'total' => $consultasStats->total ?? 0,
+            'completadas' => $consultasStats->completadas ?? 0,
+            'pendientes' => $consultasStats->pendientes ?? 0,
+            'canceladas' => $consultasStats->canceladas ?? 0,
+            'ausentes' => $consultasStats->ausentes ?? 0,
         ];
 
-        // Ingresos del día (basado en asignaciones de pago de turnos atendidos hoy)
-        $appointmentsHoy = Appointment::with(['paymentAppointments.payment'])
-            ->forDate($today)
-            ->attended()
-            ->get();
+        // Ingresos del día - Optimizado: 1 query SQL en lugar de 200+ operaciones
+        $ingresosStats = DB::table('appointments')
+            ->join('payment_appointments', 'appointments.id', '=', 'payment_appointments.appointment_id')
+            ->join('payments', 'payment_appointments.payment_id', '=', 'payments.id')
+            ->whereDate('appointments.appointment_date', $today)
+            ->where('appointments.status', 'attended')
+            ->selectRaw('
+                COALESCE(SUM(payment_appointments.allocated_amount), 0) as total,
+                COALESCE(SUM(CASE WHEN payments.payment_method = "cash" THEN payment_appointments.allocated_amount ELSE 0 END), 0) as efectivo,
+                COALESCE(SUM(CASE WHEN payments.payment_method = "transfer" THEN payment_appointments.allocated_amount ELSE 0 END), 0) as transferencia,
+                COALESCE(SUM(CASE WHEN payments.payment_method = "card" THEN payment_appointments.allocated_amount ELSE 0 END), 0) as tarjeta
+            ')
+            ->first();
 
         $ingresosHoy = [
-            'total' => $appointmentsHoy->sum(function ($apt) {
-                return $apt->paymentAppointments->sum('allocated_amount');
-            }),
-            'efectivo' => $appointmentsHoy->sum(function ($apt) {
-                return $apt->paymentAppointments->filter(function ($pa) {
-                    return $pa->payment->payment_method === 'cash';
-                })->sum('allocated_amount');
-            }),
-            'transferencia' => $appointmentsHoy->sum(function ($apt) {
-                return $apt->paymentAppointments->filter(function ($pa) {
-                    return $pa->payment->payment_method === 'transfer';
-                })->sum('allocated_amount');
-            }),
-            'tarjeta' => $appointmentsHoy->sum(function ($apt) {
-                return $apt->paymentAppointments->filter(function ($pa) {
-                    return $pa->payment->payment_method === 'card';
-                })->sum('allocated_amount');
-            }),
+            'total' => $ingresosStats->total ?? 0,
+            'efectivo' => $ingresosStats->efectivo ?? 0,
+            'transferencia' => $ingresosStats->transferencia ?? 0,
+            'tarjeta' => $ingresosStats->tarjeta ?? 0,
         ];
 
-        // Profesionales activos
-        $profesionales = Professional::active()->get();
-        $profesionalesEnConsulta = $profesionales->filter(function ($prof) use ($today) {
-            return $prof->appointments()
-                ->forDate($today)
-                ->whereTime('appointment_date', '<=', now())
-                ->whereTime('appointment_date', '>', now()->subMinutes(60))
-                ->pending()
-                ->exists();
-        });
+        // Profesionales activos - Optimizado: 1 query en lugar de N queries
+        $profesionalesStats = DB::table('professionals')
+            ->where('is_active', true)
+            ->selectRaw('
+                COUNT(*) as total,
+                SUM(CASE
+                    WHEN EXISTS (
+                        SELECT 1 FROM appointments
+                        WHERE appointments.professional_id = professionals.id
+                        AND DATE(appointments.appointment_date) = ?
+                        AND TIME(appointments.appointment_date) <= ?
+                        AND TIME(appointments.appointment_date) > ?
+                        AND appointments.status = "scheduled"
+                    ) THEN 1 ELSE 0
+                END) as enConsulta
+            ', [$today->format('Y-m-d'), now()->format('H:i:s'), now()->subMinutes(60)->format('H:i:s')])
+            ->first();
 
         $profesionalesActivos = [
-            'total' => $profesionales->count(),
-            'enConsulta' => $profesionalesEnConsulta->count(),
-            'disponibles' => $profesionales->count() - $profesionalesEnConsulta->count(),
+            'total' => $profesionalesStats->total ?? 0,
+            'enConsulta' => $profesionalesStats->enConsulta ?? 0,
+            'disponibles' => ($profesionalesStats->total ?? 0) - ($profesionalesStats->enConsulta ?? 0),
         ];
 
-        // Consultas detalladas del día
-        $consultasDetalle = Appointment::with(['patient', 'professional'])
+        // Consultas detalladas del día - Optimizado: eager loading de paymentAppointments
+        $consultasDetalle = Appointment::with(['patient', 'professional', 'paymentAppointments'])
             ->forDate($today)
             ->orderBy('appointment_date')
             ->get()
@@ -105,10 +116,10 @@ class DashboardController extends Controller
                     'monto' => $appointment->final_amount ?? $appointment->estimated_amount ?? 0,
                     'status' => $appointment->status,
                     'statusLabel' => $this->getStatusLabel($appointment->status),
-                    'isPaid' => $appointment->paymentAppointments()->exists(),
+                    'isPaid' => $appointment->paymentAppointments->isNotEmpty(),
                     'isUrgency' => $appointment->is_urgency,
                     'canMarkAttended' => $appointment->status === 'scheduled',
-                    'canMarkCompleted' => $appointment->status === 'attended' && ! $appointment->paymentAppointments()->exists(),
+                    'canMarkCompleted' => $appointment->status === 'attended' && $appointment->paymentAppointments->isEmpty(),
                 ];
             });
 
