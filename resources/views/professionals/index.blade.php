@@ -600,5 +600,8 @@ function professionalsPage() {
 
 @push('styles')
 <meta name="csrf-token" content="{{ csrf_token() }}">
+<style>
+    [x-cloak] { display: none !important; }
+</style>
 @endpush
 @endsection
