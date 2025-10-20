@@ -74,29 +74,6 @@
         </div>
     </div>
 
-    <!-- Filtros de Fecha -->
-    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 mb-6">
-        <form @submit.prevent="filterByDate()" class="flex flex-col sm:flex-row gap-4 items-end">
-            <div class="flex-1">
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Fecha</label>
-                <input x-model="selectedDate" 
-                       type="date" 
-                       class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white">
-            </div>
-            <div class="flex gap-2">
-                <button type="submit" 
-                        class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors">
-                    Filtrar
-                </button>
-                <button type="button" 
-                        @click="selectedDate = '{{ now()->format('Y-m-d') }}'; filterByDate()"
-                        class="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white text-sm font-medium rounded-lg transition-colors">
-                    Hoy
-                </button>
-            </div>
-        </form>
-    </div>
-
     <!-- Resumen de Caja -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <!-- Saldo Inicial -->
@@ -246,6 +223,25 @@
     <!-- Filtros de Movimientos -->
     <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 mb-6">
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+                        <form @submit.prevent="filterByDate()" class="flex flex-col sm:flex-row gap-4 items-end">
+            <div class="flex-1">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Fecha</label>
+                <input x-model="selectedDate"
+                       type="date"
+                       @change="filterByDate()"
+                       class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white">
+            </div>
+            <div class="flex gap-2">
+
+                <button type="button" 
+                        @click="selectedDate = '{{ now()->format('Y-m-d') }}'; filterByDate()"
+                        class="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white text-sm font-medium rounded-lg transition-colors">
+                    Hoy
+                </button>
+            </div>
+        </form>
+            </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tipo</label>
                 <select x-model="filters.type" 
