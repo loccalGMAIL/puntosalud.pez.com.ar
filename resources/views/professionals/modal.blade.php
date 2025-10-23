@@ -47,7 +47,7 @@
                     <!-- Información Personal -->
                     <div>
                         <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Información Personal</h3>
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nombre *</label>
                                 <input x-model="form.first_name"
@@ -69,6 +69,13 @@
                                 <input x-model="form.dni"
                                        @input="form.dni = form.dni.replace(/[^0-9.]/g, '')"
                                        type="text" required placeholder="12.345.678"
+                                       class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500 dark:bg-gray-700 dark:text-white">
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Matrícula</label>
+                                <input x-model="form.license_number"
+                                       type="text" placeholder="MP 12345"
                                        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500 dark:bg-gray-700 dark:text-white">
                             </div>
                         </div>
@@ -135,8 +142,19 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- Notas -->
+                    <div>
+                        <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Notas Adicionales</h3>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Notas</label>
+                            <textarea x-model="form.notes" rows="3" placeholder="Información adicional sobre el profesional..."
+                                      class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500 dark:bg-gray-700 dark:text-white"></textarea>
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Máximo 1000 caracteres</p>
+                        </div>
+                    </div>
                 </div>
-                
+
                 <!-- Footer -->
                 <div class="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-3">
                     <button @click="modalOpen = false" type="button" class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-600">

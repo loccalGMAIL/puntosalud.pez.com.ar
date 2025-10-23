@@ -14,9 +14,11 @@ class Professional extends Model
         'last_name',
         'specialty_id',
         'dni',
+        'license_number',
         'phone',
         'email',
         'commission_percentage',
+        'notes',
         'is_active',
     ];
 

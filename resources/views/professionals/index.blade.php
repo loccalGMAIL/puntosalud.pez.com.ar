@@ -188,9 +188,8 @@
                         <thead class="bg-emerald-50/50 dark:bg-emerald-950/20">
                             <tr>
                                 <th class="px-2 py-2 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-tight">Profesional</th>
-                                <th class="px-2 py-2 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-tight">DNI</th>
+                                <th class="px-2 py-2 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-tight">Matrícula</th>
                                 <th class="px-2 py-2 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-tight">Especialidad</th>
-                                <th class="px-2 py-2 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-tight">Email</th>
                                 <th class="px-2 py-2 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-tight">Tel.</th>
                                 <th class="px-2 py-2 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-tight">Com.</th>
                                 <th class="px-2 py-2 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-tight">Estado</th>
@@ -200,7 +199,7 @@
                         <tbody class="bg-white dark:bg-gray-800 divide-y divide-emerald-200/30 dark:divide-emerald-800/30">
                             <!-- Estado vac�o -->
                             <tr x-show="filteredProfessionals.length === 0">
-                                <td colspan="8" class="px-6 py-12 text-center">
+                                <td colspan="7" class="px-6 py-12 text-center">
                                     <div class="flex flex-col items-center gap-3">
                                         <svg class="w-12 h-12 text-gray-400 dark:text-gray-600" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                                             <path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />
@@ -221,19 +220,14 @@
                                         <div class="text-xs font-semibold text-gray-900 dark:text-white" x-text="professional.first_name + ' ' + professional.last_name"></div>
                                     </td>
 
-                                    <!-- DNI -->
+                                    <!-- Matrícula -->
                                     <td class="px-2 py-2 whitespace-nowrap">
-                                        <span class="text-xs font-mono text-gray-900 dark:text-white" x-text="professional.dni"></span>
+                                        <span class="text-xs font-mono text-gray-900 dark:text-white" x-text="professional.license_number || '-'"></span>
                                     </td>
 
                                     <!-- Especialidad -->
                                     <td class="px-2 py-2 whitespace-nowrap">
                                         <span class="inline-flex px-1.5 py-0.5 text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 rounded" x-text="professional.specialty.name"></span>
-                                    </td>
-
-                                    <!-- Email -->
-                                    <td class="px-2 py-2 whitespace-nowrap max-w-[150px]">
-                                        <span class="text-xs text-gray-900 dark:text-white truncate block" x-text="professional.email || '-'"></span>
                                     </td>
 
                                     <!-- Teléfono -->
@@ -342,8 +336,10 @@ function professionalsPage() {
             email: '',
             phone: '',
             dni: '',
+            license_number: '',
             specialty_id: '',
             commission_percentage: '',
+            notes: '',
             is_active: true
         },
         
@@ -429,8 +425,10 @@ function professionalsPage() {
                 email: professional.email || '',
                 phone: professional.phone || '',
                 dni: professional.dni,
+                license_number: professional.license_number || '',
                 specialty_id: professional.specialty.id.toString(),
                 commission_percentage: professional.commission_percentage,
+                notes: professional.notes || '',
                 is_active: professional.is_active.toString()
             };
             this.modalOpen = true;
@@ -443,8 +441,10 @@ function professionalsPage() {
                 email: '',
                 phone: '',
                 dni: '',
+                license_number: '',
                 specialty_id: '',
                 commission_percentage: '',
+                notes: '',
                 is_active: 'true'
             };
         },

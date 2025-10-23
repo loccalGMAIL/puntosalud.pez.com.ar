@@ -214,7 +214,8 @@
                                 <option value="">Seleccionar...</option>
                                 <option value="cash">💵 Efectivo</option>
                                 <option value="transfer">🏦 Transferencia</option>
-                                <option value="card">💳 Tarjeta</option>
+                                <option value="debit_card">💳 Tarjeta de Débito</option>
+                                <option value="credit_card">💳 Tarjeta de Crédito</option>
                             </select>
                         </div>
                     </div>
@@ -280,7 +281,8 @@
                             <option value="">Seleccionar...</option>
                             <option value="cash">💵 Efectivo</option>
                             <option value="transfer">🏦 Transferencia</option>
-                            <option value="card">💳 Tarjeta</option>
+                            <option value="debit_card">💳 Tarjeta de Débito</option>
+                            <option value="credit_card">💳 Tarjeta de Crédito</option>
                         </select>
                     </div>
                     

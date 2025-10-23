@@ -79,9 +79,10 @@
                                 class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
                                 required>
                             <option value="">Seleccionar método</option>
-                            <option value="cash">Efectivo</option>
-                            <option value="transfer">Transferencia</option>
-                            <option value="card">Tarjeta</option>
+                            <option value="cash">💵 Efectivo</option>
+                            <option value="transfer">🏦 Transferencia</option>
+                            <option value="debit_card">💳 Tarjeta de Débito</option>
+                            <option value="credit_card">💳 Tarjeta de Crédito</option>
                         </select>
                     </div>
 

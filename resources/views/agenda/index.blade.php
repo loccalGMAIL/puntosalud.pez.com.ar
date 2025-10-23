@@ -312,7 +312,7 @@
                                         <span class="font-medium text-gray-900 dark:text-white" x-text="formatTime(appointment.appointment_date)"></span>
                                         <template x-if="appointment.duration === 0">
                                             <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-bold bg-red-100 text-red-800 border border-red-300 dark:bg-red-900/40 dark:text-red-300 dark:border-red-700">
-                                                🚨 URGENCIA
+                                                URGENCIA
                                             </span>
                                         </template>
                                         <span :class="getStatusBadgeClass(appointment.status)"

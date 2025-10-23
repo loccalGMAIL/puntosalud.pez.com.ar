@@ -113,7 +113,7 @@ class AppointmentController extends Controller
                 'pay_now' => 'nullable|in:true,false,1,0,"true","false","1","0"',
                 'payment_type' => 'nullable|in:single,package',
                 'payment_amount' => 'nullable|numeric|min:0',
-                'payment_method' => 'nullable|in:cash,transfer,card',
+                'payment_method' => 'nullable|in:cash,transfer,debit_card,credit_card',
                 'payment_concept' => 'nullable|string|max:500',
                 // Campos de paquete
                 'package_sessions' => 'nullable|integer|min:2|max:20',

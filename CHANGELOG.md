@@ -7,6 +7,77 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [2.5.5] - 2025-10-23
+
+### 💼 Mejoras en Gestión de Datos y Métodos de Pago
+
+**Añadido:**
+- **Campos adicionales en Pacientes**
+  - `titular_obra_social`: Titular de la obra social
+  - `plan_obra_social`: Plan específico de la obra social
+  - Sección dedicada "Información de Obra Social" en formularios
+  - Validaciones en backend (nullable, string, max:255)
+  - Migración: `add_obra_social_fields_to_patients_table`
+
+- **Campos adicionales en Profesionales**
+  - `license_number`: Número de matrícula profesional
+  - `notes`: Notas adicionales sobre el profesional (max:1000)
+  - Sección "Notas Adicionales" en formularios con textarea
+  - Validaciones en backend
+  - Migración: `add_license_number_and_notes_to_professionals_table`
+
+- **Método de pago: Tarjetas separadas**
+  - Antes: cash, transfer, card (3 métodos)
+  - Ahora: cash, transfer, debit_card, credit_card (4 métodos)
+  - Iconos mantenidos: 💵 Efectivo, 🏦 Transferencia, 💳 Débito/Crédito
+  - Validaciones actualizadas en todos los controladores
+
+**Mejorado:**
+- **Vista de Profesionales**
+  - Tabla reorganizada: columnas DNI y Email eliminadas
+  - Nueva columna: Matrícula (license_number)
+  - Grid de formulario expandido de 3 a 4 columnas
+  - Mejor visualización de información profesional
+
+- **UX de Urgencias**
+  - Icono 🚨 removido de etiquetas "URGENCIA/ENTRETURNO"
+  - Solo texto "URGENCIA" o "ENTRETURNO" para evitar exaltación
+  - Aplicado en: Dashboard, Appointments, Agenda
+
+**Archivos Modificados:**
+- `database/migrations/2025_10_23_113114_add_license_number_and_notes_to_professionals_table.php`
+- `database/migrations/2025_10_23_113727_add_obra_social_fields_to_patients_table.php`
+- `app/Models/Patient.php` - fillable actualizado
+- `app/Models/Professional.php` - fillable actualizado
+- `app/Http/Controllers/PatientController.php` - validaciones
+- `app/Http/Controllers/ProfessionalController.php` - validaciones
+- `app/Http/Controllers/PaymentController.php` - métodos de pago
+- `app/Http/Controllers/DashboardController.php` - métodos de pago
+- `app/Http/Controllers/AppointmentController.php` - métodos de pago
+- `resources/views/patients/modal.blade.php` - nuevos campos
+- `resources/views/patients/index.blade.php` - JavaScript actualizado
+- `resources/views/professionals/modal.blade.php` - matrícula y notas
+- `resources/views/professionals/index.blade.php` - tabla y formularios
+- `resources/views/appointments/modal.blade.php` - métodos de pago con iconos
+- `resources/views/appointments/index.blade.php` - sin emoji urgencia
+- `resources/views/payments/create.blade.php` - métodos de pago
+- `resources/views/payments/edit.blade.php` - métodos de pago
+- `resources/views/payments/index.blade.php` - filtro métodos de pago
+- `resources/views/components/payment-modal.blade.php` - métodos de pago
+- `resources/views/cash/expense-form.blade.php` - métodos de pago
+- `resources/views/dashboard/dashboard.blade.php` - sin emoji urgencia
+- `resources/views/dashboard/dashboard-appointments.blade.php` - sin emoji urgencia
+- `resources/views/agenda/index.blade.php` - sin emoji urgencia
+
+**Impacto:**
+- ✅ Mayor detalle en datos de pacientes (obras sociales)
+- ✅ Mejor gestión de información profesional (matrículas y notas)
+- ✅ Métodos de pago más específicos (4 opciones)
+- ✅ UX más profesional y menos exaltada en urgencias
+- ✅ Consistencia en iconos de métodos de pago en todo el sistema
+
+---
+
 ## [2.5.4] - 2025-10-23
 
 ### 🎯 Mejoras en UX y Gestión de Horarios

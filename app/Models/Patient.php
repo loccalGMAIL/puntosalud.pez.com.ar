@@ -17,6 +17,8 @@ class Patient extends Model
         'email',
         'health_insurance',
         'health_insurance_number',
+        'titular_obra_social',
+        'plan_obra_social',
         'birth_date',
         'address',
         'activo',

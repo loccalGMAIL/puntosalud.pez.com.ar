@@ -2,7 +2,7 @@
 
 [![Laravel](https://img.shields.io/badge/Laravel-12.x-red?style=flat\&logo=laravel)](https://laravel.com)
 [![PHP](https://img.shields.io/badge/PHP-8.2-blue?style=flat\&logo=php)](https://php.net)
-[![Version](https://img.shields.io/badge/Version-2.5.3-green?style=flat)](#changelog)
+[![Version](https://img.shields.io/badge/Version-2.5.5-green?style=flat)](#changelog)
 [![License](https://img.shields.io/badge/License-MIT-yellow?style=flat)](#license)
 
 Sistema integral de gestión médica para clínicas y consultorios, desarrollado con Laravel 12 y tecnologías modernas.
@@ -121,10 +121,11 @@ php artisan config:clear
 
 ### 🔄 Últimas versiones
 
+* **v2.5.5** (2025-10-23) – Mejoras en gestión de datos y métodos de pago.
+* **v2.5.4** (2025-10-23) – Mejoras en UX y gestión de horarios.
 * **v2.5.3** (2025-10-20) – Optimizaciones de rendimiento y validaciones de caja.
 * **v2.5.2** (2025-10-17) – Sistema de entreturnos/urgencias.
 * **v2.5.1** (2025-10-14) – Impresión profesional de recibos.
-* **v2.5.0** (2025-10-14) – Sincronización de números de recibo.
 
 👉 [Ver changelog completo](CHANGELOG.md)
 

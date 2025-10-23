@@ -334,7 +334,9 @@ function patientsPage() {
             phone: '',
             address: '',
             health_insurance: '',
-            health_insurance_number: ''
+            health_insurance_number: '',
+            titular_obra_social: '',
+            plan_obra_social: ''
         },
         
         // Computed
@@ -425,7 +427,9 @@ function patientsPage() {
                 phone: patient.phone,
                 address: patient.address || '',
                 health_insurance: patient.health_insurance || '',
-                health_insurance_number: patient.health_insurance_number || ''
+                health_insurance_number: patient.health_insurance_number || '',
+                titular_obra_social: patient.titular_obra_social || '',
+                plan_obra_social: patient.plan_obra_social || ''
             };
             this.modalOpen = true;
         },
@@ -440,7 +444,9 @@ function patientsPage() {
                 phone: '',
                 address: '',
                 health_insurance: '',
-                health_insurance_number: ''
+                health_insurance_number: '',
+                titular_obra_social: '',
+                plan_obra_social: ''
             };
         },
         
