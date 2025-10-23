@@ -1,6 +1,7 @@
 @extends('layouts.app')
 
 @section('title', 'Profesionales - ' . config('app.name'))
+@section('mobileTitle', 'Profesionales')
 
 @section('content')
 <div class="flex h-full flex-1 flex-col gap-6 p-4" x-data="professionalsPage()">
@@ -127,21 +128,19 @@
             </div>
             
             <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
-                <!-- B�squeda -->
+                <!-- Búsqueda -->
                 <div class="md:col-span-2">
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Buscar</label>
-                    <input x-model="filters.search" 
-                           @input="filterProfessionals()"
-                           type="text" 
-                           placeholder="Buscar por nombre, DNI o email..." 
+                    <input x-model="filters.search"
+                           type="text"
+                           placeholder="Buscar por nombre, DNI o email..."
                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500 dark:bg-gray-700 dark:text-white">
                 </div>
 
                 <!-- Especialidad -->
                 <div>
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Especialidad</label>
-                    <select x-model="filters.specialty" 
-                            @change="filterProfessionals()"
+                    <select x-model="filters.specialty"
                             class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500 dark:bg-gray-700 dark:text-white">
                         <option value="all">Todas las especialidades</option>
                         @foreach($specialties as $specialty)
@@ -153,8 +152,7 @@
                 <!-- Estado -->
                 <div>
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Estado</label>
-                    <select x-model="filters.status" 
-                            @change="filterProfessionals()"
+                    <select x-model="filters.status"
                             class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500 dark:bg-gray-700 dark:text-white">
                         <option value="all">Todos</option>
                         <option value="active">Activos</option>
@@ -165,8 +163,9 @@
                 <!-- Contador -->
                 <div class="flex items-end">
                     <div class="text-sm text-gray-600 dark:text-gray-400">
-                        <strong x-text="filteredProfessionals.length">{{ $professionals->count() }}</strong> de 
-                        <strong x-text="stats.total">{{ $stats['total'] }}</strong> profesionales
+                        <strong x-text="filteredProfessionals.length"></strong>
+                        <span x-show="hasActiveFilters">resultados encontrados</span>
+                        <span x-show="!hasActiveFilters">profesionales en total</span>
                     </div>
                 </div>
             </div>
@@ -332,6 +331,9 @@ function professionalsPage() {
             specialty: 'all',
             status: 'all'
         },
+
+        // Debounce timer
+        searchTimeout: null,
         
         // Formulario
         form: {
@@ -353,30 +355,66 @@ function professionalsPage() {
         
         // Computed
         get filteredProfessionals() {
-            return this.professionals.filter(professional => {
-                const searchMatch = this.filters.search === '' || 
-                    (professional.first_name + ' ' + professional.last_name).toLowerCase().includes(this.filters.search.toLowerCase()) ||
-                    professional.email.toLowerCase().includes(this.filters.search.toLowerCase()) ||
-                    professional.dni.toLowerCase().includes(this.filters.search.toLowerCase());
-
-                const specialtyMatch = this.filters.specialty === 'all' || 
-                    professional.specialty.id.toString() === this.filters.specialty;
-
-                const statusMatch = this.filters.status === 'all' || 
-                    (this.filters.status === 'active' && professional.is_active) ||
-                    (this.filters.status === 'inactive' && !professional.is_active);
-
-                return searchMatch && specialtyMatch && statusMatch;
-            });
+            // Simplemente retornamos los profesionales ya que el filtrado se hace en backend
+            return this.professionals;
         },
         
         get hasActiveFilters() {
-            return this.filters.search !== '' || 
-                   this.filters.specialty !== 'all' || 
+            return this.filters.search !== '' ||
+                   this.filters.specialty !== 'all' ||
                    this.filters.status !== 'all';
         },
-        
+
+        // Init
+        init() {
+            // Watch para búsqueda con debounce
+            this.$watch('filters.search', () => {
+                clearTimeout(this.searchTimeout);
+                this.searchTimeout = setTimeout(() => {
+                    this.applyFilters();
+                }, 500); // Espera 500ms después de que el usuario deje de escribir
+            });
+
+            // Watch para filtros sin debounce
+            this.$watch('filters.specialty', () => {
+                this.applyFilters();
+            });
+
+            this.$watch('filters.status', () => {
+                this.applyFilters();
+            });
+        },
+
         // Methods
+        async applyFilters() {
+            try {
+                const params = new URLSearchParams();
+
+                if (this.filters.search) {
+                    params.append('search', this.filters.search);
+                }
+                if (this.filters.specialty !== 'all') {
+                    params.append('specialty', this.filters.specialty);
+                }
+                if (this.filters.status !== 'all') {
+                    params.append('status', this.filters.status);
+                }
+
+                const response = await fetch(`/professionals?${params.toString()}`, {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+                this.professionals = data.professionals;
+                this.stats = data.stats;
+            } catch (error) {
+                console.error('Error applying filters:', error);
+            }
+        },
+
         openCreateModal() {
             this.editingProfessional = null;
             this.resetForm();
@@ -499,30 +537,17 @@ function professionalsPage() {
         },
         
         async refreshData() {
-            try {
-                const response = await fetch('/professionals', {
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
-                });
-                const data = await response.json();
-                this.professionals = data.professionals;
-                this.stats = data.stats;
-            } catch (error) {
-                console.error('Error refreshing data:', error);
-            }
+            // Recargar la página para reflejar los cambios
+            window.location.reload();
         },
-        
-        filterProfessionals() {
-            // Los filtros se aplican autom�ticamente por el computed property
-        },
-        
+
         clearFilters() {
             this.filters = {
                 search: '',
                 specialty: 'all',
                 status: 'all'
             };
+            // Los watchers se encargarán de aplicar los filtros automáticamente
         },
         
         showNotification(message, type = 'info') {

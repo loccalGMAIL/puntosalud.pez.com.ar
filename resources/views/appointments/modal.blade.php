@@ -94,10 +94,10 @@
             <!-- Horario -->
             <div>
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Horario *</label>
-                <input x-model="form.appointment_time" 
-                       type="time" 
-                       min="08:00" 
-                       max="18:00"
+                <input x-model="form.appointment_time"
+                       type="time"
+                       min="08:00"
+                       max="21:00"
                        step="900"
                        @change="validateDateTime()"
                        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500 dark:bg-gray-700 dark:text-white"
@@ -321,7 +321,7 @@
                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />
                     </svg>
-                    <span><strong>Horario laboral:</strong> De 8:00 a 18:00, lunes a viernes.</span>
+                    <span><strong>Horario laboral:</strong> De 8:00 a 21:00, lunes a viernes.</span>
                 </div>
             </div>
         </form>

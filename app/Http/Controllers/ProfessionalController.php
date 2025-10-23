@@ -52,8 +52,14 @@ class ProfessionalController extends Controller
         // Si es una petición AJAX, devolver JSON
         if ($request->ajax()) {
             return response()->json([
-                'professionals' => $professionals,
+                'professionals' => $professionals->items(),
                 'stats' => $stats,
+                'pagination' => [
+                    'current_page' => $professionals->currentPage(),
+                    'last_page' => $professionals->lastPage(),
+                    'per_page' => $professionals->perPage(),
+                    'total' => $professionals->total(),
+                ],
             ]);
         }
 

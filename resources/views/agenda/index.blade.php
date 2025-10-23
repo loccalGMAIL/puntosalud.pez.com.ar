@@ -106,8 +106,8 @@
         <!-- Calendar Grid -->
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden">
             <!-- Calendar Header -->
-            <div class="grid grid-cols-7 bg-gray-50 dark:bg-gray-700">
-                @foreach(['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'] as $dayName)
+            <div class="grid grid-cols-5 bg-gray-50 dark:bg-gray-700">
+                @foreach(['Lun', 'Mar', 'Mié', 'Jue', 'Vie'] as $dayName)
                     <div class="p-4 text-center font-semibold text-gray-700 dark:text-gray-300 border-r border-gray-200 dark:border-gray-600 last:border-r-0">
                         {{ $dayName }}
                     </div>
@@ -115,18 +115,25 @@
             </div>
 
             <!-- Calendar Days -->
-            <div class="grid grid-cols-7">
+            <div class="grid grid-cols-5">
                 @php
                     $currentDay = $startOfCalendar->copy();
                 @endphp
                 
                 @while($currentDay->lte($endOfCalendar))
                     @php
+                        $dayOfWeek = $currentDay->dayOfWeek === 0 ? 7 : $currentDay->dayOfWeek; // Convert Sunday from 0 to 7
+
+                        // Skip Saturday (6) and Sunday (7)
+                        if ($dayOfWeek === 6 || $dayOfWeek === 7) {
+                            $currentDay->addDay();
+                            continue;
+                        }
+
                         $dayKey = $currentDay->format('Y-m-d');
                         $dayAppointments = $appointments[$dayKey] ?? collect();
                         $isCurrentMonth = $currentDay->month === $date->month;
                         $isToday = $currentDay->isToday();
-                        $dayOfWeek = $currentDay->dayOfWeek === 0 ? 7 : $currentDay->dayOfWeek; // Convert Sunday from 0 to 7
                         $hasSchedule = $professionalSchedules->has($dayOfWeek);
                         $isPast = $currentDay->isBefore(today());
                     @endphp
