@@ -7,6 +7,60 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [2.5.4] - 2025-10-23
+
+### 🎯 Mejoras en UX y Gestión de Horarios
+
+**Añadido:**
+- **Sistema de búsqueda en Profesionales**
+  - Búsqueda en tiempo real con debounce de 500ms
+  - Filtrado por nombre, DNI o email
+  - Filtros combinados con especialidad y estado
+  - Procesamiento en backend para mejor rendimiento
+  - Watchers automáticos en Alpine.js
+
+**Mejorado:**
+- **Ampliación de horario de atención**: 8:00-18:00 → 8:00-21:00
+  - Generación de slots disponibles hasta las 21:00
+  - Validación de inputs actualizada
+  - Mensajes informativos actualizados en modales
+
+- **Duraciones de turnos más flexibles**
+  - Agregada opción de 10 minutos
+  - Agregada opción de 90 minutos (1h 30min)
+  - Agregada opción de 120 minutos (2 horas)
+  - Validaciones actualizadas en todos los métodos
+
+**Optimizado:**
+- **Vista de Agenda**
+  - Calendario de 7 columnas → 5 columnas (solo días laborables)
+  - Sábados y domingos ocultos del calendario
+  - Mejor uso del espacio en pantalla
+  - Navegación más limpia
+
+- **Filtrado de usuarios inactivos**
+  - Pacientes inactivos no aparecen en selectores de agenda
+  - Pacientes inactivos no aparecen en selectores de turnos
+  - Profesionales inactivos filtrados en todas las vistas
+  - Mejora en la calidad de datos mostrados
+
+**Archivos Modificados:**
+- `app/Http/Controllers/ProfessionalController.php` - Respuesta AJAX optimizada
+- `app/Http/Controllers/AgendaController.php` - Filtro de pacientes activos
+- `app/Http/Controllers/AppointmentController.php` - Horarios, duraciones y filtros
+- `resources/views/professionals/index.blade.php` - Sistema de búsqueda completo
+- `resources/views/agenda/index.blade.php` - Calendario de 5 días
+- `resources/views/appointments/modal.blade.php` - Horarios y duraciones actualizados
+
+**Impacto:**
+- ✅ Búsqueda más rápida y eficiente en profesionales
+- ✅ Calendario enfocado en días laborables (Lun-Vie)
+- ✅ Mayor flexibilidad en horarios (8:00-21:00)
+- ✅ Más opciones de duración de turnos (10min a 2hs)
+- ✅ Datos más limpios (solo usuarios activos)
+
+---
+
 ## [2.5.4] - 2025-10-20
 
 ### 🚀 Optimización Masiva de Rendimiento del Dashboard

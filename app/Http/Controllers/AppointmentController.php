@@ -64,7 +64,7 @@ class AppointmentController extends Controller
 
         // Datos para filtros y formularios
         $professionals = Professional::where('is_active', true)->with('specialty')->orderBy('last_name')->get();
-        $patients = Patient::orderBy('last_name')->get();
+        $patients = Patient::where('activo', true)->orderBy('last_name')->orderBy('first_name')->get();
         $offices = Office::where('is_active', true)->orderBy('name')->get();
 
         // Estadísticas
@@ -104,7 +104,7 @@ class AppointmentController extends Controller
                 'patient_id' => 'required|exists:patients,id',
                 'appointment_date' => 'required|date',
                 'appointment_time' => 'required|date_format:H:i',
-                'duration' => 'required|integer|in:15,20,30,40,45,60',
+                'duration' => 'required|integer|in:10,15,20,30,40,45,60,90,120',
                 'office_id' => 'nullable|exists:offices,id',
                 'notes' => 'nullable|string|max:500',
                 'estimated_amount' => 'nullable|numeric|min:0',
@@ -303,7 +303,7 @@ class AppointmentController extends Controller
                 'patient_id' => 'required|exists:patients,id',
                 'appointment_date' => 'required|date',
                 'appointment_time' => 'required|string',
-                'duration' => 'required|integer|in:15,20,30,40,45,60',
+                'duration' => 'required|integer|in:10,15,20,30,40,45,60,90,120',
                 'office_id' => 'nullable|exists:offices,id',
                 'notes' => 'nullable|string|max:500',
                 'estimated_amount' => 'nullable|numeric|min:0',
@@ -491,7 +491,7 @@ class AppointmentController extends Controller
         $validated = $request->validate([
             'professional_id' => 'required|exists:professionals,id',
             'date' => 'required|date',
-            'duration' => 'required|integer|min:15|max:120',
+            'duration' => 'required|integer|min:10|max:120',
         ]);
 
         $slots = [];
@@ -508,9 +508,9 @@ class AppointmentController extends Controller
             ->where('status', 'scheduled')
             ->get();
 
-        // Generar slots de 8:00 a 18:00 cada 30 minutos
+        // Generar slots de 8:00 a 21:00 cada 30 minutos
         $currentTime = $date->copy()->setTime(8, 0);
-        $endTime = $date->copy()->setTime(18, 0);
+        $endTime = $date->copy()->setTime(21, 0);
         $duration = (int) $validated['duration'];
 
         while ($currentTime->copy()->addMinutes($duration)->lte($endTime)) {
