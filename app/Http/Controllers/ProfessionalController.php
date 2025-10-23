@@ -88,8 +88,10 @@ class ProfessionalController extends Controller
                 'email' => 'nullable|string|email|max:255',
                 'phone' => 'nullable|string|max:255',
                 'dni' => ['required', 'string', 'max:20', 'unique:professionals', 'regex:/^[0-9.]+$/'],
+                'license_number' => 'nullable|string|max:255',
                 'specialty_id' => 'required|exists:specialties,id',
                 'commission_percentage' => 'required|numeric|min:0|max:100',
+                'notes' => 'nullable|string|max:1000',
             ], [
                 'first_name.regex' => 'El nombre solo puede contener letras y espacios.',
                 'last_name.regex' => 'El apellido solo puede contener letras y espacios.',
@@ -167,8 +169,10 @@ class ProfessionalController extends Controller
                 'email' => 'nullable|string|email|max:255',
                 'phone' => 'nullable|string|max:255',
                 'dni' => ['required', 'string', 'max:20', 'unique:professionals,dni,'.$professional->id, 'regex:/^[0-9.]+$/'],
+                'license_number' => 'nullable|string|max:255',
                 'specialty_id' => 'required|exists:specialties,id',
                 'commission_percentage' => 'required|numeric|min:0|max:100',
+                'notes' => 'nullable|string|max:1000',
                 'is_active' => 'required|in:0,1',
             ], [
                 'first_name.regex' => 'El nombre solo puede contener letras y espacios.',

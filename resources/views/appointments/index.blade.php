@@ -274,7 +274,7 @@
                                 <td class="px-3 py-2 whitespace-nowrap">
                                     <template x-if="appointment.duration === 0">
                                         <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-bold bg-red-100 text-red-800 border border-red-300 dark:bg-red-900/40 dark:text-red-300 dark:border-red-700">
-                                            🚨 URGENCIA
+                                            URGENCIA
                                         </span>
                                     </template>
                                     <template x-if="appointment.duration > 0">

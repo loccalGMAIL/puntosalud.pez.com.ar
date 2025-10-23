@@ -111,16 +111,29 @@
                     
                     <!-- Información de Obra Social -->
                     <div>
+                        <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Información de Obra Social</h3>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Obra Social</label>
                                 <input x-model="form.health_insurance" type="text" placeholder="Ej: OSDE, Swiss Medical, PAMI"
                                        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500 dark:bg-gray-700 dark:text-white">
                             </div>
-                            
+
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Número de Afiliado</label>
                                 <input x-model="form.health_insurance_number" type="text" placeholder="123456789"
+                                       class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500 dark:bg-gray-700 dark:text-white">
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Titular Obra Social</label>
+                                <input x-model="form.titular_obra_social" type="text" placeholder="Nombre del titular"
+                                       class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500 dark:bg-gray-700 dark:text-white">
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Plan Obra Social</label>
+                                <input x-model="form.plan_obra_social" type="text" placeholder="Ej: Plan 210, PMO"
                                        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500 dark:bg-gray-700 dark:text-white">
                             </div>
                         </div>

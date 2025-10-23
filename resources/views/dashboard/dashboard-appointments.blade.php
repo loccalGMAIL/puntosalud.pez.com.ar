@@ -80,7 +80,7 @@
                                     <div class="flex items-center gap-1 flex-wrap">
                                         @if($consulta['isUrgency'])
                                             <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-bold bg-red-100 text-red-800 border border-red-300 dark:bg-red-900/40 dark:text-red-300 dark:border-red-700">
-                                                🚨 URGENCIA
+                                                URGENCIA
                                             </span>
                                         @endif
                                         <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium

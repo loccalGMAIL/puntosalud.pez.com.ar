@@ -87,6 +87,8 @@ class PatientController extends Controller
                 'address' => 'nullable|string|max:500',
                 'health_insurance' => 'nullable|string|max:255',
                 'health_insurance_number' => 'nullable|string|max:255',
+                'titular_obra_social' => 'nullable|string|max:255',
+                'plan_obra_social' => 'nullable|string|max:255',
             ], [
                 'first_name.regex' => 'El nombre solo puede contener letras y espacios.',
                 'last_name.regex' => 'El apellido solo puede contener letras y espacios.',
@@ -166,6 +168,8 @@ class PatientController extends Controller
                 'address' => 'nullable|string|max:500',
                 'health_insurance' => 'nullable|string|max:255',
                 'health_insurance_number' => 'nullable|string|max:255',
+                'titular_obra_social' => 'nullable|string|max:255',
+                'plan_obra_social' => 'nullable|string|max:255',
             ], [
                 'first_name.regex' => 'El nombre solo puede contener letras y espacios.',
                 'last_name.regex' => 'El apellido solo puede contener letras y espacios.',
