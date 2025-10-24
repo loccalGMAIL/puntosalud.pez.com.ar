@@ -7,6 +7,46 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [2.5.6] - 2025-10-24
+
+### 📅 Mejoras en Entreturnos y Gestión de Ingresos
+
+**Añadido:**
+- **Selector de fecha en Entreturnos/Urgencias**
+  - Campo de fecha (sin hora) en modal de entreturno/urgencia
+  - Fecha mínima: día actual en adelante
+  - Fecha preseleccionada: día actual
+  - Validación backend: `after_or_equal:today`
+  - La hora se establece automáticamente al momento del registro
+
+- **Nueva categoría de ingreso manual**
+  - "Pago de Saldos Dra. Zalazar" agregada a ingresos manuales
+
+**Mejorado:**
+- **Selector de profesionales en ingresos manuales**
+  - Ahora muestra TODOS los profesionales activos (sin restricción)
+  - Antes: solo profesionales con turnos del día
+  - Carga relación `specialty` para mejor visualización
+
+- **Categorías de ingresos simplificadas**
+  - Eliminado: "Venta de Producto"
+  - Eliminado: "Cobro de Servicio Extra"
+  - Categorías actuales: Pago Módulo Profesional, Pago de Saldos Dra. Zalazar, Corrección de Ingreso, Otros Ingresos
+
+**Archivos Modificados:**
+- `resources/views/appointments/modal-urgency.blade.php` - campo fecha agregado
+- `resources/views/dashboard/dashboard.blade.php` - fecha inicializada en formulario
+- `app/Http/Controllers/AppointmentController.php` - validación y procesamiento de fecha
+- `app/Http/Controllers/CashController.php` - categorías actualizadas, profesionales sin restricción
+
+**Impacto:**
+- ✅ Mayor flexibilidad para programar entreturnos en fechas futuras
+- ✅ Categorías de ingresos más específicas y relevantes al negocio
+- ✅ Todos los profesionales disponibles en ingresos manuales
+- ✅ UX mejorada con fecha preseleccionada
+
+---
+
 ## [2.5.5] - 2025-10-23
 
 ### 💼 Mejoras en Gestión de Datos y Métodos de Pago
