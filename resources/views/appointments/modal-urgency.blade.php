@@ -28,7 +28,7 @@
                     <svg class="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
                     </svg>
-                    <span><strong>Atención inmediata:</strong> Registro con fecha y hora actual.</span>
+                    <span><strong>Atención urgente:</strong> Seleccione fecha desde hoy en adelante.</span>
                 </div>
             </div>
         </div>
@@ -69,8 +69,18 @@
                 </select>
             </div>
 
-            <!-- Monto y Consultorio en la misma línea -->
-            <div class="grid grid-cols-2 gap-3">
+            <!-- Fecha, Monto y Consultorio en la misma línea -->
+            <div class="grid grid-cols-3 gap-3">
+                <!-- Fecha -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Fecha *</label>
+                    <input x-model="urgencyForm.appointment_date"
+                           type="date"
+                           :min="new Date().toISOString().split('T')[0]"
+                           class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500 dark:bg-gray-700 dark:text-white"
+                           required>
+                </div>
+
                 <!-- Monto -->
                 <div>
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Monto *</label>

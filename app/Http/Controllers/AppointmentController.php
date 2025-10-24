@@ -413,6 +413,7 @@ class AppointmentController extends Controller
             $validated = $request->validate([
                 'professional_id' => 'required|exists:professionals,id',
                 'patient_id' => 'required|exists:patients,id',
+                'appointment_date' => 'required|date|after_or_equal:today',
                 'estimated_amount' => 'required|numeric|min:0',
                 'office_id' => 'nullable|exists:offices,id',
                 'notes' => 'nullable|string|max:500',
@@ -421,6 +422,9 @@ class AppointmentController extends Controller
                 'professional_id.exists' => 'El profesional seleccionado no existe.',
                 'patient_id.required' => 'Debe seleccionar un paciente.',
                 'patient_id.exists' => 'El paciente seleccionado no existe.',
+                'appointment_date.required' => 'La fecha es obligatoria.',
+                'appointment_date.date' => 'La fecha debe ser válida.',
+                'appointment_date.after_or_equal' => 'La fecha debe ser igual o posterior a hoy.',
                 'estimated_amount.required' => 'El monto es obligatorio.',
                 'estimated_amount.numeric' => 'El monto debe ser un número válido.',
                 'estimated_amount.min' => 'El monto debe ser mayor o igual a 0.',
@@ -436,11 +440,17 @@ class AppointmentController extends Controller
 
             DB::beginTransaction();
 
-            // Crear turno de urgencia con duration = 0 y fecha/hora actual
+            // Crear turno de urgencia con duration = 0 y fecha seleccionada + hora actual
+            $appointmentDate = Carbon::parse($validated['appointment_date'])->setTime(
+                now()->hour,
+                now()->minute,
+                now()->second
+            );
+
             $appointment = Appointment::create([
                 'professional_id' => $validated['professional_id'],
                 'patient_id' => $validated['patient_id'],
-                'appointment_date' => now(), // Fecha y hora actual
+                'appointment_date' => $appointmentDate,
                 'duration' => 0, // duration = 0 indica urgencia
                 'office_id' => $validated['office_id'],
                 'notes' => $validated['notes'],

@@ -672,19 +672,14 @@ class CashController extends Controller
         if ($request->isMethod('get')) {
             $incomeCategories = [
                 'professional_module_payment' => 'Pago Módulo Profesional',
+                'zalazar_balance_payment' => 'Pago de Saldos Dra. Zalazar',
                 'correction' => 'Corrección de Ingreso',
-                'product_sale' => 'Venta de Producto',
-                'service_fee' => 'Cobro de Servicio Extra',
                 'other' => 'Otros Ingresos',
             ];
 
-            // Obtener profesionales activos que tengan turnos hoy
-            $today = now()->format('Y-m-d');
-
+            // Obtener TODOS los profesionales activos
             $professionals = \App\Models\Professional::active()
-                ->whereHas('appointments', function ($query) use ($today) {
-                    $query->whereDate('appointment_date', $today);
-                })
+                ->with('specialty')
                 ->orderBy('last_name')
                 ->orderBy('first_name')
                 ->get();
@@ -694,7 +689,7 @@ class CashController extends Controller
 
         $validated = $request->validate([
             'amount' => 'required|numeric|min:0.01',
-            'category' => 'required|string|in:professional_module_payment,correction,product_sale,service_fee,other',
+            'category' => 'required|string|in:professional_module_payment,zalazar_balance_payment,correction,other',
             'description' => 'required|string|max:500',
             'professional_id' => 'nullable|exists:professionals,id|required_if:category,professional_module_payment',
             'receipt_file' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
@@ -716,9 +711,8 @@ class CashController extends Controller
             // Construir descripción con categoría
             $categoryLabels = [
                 'professional_module_payment' => 'Pago Módulo Profesional',
+                'zalazar_balance_payment' => 'Pago de Saldos Dra. Zalazar',
                 'correction' => 'Corrección de Ingreso',
-                'product_sale' => 'Venta de Producto',
-                'service_fee' => 'Cobro de Servicio Extra',
                 'other' => 'Otros Ingresos',
             ];
 

@@ -377,6 +377,7 @@ function urgencyModalDashboard() {
         urgencyForm: {
             professional_id: '',
             patient_id: '',
+            appointment_date: new Date().toISOString().split('T')[0],
             estimated_amount: '0',
             office_id: '',
             notes: ''
@@ -495,6 +496,7 @@ function urgencyModalDashboard() {
             this.urgencyForm = {
                 professional_id: '',
                 patient_id: '',
+                appointment_date: new Date().toISOString().split('T')[0],
                 estimated_amount: '0',
                 office_id: '',
                 notes: ''
@@ -505,8 +507,8 @@ function urgencyModalDashboard() {
         },
         async submitUrgencyForm() {
             if (this.urgencyLoading) return;
-            if (!this.urgencyForm.professional_id || !this.urgencyForm.patient_id || !this.urgencyForm.estimated_amount) {
-                await SystemModal.show('error', 'Error', 'Complete todos los campos requeridos (Profesional, Paciente y Monto).', 'Aceptar', false);
+            if (!this.urgencyForm.professional_id || !this.urgencyForm.patient_id || !this.urgencyForm.appointment_date || !this.urgencyForm.estimated_amount) {
+                await SystemModal.show('error', 'Error', 'Complete todos los campos requeridos (Profesional, Paciente, Fecha y Monto).', 'Aceptar', false);
                 return;
             }
             this.urgencyLoading = true;
