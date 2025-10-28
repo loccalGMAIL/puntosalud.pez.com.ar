@@ -123,9 +123,13 @@ class CashController extends Controller
             'period_days' => $startDate->diffInDays($endDate) + 1,
         ];
 
-        $movementsByType = $movements->groupBy('type')->map(function ($group, $type) {
+        $movementsByType = $movements->groupBy(function($movement) {
+            return $movement->movementType?->code ?? 'unknown';
+        })->map(function ($group, $typeCode) {
+            $firstMovement = $group->first();
             return [
-                'type' => $type,
+                'type' => $typeCode,
+                'type_name' => $firstMovement->movementType?->name ?? ucfirst($typeCode),
                 'inflows' => $group->where('amount', '>', 0)->sum('amount'),
                 'outflows' => abs($group->where('amount', '<', 0)->sum('amount')),
                 'count' => $group->count(),
@@ -514,14 +518,20 @@ class CashController extends Controller
             ->get();
 
         // Calcular totales (excluyendo apertura y cierre de caja)
-        $movementsForTotals = $movements->whereNotIn('type', ['cash_opening', 'cash_closing']);
+        $movementsForTotals = $movements->filter(function($movement) {
+            return !in_array($movement->movementType?->code, ['cash_opening', 'cash_closing']);
+        });
         $inflows = $movementsForTotals->where('amount', '>', 0)->sum('amount');
         $outflows = $movementsForTotals->where('amount', '<', 0)->sum('amount');
         $finalBalance = $initialBalance + $inflows + $outflows;
 
         // Obtener movimientos de apertura y cierre
-        $openingMovement = $movements->where('type', 'cash_opening')->first();
-        $closingMovement = $movements->where('type', 'cash_closing')->first();
+        $openingMovement = $movements->first(function($movement) {
+            return $movement->movementType?->code === 'cash_opening';
+        });
+        $closingMovement = $movements->first(function($movement) {
+            return $movement->movementType?->code === 'cash_closing';
+        });
 
         // Calcular efectivo contado y diferencia si hay cierre
         $countedAmount = 0;
@@ -552,11 +562,17 @@ class CashController extends Controller
 
         // Agrupar por tipo de movimiento (excluyendo apertura y cierre)
         $movementsByType = $movements
-            ->whereNotIn('type', ['cash_opening', 'cash_closing'])
-            ->groupBy('type')
-            ->map(function ($group, $type) {
+            ->filter(function($movement) {
+                return !in_array($movement->movementType?->code, ['cash_opening', 'cash_closing']);
+            })
+            ->groupBy(function($movement) {
+                return $movement->movementType?->code ?? 'unknown';
+            })
+            ->map(function ($group, $typeCode) {
+                $firstMovement = $group->first();
                 return [
-                    'type' => $type,
+                    'type' => $typeCode,
+                    'type_name' => $firstMovement->movementType?->name ?? ucfirst($typeCode),
                     'inflows' => $group->where('amount', '>', 0)->sum('amount'),
                     'outflows' => abs($group->where('amount', '<', 0)->sum('amount')),
                     'count' => $group->count(),

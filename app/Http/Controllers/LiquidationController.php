@@ -112,7 +112,7 @@ class LiquidationController extends Controller
             $professionalCommission = $professional->calculateCommission($totalCollected);
 
             // Obtener reintegros del día para este profesional (usando referencias polimórficas)
-            $refunds = CashMovement::where('type', 'expense')
+            $refunds = CashMovement::byType('expense')
                 ->where('reference_type', 'App\Models\Professional')
                 ->where('reference_id', $professional->id)
                 ->whereDate('movement_date', $date)
