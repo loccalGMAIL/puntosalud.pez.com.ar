@@ -307,73 +307,22 @@
                                 {{ $movement->created_at->format('H:i') }}
                             </td>
                             <td class="py-3 px-4">
-                                @switch($movement->type)
-                                    @case('patient_payment')
-                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-                                            💰 Pago Paciente
-                                        </span>
-                                        @break
-                                    @case('professional_payment')
-                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
-                                            👨‍⚕️ Pago Profesional
-                                        </span>
-                                        @break
-                                    @case('expense')
-                                        @if($movement->reference_type === 'App\\Models\\Professional' && $movement->reference_id)
-                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
-                                                🔄 Reintegro Paciente
-                                            </span>
-                                        @else
-                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
-                                                💸 Gasto
-                                            </span>
-                                        @endif
-                                        @break
-                                    @case('refund')
-                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
-                                            🔄 Reembolso
-                                        </span>
-                                        @break
-                                    @case('other')
-                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200">
-                                            📋 Otro
-                                        </span>
-                                        @break
-                                    @case('cash_opening')
-                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200">
-                                            🔓 Apertura de Caja
-                                        </span>
-                                        @break
-                                    @case('cash_closing')
-                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200">
-                                            🔒 Cierre de Caja
-                                        </span>
-                                        @break
-                                    @case('cash_control')
-                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200">
-                                            🔍 Control de Caja
-                                        </span>
-                                        @break
-                                    @case('shift_handover')
-                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200">
-                                            🔄 Entrega de Turno
-                                        </span>
-                                        @break
-                                    @case('shift_receive')
-                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-teal-100 text-teal-800 dark:bg-teal-900 dark:text-teal-200">
-                                            📥 Recibo de Turno
-                                        </span>
-                                        @break
-                                    @case('cash_withdrawal')
-                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200">
-                                            💸 Retiro de Caja
-                                        </span>
-                                        @break
-                                    @default
-                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200">
-                                            {{ ucfirst($movement->type) }}
-                                        </span>
-                                @endswitch
+                                @php
+                                    $typeColor = match($movement->movementType?->color) {
+                                        'green' => 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
+                                        'blue' => 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
+                                        'red' => 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
+                                        'yellow' => 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
+                                        'orange' => 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200',
+                                        'purple' => 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
+                                        'indigo' => 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200',
+                                        'teal' => 'bg-teal-100 text-teal-800 dark:bg-teal-900 dark:text-teal-200',
+                                        default => 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200',
+                                    };
+                                @endphp
+                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium {{ $typeColor }}">
+                                    {{ $movement->movementType?->icon }} {{ $movement->movementType?->name ?? 'Desconocido' }}
+                                </span>
                             </td>
                             <td class="py-3 px-4 text-sm text-gray-700 dark:text-gray-300">
                                 <div class="flex items-center gap-2">
@@ -384,7 +333,7 @@
                                 </div>
                             </td>
                             <td class="py-3 px-4 text-sm text-gray-900 dark:text-white">
-                                @if($movement->type === 'professional_payment' && $movement->reference_type === 'App\\Models\\Professional' && $movement->reference_id)
+                                @if($movement->movementType?->code === 'professional_payment' && $movement->reference_type === 'App\\Models\\Professional' && $movement->reference_id)
                                     @php
                                         $professional = \App\Models\Professional::find($movement->reference_id);
                                     @endphp
@@ -424,7 +373,7 @@
                                             <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                         </svg>
                                     </button>
-                                    @if($movement->type === 'patient_payment' && $movement->reference_id)
+                                    @if($movement->movementType?->code === 'patient_payment' && $movement->reference_id)
                                         <a href="{{ route('payments.print-receipt', $movement->reference_id) }}?print=1"
                                            target="_blank"
                                            class="text-purple-600 hover:text-purple-900 dark:text-purple-400 dark:hover:text-purple-300"
@@ -578,7 +527,7 @@
                             </div>
                             <div>
                                 <span class="text-gray-600 dark:text-gray-400">Tipo:</span>
-                                <span class="text-gray-900 dark:text-white ml-2" x-text="getMovementTypeLabel(movementDetails?.type)"></span>
+                                <span class="text-gray-900 dark:text-white ml-2" x-text="movementDetails?.movement_type?.icon + ' ' + movementDetails?.movement_type?.name"></span>
                             </div>
                             <div>
                                 <span class="text-gray-600 dark:text-gray-400">Usuario:</span>
@@ -598,7 +547,7 @@
                     </div>
 
                     <!-- Detalles específicos para pagos de pacientes -->
-                    <div x-show="movementDetails?.type === 'patient_payment' && paymentDetails"
+                    <div x-show="movementDetails?.movement_type?.code === 'patient_payment' && paymentDetails"
                          class="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4">
                         <h3 class="font-medium text-blue-900 dark:text-blue-200 mb-3">💰 Detalles del Pago</h3>
                         <div class="text-sm space-y-2">
@@ -637,7 +586,7 @@
                     </div>
 
                     <!-- Detalles específicos para liquidaciones de profesionales -->
-                    <div x-show="movementDetails?.type === 'professional_payment' && professionalDetails"
+                    <div x-show="movementDetails?.movement_type?.code === 'professional_payment' && professionalDetails"
                          class="bg-green-50 dark:bg-green-900/20 rounded-lg p-4">
                         <h3 class="font-medium text-green-900 dark:text-green-200 mb-3">👨‍⚕️ Detalles de la Liquidación</h3>
                         <div class="text-sm space-y-2">
@@ -663,7 +612,7 @@
                     </div>
 
                     <!-- Detalles específicos para reintegros a pacientes -->
-                    <div x-show="movementDetails?.type === 'expense' && refundProfessionalDetails"
+                    <div x-show="movementDetails?.movement_type?.code === 'expense' && refundProfessionalDetails"
                          class="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg p-4">
                         <h3 class="font-medium text-yellow-900 dark:text-yellow-200 mb-3">🔄 Detalles del Reintegro</h3>
                         <div class="text-sm space-y-2">

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\CashMovement;
+use App\Models\MovementType;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -22,11 +23,13 @@ class CashController extends Controller
 
         $initialBalance = $lastBalanceMovement ? $lastBalanceMovement->balance_after : 0;
 
-        $query = CashMovement::with(['user'])
+        $query = CashMovement::with(['user', 'movementType'])
             ->whereDate('movement_date', $selectedDate);
 
         if ($request->filled('type')) {
-            $query->where('type', $request->type);
+            $query->whereHas('movementType', function($q) use ($request) {
+                $q->where('code', $request->type);
+            });
         }
 
         if ($request->filled('reference_type')) {
@@ -37,7 +40,9 @@ class CashController extends Controller
             ->get();
 
         // Calcular totales excluyendo apertura y cierre de caja
-        $movementsForTotals = $movements->whereNotIn('type', ['cash_opening', 'cash_closing']);
+        $movementsForTotals = $movements->filter(function($movement) {
+            return !in_array($movement->movementType?->code, ['cash_opening', 'cash_closing']);
+        });
         $inflows = $movementsForTotals->where('amount', '>', 0)->sum('amount');
         $outflows = $movementsForTotals->where('amount', '<', 0)->sum('amount');
         $finalBalance = $initialBalance + $inflows + $outflows;
@@ -63,11 +68,18 @@ class CashController extends Controller
 
         // Agrupar por tipo de movimiento excluyendo apertura y cierre
         $movementsByType = $movements
-            ->whereNotIn('type', ['cash_opening', 'cash_closing'])
-            ->groupBy('type')
-            ->map(function ($group, $type) {
+            ->filter(function($movement) {
+                return !in_array($movement->movementType?->code, ['cash_opening', 'cash_closing']);
+            })
+            ->groupBy(function($movement) {
+                return $movement->movementType?->code ?? 'unknown';
+            })
+            ->map(function ($group, $typeCode) {
+                $firstMovement = $group->first();
                 return [
-                    'type' => $type,
+                    'type' => $typeCode,
+                    'type_name' => $firstMovement->movementType?->name ?? ucfirst($typeCode),
+                    'icon' => $firstMovement->movementType?->icon ?? '📋',
                     'inflows' => $group->where('amount', '>', 0)->sum('amount'),
                     'outflows' => abs($group->where('amount', '<', 0)->sum('amount')),
                     'count' => $group->count(),
@@ -199,12 +211,15 @@ class CashController extends Controller
                 $description .= ' - '.$validated['notes'];
             }
 
+            // Usar el tipo específico de gasto (subcategoría) en lugar del genérico 'expense'
+            $movementTypeCode = $validated['category']; // ej: 'office_supplies', 'medical_supplies', etc.
+
             $cashMovement = CashMovement::create([
                 'movement_date' => now(),
-                'type' => 'expense',
+                'movement_type_id' => MovementType::getIdByCode($movementTypeCode),
                 'amount' => -$validated['amount'], // Negativo para egreso
                 'description' => $description,
-                'reference_type' => isset($validated['professional_id']) ? 'App\\Models\\Professional' : 'expense_category',
+                'reference_type' => isset($validated['professional_id']) ? 'App\\Models\\Professional' : null,
                 'reference_id' => $validated['professional_id'] ?? null,
                 'balance_after' => $newBalance,
                 'user_id' => auth()->id(),
@@ -241,13 +256,13 @@ class CashController extends Controller
 
     public function getCashMovementDetails(CashMovement $cashMovement)
     {
-        $cashMovement->load(['user']);
+        $cashMovement->load(['user', 'movementType']);
 
         $additionalData = [];
 
         try {
             // Cargar información adicional según el tipo de movimiento y reference_type
-            if ($cashMovement->type === 'patient_payment' && $cashMovement->reference_id &&
+            if ($cashMovement->movementType?->code === 'patient_payment' && $cashMovement->reference_id &&
                 in_array($cashMovement->reference_type, ['payment', 'App\\Models\\Payment'])) {
                 $payment = \App\Models\Payment::with(['patient', 'paymentAppointments.appointment.professional'])
                     ->find($cashMovement->reference_id);
@@ -259,9 +274,9 @@ class CashController extends Controller
                 // Carga profesional para liquidaciones y reintegros
                 $professional = \App\Models\Professional::with(['specialty'])->find($cashMovement->reference_id);
                 if ($professional) {
-                    if ($cashMovement->type === 'professional_payment') {
+                    if ($cashMovement->movementType?->code === 'professional_payment') {
                         $additionalData['professional'] = $professional;
-                    } elseif ($cashMovement->type === 'expense') {
+                    } elseif ($cashMovement->movementType?->code === 'expense') {
                         // Reintegro a paciente
                         $additionalData['refund_professional'] = $professional;
                     }
@@ -325,10 +340,10 @@ class CashController extends Controller
             // Crear movimiento de apertura
             $cashMovement = CashMovement::create([
                 'movement_date' => now(),
-                'type' => 'cash_opening',
+                'movement_type_id' => MovementType::getIdByCode('cash_opening'),
                 'amount' => $openingAmount,
                 'description' => 'Apertura de caja - '.($validated['notes'] ?: 'Apertura del día'),
-                'reference_type' => 'cash_opening',
+                'reference_type' => null,
                 'reference_id' => null,
                 'balance_after' => $newBalance,
                 'user_id' => auth()->id(),
@@ -422,12 +437,12 @@ class CashController extends Controller
             // Crear movimiento de cierre que retira todo el saldo
             $cashMovement = CashMovement::create([
                 'movement_date' => $closeDate->endOfDay(),
-                'type' => 'cash_closing',
+                'movement_type_id' => MovementType::getIdByCode('cash_closing'),
                 'amount' => -$currentBalance, // Retirar todo el saldo actual
                 'description' => 'Cierre de caja - Efectivo contado: $'.number_format($validated['closing_amount'], 2).
                                ' - Saldo retirado: $'.number_format($currentBalance, 2).
                                ($validated['notes'] ? ' - '.$validated['notes'] : ''),
-                'reference_type' => 'cash_closing',
+                'reference_type' => null,
                 'reference_id' => null,
                 'balance_after' => 0, // Balance queda en cero
                 'user_id' => auth()->id(),
@@ -626,12 +641,15 @@ class CashController extends Controller
                 $description .= ' - '.$validated['notes'];
             }
 
+            // Usar el tipo específico de retiro (subcategoría) en lugar del genérico 'cash_withdrawal'
+            $movementTypeCode = $validated['withdrawal_type']; // ej: 'bank_deposit', 'safe_custody', etc.
+
             $cashMovement = CashMovement::create([
                 'movement_date' => now(),
-                'type' => 'cash_withdrawal',
+                'movement_type_id' => MovementType::getIdByCode($movementTypeCode),
                 'amount' => -$validated['amount'], // Negativo para salida
                 'description' => $description,
-                'reference_type' => $validated['withdrawal_type'],
+                'reference_type' => null,
                 'reference_id' => null,
                 'balance_after' => $newBalance,
                 'user_id' => auth()->id(),
@@ -730,12 +748,15 @@ class CashController extends Controller
                 $description .= ' - '.$validated['notes'];
             }
 
+            // Usar el tipo específico de ingreso (subcategoría) en lugar del genérico 'other'
+            $movementTypeCode = $validated['category']; // ej: 'professional_module_payment', 'correction', etc.
+
             $cashMovement = CashMovement::create([
                 'movement_date' => now(),
-                'type' => 'other',
+                'movement_type_id' => MovementType::getIdByCode($movementTypeCode),
                 'amount' => $validated['amount'],
                 'description' => $description,
-                'reference_type' => isset($validated['professional_id']) ? 'App\\Models\\Professional' : 'manual_income',
+                'reference_type' => isset($validated['professional_id']) ? 'App\\Models\\Professional' : null,
                 'reference_id' => $validated['professional_id'] ?? null,
                 'balance_after' => $newBalance,
                 'user_id' => auth()->id(),

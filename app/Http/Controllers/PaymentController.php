@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Appointment;
 use App\Models\CashMovement;
+use App\Models\MovementType;
 use App\Models\Patient;
 use App\Models\Payment;
 use App\Models\PaymentAppointment;
@@ -451,7 +452,7 @@ class PaymentController extends Controller
         $currentBalance = CashMovement::getCurrentBalanceWithLock();
 
         // Determinar tipo y monto según si es reembolso o pago
-        $type = $payment->payment_type === 'refund' ? 'refund' : 'patient_payment';
+        $movementTypeCode = $payment->payment_type === 'refund' ? 'refund' : 'patient_payment';
         $amount = $payment->payment_type === 'refund' ? -$payment->amount : $payment->amount;
         $newBalance = $currentBalance + $amount;
 
@@ -460,10 +461,10 @@ class PaymentController extends Controller
 
         CashMovement::create([
             'movement_date' => $payment->payment_date,
-            'type' => $type,
+            'movement_type_id' => MovementType::getIdByCode($movementTypeCode),
             'amount' => $amount,
             'description' => $description,
-            'reference_type' => 'payment',
+            'reference_type' => Payment::class,
             'reference_id' => $payment->id,
             'balance_after' => $newBalance,
             'user_id' => auth()->id(),

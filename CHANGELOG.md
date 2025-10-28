@@ -7,6 +7,102 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [2.5.7] - 2025-10-28
+
+### 🗂️ Sistema de Tipos de Movimiento en Base de Datos
+
+**Añadido:**
+- **Tabla `movement_types` con estructura jerárquica**
+  - Soporte para tipos principales y subcategorías (parent_type_id)
+  - 11 tipos principales: apertura/cierre de caja, pagos, gastos, retiros, etc.
+  - 17 subcategorías: detalles de gastos, ingresos y retiros
+  - Campos: code, name, description, category, affects_balance, icon, color, is_active, order
+  - Sistema de iconos emoji y colores para mejor UX
+
+- **Modelo MovementType con funcionalidades completas**
+  - Relaciones: parent, children, cashMovements
+  - Scopes: mainTypes, subTypes, active, byCategory, byCode
+  - Helper estático: `getIdByCode()` con caché en memoria
+  - Método: `getAffectsBalanceText()` para etiquetas legibles
+
+- **Interfaz de administración completa**
+  - Vista index: listado de tipos principales y subcategorías
+  - Vista create: formulario completo para nuevos tipos
+  - Vista edit: formulario de edición con alertas si tiene movimientos
+  - Toggle de estado activo/inactivo desde listado
+  - Validación: no permite eliminar si tiene movimientos o subcategorías asociadas
+  - Acceso restringido a administradores
+
+- **Nueva entrada en menú de navegación**
+  - "Tipos de Movimientos" en sección de Configuración
+  - Visible solo para usuarios administradores
+  - Breadcrumbs de navegación en todas las vistas
+
+**Mejorado:**
+- **Migración de datos existentes**
+  - 78 registros de cash_movements migrados exitosamente
+  - Campo `type` (string) → `movement_type_id` (FK)
+  - Campo `reference_type` normalizado a nombres completos de clase
+  - Eliminación de columna `type` obsoleta
+
+- **Controladores actualizados para usar BD**
+  - CashController: usa MovementType::getIdByCode() en lugar de strings
+  - PaymentController: tipos desde BD
+  - AppointmentController: tipos desde BD
+  - DashboardController: tipos desde BD
+  - LiquidationController: tipos desde BD
+  - Uso de subcategorías específicas en lugar de tipos genéricos
+
+- **Modelo CashMovement refactorizado**
+  - Relación `movementType()` agregada
+  - Scopes actualizados: byType, incomes, expenses, withdrawals
+  - Campo `type` removido del fillable
+  - Eager loading de movementType en consultas
+
+- **Vista de Caja Diaria actualizada**
+  - Muestra icono y nombre desde movementType
+  - Colores dinámicos según movementType->color
+  - JavaScript actualizado para usar movementType->code
+  - Modal de detalles muestra información del tipo
+
+**Técnico:**
+- Migraciones con manejo seguro de datos existentes
+- Seeder completo con todos los tipos del sistema
+- Foreign key con restricción `onDelete('restrict')`
+- Caché de códigos en MovementType para optimización
+- Validaciones completas en MovementTypeController
+
+**Archivos Añadidos:**
+- `database/migrations/2025_10_26_071829_create_movement_types_table.php`
+- `database/migrations/2025_10_26_072215_add_movement_type_id_to_cash_movements_table.php`
+- `database/seeders/MovementTypeSeeder.php`
+- `app/Models/MovementType.php`
+- `app/Http/Controllers/MovementTypeController.php`
+- `resources/views/settings/movement-types/index.blade.php`
+- `resources/views/settings/movement-types/create.blade.php`
+- `resources/views/settings/movement-types/edit.blade.php`
+
+**Archivos Modificados:**
+- `app/Models/CashMovement.php` - relación y scopes
+- `app/Http/Controllers/CashController.php` - uso de MovementType
+- `app/Http/Controllers/PaymentController.php` - uso de MovementType
+- `app/Http/Controllers/AppointmentController.php` - uso de MovementType
+- `app/Http/Controllers/DashboardController.php` - uso de MovementType
+- `app/Http/Controllers/LiquidationController.php` - uso de MovementType
+- `resources/views/cash/daily.blade.php` - muestra tipos desde BD
+- `resources/views/layouts/app.blade.php` - menú admin
+- `routes/web.php` - rutas de configuración
+
+**Impacto:**
+- ✅ Tipos de movimiento ahora configurables sin código
+- ✅ Sistema más flexible y mantenible
+- ✅ Mejor trazabilidad de categorías de movimientos
+- ✅ Interfaz administrativa para gestión completa
+- ✅ Migración exitosa sin pérdida de datos
+- ✅ Base sólida para futuros reportes personalizados
+
+---
+
 ## [2.5.6] - 2025-10-24
 
 ### 📅 Mejoras en Entreturnos y Gestión de Ingresos

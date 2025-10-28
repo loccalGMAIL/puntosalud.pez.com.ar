@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Appointment;
 use App\Models\CashMovement;
 use App\Models\LiquidationDetail;
+use App\Models\MovementType;
 use App\Models\Payment;
 use App\Models\Professional;
 use App\Models\ProfessionalLiquidation;
@@ -188,7 +189,7 @@ class LiquidationController extends Controller
             // 12. Crear movimiento de caja por pago al profesional
             CashMovement::create([
                 'movement_date' => $date,
-                'type' => 'professional_payment',
+                'movement_type_id' => MovementType::getIdByCode('professional_payment'),
                 'amount' => -$amount, // Negativo porque es una salida de dinero
                 'description' => "Liquidación profesional: {$professional->full_name} - {$attendedAppointments->count()} turnos",
                 'reference_type' => ProfessionalLiquidation::class,

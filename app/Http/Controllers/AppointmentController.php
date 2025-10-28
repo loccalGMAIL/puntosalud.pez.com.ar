@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Appointment;
 use App\Models\CashMovement;
+use App\Models\MovementType;
 use App\Models\Office;
 use App\Models\Patient;
 use App\Models\Payment;
@@ -646,10 +647,10 @@ class AppointmentController extends Controller
 
         CashMovement::create([
             'movement_date' => $payment->payment_date,
-            'type' => 'patient_payment',
+            'movement_type_id' => MovementType::getIdByCode('patient_payment'),
             'amount' => $payment->amount,
             'description' => $payment->concept ?: 'Pago anticipado - '.$payment->patient->full_name,
-            'reference_type' => 'payment',
+            'reference_type' => Payment::class,
             'reference_id' => $payment->id,
             'balance_after' => $newBalance,
             'user_id' => auth()->id(),

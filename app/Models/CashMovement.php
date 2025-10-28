@@ -11,7 +11,7 @@ class CashMovement extends Model
 
     protected $fillable = [
         'movement_date',
-        'type',
+        'movement_type_id',
         'amount',
         'description',
         'reference_type',
@@ -29,9 +29,16 @@ class CashMovement extends Model
         ];
     }
 
+    // Relaciones
+
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function movementType()
+    {
+        return $this->belongsTo(MovementType::class);
     }
 
     public function reference()
@@ -39,9 +46,25 @@ class CashMovement extends Model
         return $this->morphTo();
     }
 
-    public function scopeByType($query, $type)
+    // Scopes
+
+    /**
+     * Filtrar por código de tipo de movimiento
+     * @param string $typeCode Código del tipo (ej: 'patient_payment', 'expense', etc.)
+     */
+    public function scopeByType($query, $typeCode)
     {
-        return $query->where('type', $type);
+        return $query->whereHas('movementType', function ($q) use ($typeCode) {
+            $q->where('code', $typeCode);
+        });
+    }
+
+    /**
+     * Filtrar por ID de tipo de movimiento
+     */
+    public function scopeByTypeId($query, $typeId)
+    {
+        return $query->where('movement_type_id', $typeId);
     }
 
     public function scopeIncome($query)
@@ -59,6 +82,27 @@ class CashMovement extends Model
         return $query->whereBetween('movement_date', [$startDate, $endDate]);
     }
 
+    public function scopeOpeningMovements($query)
+    {
+        return $query->whereHas('movementType', function ($q) {
+            $q->where('code', 'cash_opening');
+        });
+    }
+
+    public function scopeClosingMovements($query)
+    {
+        return $query->whereHas('movementType', function ($q) {
+            $q->where('code', 'cash_closing');
+        });
+    }
+
+    public function scopeForDate($query, $date)
+    {
+        return $query->whereDate('movement_date', $date);
+    }
+
+    // Métodos helper
+
     public function isIncome()
     {
         return $this->amount > 0;
@@ -69,29 +113,14 @@ class CashMovement extends Model
         return $this->amount < 0;
     }
 
-    public function scopeOpeningMovements($query)
-    {
-        return $query->where('type', 'cash_opening');
-    }
-
-    public function scopeClosingMovements($query)
-    {
-        return $query->where('type', 'cash_closing');
-    }
-
-    public function scopeForDate($query, $date)
-    {
-        return $query->whereDate('movement_date', $date);
-    }
-
     public function isOpening()
     {
-        return $this->type === 'cash_opening';
+        return $this->movementType?->code === 'cash_opening';
     }
 
     public function isClosing()
     {
-        return $this->type === 'cash_closing';
+        return $this->movementType?->code === 'cash_closing';
     }
 
     public static function getCashStatusForDate($date)
@@ -110,13 +139,16 @@ class CashMovement extends Model
 
     public static function hasUnclosedCash()
     {
+        // Obtener el ID del tipo 'cash_closing'
+        $closingTypeId = MovementType::where('code', 'cash_closing')->value('id');
+
         // Buscar días con apertura pero sin cierre
         $unclosedDates = static::openingMovements()
-            ->whereNotExists(function ($query) {
+            ->whereNotExists(function ($query) use ($closingTypeId) {
                 $query->select('id')
                     ->from('cash_movements as cm2')
                     ->whereRaw('DATE(cm2.movement_date) = DATE(cash_movements.movement_date)')
-                    ->where('cm2.type', 'cash_closing');
+                    ->where('cm2.movement_type_id', $closingTypeId);
             })
             ->where('movement_date', '<', now()->startOfDay())
             ->orderBy('movement_date', 'desc')
