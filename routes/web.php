@@ -4,6 +4,7 @@ use App\Http\Controllers\AgendaController;
 use App\Http\Controllers\AppointmentController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\MovementTypeController;
 use App\Http\Controllers\PatientController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ProfessionalController;
@@ -97,6 +98,10 @@ Route::middleware(['auth'])->group(function () {
     Route::middleware(['can:viewAny,App\Models\User'])->group(function () {
         Route::resource('users', UserController::class);
         Route::patch('/users/{user}/toggle-status', [UserController::class, 'toggleStatus'])->name('users.toggle-status');
+
+        // Movement Types management (Admin only)
+        Route::resource('movement-types', MovementTypeController::class)->except(['show']);
+        Route::patch('/movement-types/{movementType}/toggle-active', [MovementTypeController::class, 'toggleActive'])->name('movement-types.toggle-active');
     });
 
     // User profile routes
