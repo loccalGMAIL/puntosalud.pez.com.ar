@@ -419,7 +419,6 @@ class DashboardController extends Controller
         $newBalance = $currentBalance + $payment->amount;
 
         CashMovement::create([
-            'movement_date' => $payment->payment_date,
             'movement_type_id' => MovementType::getIdByCode('patient_payment'),
             'amount' => $payment->amount,
             'description' => $payment->concept ?: 'Pago de paciente - '.$payment->patient->full_name,

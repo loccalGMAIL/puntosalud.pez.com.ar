@@ -460,7 +460,6 @@ class PaymentController extends Controller
         $description = $payment->concept ?: $this->getDefaultConcept($payment);
 
         CashMovement::create([
-            'movement_date' => $payment->payment_date,
             'movement_type_id' => MovementType::getIdByCode($movementTypeCode),
             'amount' => $amount,
             'description' => $description,

@@ -22,13 +22,12 @@ class CashMovementSeeder extends Seeder
 
         // Balance inicial
         $movements[] = [
-            'movement_date' => $startDate->copy()->setTime(8, 0, 0),
+            'created_at' => $startDate->copy()->setTime(8, 0, 0),
             'type' => 'other',
             'amount' => 50000,
             'description' => 'Balance inicial de caja',
             'balance_after' => 50000,
             'user_id' => $adminUser->id,
-            'created_at' => now(),
             'updated_at' => now(),
         ];
         $runningBalance = 50000;
@@ -38,7 +37,7 @@ class CashMovementSeeder extends Seeder
         foreach ($payments as $payment) {
             $runningBalance += $payment->amount;
             $movements[] = [
-                'movement_date' => $payment->payment_date,
+                'created_at' => $payment->payment_date,
                 'type' => 'patient_payment',
                 'amount' => $payment->amount,
                 'description' => "Pago de paciente - {$payment->concept}",
@@ -46,7 +45,6 @@ class CashMovementSeeder extends Seeder
                 'reference_id' => $payment->id,
                 'balance_after' => $runningBalance,
                 'user_id' => $adminUser->id,
-                'created_at' => now(),
                 'updated_at' => now(),
             ];
         }
@@ -70,13 +68,12 @@ class CashMovementSeeder extends Seeder
             $runningBalance += $expense['amount'];
 
             $movements[] = [
-                'movement_date' => $expenseDate,
+                'created_at' => $expenseDate,
                 'type' => 'expense',
                 'amount' => $expense['amount'],
                 'description' => $expense['desc'],
                 'balance_after' => $runningBalance,
                 'user_id' => $adminUser->id,
-                'created_at' => now(),
                 'updated_at' => now(),
             ];
         }
@@ -94,13 +91,12 @@ class CashMovementSeeder extends Seeder
             $runningBalance += $payment['amount'];
 
             $movements[] = [
-                'movement_date' => $paymentDate,
+                'created_at' => $paymentDate,
                 'type' => 'professional_payment',
                 'amount' => $payment['amount'],
                 'description' => $payment['desc'],
                 'balance_after' => $runningBalance,
                 'user_id' => $adminUser->id,
-                'created_at' => now(),
                 'updated_at' => now(),
             ];
         }
@@ -110,7 +106,7 @@ class CashMovementSeeder extends Seeder
         foreach ($refunds as $refund) {
             $runningBalance += $refund->amount;
             $movements[] = [
-                'movement_date' => $refund->payment_date,
+                'created_at' => $refund->payment_date,
                 'type' => 'refund',
                 'amount' => $refund->amount,
                 'description' => "Reembolso a paciente - {$refund->concept}",
@@ -118,14 +114,13 @@ class CashMovementSeeder extends Seeder
                 'reference_id' => $refund->id,
                 'balance_after' => $runningBalance,
                 'user_id' => $adminUser->id,
-                'created_at' => now(),
                 'updated_at' => now(),
             ];
         }
 
         // Ordenar movimientos por fecha
         usort($movements, function ($a, $b) {
-            return strcmp($a['movement_date'], $b['movement_date']);
+            return strcmp($a['created_at'], $b['created_at']);
         });
 
         // Recalcular balances en orden cronológico

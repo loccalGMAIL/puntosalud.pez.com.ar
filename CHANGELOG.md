@@ -7,6 +7,52 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [2.5.8] - 2025-10-29
+
+### 🐛 Corrección Crítica de Cálculo de Balance en Caja
+
+**Corregido:**
+- **Bug crítico en cálculo de balance de caja**
+  - Problema: Liquidaciones profesionales usaban `movement_date` con fecha medianoche (00:00:00)
+  - Otros movimientos usaban `movement_date` con hora actual (`now()`)
+  - El método `getCurrentBalanceWithLock()` ordenaba por `movement_date DESC`
+  - Resultado: Balances posteriores ignoraban liquidaciones recientes
+  - Caso real 27/10: Error de $549,625 en balance por liquidaciones no consideradas
+
+- **Eliminación del campo `movement_date`**
+  - Campo redundante que causaba inconsistencias
+  - Ahora todos los movimientos usan únicamente `created_at`
+  - Simplifica la lógica y previene futuros errores de sincronización
+  - Laravel maneja correctamente zonas horarias con `created_at` + Carbon
+
+**Técnico:**
+- Migración: `drop_movement_date_from_cash_movements`
+- Actualizados 7 archivos (controllers y models)
+- Reemplazadas 40+ referencias de `movement_date` por `created_at`
+- Ordenamiento y filtros ahora consistentes con `created_at`
+- `whereDate()`, `orderBy()` y queries actualizadas
+
+**Archivos Modificados:**
+- `app/Models/CashMovement.php` - fillable, casts, scopes y métodos
+- `app/Http/Controllers/CashController.php` - queries y ordenamientos
+- `app/Http/Controllers/LiquidationController.php` - creación de movimientos
+- `app/Http/Controllers/DashboardController.php` - queries
+- `app/Http/Controllers/PaymentController.php` - queries
+- `app/Http/Controllers/AppointmentController.php` - queries
+- `app/Http/Controllers/ReportController.php` - queries
+- `resources/views/cash/daily.blade.php` - modal de detalles (JavaScript)
+- `resources/views/reports/professional-liquidation.blade.php` - tabla de reintegros
+- `database/seeders/CashMovementSeeder.php` - generación de datos de prueba
+
+**Impacto:**
+- ✅ Cálculo de balance correcto en todas las operaciones
+- ✅ Liquidaciones profesionales se consideran en el orden correcto
+- ✅ Código más simple y mantenible
+- ✅ Previene errores futuros de sincronización de fechas
+- ✅ Compatible con todas las funcionalidades existentes
+
+---
+
 ## [2.5.7] - 2025-10-28
 
 ### 🗂️ Sistema de Tipos de Movimiento en Base de Datos

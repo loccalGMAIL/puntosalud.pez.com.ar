@@ -298,7 +298,7 @@
                             @foreach($liquidationData['refunds'] as $refund)
                                 <tr class="border-b border-gray-100 dark:border-gray-700">
                                     <td class="py-3 px-3 font-medium text-gray-900 dark:text-white">
-                                        {{ \Carbon\Carbon::parse($refund->movement_date)->format('H:i') }}
+                                        {{ \Carbon\Carbon::parse($refund->created_at)->format('H:i') }}
                                     </td>
                                     <td class="py-3 px-3">
                                         <div class="text-sm text-gray-900 dark:text-white">{{ $refund->description }}</div>

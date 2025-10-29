@@ -201,7 +201,7 @@ class ReportController extends Controller
                 $refunds = \App\Models\CashMovement::byType('expense')
                     ->where('reference_type', 'App\Models\Professional')
                     ->where('reference_id', $professional->id)
-                    ->whereDate('movement_date', $selectedDate)
+                    ->whereDate('created_at', $selectedDate)
                     ->get();
 
                 $totalRefunds = $refunds->sum(function($refund) {
@@ -281,7 +281,7 @@ class ReportController extends Controller
         $refunds = \App\Models\CashMovement::byType('expense')
             ->where('reference_type', 'App\Models\Professional')
             ->where('reference_id', $professionalId)
-            ->whereDate('movement_date', $selectedDate)
+            ->whereDate('created_at', $selectedDate)
             ->get();
 
         $totalRefunds = $refunds->sum(function($refund) {

@@ -16,15 +16,15 @@ class CashController extends Controller
         $selectedDate = Carbon::parse($date);
 
         $previousDay = $selectedDate->copy()->subDay();
-        $lastBalanceMovement = CashMovement::whereDate('movement_date', '<=', $previousDay)
-            ->orderBy('movement_date', 'desc')
+        $lastBalanceMovement = CashMovement::whereDate('created_at', '<=', $previousDay)
+            ->orderBy('created_at', 'desc')
             ->orderBy('created_at', 'desc')
             ->first();
 
         $initialBalance = $lastBalanceMovement ? $lastBalanceMovement->balance_after : 0;
 
         $query = CashMovement::with(['user', 'movementType'])
-            ->whereDate('movement_date', $selectedDate);
+            ->whereDate('created_at', $selectedDate);
 
         if ($request->filled('type')) {
             $query->whereHas('movementType', function($q) use ($request) {
@@ -108,9 +108,9 @@ class CashController extends Controller
         $endDate = Carbon::parse($dateTo);
 
         $movements = CashMovement::with(['user'])
-            ->whereDate('movement_date', '>=', $startDate)
-            ->whereDate('movement_date', '<=', $endDate)
-            ->orderBy('movement_date')
+            ->whereDate('created_at', '>=', $startDate)
+            ->whereDate('created_at', '<=', $endDate)
+            ->orderBy('created_at')
             ->get();
 
         $reportData = $this->generateReportData($movements, $groupBy, $startDate, $endDate);
@@ -219,8 +219,7 @@ class CashController extends Controller
             $movementTypeCode = $validated['category']; // ej: 'office_supplies', 'medical_supplies', etc.
 
             $cashMovement = CashMovement::create([
-                'movement_date' => now(),
-                'movement_type_id' => MovementType::getIdByCode($movementTypeCode),
+                                'movement_type_id' => MovementType::getIdByCode($movementTypeCode),
                 'amount' => -$validated['amount'], // Negativo para egreso
                 'description' => $description,
                 'reference_type' => isset($validated['professional_id']) ? 'App\\Models\\Professional' : null,
@@ -331,8 +330,8 @@ class CashController extends Controller
 
             // Obtener saldo anterior con lock pesimista
             $previousDay = $today->copy()->subDay();
-            $lastMovement = CashMovement::whereDate('movement_date', '<=', $previousDay)
-                ->orderBy('movement_date', 'desc')
+            $lastMovement = CashMovement::whereDate('created_at', '<=', $previousDay)
+                ->orderBy('created_at', 'desc')
                 ->orderBy('created_at', 'desc')
                 ->lockForUpdate()
                 ->first();
@@ -343,8 +342,7 @@ class CashController extends Controller
 
             // Crear movimiento de apertura
             $cashMovement = CashMovement::create([
-                'movement_date' => now(),
-                'movement_type_id' => MovementType::getIdByCode('cash_opening'),
+                                'movement_type_id' => MovementType::getIdByCode('cash_opening'),
                 'amount' => $openingAmount,
                 'description' => 'Apertura de caja - '.($validated['notes'] ?: 'Apertura del día'),
                 'reference_type' => null,
@@ -430,7 +428,7 @@ class CashController extends Controller
             }
 
             // Obtener el saldo actual antes del cierre con lock pesimista
-            $lastMovement = CashMovement::whereDate('movement_date', '<=', $closeDate)
+            $lastMovement = CashMovement::whereDate('created_at', '<=', $closeDate)
                 ->orderBy('id', 'desc')
                 ->orderBy('created_at', 'desc')
                 ->lockForUpdate()
@@ -440,8 +438,7 @@ class CashController extends Controller
 
             // Crear movimiento de cierre que retira todo el saldo
             $cashMovement = CashMovement::create([
-                'movement_date' => $closeDate->endOfDay(),
-                'movement_type_id' => MovementType::getIdByCode('cash_closing'),
+                                'movement_type_id' => MovementType::getIdByCode('cash_closing'),
                 'amount' => -$currentBalance, // Retirar todo el saldo actual
                 'description' => 'Cierre de caja - Efectivo contado: $'.number_format($validated['closing_amount'], 2).
                                ' - Saldo retirado: $'.number_format($currentBalance, 2).
@@ -503,8 +500,8 @@ class CashController extends Controller
 
         // Obtener el saldo inicial del día anterior
         $previousDay = $selectedDate->copy()->subDay();
-        $lastBalanceMovement = CashMovement::whereDate('movement_date', '<=', $previousDay)
-            ->orderBy('movement_date', 'desc')
+        $lastBalanceMovement = CashMovement::whereDate('created_at', '<=', $previousDay)
+            ->orderBy('created_at', 'desc')
             ->orderBy('created_at', 'desc')
             ->first();
 
@@ -512,8 +509,8 @@ class CashController extends Controller
 
         // Obtener todos los movimientos del día
         $movements = CashMovement::with(['user'])
-            ->whereDate('movement_date', $selectedDate)
-            ->orderBy('movement_date')
+            ->whereDate('created_at', $selectedDate)
+            ->orderBy('created_at')
             ->orderBy('created_at')
             ->get();
 
@@ -661,8 +658,7 @@ class CashController extends Controller
             $movementTypeCode = $validated['withdrawal_type']; // ej: 'bank_deposit', 'safe_custody', etc.
 
             $cashMovement = CashMovement::create([
-                'movement_date' => now(),
-                'movement_type_id' => MovementType::getIdByCode($movementTypeCode),
+                                'movement_type_id' => MovementType::getIdByCode($movementTypeCode),
                 'amount' => -$validated['amount'], // Negativo para salida
                 'description' => $description,
                 'reference_type' => null,
@@ -768,8 +764,7 @@ class CashController extends Controller
             $movementTypeCode = $validated['category']; // ej: 'professional_module_payment', 'correction', etc.
 
             $cashMovement = CashMovement::create([
-                'movement_date' => now(),
-                'movement_type_id' => MovementType::getIdByCode($movementTypeCode),
+                                'movement_type_id' => MovementType::getIdByCode($movementTypeCode),
                 'amount' => $validated['amount'],
                 'description' => $description,
                 'reference_type' => isset($validated['professional_id']) ? 'App\\Models\\Professional' : null,
@@ -817,7 +812,7 @@ class CashController extends Controller
                 $period = $startDate->copy();
                 while ($period->lte($endDate)) {
                     $dayMovements = $movements->filter(function ($movement) use ($period) {
-                        return Carbon::parse($movement->movement_date)->isSameDay($period);
+                        return Carbon::parse($movement->created_at)->isSameDay($period);
                     });
 
                     $data->push([
@@ -838,7 +833,7 @@ class CashController extends Controller
                 while ($period->lte($endDate)) {
                     $weekEnd = $period->copy()->endOfWeek();
                     $weekMovements = $movements->filter(function ($movement) use ($period, $weekEnd) {
-                        $moveDate = Carbon::parse($movement->movement_date);
+                        $moveDate = Carbon::parse($movement->created_at);
 
                         return $moveDate->between($period, $weekEnd);
                     });
@@ -861,7 +856,7 @@ class CashController extends Controller
                 while ($period->lte($endDate)) {
                     $monthEnd = $period->copy()->endOfMonth();
                     $monthMovements = $movements->filter(function ($movement) use ($period, $monthEnd) {
-                        $moveDate = Carbon::parse($movement->movement_date);
+                        $moveDate = Carbon::parse($movement->created_at);
 
                         return $moveDate->between($period, $monthEnd);
                     });
