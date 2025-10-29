@@ -9,6 +9,51 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ## [2.5.8] - 2025-10-29
 
+### 🛡️ Fix: Manejo de Error de DNI Duplicado y Búsqueda Mejorada
+
+**Corregido:**
+- **Error no controlado al editar/crear paciente/profesional con DNI duplicado**
+  - Problema: Error 500 o mensaje de validación críptico (`uvalidation.unique`)
+  - Usuario veía mensaje técnico sin contexto
+  - Experiencia de usuario negativa y confusa
+
+- **Búsqueda de DNI inflexible**
+  - Problema: Búsqueda solo funcionaba con formato exacto (con puntos)
+  - Buscar "12345678" no encontraba "12.345.678"
+  - Usuarios forzados a recordar formato exacto
+
+**Soluciones implementadas:**
+
+1. **Mensajes de validación personalizados**
+   - Agregado mensaje para regla `unique`: "El DNI ingresado ya está registrado en el sistema."
+   - Aplicado en `PatientController` y `ProfessionalController`
+   - Mensaje claro y contextual para el usuario
+
+2. **Manejo de excepciones de base de datos**
+   - Captura `QueryException` para casos edge (race conditions)
+   - Detecta código MySQL 1062 (duplicate entry)
+   - Respuesta apropiada para AJAX y peticiones regulares
+
+3. **Búsqueda normalizada de DNI**
+   - Búsqueda funciona con o sin puntos
+   - Query SQL: `REPLACE(dni, ".", "") LIKE ?`
+   - Aplicado en índice de pacientes y profesionales
+
+**Técnico:**
+- Archivos modificados:
+  - `app/Http/Controllers/PatientController.php`
+  - `app/Http/Controllers/ProfessionalController.php`
+- Agregados mensajes de validación: `'dni.unique' => '...'`
+- Agregado catch para `QueryException` con verificación 1062
+- Búsqueda mejorada: limpieza de búsqueda + `orWhereRaw()`
+
+**Impacto:**
+- ✅ Mensajes de error claros y útiles
+- ✅ Búsqueda más flexible e intuitiva
+- ✅ Encuentra DNI con o sin formato de puntos
+- ✅ Datos del formulario preservados (withInput)
+- ✅ Mejor experiencia de usuario general
+
 ### 🐛 Corrección Crítica de Cálculo de Balance en Caja
 
 **Corregido:**
