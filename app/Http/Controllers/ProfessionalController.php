@@ -20,11 +20,16 @@ class ProfessionalController extends Controller
         // Filtros
         if ($request->filled('search')) {
             $search = $request->get('search');
-            $query->where(function ($q) use ($search) {
+            // Limpiar búsqueda de puntos para DNI
+            $cleanSearch = preg_replace('/[.\s]/', '', $search);
+
+            $query->where(function ($q) use ($search, $cleanSearch) {
                 $q->where('first_name', 'like', "%{$search}%")
                     ->orWhere('last_name', 'like', "%{$search}%")
                     ->orWhere('email', 'like', "%{$search}%")
-                    ->orWhere('dni', 'like', "%{$search}%");
+                    ->orWhere('dni', 'like', "%{$search}%")
+                    // Búsqueda de DNI sin puntos (normalizada)
+                    ->orWhereRaw('REPLACE(dni, ".", "") LIKE ?', ["%{$cleanSearch}%"]);
             });
         }
 
@@ -96,6 +101,7 @@ class ProfessionalController extends Controller
                 'first_name.regex' => 'El nombre solo puede contener letras y espacios.',
                 'last_name.regex' => 'El apellido solo puede contener letras y espacios.',
                 'dni.regex' => 'El DNI solo puede contener números y puntos.',
+                'dni.unique' => 'El DNI ingresado ya está registrado en el sistema.',
             ]);
 
             // Formatear DNI con puntos
@@ -119,6 +125,23 @@ class ProfessionalController extends Controller
                     'errors' => $e->errors(),
                 ], 422);
             }
+            throw $e;
+        } catch (\Illuminate\Database\QueryException $e) {
+            // Capturar error de constraint violation (DNI duplicado)
+            if ($e->errorInfo[1] == 1062) { // Código MySQL para duplicate entry
+                if ($request->ajax()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'El DNI ingresado ya está registrado en el sistema. Por favor, verifique el número de documento.',
+                    ], 422);
+                }
+
+                return back()
+                    ->withInput()
+                    ->withErrors(['dni' => 'El DNI ingresado ya está registrado en el sistema.']);
+            }
+
+            // Si es otro tipo de error de base de datos, re-lanzarlo
             throw $e;
         }
     }
@@ -178,6 +201,7 @@ class ProfessionalController extends Controller
                 'first_name.regex' => 'El nombre solo puede contener letras y espacios.',
                 'last_name.regex' => 'El apellido solo puede contener letras y espacios.',
                 'dni.regex' => 'El DNI solo puede contener números y puntos.',
+                'dni.unique' => 'El DNI ingresado ya está registrado en el sistema.',
             ]);
 
             // Formatear DNI con puntos
@@ -203,6 +227,23 @@ class ProfessionalController extends Controller
                     'errors' => $e->errors(),
                 ], 422);
             }
+            throw $e;
+        } catch (\Illuminate\Database\QueryException $e) {
+            // Capturar error de constraint violation (DNI duplicado)
+            if ($e->errorInfo[1] == 1062) { // Código MySQL para duplicate entry
+                if ($request->ajax()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'El DNI ingresado ya está registrado en el sistema. Por favor, verifique el número de documento.',
+                    ], 422);
+                }
+
+                return back()
+                    ->withInput()
+                    ->withErrors(['dni' => 'El DNI ingresado ya está registrado en el sistema.']);
+            }
+
+            // Si es otro tipo de error de base de datos, re-lanzarlo
             throw $e;
         }
     }
