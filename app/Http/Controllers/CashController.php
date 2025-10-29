@@ -401,12 +401,24 @@ class CashController extends Controller
             }
 
             // Verificar que todos los profesionales con turnos atendidos del día hayan sido liquidados
+            // EXCLUIR profesionales cuyo monto total de turnos sea $0
             $professionalsWithAppointments = \App\Models\Professional::whereHas('appointments', function ($query) use ($closeDate) {
                 $query->whereDate('appointment_date', $closeDate)
                       ->where('status', 'attended');
             })->get();
 
             $professionalsNotLiquidated = $professionalsWithAppointments->filter(function ($professional) use ($closeDate) {
+                // Calcular monto total de turnos atendidos del día
+                $totalAmount = \App\Models\Appointment::where('professional_id', $professional->id)
+                    ->whereDate('appointment_date', $closeDate)
+                    ->where('status', 'attended')
+                    ->sum('final_amount');
+
+                // Si el monto total es $0, no requiere liquidación
+                if ($totalAmount == 0) {
+                    return false;
+                }
+
                 // Verificar si existe liquidación para este profesional en esta fecha
                 $hasLiquidation = \App\Models\ProfessionalLiquidation::where('professional_id', $professional->id)
                     ->whereDate('liquidation_date', $closeDate)

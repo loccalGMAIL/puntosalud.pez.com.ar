@@ -9,23 +9,22 @@
     <!-- Contenido del Reporte -->
     <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 print:shadow-none print:border-none">
         <!-- Encabezado del Reporte -->
-        <div class="p-6 border-b border-gray-200 dark:border-gray-700 print:border-gray-400 print:p-2">
-            <div class="flex items-center justify-between gap-4">
+        <div class="p-2 border-b border-gray-200 dark:border-gray-700 print:border-gray-400 print:p-0.5">
+            <div class="flex items-center justify-between gap-2">
                 <!-- Logo -->
                 <div class="flex-shrink-0">
-                    <img src="{{ asset('logo.png') }}" alt="Logo PuntoSalud" class="w-48 h-48 print:w-36 print:h-36 object-contain">
+                    <img src="{{ asset('logo.png') }}" alt="Logo PuntoSalud" class="w-32 h-32 print:w-24 print:h-24 object-contain">
                 </div>
 
                 <!-- Información del Reporte -->
-                <div class="flex-1 text-center">
-                    {{-- <h2 class="text-xl font-bold text-gray-900 dark:text-white print:text-black print:text-base">PuntoSalud</h2> --}}
+                <div class="flex-1 text-center space-y-0.5">
                     <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-300 print:text-gray-700 print:text-sm">Reporte de Cierre de Caja</h3>
-                    <p class="text-gray-600 dark:text-gray-400 print:text-gray-600 print:text-xs">{{ $selectedDate->format('l, d \d\e F \d\e Y') }}</p>
+                    <p class="text-gray-600 dark:text-gray-400 print:text-gray-600 print:text-xs">{{ $selectedDate->translatedFormat('l, d \d\e F \d\e Y') }}</p>
                     <p class="text-sm text-gray-500 dark:text-gray-500 print:text-gray-500 print:text-xs">Generado: {{ now()->format('d/m/Y H:i') }}</p>
                 </div>
 
                 <!-- Espacio para balance visual -->
-                <div class="flex-shrink-0 w-48 print:w-36"></div>
+                <div class="flex-shrink-0 w-32 print:w-24"></div>
             </div>
         </div>
 
@@ -33,7 +32,7 @@
         <div class="p-6 print:p-2">
             <h4 class="text-lg font-semibold text-gray-900 dark:text-white print:text-black mb-4 print:mb-2 print:text-sm">Resumen Financiero</h4>
 
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 print:gap-1 print:mb-2">
+            <div class="grid grid-cols-4 gap-4 mb-6 print:gap-1 print:mb-2">
                 <div class="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg print:bg-gray-100 print:border print:border-gray-300 print:p-1">
                     <p class="text-xs font-medium text-blue-900 dark:text-blue-200 print:text-gray-800 print:text-xs">Saldo Inicial</p>
                     <p class="text-base font-bold text-blue-600 dark:text-blue-400 print:text-black print:text-sm">
@@ -66,39 +65,27 @@
             @if($summary['closing_movement'])
             <!-- Estado de Cierre -->
             <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg mb-6 print:bg-gray-100 print:border print:border-gray-300 print:p-1 print:mb-2">
-                <h5 class="font-semibold text-gray-900 dark:text-white print:text-black mb-2 print:mb-1 print:text-xs">Estado de Cierre</h5>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm print:gap-2 print:text-xs">
-                    <div>
-                        <span class="text-gray-600 dark:text-gray-400 print:text-gray-600">Contado: </span>
-                        <span class="font-bold text-gray-900 dark:text-white print:text-black">
+                <h5 class="font-semibold text-gray-900 dark:text-white print:text-black print:text-xs">Estado de Cierre:</h5>
+                <div class="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm print:text-xs">
+                    <div class="flex items-center">
+                        <span class="text-gray-600 dark:text-gray-400 print:text-gray-600">Contado:</span>
+                        <span class="font-bold text-gray-900 dark:text-white print:text-black ml-1">
                             ${{ number_format($summary['counted_amount'], 2) }}
                         </span>
                     </div>
-                    <div>
-                        <span class="text-gray-600 dark:text-gray-400 print:text-gray-600">Diferencia: </span>
-                        <span class="font-bold @if($summary['difference'] > 0) text-green-600 @elseif($summary['difference'] < 0) text-red-600 @else text-gray-900 dark:text-white @endif print:text-black">
+                    <div class="flex items-center">
+                        <span class="text-gray-600 dark:text-gray-400 print:text-gray-600">Diferencia:</span>
+                        <span class="font-bold @if($summary['difference'] > 0) text-green-600 @elseif($summary['difference'] < 0) text-red-600 @else text-gray-900 dark:text-white @endif print:text-black ml-1">
                             ${{ number_format($summary['difference'], 2) }}
                             @if($summary['difference'] > 0) (Sobra) @elseif($summary['difference'] < 0) (Falta) @endif
                         </span>
                     </div>
-                    <div>
-                        <span class="text-gray-600 dark:text-gray-400 print:text-gray-600">Cerrado por: </span>
-                        <span class="font-bold text-gray-900 dark:text-white print:text-black">
+                    <div class="flex items-center">
+                        <span class="text-gray-600 dark:text-gray-400 print:text-gray-600">Cerrado por:</span>
+                        <span class="font-bold text-gray-900 dark:text-white print:text-black ml-1">
                             {{ $summary['closing_movement']?->user?->name ?? 'N/A' }}
                         </span>
                     </div>
-                </div>
-            </div>
-            @else
-            <!-- Caja Sin Cerrar -->
-            <div class="bg-amber-50 dark:bg-amber-900/20 p-4 rounded-lg mb-6 print:bg-yellow-100 print:border print:border-yellow-400 print:p-1 print:mb-2">
-                <div class="flex items-center">
-                    <svg class="h-5 w-5 text-amber-600 dark:text-amber-400 print:text-amber-700 mr-2 print:h-3 print:w-3" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
-                    </svg>
-                    <p class="font-semibold text-amber-800 dark:text-amber-200 print:text-amber-800 print:text-xs">
-                        Caja sin cerrar - Se requiere conteo de efectivo y cierre
-                    </p>
                 </div>
             </div>
             @endif
@@ -262,6 +249,24 @@ function dailyReportForm() {
 /* Estilos específicos para el reporte de caja */
 .page-break-inside-avoid {
     page-break-inside: avoid;
+}
+
+@media print {
+    @page {
+        margin: 0.5cm;
+        size: A4;
+    }
+    body {
+        margin: 0;
+        padding: 0;
+    }
+    /* Ocultar encabezados y pies de página del navegador */
+    @page :first {
+        margin-top: 0;
+    }
+    @page {
+        margin-top: 0;
+    }
 }
 </style>
 @endpush
