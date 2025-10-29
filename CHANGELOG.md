@@ -79,6 +79,61 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 - ✅ Mantiene validación estricta para consultas con cobro
 - ✅ Solución transparente para el usuario
 
+### 🎨 UX: Eliminar Mensaje Confuso en Reporte de Cierre
+
+**Corregido:**
+- **Mensaje "Caja sin cerrar" aparecía en reportes de cajas ya cerradas**
+  - Problema: El reporte mostraba "Caja sin cerrar - Se requiere conteo..." incluso cuando la caja estaba cerrada
+  - Causaba confusión al usuario al visualizar reportes históricos
+  - El mensaje aparecía en situación incorrecta
+
+- **Solución implementada**
+  - Eliminado bloque `@else` que mostraba el mensaje confuso
+  - Ahora solo muestra "Estado de Cierre" cuando existe movimiento de cierre
+  - Si no hay cierre, simplemente no muestra esa sección (comportamiento correcto)
+
+**Técnico:**
+- Archivo modificado: `resources/views/cash/daily-report.blade.php`
+- Eliminadas líneas 92-104 (bloque @else con alerta amber)
+- Simplifica la lógica de presentación del reporte
+
+**Impacto:**
+- ✅ Elimina confusión al visualizar reportes
+- ✅ Mensajes más claros y contextuales
+- ✅ Mejor experiencia de usuario
+- ✅ Interfaz más limpia
+
+### 🎨 Diseño: Optimización del Layout del Reporte de Cierre
+
+**Mejorado:**
+- **Resumen financiero más compacto y legible**
+  - Cards de resumen financiero ahora siempre en una sola línea (4 columnas)
+  - Antes: 2 columnas en móvil, 4 en desktop (ocupaba más espacio vertical)
+  - Ahora: 4 columnas siempre (reduce espacio en impresión)
+  - Mejor aprovechamiento del espacio en la hoja impresa
+
+- **Encabezado más compacto**
+  - Reducido padding de `p-6` a `p-3` (pantalla)
+  - Reducido padding de `print:p-2` a `print:p-1` (impresión)
+  - Menos espacio vertical desperdiciado
+
+- **Fecha en español**
+  - Cambio de `format()` a `translatedFormat()`
+  - Usa locale configurado (es_AR)
+  - Muestra día y mes en español correctamente
+
+**Técnico:**
+- Archivo modificado: `resources/views/cash/daily-report.blade.php`
+- Grid: `grid-cols-2 md:grid-cols-4` → `grid-cols-4`
+- Padding encabezado: `p-6 print:p-2` → `p-3 print:p-1`
+- Fecha: `$selectedDate->format()` → `$selectedDate->translatedFormat()`
+
+**Impacto:**
+- ✅ Reporte más compacto (cabe mejor en una hoja)
+- ✅ Mejor legibilidad del resumen financiero
+- ✅ Menos desperdicio de espacio vertical
+- ✅ Localización correcta de fechas
+
 ---
 
 ## [2.5.7] - 2025-10-28
