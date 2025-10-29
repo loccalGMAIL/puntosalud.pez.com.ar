@@ -115,7 +115,7 @@ class LiquidationController extends Controller
             $refunds = CashMovement::byType('expense')
                 ->where('reference_type', 'App\Models\Professional')
                 ->where('reference_id', $professional->id)
-                ->whereDate('movement_date', $date)
+                ->whereDate('created_at', $date)
                 ->get();
 
             $totalRefunds = $refunds->sum(function($refund) {
@@ -188,7 +188,6 @@ class LiquidationController extends Controller
 
             // 12. Crear movimiento de caja por pago al profesional
             CashMovement::create([
-                'movement_date' => $date,
                 'movement_type_id' => MovementType::getIdByCode('professional_payment'),
                 'amount' => -$amount, // Negativo porque es una salida de dinero
                 'description' => "Liquidación profesional: {$professional->full_name} - {$attendedAppointments->count()} turnos",
@@ -233,15 +232,15 @@ class LiquidationController extends Controller
     private function getCurrentCashBalance($date)
     {
         // Obtener el balance actual de caja con lock pesimista
-        $lastMovement = CashMovement::whereDate('movement_date', $date)
+        $lastMovement = CashMovement::whereDate('created_at', $date)
             ->orderBy('created_at', 'desc')
             ->lockForUpdate()
             ->first();
 
         if (! $lastMovement) {
             // Si no hay movimientos hoy, buscar el último balance con lock
-            $lastMovement = CashMovement::where('movement_date', '<', $date->startOfDay())
-                ->orderBy('movement_date', 'desc')
+            $lastMovement = CashMovement::where('created_at', '<', $date->startOfDay())
+                ->orderBy('created_at', 'desc')
                 ->orderBy('created_at', 'desc')
                 ->lockForUpdate()
                 ->first();

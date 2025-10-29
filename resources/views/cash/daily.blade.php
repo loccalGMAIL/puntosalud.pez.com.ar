@@ -523,7 +523,7 @@
                             </div>
                             <div>
                                 <span class="text-gray-600 dark:text-gray-400">Fecha:</span>
-                                <span class="text-gray-900 dark:text-white ml-2" x-text="formatDate(movementDetails?.movement_date)"></span>
+                                <span class="text-gray-900 dark:text-white ml-2" x-text="formatDate(movementDetails?.created_at)"></span>
                             </div>
                             <div>
                                 <span class="text-gray-600 dark:text-gray-400">Tipo:</span>

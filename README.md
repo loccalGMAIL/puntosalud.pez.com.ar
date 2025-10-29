@@ -2,7 +2,7 @@
 
 [![Laravel](https://img.shields.io/badge/Laravel-12.x-red?style=flat\&logo=laravel)](https://laravel.com)
 [![PHP](https://img.shields.io/badge/PHP-8.2-blue?style=flat\&logo=php)](https://php.net)
-[![Version](https://img.shields.io/badge/Version-2.5.7-green?style=flat)](#changelog)
+[![Version](https://img.shields.io/badge/Version-2.5.8-green?style=flat)](#changelog)
 [![License](https://img.shields.io/badge/License-MIT-yellow?style=flat)](#license)
 
 Sistema integral de gestión médica para clínicas y consultorios, desarrollado con Laravel 12 y tecnologías modernas.
@@ -122,11 +122,11 @@ php artisan config:clear
 
 ### 🔄 Últimas versiones
 
+* **v2.5.8** (2025-10-29) – Corrección crítica de cálculo de balance en caja (eliminación de movement_date).
 * **v2.5.7** (2025-10-28) – Sistema de tipos de movimiento en base de datos con gestión admin.
 * **v2.5.6** (2025-10-24) – Mejoras en entreturnos y gestión de ingresos.
 * **v2.5.5** (2025-10-23) – Mejoras en gestión de datos y métodos de pago.
 * **v2.5.4** (2025-10-23) – Mejoras en UX y gestión de horarios.
-* **v2.5.3** (2025-10-20) – Optimizaciones de rendimiento y validaciones de caja.
 
 👉 [Ver changelog completo](CHANGELOG.md)
 

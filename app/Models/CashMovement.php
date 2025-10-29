@@ -10,7 +10,6 @@ class CashMovement extends Model
     use HasFactory;
 
     protected $fillable = [
-        'movement_date',
         'movement_type_id',
         'amount',
         'description',
@@ -23,7 +22,6 @@ class CashMovement extends Model
     protected function casts(): array
     {
         return [
-            'movement_date' => 'datetime',
             'amount' => 'decimal:2',
             'balance_after' => 'decimal:2',
         ];
@@ -79,7 +77,7 @@ class CashMovement extends Model
 
     public function scopeByDateRange($query, $startDate, $endDate)
     {
-        return $query->whereBetween('movement_date', [$startDate, $endDate]);
+        return $query->whereBetween('created_at', [$startDate, $endDate]);
     }
 
     public function scopeOpeningMovements($query)
@@ -98,7 +96,7 @@ class CashMovement extends Model
 
     public function scopeForDate($query, $date)
     {
-        return $query->whereDate('movement_date', $date);
+        return $query->whereDate('created_at', $date);
     }
 
     // Métodos helper
@@ -147,14 +145,14 @@ class CashMovement extends Model
             ->whereNotExists(function ($query) use ($closingTypeId) {
                 $query->select('id')
                     ->from('cash_movements as cm2')
-                    ->whereRaw('DATE(cm2.movement_date) = DATE(cash_movements.movement_date)')
+                    ->whereRaw('DATE(cm2.created_at) = DATE(cash_movements.created_at)')
                     ->where('cm2.movement_type_id', $closingTypeId);
             })
-            ->where('movement_date', '<', now()->startOfDay())
-            ->orderBy('movement_date', 'desc')
+            ->where('created_at', '<', now()->startOfDay())
+            ->orderBy('created_at', 'desc')
             ->first();
 
-        return $unclosedDates ? $unclosedDates->movement_date->format('Y-m-d') : null;
+        return $unclosedDates ? $unclosedDates->created_at->format('Y-m-d') : null;
     }
 
     /**
@@ -164,8 +162,7 @@ class CashMovement extends Model
      */
     public static function getCurrentBalanceWithLock()
     {
-        $lastMovement = static::orderBy('movement_date', 'desc')
-            ->orderBy('created_at', 'desc')
+        $lastMovement = static::orderBy('created_at', 'desc')
             ->lockForUpdate()
             ->first();
 
