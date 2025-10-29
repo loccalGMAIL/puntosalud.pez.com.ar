@@ -51,6 +51,34 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 - ✅ Previene errores futuros de sincronización de fechas
 - ✅ Compatible con todas las funcionalidades existentes
 
+### 🔧 Fix: Validación de Cierre de Caja con Consultas $0
+
+**Corregido:**
+- **Bloqueo de cierre de caja por consultas sin cobro**
+  - Problema: Profesionales con consultas atendidas pero con valor $0 (sin cobro) bloqueaban el cierre de caja
+  - No se mostraba botón de liquidar porque `professional_amount = 0`
+  - La validación detectaba turnos sin liquidar y impedía cerrar la caja
+  - Caso real: Dos profesionales con consultas gratuitas bloquearon operación
+
+- **Solución implementada**
+  - Modificada validación de cierre de caja en `CashController::closeCash()`
+  - Ahora calcula monto total de turnos atendidos por profesional
+  - Excluye automáticamente profesionales con monto total = $0 de la validación
+  - No requiere liquidación manual para consultas sin cobro
+
+**Técnico:**
+- Archivo modificado: `app/Http/Controllers/CashController.php`
+- Agregado cálculo de `totalAmount` antes de verificar liquidación
+- Condición: `if ($totalAmount == 0) return false;`
+- Profesionales con consultas $0 quedan excluidos automáticamente
+
+**Impacto:**
+- ✅ Cierre de caja no bloqueado por consultas gratuitas o sin cobro
+- ✅ Validación más inteligente y contextual
+- ✅ No requiere intervención manual para casos especiales
+- ✅ Mantiene validación estricta para consultas con cobro
+- ✅ Solución transparente para el usuario
+
 ---
 
 ## [2.5.7] - 2025-10-28
