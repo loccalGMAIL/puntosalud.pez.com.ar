@@ -18,7 +18,9 @@ class AgendaController extends Controller
         $currentMonth = $request->get('month', now()->format('Y-m'));
         $selectedProfessional = $request->get('professional_id');
 
-        $date = Carbon::createFromFormat('Y-m', $currentMonth)->startOfMonth();
+        // Crear fecha con día 1 para evitar overflow en meses con menos días
+        // Bug: Si hoy es 31 y navegas a un mes con 30 días, Carbon hace overflow
+        $date = Carbon::createFromFormat('Y-m-d', $currentMonth . '-01');
         $startOfCalendar = $date->copy()->startOfWeek();
         $endOfCalendar = $date->copy()->endOfMonth()->endOfWeek();
 
