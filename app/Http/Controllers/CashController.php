@@ -151,16 +151,18 @@ class CashController extends Controller
     public function addExpense(Request $request)
     {
         if ($request->isMethod('get')) {
-            $expenseCategories = [
-                'office_supplies' => 'Insumos de Oficina',
-                'medical_supplies' => 'Insumos Médicos',
-                'services' => 'Servicios',
-                'maintenance' => 'Mantenimiento',
-                'taxes' => 'Impuestos',
-                'professional_payments' => 'Pagos a Profesionales',
-                'patient_refund' => 'Reintegro/Devolución a Paciente',
-                'other' => 'Otros',
-            ];
+            // Obtener tipos de movimiento de egresos activos desde BD
+            // Excluir tipos de sistema: professional_payment, cash_opening, cash_closing
+            $excludedCodes = ['professional_payment', 'cash_opening', 'cash_closing'];
+
+            $expenseTypes = \App\Models\MovementType::active()
+                ->expense()
+                ->whereNotIn('code', $excludedCodes)
+                ->orderBy('order')
+                ->get();
+
+            // Convertir a array [code => name] para el select
+            $expenseCategories = $expenseTypes->pluck('name', 'code')->toArray();
 
             // Obtener profesionales activos que tengan turnos hoy y no estén liquidados
             $today = now()->format('Y-m-d');
@@ -180,10 +182,17 @@ class CashController extends Controller
             return view('cash.expense-form', compact('expenseCategories', 'professionals'));
         }
 
+        // Validación dinámica: obtener códigos válidos desde BD
+        $validCodes = \App\Models\MovementType::active()
+            ->expense()
+            ->whereNotIn('code', ['professional_payment', 'cash_opening', 'cash_closing'])
+            ->pluck('code')
+            ->toArray();
+
         $validated = $request->validate([
             'amount' => 'required|numeric|min:0.01',
             'description' => 'required|string|max:500',
-            'category' => 'required|string|in:office_supplies,medical_supplies,services,maintenance,taxes,professional_payments,patient_refund,other',
+            'category' => 'required|string|in:' . implode(',', $validCodes),
             'professional_id' => 'nullable|exists:professionals,id|required_if:category,patient_refund',
             'receipt_file' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
             'notes' => 'nullable|string|max:500',
@@ -520,9 +529,8 @@ class CashController extends Controller
         $initialBalance = $lastBalanceMovement ? $lastBalanceMovement->balance_after : 0;
 
         // Obtener todos los movimientos del día
-        $movements = CashMovement::with(['user'])
+        $movements = CashMovement::with(['user', 'reference', 'movementType'])
             ->whereDate('created_at', $selectedDate)
-            ->orderBy('created_at')
             ->orderBy('created_at')
             ->get();
 
@@ -582,6 +590,7 @@ class CashController extends Controller
                 return [
                     'type' => $typeCode,
                     'type_name' => $firstMovement->movementType?->name ?? ucfirst($typeCode),
+                    'icon' => $firstMovement->movementType?->icon ?? '',
                     'inflows' => $group->where('amount', '>', 0)->sum('amount'),
                     'outflows' => abs($group->where('amount', '<', 0)->sum('amount')),
                     'count' => $group->count(),
@@ -611,33 +620,71 @@ class CashController extends Controller
             ];
         });
 
+        // Calcular liquidación de Dra. Zalazar (professional_id = 1) para saldo final
+        $zalazarLiquidation = $professionalLiquidations->firstWhere('professional_id', 1);
+        $zalazarCommission = $zalazarLiquidation ? $zalazarLiquidation->professional_commission : 0;
+
+        // Obtener movimientos de "Pago de Saldos Dra. Zalazar"
+        $zalazarBalancePayments = $movements->filter(fn($m) => $m->movementType?->code === 'zalazar_balance_payment');
+        $zalazarBalanceTotal = $zalazarBalancePayments->sum('amount');
+
+        // Total de ingresos de Dra. Zalazar (liquidación + pagos de saldos)
+        $zalazarTotalIncome = $zalazarCommission + $zalazarBalanceTotal;
+
+        // Agregar al summary el saldo final que incluye la liquidación de Zalazar
+        $summary['zalazar_liquidation'] = $zalazarCommission;
+        $summary['zalazar_balance_payments'] = $zalazarBalanceTotal;
+        $summary['zalazar_total_income'] = $zalazarTotalIncome;
+        $summary['final_balance_with_zalazar'] = $finalBalance + $zalazarTotalIncome;
+
         return view('cash.daily-report', compact(
             'selectedDate',
             'summary',
             'movements',
             'movementsByType',
             'userSummary',
-            'professionalIncome'
+            'professionalIncome',
+            'zalazarBalancePayments'
         ));
     }
 
     public function withdrawalForm(Request $request)
     {
         if ($request->isMethod('get')) {
-            $withdrawalTypes = [
-                'bank_deposit' => 'Depósito Bancario',
-                'expense_payment' => 'Pago de Gastos',
-                'professional_liquidation' => 'Liquidación de Profesional',
-                'safe_custody' => 'Custodia en Caja Fuerte',
-                'other_withdrawal' => 'Otro Retiro',
-            ];
+            // Obtener tipos de retiro activos desde BD
+            // Filtrar por categoría 'withdrawal' o tipos que sean retiros
+            $withdrawalTypes = \App\Models\MovementType::active()
+                ->where(function($query) {
+                    $query->where('category', 'withdrawal')
+                          ->orWhere('code', 'like', '%withdrawal%')
+                          ->orWhere('code', 'like', 'bank_%')
+                          ->orWhere('code', 'like', 'safe_%');
+                })
+                ->whereNotIn('code', ['cash_withdrawal']) // Excluir el tipo genérico si existe
+                ->orderBy('order')
+                ->get();
+
+            // Convertir a array [code => name] para el select
+            $withdrawalTypes = $withdrawalTypes->pluck('name', 'code')->toArray();
 
             return view('cash.withdrawal-form', compact('withdrawalTypes'));
         }
 
+        // Validación dinámica: obtener códigos válidos desde BD
+        $validCodes = \App\Models\MovementType::active()
+            ->where(function($query) {
+                $query->where('category', 'withdrawal')
+                      ->orWhere('code', 'like', '%withdrawal%')
+                      ->orWhere('code', 'like', 'bank_%')
+                      ->orWhere('code', 'like', 'safe_%');
+            })
+            ->whereNotIn('code', ['cash_withdrawal'])
+            ->pluck('code')
+            ->toArray();
+
         $validated = $request->validate([
             'amount' => 'required|numeric|min:0.01',
-            'withdrawal_type' => 'required|string|in:bank_deposit,expense_payment,professional_liquidation,safe_custody,other_withdrawal',
+            'withdrawal_type' => 'required|string|in:' . implode(',', $validCodes),
             'description' => 'required|string|max:500',
             'recipient' => 'nullable|string|max:255',
             'notes' => 'nullable|string|max:500',
@@ -712,12 +759,18 @@ class CashController extends Controller
     public function manualIncomeForm(Request $request)
     {
         if ($request->isMethod('get')) {
-            $incomeCategories = [
-                'professional_module_payment' => 'Pago Módulo Profesional',
-                'zalazar_balance_payment' => 'Pago de Saldos Dra. Zalazar',
-                'correction' => 'Corrección de Ingreso',
-                'other' => 'Otros Ingresos',
-            ];
+            // Obtener tipos de movimiento de ingresos activos desde BD
+            // Excluir tipos de sistema: patient_payment, cash_opening, cash_closing
+            $excludedCodes = ['patient_payment', 'cash_opening', 'cash_closing'];
+
+            $incomeTypes = \App\Models\MovementType::active()
+                ->income()
+                ->whereNotIn('code', $excludedCodes)
+                ->orderBy('order')
+                ->get();
+
+            // Convertir a array [code => name] para el select
+            $incomeCategories = $incomeTypes->pluck('name', 'code')->toArray();
 
             // Obtener TODOS los profesionales activos
             $professionals = \App\Models\Professional::active()
@@ -729,9 +782,16 @@ class CashController extends Controller
             return view('cash.manual-income-form', compact('incomeCategories', 'professionals'));
         }
 
+        // Validación dinámica: obtener códigos válidos desde BD
+        $validCodes = \App\Models\MovementType::active()
+            ->income()
+            ->whereNotIn('code', ['patient_payment', 'cash_opening', 'cash_closing'])
+            ->pluck('code')
+            ->toArray();
+
         $validated = $request->validate([
             'amount' => 'required|numeric|min:0.01',
-            'category' => 'required|string|in:professional_module_payment,zalazar_balance_payment,correction,other',
+            'category' => 'required|string|in:' . implode(',', $validCodes),
             'description' => 'required|string|max:500',
             'professional_id' => 'nullable|exists:professionals,id|required_if:category,professional_module_payment',
             'receipt_file' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
@@ -750,15 +810,11 @@ class CashController extends Controller
             $currentBalance = CashMovement::getCurrentBalanceWithLock();
             $newBalance = $currentBalance + $validated['amount'];
 
-            // Construir descripción con categoría
-            $categoryLabels = [
-                'professional_module_payment' => 'Pago Módulo Profesional',
-                'zalazar_balance_payment' => 'Pago de Saldos Dra. Zalazar',
-                'correction' => 'Corrección de Ingreso',
-                'other' => 'Otros Ingresos',
-            ];
+            // Obtener nombre del tipo de movimiento desde BD
+            $movementType = \App\Models\MovementType::where('code', $validated['category'])->first();
+            $categoryLabel = $movementType ? $movementType->name : ucfirst(str_replace('_', ' ', $validated['category']));
 
-            $description = '['.$categoryLabels[$validated['category']].'] '.$validated['description'];
+            $description = '['.$categoryLabel.'] '.$validated['description'];
 
             // Si es pago módulo profesional, agregar nombre del profesional a la descripción
             if ($validated['category'] === 'professional_module_payment' && isset($validated['professional_id'])) {

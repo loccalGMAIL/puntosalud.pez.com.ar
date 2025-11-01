@@ -171,14 +171,58 @@
         width: 100% !important;
     }
 
-    th, td {
+    /* th, td {
         border: 1px solid #d1d5db !important;
         padding: 0.5rem !important;
+    } */
+
+    th, td {
+        border: 1px solid #d1d5db !important;
+        padding: 2px 4px !important; /* mucho más compacto */
     }
+
 
     /* Evitar saltos de página en elementos importantes */
     .page-break-inside-avoid {
         page-break-inside: avoid;
+    }
+
+    /* Clases reutilizables para reportes */
+    .report-section-title {
+        font-size: 0.875rem !important; /* text-sm */
+        font-weight: 600 !important; /* font-semibold */
+        color: black !important;
+        margin-bottom: 0.5rem !important; /* mb-2 */
+    }
+
+    .report-table {
+        width: 100% !important;
+        font-size: 9px !important;
+        border-collapse: collapse !important;
+    }
+
+    .report-th {
+        padding: 2px 4px !important;
+        font-weight: 600 !important;
+        color: black !important;
+    }
+
+    .report-td {
+        padding: 1px 4px !important;
+        color: black !important;
+    }
+}
+</style>
+
+<style>
+/* Clases reutilizables para pantalla y print */
+.report-section-title {
+    @apply text-base font-semibold text-gray-900 dark:text-white mb-4;
+}
+
+@media print {
+    .report-section-title {
+        @apply text-sm mb-2 !important;
     }
 }
 </style>

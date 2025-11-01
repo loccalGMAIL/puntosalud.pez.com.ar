@@ -179,6 +179,154 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 - ✅ Menos desperdicio de espacio vertical
 - ✅ Localización correcta de fechas
 
+### 📊 Mejoras en Detalle de Movimientos del Reporte Diario
+
+**Añadido:**
+- **Resumen de pagos a profesionales (💸)**
+  - Nueva sección con tabla resumida de pagos del día
+  - Muestra profesional, notas y monto pagado
+  - Total de pagos a profesionales calculado automáticamente
+  - Facilita verificación de liquidaciones pagadas
+
+- **Desglose detallado de gastos (📤)**
+  - Nueva sección con tabla de gastos del día
+  - Muestra hora, descripción y monto de cada gasto
+  - Total de gastos calculado automáticamente
+  - Facilita auditoría de egresos
+
+- **Desglose de otros egresos (📋)**
+  - Nueva sección para movimientos no categorizados
+  - Incluye tipo, hora, descripción y monto
+  - Separa claramente de gastos y pagos profesionales
+  - Total de otros egresos calculado
+
+- **Visualización de observaciones del cierre**
+  - Extracción automática de notas del cierre de caja
+  - Formato destacado en sección de Estado de Cierre
+  - Regex para extraer observaciones del campo description
+  - Permite registrar y visualizar incidencias del día
+
+**Técnico:**
+- Archivo modificado: `resources/views/cash/daily-report.blade.php`
+- Filtros agregados:
+  - `$professionalPayments = $movements->filter(fn($m) => $m->movementType?->code === 'professional_payment')`
+  - `$expenses = $movements->filter(fn($m) => $m->movementType?->code === 'expense')`
+  - `$otherOutflows = $movements->filter(fn($m) => ... && $m->amount < 0)`
+- Extracción de notas: `preg_match('/\$[0-9,]+\.?\d*\s*-\s*(.+)$/', $description, $notesMatch)`
+- Tablas con formato consistente (profesional/hora, descripción/notas, monto)
+- Totales en negrita con border-top-2
+
+**Impacto:**
+- ✅ Resumen claro de pagos a profesionales del día
+- ✅ Mayor transparencia en movimientos de egresos
+- ✅ Desglose claro de gastos del día
+- ✅ Observaciones del cierre visibles en reporte
+- ✅ Mejor trazabilidad de movimientos no estándar
+- ✅ Facilita auditoría y control de caja
+
+### 🎨 Categorías Dinámicas y Optimización Ultra-Compacta del Reporte
+
+**Mejorado:**
+- **Saldo Final que incluye liquidación de Dra. Zalazar**
+  - Nuevo card "Saldo Final" en resumen financiero
+  - Incluye automáticamente todos los ingresos de la propietaria (professional_id = 1)
+  - Cálculo: Saldo Final Teórico + Total Ingresos Dra. Zalazar
+  - Removido card "Saldo Inicial" para mejor visualización
+  - Refleja el saldo real que queda en caja considerando que su liquidación no se retira
+
+**Añadido:**
+- **Desglose de Ingresos Dra. Natalia Zalazar**
+  - Nueva sección después de "Liquidación por Profesional"
+  - Muestra liquidación de pacientes (comisión por consultas del día)
+  - Detalla cada pago de saldos con descripción completa
+  - Total general de ingresos de la Dra. Zalazar
+  - Facilita auditoría completa de sus ingresos diarios
+  - Formato ultra-compacto consistente con resto del reporte
+
+**Mejorado:**
+- **Categorías de movimientos dinámicas desde base de datos**
+  - Selectores de ingresos, gastos y retiros ahora cargan desde `movement_types` table
+  - Antes: categorías hardcodeadas en arrays PHP
+  - Ahora: carga dinámica con filtros por categoría y estado activo
+  - Se excluyen tipos especiales (patient_payment, cash_opening, cash_closing)
+  - Orden configurable desde base de datos
+
+- **Desglose de Pagos Módulo Profesional**
+  - Nueva sección en reporte de cierre con detalle de cada pago
+  - Muestra nombre del profesional y monto pagado
+  - Usa relación morphTo 'reference' para identificar profesional
+  - Total calculado automáticamente
+  - Facilita auditoría de pagos a profesionales
+
+- **Optimización vertical extrema del reporte**
+  - Fuentes reducidas: `text-[11px]` en pantalla, `print:text-[9px]` en impresión
+  - Padding ultra-compacto: `py-[1px] px-1` en celdas
+  - Headers con `py-[2px] px-1`
+  - Márgenes mínimos entre secciones: `mb-2 print:mb-0.5`
+  - Mejora significativa en cantidad de páginas impresas
+
+- **Clases CSS reutilizables en layout de impresión**
+  - `.report-section-title` - títulos de sección con responsive sizing (text-sm en print)
+  - `.report-table` - tablas ultra-compactas (9px en print)
+  - `.report-th` - headers de tabla (padding 2px 4px)
+  - `.report-td` - celdas de tabla (padding 1px 4px)
+  - Estilos consistentes en screen y print con `@apply`
+
+- **Iconos y nombres dinámicos en tipos de movimiento**
+  - Íconos cargados desde `movement_types.icon` en lugar de switch hardcoded
+  - Nombres de tipos también dinámicos desde BD
+  - Permite agregar nuevos tipos sin modificar código
+  - Icon agregado al array `movementsByType` en controlador
+
+**Técnico:**
+- Eager loading de 'reference' morphTo relationship en CashController:532
+- Filtrado con `whereNotIn` para excluir tipos especiales
+- TailwindCSS arbitrary values para máximo control de spacing
+- CSS @apply para reutilización de clases Tailwind
+- Media queries @print optimizadas
+- Categorías dinámicas en 3 métodos: ingresos (líneas 715-753), gastos (151-199), retiros (634-674)
+
+**Archivos Modificados:**
+- `app/Http/Controllers/CashController.php` - categorías dinámicas, eager loading, icon en array
+- `resources/views/cash/daily-report.blade.php` - desglose profesionales, estilos ultra-compactos
+- `resources/views/cash/daily.blade.php` - iconos y nombres dinámicos
+- `resources/views/layouts/print.blade.php` - clases reutilizables para reportes
+
+**Impacto:**
+- ✅ Categorías configurables sin modificar código
+- ✅ Detalle claro de pagos profesionales en cierre
+- ✅ Reporte cabe en menos páginas (ahorro de papel y tinta)
+- ✅ Estilos mantenibles y reutilizables
+- ✅ Mayor flexibilidad del sistema
+- ✅ Nuevos tipos de movimiento se integran automáticamente
+
+### 🐛 Hotfix: Bug de Navegación de Meses en Agenda
+
+**Corregido:**
+- **Error crítico en navegación de calendario**
+  - Problema: Carbon overflow cuando día actual es 31 y se navega a meses con 30 días
+  - Síntoma: Septiembre mostraba como Octubre, Noviembre no aparecía
+  - Ejemplo: Estar en Oct 31 y navegar a Sept causaba overflow a Oct 1
+  - Bug afectaba navegación mensual en vista de Agenda
+
+- **Solución implementada**
+  - Forzar día 1 al crear fecha desde formato año-mes
+  - Cambio: `Carbon::createFromFormat('Y-m', $month)` → `Carbon::createFromFormat('Y-m-d', $month . '-01')`
+  - Comentario explicativo del bug agregado en código
+  - Previene overflow automático de Carbon
+
+**Técnico:**
+- Archivo modificado: `app/Http/Controllers/AgendaController.php`
+- Línea 21-23: Creación de fecha con día explícito en 1
+- Comentario: "Bug: Si hoy es 31 y navegas a un mes con 30 días, Carbon hace overflow"
+- Branch: hotfix-agenda-month-overflow (merged)
+
+**Impacto:**
+- ✅ Navegación de meses funciona correctamente siempre
+- ✅ Previene confusión de usuarios
+- ✅ Fix aplicable a cualquier día del mes
+- ✅ Solución permanente sin efectos secundarios
+
 ---
 
 ## [2.5.7] - 2025-10-28
