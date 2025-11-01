@@ -156,43 +156,7 @@
                 <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
                     <div class="flex justify-between items-center mb-2">
                         <h3 class="font-medium text-gray-900 dark:text-white">
-                            @switch($type)
-                                @case('patient_payment')
-                                    💰 Pagos Pacientes
-                                    @break
-                                @case('professional_payment')
-                                    👨‍⚕️ Pagos Profesionales
-                                    @break
-                                @case('expense')
-                                    💸 Gastos
-                                    @break
-                                @case('refund')
-                                    🔄 Reembolsos
-                                    @break
-                                @case('cash_opening')
-                                    🔓 Apertura de Caja
-                                    @break
-                                @case('cash_closing')
-                                    🔒 Cierre de Caja
-                                    @break
-                                @case('cash_control')
-                                    🔍 Control de Caja
-                                    @break
-                                @case('shift_handover')
-                                    🔄 Entrega de Turno
-                                    @break
-                                @case('shift_receive')
-                                    📥 Recibo de Turno
-                                    @break
-                                @case('cash_withdrawal')
-                                    💸 Retiro de Caja
-                                    @break
-                                @case('other')
-                                    📋 Otros
-                                    @break
-                                @default
-                                    {{ ucfirst(str_replace('_', ' ', $type)) }}
-                            @endswitch
+                            {{ $data['icon'] ?? '' }} {{ $data['type_name'] ?? ucfirst(str_replace('_', ' ', $type)) }}
                         </h3>
                         <span class="text-sm text-gray-500 dark:text-gray-400">{{ $data['count'] }} movimientos</span>
                     </div>
