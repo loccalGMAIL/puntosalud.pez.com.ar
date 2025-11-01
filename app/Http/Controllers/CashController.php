@@ -629,13 +629,15 @@ class CashController extends Controller
         $zalazarBalanceTotal = $zalazarBalancePayments->sum('amount');
 
         // Total de ingresos de Dra. Zalazar (liquidación + pagos de saldos)
+        // NOTA: Los pagos de saldos ya están incluidos en $finalBalance (son ingresos del día)
         $zalazarTotalIncome = $zalazarCommission + $zalazarBalanceTotal;
 
-        // Agregar al summary el saldo final que incluye la liquidación de Zalazar
+        // Agregar al summary el saldo final que incluye SOLO la liquidación de Zalazar
+        // Los pagos de saldos ya están incluidos en finalBalance, por eso no se suman de nuevo
         $summary['zalazar_liquidation'] = $zalazarCommission;
         $summary['zalazar_balance_payments'] = $zalazarBalanceTotal;
         $summary['zalazar_total_income'] = $zalazarTotalIncome;
-        $summary['final_balance_with_zalazar'] = $finalBalance + $zalazarTotalIncome;
+        $summary['final_balance_with_zalazar'] = $finalBalance + $zalazarCommission;
 
         return view('cash.daily-report', compact(
             'selectedDate',
