@@ -168,4 +168,15 @@ class CashMovement extends Model
 
         return $lastMovement ? $lastMovement->balance_after : 0;
     }
+
+    /**
+     * Verifica si la caja está abierta para hoy
+     *
+     * @return bool True si la caja está abierta, False si está cerrada o no abierta
+     */
+    public static function isCashOpenToday()
+    {
+        $status = static::getCashStatusForDate(now());
+        return $status['is_open'];
+    }
 }

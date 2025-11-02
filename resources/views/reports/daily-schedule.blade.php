@@ -10,9 +10,9 @@
             <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
                 📋 Listado de Pacientes del Día
             </h1>
-            <p class="text-gray-600 dark:text-gray-400">
+            {{-- <p class="text-gray-600 dark:text-gray-400">
                 Dr. {{ $reportData['professional']->full_name }} - {{ $reportData['date']->format('d/m/Y') }}
-            </p>
+            </p> --}}
         </div>
         <div class="flex gap-3">
             <a href="{{ route('reports.daily-schedule') }}"
@@ -48,7 +48,7 @@
             <div>
                 <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300">Total Pacientes</h3>
                 <p class="text-lg font-semibold text-gray-900 dark:text-white">{{ $reportData['stats']['total_appointments'] }} turnos</p>
-                <p class="text-sm text-gray-600 dark:text-gray-400">{{ $reportData['stats']['scheduled'] }} programados</p>
+                {{-- <p class="text-sm text-gray-600 dark:text-gray-400">{{ $reportData['stats']['scheduled'] }} programados</p> --}}
             </div>
         </div>
     </div>
@@ -59,9 +59,9 @@
             <h3 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
                 📋 Pacientes del Día ({{ $reportData['appointments']->count() }})
             </h3>
-            <p class="text-sm text-gray-600 dark:text-gray-400">
+            {{-- <p class="text-sm text-gray-600 dark:text-gray-400">
                 {{ $reportData['stats']['scheduled'] }} programados
-            </p>
+            </p> --}}
         </div>
 
         @if($reportData['appointments']->count() > 0)
@@ -126,17 +126,22 @@
 
 <style>
 @media print {
+    @page {
+        margin: 1cm;
+        size: A4;
+    }
+
     /* Ocultar sidebar y elementos de navegación */
-    [x-data]:first-of-type > div:first-child,  /* Sidebar container */
-    .fixed.left-0.top-0,  /* Sidebar fixed */
-    .fixed.inset-0.z-40,  /* Overlay mobile */
+    [x-data]:first-of-type > div:first-child,
+    .fixed.left-0.top-0,
+    .fixed.inset-0.z-40,
     nav,
     .no-print,
     button,
     .bg-gray-600,
     header,
     aside,
-    .lg\:hidden {  /* Mobile header */
+    .lg\:hidden {
         display: none !important;
     }
 
@@ -145,10 +150,11 @@
         margin-left: 0 !important;
     }
 
-    /* Ajustar el container para impresión */
+    /* Ajustar el container para impresión ULTRA-COMPACTO */
     .container {
         max-width: 100% !important;
         padding: 0 !important;
+        margin: 0 !important;
     }
 
     /* Resetear colores de fondo para impresión */
@@ -156,11 +162,18 @@
         background: white !important;
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
+        font-size: 12px !important;
+        line-height: 1.3 !important;
     }
 
-    /* Asegurar que los badges se vean bien */
+    /* Asegurar que los badges y colores se vean bien */
+    .bg-emerald-50,
+    .bg-emerald-100,
+    .bg-yellow-50,
     .bg-yellow-100,
+    .bg-green-50,
     .bg-green-100,
+    .bg-red-50,
     .bg-red-100,
     .bg-gray-100 {
         -webkit-print-color-adjust: exact;
@@ -172,21 +185,134 @@
         display: none !important;
     }
 
-    /* Ajustar tamaños de fuente para impresión */
-    body {
-        font-size: 12pt;
-    }
-
+    /* Tamaños de fuente más grandes para mejor legibilidad */
     h1 {
-        font-size: 18pt;
+        font-size: 21px !important;
+        margin-bottom: 5px !important;
     }
 
+    h2, h3 {
+        font-size: 14px !important;
+        margin-bottom: 4px !important;
+    }
+
+    p, div, span {
+        font-size: 12px !important;
+    }
+
+    /* Reducir padding y márgenes extremadamente */
+    .px-4, .px-6 {
+        padding-left: 4px !important;
+        padding-right: 4px !important;
+    }
+
+    .py-4, .py-6 {
+        padding-top: 3px !important;
+        padding-bottom: 3px !important;
+    }
+
+    .p-6 {
+        padding: 4px !important;
+    }
+
+    .mb-6 {
+        margin-bottom: 6px !important;
+    }
+
+    .mb-4 {
+        margin-bottom: 4px !important;
+    }
+
+    .gap-6 {
+        gap: 4px !important;
+    }
+
+    /* Tablas compactas con mejor legibilidad */
     table {
         page-break-inside: avoid;
+        font-size: 12px !important;
+    }
+
+    thead th {
+        padding: 3px 4px !important;
+        font-size: 11px !important;
+    }
+
+    tbody td {
+        padding: 3px 4px !important;
+        font-size: 12px !important;
+    }
+
+    tfoot td {
+        padding: 3px 4px !important;
+        font-size: 12px !important;
+    }
+
+    .text-xs {
+        font-size: 10px !important;
+    }
+
+    .text-sm {
+        font-size: 11px !important;
+    }
+
+    .text-base, .text-lg {
+        font-size: 12px !important;
+    }
+
+    .text-xl {
+        font-size: 14px !important;
+    }
+
+    .text-2xl {
+        font-size: 15px !important;
     }
 
     tr {
         page-break-inside: avoid;
+    }
+
+    /* Reducir espacio en cards y secciones */
+    .rounded-lg {
+        margin-bottom: 4px !important;
+    }
+
+    /* Ajustar badges y tags */
+    .inline-flex.items-center {
+        padding: 2px 4px !important;
+        font-size: 10px !important;
+    }
+
+    /* Eliminar sombras y bordes gruesos en print */
+    .shadow-sm {
+        box-shadow: none !important;
+    }
+
+    /* Primera card: Professional Info en dos columnas horizontales */
+    .grid.grid-cols-1.md\:grid-cols-3 {
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: wrap !important;
+        justify-content: space-between !important;
+        gap: 8px !important;
+    }
+
+    .grid.grid-cols-1.md\:grid-cols-3 > div {
+        flex: 0 0 48% !important;
+        display: flex !important;
+        flex-direction: row !important;
+        gap: 8px !important;
+        align-items: center !important;
+    }
+
+    .grid.grid-cols-1.md\:grid-cols-3 > div h3 {
+        font-weight: bold !important;
+        min-width: 80px !important;
+        margin-bottom: 0 !important;
+    }
+
+    .grid.grid-cols-1.md\:grid-cols-3 > div p {
+        margin: 0 !important;
     }
 }
 </style>

@@ -151,12 +151,12 @@ class CashController extends Controller
     public function addExpense(Request $request)
     {
         if ($request->isMethod('get')) {
-            // Obtener tipos de movimiento de egresos activos desde BD
-            // Excluir tipos de sistema: professional_payment, cash_opening, cash_closing
+            // Obtener tipos de movimiento de GASTOS activos desde BD (categoría expense_detail)
+            // Excluir tipos de sistema y retiros (withdrawal_detail)
             $excludedCodes = ['professional_payment', 'cash_opening', 'cash_closing'];
 
             $expenseTypes = \App\Models\MovementType::active()
-                ->expense()
+                ->where('category', 'expense_detail') // Solo gastos, NO retiros
                 ->whereNotIn('code', $excludedCodes)
                 ->orderBy('order')
                 ->get();
@@ -182,9 +182,9 @@ class CashController extends Controller
             return view('cash.expense-form', compact('expenseCategories', 'professionals'));
         }
 
-        // Validación dinámica: obtener códigos válidos desde BD
+        // Validación dinámica: obtener códigos válidos desde BD (solo categoría expense_detail)
         $validCodes = \App\Models\MovementType::active()
-            ->expense()
+            ->where('category', 'expense_detail') // Solo gastos, NO retiros
             ->whereNotIn('code', ['professional_payment', 'cash_opening', 'cash_closing'])
             ->pluck('code')
             ->toArray();
@@ -200,6 +200,14 @@ class CashController extends Controller
 
         try {
             DB::beginTransaction();
+
+            // Verificar que la caja esté abierta
+            if (! CashMovement::isCashOpenToday()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No se pueden registrar gastos. La caja debe estar abierta para realizar esta operación.',
+                ], 400);
+            }
 
             $receiptPath = null;
             if ($request->hasFile('receipt_file')) {
@@ -653,16 +661,10 @@ class CashController extends Controller
     public function withdrawalForm(Request $request)
     {
         if ($request->isMethod('get')) {
-            // Obtener tipos de retiro activos desde BD
-            // Filtrar por categoría 'withdrawal' o tipos que sean retiros
+            // Obtener tipos de RETIROS activos desde BD (categoría withdrawal_detail)
+            // Excluir tipos de sistema y gastos (expense_detail)
             $withdrawalTypes = \App\Models\MovementType::active()
-                ->where(function($query) {
-                    $query->where('category', 'withdrawal')
-                          ->orWhere('code', 'like', '%withdrawal%')
-                          ->orWhere('code', 'like', 'bank_%')
-                          ->orWhere('code', 'like', 'safe_%');
-                })
-                ->whereNotIn('code', ['cash_withdrawal']) // Excluir el tipo genérico si existe
+                ->where('category', 'withdrawal_detail') // Solo retiros, NO gastos
                 ->orderBy('order')
                 ->get();
 
@@ -672,15 +674,9 @@ class CashController extends Controller
             return view('cash.withdrawal-form', compact('withdrawalTypes'));
         }
 
-        // Validación dinámica: obtener códigos válidos desde BD
+        // Validación dinámica: obtener códigos válidos desde BD (solo categoría withdrawal_detail)
         $validCodes = \App\Models\MovementType::active()
-            ->where(function($query) {
-                $query->where('category', 'withdrawal')
-                      ->orWhere('code', 'like', '%withdrawal%')
-                      ->orWhere('code', 'like', 'bank_%')
-                      ->orWhere('code', 'like', 'safe_%');
-            })
-            ->whereNotIn('code', ['cash_withdrawal'])
+            ->where('category', 'withdrawal_detail') // Solo retiros, NO gastos
             ->pluck('code')
             ->toArray();
 
@@ -694,6 +690,14 @@ class CashController extends Controller
 
         try {
             DB::beginTransaction();
+
+            // Verificar que la caja esté abierta
+            if (! CashMovement::isCashOpenToday()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No se pueden realizar retiros. La caja debe estar abierta para realizar esta operación.',
+                ], 400);
+            }
 
             // Verificar que hay suficiente efectivo en caja (con lock pesimista)
             $currentBalance = CashMovement::getCurrentBalanceWithLock();
@@ -761,12 +765,12 @@ class CashController extends Controller
     public function manualIncomeForm(Request $request)
     {
         if ($request->isMethod('get')) {
-            // Obtener tipos de movimiento de ingresos activos desde BD
+            // Obtener tipos de movimiento de INGRESOS activos desde BD (categoría income_detail)
             // Excluir tipos de sistema: patient_payment, cash_opening, cash_closing
             $excludedCodes = ['patient_payment', 'cash_opening', 'cash_closing'];
 
             $incomeTypes = \App\Models\MovementType::active()
-                ->income()
+                ->where('category', 'income_detail') // Solo ingresos manuales
                 ->whereNotIn('code', $excludedCodes)
                 ->orderBy('order')
                 ->get();
@@ -784,9 +788,9 @@ class CashController extends Controller
             return view('cash.manual-income-form', compact('incomeCategories', 'professionals'));
         }
 
-        // Validación dinámica: obtener códigos válidos desde BD
+        // Validación dinámica: obtener códigos válidos desde BD (solo categoría income_detail)
         $validCodes = \App\Models\MovementType::active()
-            ->income()
+            ->where('category', 'income_detail') // Solo ingresos manuales
             ->whereNotIn('code', ['patient_payment', 'cash_opening', 'cash_closing'])
             ->pluck('code')
             ->toArray();
@@ -802,6 +806,14 @@ class CashController extends Controller
 
         try {
             DB::beginTransaction();
+
+            // Verificar que la caja esté abierta
+            if (! CashMovement::isCashOpenToday()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No se pueden registrar ingresos. La caja debe estar abierta para realizar esta operación.',
+                ], 400);
+            }
 
             $receiptPath = null;
             if ($request->hasFile('receipt_file')) {

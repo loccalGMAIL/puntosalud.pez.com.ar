@@ -13,37 +13,37 @@
         
         body {
             font-family: Arial, sans-serif;
-            font-size: 12px;
-            line-height: 1.4;
+            font-size: 10px;
+            line-height: 1.2;
             color: #333;
             background: white;
         }
-        
+
         .header {
             text-align: center;
-            margin-bottom: 20px;
-            padding-bottom: 15px;
+            margin-bottom: 8px;
+            padding-bottom: 6px;
             border-bottom: 2px solid #333;
         }
-        
+
         .clinic-name {
-            font-size: 20px;
+            font-size: 14px;
             font-weight: bold;
-            margin-bottom: 5px;
+            margin-bottom: 2px;
         }
-        
+
         .report-title {
-            font-size: 16px;
+            font-size: 12px;
             font-weight: bold;
-            margin-bottom: 10px;
+            margin-bottom: 4px;
         }
-        
+
         .report-info {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 20px;
+            margin-bottom: 8px;
             background-color: #f8f9fa;
-            padding: 10px;
+            padding: 4px 6px;
             border: 1px solid #dee2e6;
         }
         
@@ -53,80 +53,81 @@
         
         .info-label {
             font-weight: bold;
-            margin-bottom: 3px;
+            margin-bottom: 1px;
+            font-size: 8px;
         }
-        
+
         .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 10px;
-            margin-bottom: 20px;
+            display: flex;
+            gap: 6px;
+            margin-bottom: 8px;
         }
-        
+
         .stat-card {
             text-align: center;
-            padding: 8px;
+            padding: 3px 6px;
             border: 1px solid #dee2e6;
             background-color: #f8f9fa;
+            flex: 1;
         }
-        
+
         .stat-number {
-            font-size: 18px;
+            font-size: 12px;
             font-weight: bold;
             color: #2563eb;
         }
-        
+
         .stat-label {
-            font-size: 10px;
+            font-size: 7px;
             text-transform: uppercase;
-            margin-top: 2px;
+            margin-top: 1px;
         }
-        
+
         .appointments-table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 20px;
+            margin-bottom: 8px;
         }
-        
+
         .appointments-table th,
         .appointments-table td {
             border: 1px solid #dee2e6;
-            padding: 8px;
+            padding: 2px 4px;
             text-align: left;
-            font-size: 11px;
+            font-size: 9px;
         }
-        
+
         .appointments-table th {
             background-color: #e9ecef;
             font-weight: bold;
-            font-size: 10px;
+            font-size: 8px;
             text-transform: uppercase;
         }
         
         .time-column {
-            width: 60px;
+            width: 45px;
             text-align: center;
             font-weight: bold;
         }
-        
+
         .patient-column {
-            width: 30%;
+            width: 35%;
         }
 
         .status-column {
-            width: 100px;
+            width: 70px;
             text-align: center;
         }
 
         .notes-column {
-            width: 40%;
-            font-size: 10px;
+            width: 35%;
+            font-size: 8px;
         }
-        
+
         .status-badge {
-            padding: 2px 6px;
-            border-radius: 3px;
-            font-size: 9px;
+            padding: 1px 4px;
+            border-radius: 2px;
+            font-size: 7px;
             font-weight: bold;
             text-transform: uppercase;
         }
@@ -152,32 +153,37 @@
         }
 
         .footer {
-            margin-top: 30px;
-            padding-top: 15px;
+            margin-top: 10px;
+            padding-top: 6px;
             border-top: 1px solid #dee2e6;
             display: flex;
             justify-content: space-between;
-            font-size: 10px;
+            font-size: 7px;
             color: #6c757d;
         }
-        
+
         .no-appointments {
             text-align: center;
-            padding: 40px;
+            padding: 20px;
             color: #6c757d;
             font-style: italic;
         }
-        
+
         @media print {
+            @page {
+                margin: 1cm;
+                size: A4;
+            }
+
             body {
                 -webkit-print-color-adjust: exact;
                 print-color-adjust: exact;
             }
-            
+
             .no-print {
                 display: none !important;
             }
-            
+
             .page-break {
                 page-break-after: always;
             }
@@ -215,18 +221,18 @@
     <div class="report-info">
         <div class="info-section">
             <div class="info-label">Profesional:</div>
-            <div>Dr. {{ $reportData['professional']->full_name }}</div>
-            <div style="font-size: 10px; color: #666;">{{ $reportData['professional']->specialty->name }}</div>
+            <div style="font-size: 9px;">Dr. {{ $reportData['professional']->full_name }}</div>
+            <div style="font-size: 7px; color: #666;">{{ $reportData['professional']->specialty->name }}</div>
         </div>
         <div class="info-section">
             <div class="info-label">Fecha:</div>
-            <div>{{ $reportData['date']->format('d/m/Y') }}</div>
-            <div style="font-size: 10px; color: #666;">{{ $reportData['date']->translatedFormat('l') }}</div>
+            <div style="font-size: 9px;">{{ $reportData['date']->format('d/m/Y') }}</div>
+            <div style="font-size: 7px; color: #666;">{{ $reportData['date']->translatedFormat('l') }}</div>
         </div>
         <div class="info-section">
             <div class="info-label">Generado:</div>
-            <div>{{ $reportData['generated_at']->format('d/m/Y H:i') }}</div>
-            <div style="font-size: 10px; color: #666;">Por: {{ $reportData['generated_by'] }}</div>
+            <div style="font-size: 9px;">{{ $reportData['generated_at']->format('d/m/Y H:i') }}</div>
+            <div style="font-size: 7px; color: #666;">Por: {{ $reportData['generated_by'] }}</div>
         </div>
     </div>
     
@@ -258,8 +264,8 @@
                     <tr>
                         <td class="time-column">{{ $appointment['time'] }}</td>
                         <td class="patient-column">
-                            <div><strong>{{ $appointment['patient_name'] }}</strong></div>
-                            <div style="font-size: 9px; color: #666;">
+                            <div style="font-size: 9px;"><strong>{{ $appointment['patient_name'] }}</strong></div>
+                            <div style="font-size: 7px; color: #666;">
                                 DNI: {{ $appointment['patient_dni'] }}
                                 @if($appointment['patient_insurance'])
                                     | {{ $appointment['patient_insurance'] }}
