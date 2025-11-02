@@ -448,6 +448,11 @@ class PaymentController extends Controller
 
     private function createCashMovement(Payment $payment)
     {
+        // Verificar que la caja esté abierta
+        if (! CashMovement::isCashOpenToday()) {
+            throw new \Exception('No se pueden registrar pagos. La caja debe estar abierta para realizar esta operación.');
+        }
+
         // Obtener balance actual con lock pesimista
         $currentBalance = CashMovement::getCurrentBalanceWithLock();
 

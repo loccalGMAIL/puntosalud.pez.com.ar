@@ -7,6 +7,63 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [2.5.8-4] - 2025-11-02
+
+### 🔒 Validación de Caja Abierta y Optimización de Reportes
+
+**Agregado:**
+- **Validación de caja abierta antes de operaciones financieras**
+  - Método `isCashOpenToday()` en modelo `CashMovement`
+  - Validación en creación de ingresos manuales, gastos y retiros
+  - Validación en registro de pagos desde múltiples puntos:
+    - `PaymentController`: pagos de pacientes
+    - `DashboardController`: pagos rápidos desde dashboard
+    - `AppointmentController`: pagos de urgencias/walk-ins
+  - Mensajes de error claros cuando la caja no está abierta
+
+**Corregido:**
+- **Mezcla de categorías en formularios de movimientos de caja**
+  - Problema: Selector de gastos mostraba categorías de retiros mezcladas
+  - Causa: Filtro por `affects_balance = -1` incluía gastos Y retiros
+  - Solución: Filtrado específico por categoría en `movement_types`:
+    - Gastos: `category = 'expense_detail'`
+    - Retiros: `category = 'withdrawal_detail'`
+    - Ingresos: `category = 'income_detail'`
+
+**Mejorado:**
+- **Optimización de reportes para impresión en una hoja A4**
+  - `daily-schedule-print.blade.php`: Diseño ultra-compacto
+    - Fuentes reducidas: 8-10px
+    - Padding reducido: 2-4px
+    - Márgenes optimizados para A4
+
+  - `professional-liquidation.blade.php`:
+    - Diseño compacto con fuentes legibles (12px)
+    - Primera card en dos columnas horizontales
+    - Título destacado (19px)
+    - Desglose de métodos de pago (efectivo/transferencia) en resumen
+    - Optimizado para caber en una hoja A4
+
+**Técnico:**
+- Archivos modificados:
+  - `app/Models/CashMovement.php`: Método `isCashOpenToday()`
+  - `app/Http/Controllers/CashController.php`: Validaciones + filtros de categoría
+  - `app/Http/Controllers/PaymentController.php`: Validación de caja
+  - `app/Http/Controllers/DashboardController.php`: Validación de caja
+  - `app/Http/Controllers/AppointmentController.php`: Validación de caja
+  - `resources/views/reports/daily-schedule-print.blade.php`: Estilos compactos
+  - `resources/views/reports/daily-schedule.blade.php`: Ajustes de diseño
+  - `resources/views/reports/professional-liquidation.blade.php`: Estilos print + desglose pagos
+
+**Impacto:**
+- ✅ Previene registros financieros cuando la caja está cerrada
+- ✅ Mejora integridad de datos de caja
+- ✅ Evita confusión entre categorías de movimientos
+- ✅ Reportes profesionales listos para imprimir
+- ✅ Mejor experiencia de usuario en gestión de caja
+
+---
+
 ## [2.5.8] - 2025-10-29
 
 ### 🛡️ Fix: Manejo de Error de DNI Duplicado y Búsqueda Mejorada
