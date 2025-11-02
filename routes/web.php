@@ -56,9 +56,11 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('/agenda', [AgendaController::class, 'index'])->name('agenda.index');
 
-    Route::resource('payments', PaymentController::class);
+    // Payment custom routes - DEBEN IR ANTES del resource
     Route::get('/payments/{payment}/print-receipt', [PaymentController::class, 'printReceipt'])->name('payments.print-receipt');
+    Route::post('/payments/{payment}/annul', [PaymentController::class, 'annul'])->name('payments.annul');
     Route::get('/payments/search-patients', [PaymentController::class, 'searchPatients'])->name('payments.search-patients');
+    Route::resource('payments', PaymentController::class);
     Route::get('/payments/patients/{patient}/pending-appointments', [PaymentController::class, 'getPendingAppointments'])->name('payments.pending-appointments');
 
     // Payment allocation routes
