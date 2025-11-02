@@ -425,6 +425,111 @@ class PaymentController extends Controller
         return view('receipts.print', compact('payment', 'professionals'));
     }
 
+    /**
+     * Anular un pago realizado
+     * Crea un pago negativo (refund) y revierte el estado del turno
+     */
+    public function annul(Payment $payment)
+    {
+        try {
+            DB::beginTransaction();
+
+            // Verificar que la caja esté abierta
+            if (! CashMovement::isCashOpenToday()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No se pueden anular pagos. La caja debe estar abierta para realizar esta operación.',
+                ], 400);
+            }
+
+            // Verificar si ya fue anulado
+            $existingRefund = Payment::where('concept', 'LIKE', '%#' . $payment->receipt_number . '%')
+                ->where('payment_type', 'refund')
+                ->first();
+
+            if ($existingRefund) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Este pago ya fue anulado anteriormente.',
+                ], 400);
+            }
+
+            // Verificar que no sea un refund
+            if ($payment->payment_type === 'refund') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No se puede anular un reembolso. Solo se pueden anular pagos originales.',
+                ], 400);
+            }
+
+            // Verificar que el pago esté pendiente de liquidación
+            if ($payment->liquidation_status !== 'pending') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Solo se pueden anular pagos que estén pendientes de liquidación. Este pago ya fue ' .
+                                ($payment->liquidation_status === 'liquidated' ? 'liquidado' : 'cancelado') . '.',
+                ], 400);
+            }
+
+            // Crear pago negativo (refund)
+            $refund = Payment::create([
+                'patient_id' => $payment->patient_id,
+                'payment_date' => now(),
+                'payment_type' => 'refund',
+                'payment_method' => $payment->payment_method,
+                'amount' => $payment->amount, // El monto positivo, createCashMovement lo hace negativo
+                'sessions_included' => 0,
+                'sessions_used' => 0,
+                'liquidation_status' => 'not_applicable', // Los refunds no se liquidan
+                'concept' => 'Anulación de pago - Recibo #' . $payment->receipt_number,
+                'receipt_number' => $this->generateReceiptNumber(),
+                'created_by' => auth()->id(),
+            ]);
+
+            // Registrar movimiento de caja negativo
+            $this->createCashMovement($refund);
+
+            // Revertir turnos asociados al pago
+            $appointments = $payment->paymentAppointments;
+
+            foreach ($appointments as $paymentAppointment) {
+                $appointment = $paymentAppointment->appointment;
+
+                if ($appointment) {
+                    // Eliminar la relación payment_appointment
+                    $paymentAppointment->delete();
+
+                    // Resetear el turno para que pueda ser cobrado nuevamente
+                    $appointment->update([
+                        'final_amount' => null,
+                    ]);
+                }
+            }
+
+            // Marcar el pago original como anulado
+            $payment->update([
+                'liquidation_status' => 'cancelled', // Cambiar a cancelado para que no quede pendiente de liquidación
+                'concept' => ($payment->concept ? $payment->concept . ' ' : '') . '[ANULADO - Ref: ' . $refund->receipt_number . ']',
+            ]);
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Pago anulado exitosamente. Se registró el movimiento de caja y los turnos fueron liberados para nuevo cobro.',
+                'refund_receipt' => $refund->receipt_number,
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al anular el pago: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
     // Métodos privados
     private function generateReceiptNumber()
     {

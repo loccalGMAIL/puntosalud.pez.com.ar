@@ -7,6 +7,72 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [2.5.9] - 2025-11-02
+
+### 🔄 Anulación de Pagos con Trazabilidad Completa
+
+**Agregado:**
+- **Función de anulación de pagos** (`annul()` en PaymentController)
+  - Reemplaza el botón "Eliminar" por "Anular" en la vista de pagos
+  - Crea un pago negativo (refund) como contraasiento contable
+  - Registra automáticamente el movimiento de caja negativo
+  - Libera los turnos asociados para que puedan ser cobrados nuevamente
+  - Genera nuevo número de recibo para el refund
+  - Marca el pago original con estado `'cancelled'`
+  - Validaciones:
+    - Verifica que la caja esté abierta
+    - Detecta si el pago ya fue anulado anteriormente
+    - Solo permite anular pagos en estado `'pending'`
+    - No permite anular refunds (solo pagos originales)
+
+- **Nuevo estado en ENUM `liquidation_status`**
+  - Agregado valor `'cancelled'` al ENUM
+  - Valores ahora: `'pending'`, `'liquidated'`, `'not_applicable'`, `'cancelled'`
+  - Migración: `2025_11_02_050734_add_cancelled_to_liquidation_status_in_payments_table.php`
+
+- **Ruta de anulación**
+  - `POST /payments/{payment}/annul` - Route: `payments.annul`
+  - Posicionada antes del resource para evitar conflictos
+
+**Mejorado:**
+- **Vista de pagos (payments/index.blade.php)**
+  - Botón "Anular" en color naranja con icono de círculo tachado
+  - Confirmación detallada con información de la acción
+  - Muestra número de recibo de anulación tras éxito
+  - Función JavaScript async/await para mejor UX
+  - Solo se muestra en pagos `'pending'` que no sean refunds
+
+- **Manejo robusto de estados de liquidación**
+  - Operador null coalescing para estados no definidos
+  - Caso especial para refunds: muestra "No aplica" (gris)
+  - Pagos cancelados: muestra "Cancelado" (rojo)
+  - Filtro actualizado con opción 'cancelled'
+
+**Técnico:**
+- Archivos modificados:
+  - `app/Http/Controllers/PaymentController.php`: Método `annul()` con validaciones completas
+  - `routes/web.php`: Ruta `payments.annul` antes del resource
+  - `resources/views/payments/index.blade.php`: Botón + función JavaScript
+  - `database/migrations/2025_11_02_050734_add_cancelled_to_liquidation_status_in_payments_table.php`: ENUM actualizado
+  - `VERSION`: 2.5.9
+  - `README.md`: Badge actualizado
+  - `CHANGELOG.md`: Esta entrada
+
+**Flujo de anulación:**
+1. Pago original → `liquidation_status = 'cancelled'` + concepto `[ANULADO - Ref: xxx]`
+2. Refund creado → `payment_type = 'refund'`, `liquidation_status = 'not_applicable'`
+3. Movimiento de caja → Monto negativo registrado
+4. Turnos → `final_amount = null`, listo para nuevo cobro
+
+**Impacto:**
+- ✅ Mantiene trazabilidad contable completa (no se eliminan registros)
+- ✅ Integridad de caja garantizada con contraasientos
+- ✅ Auditoría completa de anulaciones
+- ✅ Turnos liberados para corrección de errores
+- ✅ Mejor experiencia de usuario vs "eliminar"
+
+---
+
 ## [2.5.8-4] - 2025-11-02
 
 ### 🔒 Validación de Caja Abierta y Optimización de Reportes

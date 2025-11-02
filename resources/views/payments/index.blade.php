@@ -270,16 +270,29 @@
                                             $statusColors = [
                                                 'pending' => 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
                                                 'liquidated' => 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
-                                                'cancelled' => 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
+                                                'cancelled' => 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
+                                                'not_applicable' => 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400'
                                             ];
                                             $statusLabels = [
                                                 'pending' => 'Para liquidar',
                                                 'liquidated' => 'Liquidado',
-                                                'cancelled' => 'Cancelado'
+                                                'cancelled' => 'Cancelado',
+                                                'not_applicable' => 'No aplica'
                                             ];
+
+                                            // Manejo especial para refunds (anulaciones)
+                                            $currentStatus = $payment->liquidation_status;
+                                            $statusColor = $statusColors[$currentStatus] ?? 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400';
+                                            $statusLabel = $statusLabels[$currentStatus] ?? ucfirst($currentStatus);
+
+                                            // Si es un refund, mostrar "No aplica" independiente del estado
+                                            if ($payment->payment_type === 'refund') {
+                                                $statusColor = 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400';
+                                                $statusLabel = 'No aplica';
+                                            }
                                         @endphp
-                                        <span class="inline-flex px-2 py-1 text-xs font-medium rounded-full {{ $statusColors[$payment->liquidation_status] }}">
-                                            {{ $statusLabels[$payment->liquidation_status] }}
+                                        <span class="inline-flex px-2 py-1 text-xs font-medium rounded-full {{ $statusColor }}">
+                                            {{ $statusLabel }}
                                         </span>
                                     </td>
                                     
@@ -299,13 +312,13 @@
                                             <!-- Editar: Deshabilitado para mantener integridad contable -->
                                             {{-- Edición removida: usar retiros/ingresos manuales para correcciones --}}
 
-                                            <!-- Eliminar -->
-                                            @if($payment->liquidation_status === 'pending')
-                                                <button onclick="deletePayment({{ $payment->id }})" 
-                                                        class="p-2 text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                                                        title="Eliminar">
+                                            <!-- Anular Pago -->
+                                            @if($payment->liquidation_status === 'pending' && $payment->payment_type !== 'refund' && !str_contains($payment->concept ?? '', '[ANULADO'))
+                                                <button onclick="annulPayment({{ $payment->id }}, '{{ $payment->receipt_number }}')"
+                                                        class="p-2 text-orange-600 hover:text-orange-800 dark:text-orange-400 dark:hover:text-orange-300 hover:bg-orange-50 dark:hover:bg-orange-900/20 rounded-lg transition-colors"
+                                                        title="Anular Pago">
                                                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                                                        <path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
                                                     </svg>
                                                 </button>
                                             @endif
@@ -380,26 +393,39 @@ function paymentsPage() {
     }
 }
 
-function deletePayment(paymentId) {
-    if (confirm('¿Está seguro de que desea eliminar este pago?')) {
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = `/payments/${paymentId}`;
-        
-        const methodField = document.createElement('input');
-        methodField.type = 'hidden';
-        methodField.name = '_method';
-        methodField.value = 'DELETE';
-        
-        const tokenField = document.createElement('input');
-        tokenField.type = 'hidden';
-        tokenField.name = '_token';
-        tokenField.value = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-        
-        form.appendChild(methodField);
-        form.appendChild(tokenField);
-        document.body.appendChild(form);
-        form.submit();
+async function annulPayment(paymentId, receiptNumber) {
+    const confirmed = confirm(
+        `¿Está seguro de que desea ANULAR el pago con recibo #${receiptNumber}?\n\n` +
+        `Esta acción:\n` +
+        `• Creará un movimiento de caja negativo\n` +
+        `• Liberará el/los turno(s) asociado(s) para nuevo cobro\n` +
+        `• Generará un nuevo recibo de anulación\n\n` +
+        `Esta operación NO se puede revertir.`
+    );
+
+    if (!confirmed) return;
+
+    try {
+        const response = await fetch(`/payments/${paymentId}/annul`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'Accept': 'application/json'
+            }
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            alert(`✓ Pago anulado exitosamente.\n\nRecibo de anulación: ${result.refund_receipt}\n\n${result.message}`);
+            window.location.reload();
+        } else {
+            alert(`✗ Error: ${result.message}`);
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('✗ Error al procesar la anulación. Por favor, intente nuevamente.');
     }
 }
 </script>
