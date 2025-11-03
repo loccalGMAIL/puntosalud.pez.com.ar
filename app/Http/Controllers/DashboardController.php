@@ -104,8 +104,10 @@ class DashboardController extends Controller
         ];
 
         // Consultas detalladas del día - Optimizado: eager loading de paymentAppointments
+        // Excluir turnos cancelados del listado
         $consultasDetalle = Appointment::with(['patient', 'professional', 'paymentAppointments'])
             ->forDate($today)
+            ->where('status', '!=', 'cancelled')
             ->orderBy('appointment_date')
             ->get()
             ->map(function ($appointment) {
