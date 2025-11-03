@@ -3,12 +3,94 @@
 namespace App\Http\Controllers;
 
 use App\Models\Appointment;
+use App\Models\CashMovement;
 use App\Models\Professional;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 class ReportController extends Controller
 {
+    /**
+     * Reporte de caja diaria (solo lectura)
+     */
+    public function cashReport(Request $request)
+    {
+        $date = $request->get('date', now()->format('Y-m-d'));
+        $selectedDate = Carbon::parse($date);
+
+        $previousDay = $selectedDate->copy()->subDay();
+        $lastBalanceMovement = CashMovement::whereDate('created_at', '<=', $previousDay)
+            ->orderBy('created_at', 'desc')
+            ->first();
+
+        $initialBalance = $lastBalanceMovement ? $lastBalanceMovement->balance_after : 0;
+
+        $query = CashMovement::with(['user', 'movementType'])
+            ->whereDate('created_at', $selectedDate);
+
+        if ($request->filled('type')) {
+            $query->whereHas('movementType', function($q) use ($request) {
+                $q->where('code', $request->type);
+            });
+        }
+
+        if ($request->filled('reference_type')) {
+            $query->where('reference_type', $request->reference_type);
+        }
+
+        $movements = $query->orderBy('created_at', 'desc')
+            ->get();
+
+        // Calcular totales excluyendo apertura y cierre de caja
+        $movementsForTotals = $movements->filter(function($movement) {
+            return !in_array($movement->movementType?->code, ['cash_opening', 'cash_closing']);
+        });
+        $inflows = $movementsForTotals->where('amount', '>', 0)->sum('amount');
+        $outflows = $movementsForTotals->where('amount', '<', 0)->sum('amount');
+        $finalBalance = $initialBalance + $inflows + $outflows;
+
+        $lastMovement = $movements->first();
+        $systemFinalBalance = $lastMovement ? $lastMovement->balance_after : $initialBalance;
+
+        // Obtener estado de caja para el día
+        $cashStatus = CashMovement::getCashStatusForDate($selectedDate);
+
+        $cashSummary = [
+            'date' => $selectedDate,
+            'initial_balance' => $initialBalance,
+            'total_inflows' => $inflows,
+            'total_outflows' => abs($outflows),
+            'final_balance' => $finalBalance,
+            'system_final_balance' => $systemFinalBalance,
+            'is_closed' => $cashStatus['is_closed'],
+            'is_open' => $cashStatus['is_open'],
+            'needs_opening' => $cashStatus['needs_opening'],
+            'movements_count' => $movements->count(),
+        ];
+
+        // Agrupar por tipo de movimiento excluyendo apertura y cierre
+        $movementsByType = $movements
+            ->filter(function($movement) {
+                return !in_array($movement->movementType?->code, ['cash_opening', 'cash_closing']);
+            })
+            ->groupBy(function($movement) {
+                return $movement->movementType?->code ?? 'unknown';
+            })
+            ->map(function ($group, $typeCode) {
+                $firstMovement = $group->first();
+                return [
+                    'type' => $typeCode,
+                    'type_name' => $firstMovement->movementType?->name ?? ucfirst($typeCode),
+                    'icon' => $firstMovement->movementType?->icon ?? '📋',
+                    'inflows' => $group->where('amount', '>', 0)->sum('amount'),
+                    'outflows' => abs($group->where('amount', '<', 0)->sum('amount')),
+                    'count' => $group->count(),
+                ];
+            });
+
+        return view('reports.cash', compact('cashSummary', 'movements', 'movementsByType'));
+    }
+
     /**
      * Listado diario de pacientes a atender por profesional
      */

@@ -75,6 +75,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/reports/daily-schedule', [ReportController::class, 'dailySchedule'])->name('reports.daily-schedule');
     Route::get('/reports/daily-summary', [ReportController::class, 'dailySummary'])->name('reports.daily-summary');
     Route::get('/reports/professional-liquidation', [ReportController::class, 'professionalLiquidation'])->name('reports.professional-liquidation');
+    Route::get('/reports/cash', [ReportController::class, 'cashReport'])->name('reports.cash');
 
     // Cash management routes
     Route::get('/cash/daily', [App\Http\Controllers\CashController::class, 'dailyCash'])->name('cash.daily');
