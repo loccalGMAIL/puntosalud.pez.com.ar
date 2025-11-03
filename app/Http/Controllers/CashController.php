@@ -12,8 +12,8 @@ class CashController extends Controller
 {
     public function dailyCash(Request $request)
     {
-        $date = $request->get('date', now()->format('Y-m-d'));
-        $selectedDate = Carbon::parse($date);
+        // Forzar siempre la fecha de hoy (no permitir ver días anteriores)
+        $selectedDate = now();
 
         $previousDay = $selectedDate->copy()->subDay();
         $lastBalanceMovement = CashMovement::whereDate('created_at', '<=', $previousDay)
