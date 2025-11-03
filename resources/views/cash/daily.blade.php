@@ -154,20 +154,18 @@
                         <span class="text-sm text-gray-500 dark:text-gray-400">{{ $data['count'] }} movimientos</span>
                     </div>
                     <div class="space-y-1 text-sm">
+                        @if($data['inflows'] > 0)
                         <div class="flex justify-between">
-                            <span class="text-green-600">Ingresos:</span>
-                            <span class="text-green-600">+${{ number_format($data['inflows'], 2) }}</span>
+                            <span class="text-green-600 dark:text-green-400">Ingresos:</span>
+                            <span class="text-green-600 dark:text-green-400 font-semibold text-lg">+${{ number_format($data['inflows'], 2) }}</span>
                         </div>
+                        @endif
+                        @if($data['outflows'] > 0)
                         <div class="flex justify-between">
-                            <span class="text-red-600">Egresos:</span>
-                            <span class="text-red-600">-${{ number_format($data['outflows'], 2) }}</span>
+                            <span class="text-red-600 dark:text-red-400">Egresos:</span>
+                            <span class="text-red-600 dark:text-red-400 font-semibold text-lg">-${{ number_format($data['outflows'], 2) }}</span>
                         </div>
-                        <div class="flex justify-between border-t border-gray-200 dark:border-gray-600 pt-1">
-                            <span class="font-medium text-gray-900 dark:text-white">Neto:</span>
-                            <span class="font-medium text-gray-900 dark:text-white">
-                                ${{ number_format($data['inflows'] - $data['outflows'], 2) }}
-                            </span>
-                        </div>
+                        @endif
                     </div>
                 </div>
                     @endif
