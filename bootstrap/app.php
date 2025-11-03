@@ -21,5 +21,18 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        // Manejo de error 419 - CSRF Token Expired
+        $exceptions->render(function (\Illuminate\Session\TokenMismatchException $e, $request) {
+            // Si es una petición AJAX
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'message' => 'Tu sesión ha expirado. Por favor, recarga la página e inicia sesión nuevamente.',
+                    'redirect' => route('login')
+                ], 419);
+            }
+
+            // Si es una petición web normal
+            return redirect()->route('login')
+                ->withErrors(['session' => 'Tu sesión ha expirado. Por favor, inicia sesión nuevamente.']);
+        });
     })->create();
