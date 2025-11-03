@@ -79,8 +79,14 @@
                         <tbody>
                         @foreach($reportData['appointments'] as $appointment)
                             <tr class="border-b border-gray-100 dark:border-gray-700">
-                                <td class="py-3 px-3 font-medium text-gray-900 dark:text-white">
-                                    {{ $appointment['time'] }}
+                                <td class="py-3 px-3">
+                                    @if($appointment['is_urgency'])
+                                        <span class="inline-flex items-center rounded px-1 py-0.5 text-xs font-bold bg-red-100 text-red-800 border border-red-300 dark:bg-red-900/40 dark:text-red-300 dark:border-red-700" title="Urgencia">
+                                            🚨
+                                        </span>
+                                    @else
+                                        <span class="font-medium text-gray-900 dark:text-white">{{ $appointment['time'] }}</span>
+                                    @endif
                                 </td>
                                 <td class="py-3 px-3">
                                     <div class="font-medium text-gray-900 dark:text-white">{{ $appointment['patient_name'] }}</div>

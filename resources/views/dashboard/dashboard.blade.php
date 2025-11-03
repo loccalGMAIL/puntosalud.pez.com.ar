@@ -266,7 +266,7 @@
                     @include('patients.modal')
                 </div>
 
-                <!-- Entreturno / Urgencia -->
+                <!-- Urgencia -->
                 <div x-data="urgencyModalDashboard()" x-init="init()">
                     <a href="#" @click.prevent="openUrgencyModal()" class="flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-red-50 to-red-100 hover:from-red-100 hover:to-red-200 border border-red-200 dark:from-red-900/20 dark:to-red-800/20 dark:border-red-700 transition-all duration-200 group">
                         <div class="flex items-center gap-3">
@@ -507,8 +507,10 @@ function urgencyModalDashboard() {
         },
         async submitUrgencyForm() {
             if (this.urgencyLoading) return;
-            if (!this.urgencyForm.professional_id || !this.urgencyForm.patient_id || !this.urgencyForm.appointment_date || !this.urgencyForm.estimated_amount) {
-                await SystemModal.show('error', 'Error', 'Complete todos los campos requeridos (Profesional, Paciente, Fecha y Monto).', 'Aceptar', false);
+            // La fecha siempre es hoy, no necesita validación
+            this.urgencyForm.appointment_date = new Date().toISOString().split('T')[0];
+            if (!this.urgencyForm.professional_id || !this.urgencyForm.patient_id || !this.urgencyForm.estimated_amount) {
+                await SystemModal.show('error', 'Error', 'Complete todos los campos requeridos (Profesional, Paciente y Monto).', 'Aceptar', false);
                 return;
             }
             this.urgencyLoading = true;
@@ -671,8 +673,8 @@ function urgencyModalDashboard() {
                                         <p class="font-semibold text-gray-900 dark:text-white">${{ number_format($consulta['monto'], 0, ',', '.') }}</p>
                                         <div class="flex items-center gap-1 flex-wrap">
                                             @if($consulta['isUrgency'])
-                                                <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-bold bg-red-100 text-red-800 border border-red-300 dark:bg-red-900/40 dark:text-red-300 dark:border-red-700">
-                                                    URGENCIA
+                                                <span class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-bold bg-red-100 text-red-800 border border-red-300 dark:bg-red-900/40 dark:text-red-300 dark:border-red-700">
+                                                    🚨 URGENCIA
                                                 </span>
                                             @endif
                                             <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium
