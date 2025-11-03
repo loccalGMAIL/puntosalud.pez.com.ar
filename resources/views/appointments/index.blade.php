@@ -251,7 +251,9 @@
                         <!-- Filas de turnos -->
                         <template x-for="appointment in filteredAppointments" :key="appointment.id">
                             <tr class="transition-colors duration-200"
-                                :class="appointment.duration === 0 ? 'bg-red-50/50 dark:bg-red-900/10 hover:bg-red-100/50 dark:hover:bg-red-900/20 border-l-4 border-l-red-500' : 'hover:bg-emerald-50/30 dark:hover:bg-emerald-950/20'">
+                                :class="appointment.duration === 0 ? 'bg-red-50/50 dark:bg-red-900/10 hover:bg-red-100/50 dark:hover:bg-red-900/20 border-l-4 border-l-red-500' :
+                                        appointment.is_between_turn ? 'bg-orange-50/50 dark:bg-orange-900/10 hover:bg-orange-100/50 dark:hover:bg-orange-900/20 border-l-4 border-l-orange-500' :
+                                        'hover:bg-emerald-50/30 dark:hover:bg-emerald-950/20'">
                                 <!-- Fecha/Hora -->
                                 <td class="px-3 py-2 whitespace-nowrap">
                                     <div class="text-xs font-medium text-gray-900 dark:text-white" x-text="formatDate(appointment.appointment_date)"></div>
@@ -274,10 +276,18 @@
                                 <td class="px-3 py-2 whitespace-nowrap">
                                     <template x-if="appointment.duration === 0">
                                         <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-bold bg-red-100 text-red-800 border border-red-300 dark:bg-red-900/40 dark:text-red-300 dark:border-red-700">
-                                            URGENCIA
+                                            🚨 URGENCIA
                                         </span>
                                     </template>
-                                    <template x-if="appointment.duration > 0">
+                                    <template x-if="appointment.duration > 0 && appointment.is_between_turn">
+                                        <div class="flex items-center gap-1.5">
+                                            <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-bold bg-orange-100 text-orange-800 border border-orange-300 dark:bg-orange-900/40 dark:text-orange-300 dark:border-orange-700">
+                                                ⏱️ ENTRETURNO
+                                            </span>
+                                            <span class="text-xs text-gray-500 dark:text-gray-400" x-text="appointment.duration + ' min'"></span>
+                                        </div>
+                                    </template>
+                                    <template x-if="appointment.duration > 0 && !appointment.is_between_turn">
                                         <span class="text-xs text-gray-900 dark:text-white" x-text="appointment.duration + ' min'"></span>
                                     </template>
                                 </td>
@@ -458,6 +468,7 @@ function appointmentsPage() {
             notes: '',
             estimated_amount: '',
             status: 'scheduled',
+            is_between_turn: false,
             // Campos de pago
             pay_now: false,
             payment_type: 'single', // 'single' o 'package'
@@ -514,7 +525,7 @@ function appointmentsPage() {
         openEditModal(appointment) {
             this.editingAppointment = appointment;
             const appointmentDate = new Date(appointment.appointment_date);
-            
+
             this.form = {
                 professional_id: appointment.professional.id.toString(),
                 patient_id: appointment.patient.id.toString(),
@@ -524,7 +535,8 @@ function appointmentsPage() {
                 office_id: appointment.office?.id.toString() || '',
                 notes: appointment.notes || '',
                 estimated_amount: appointment.estimated_amount || '',
-                status: appointment.status || 'scheduled'
+                status: appointment.status || 'scheduled',
+                is_between_turn: appointment.is_between_turn || false
             };
             this.modalOpen = true;
         },
@@ -540,6 +552,7 @@ function appointmentsPage() {
                 notes: '',
                 estimated_amount: '',
                 status: 'scheduled',
+                is_between_turn: false,
                 // Resetear campos de pago
                 pay_now: false,
                 payment_type: 'single',
@@ -575,19 +588,20 @@ function appointmentsPage() {
                 const formData = new FormData();
                 Object.keys(this.form).forEach(key => {
                     const value = this.form[key];
-                    
+
+                    // Campos booleanos que siempre deben enviarse
+                    if (key === 'pay_now' || key === 'is_between_turn') {
+                        formData.append(key, value ? '1' : '0');
+                        return;
+                    }
+
                     // Campos opcionales que pueden estar vacíos
                     const optionalFields = ['notes', 'office_id', 'estimated_amount', 'payment_concept', 'package_sessions', 'session_price'];
-                    
+
                     if (value !== '' && value !== null && value !== undefined) {
                         formData.append(key, value);
                     } else if (optionalFields.includes(key) || key === 'status') {
                         formData.append(key, value || '');
-                    }
-                    
-                    // Para boolean pay_now, asegurar que se envíe correctamente
-                    if (key === 'pay_now') {
-                        formData.append(key, value ? '1' : '0');
                     }
                 });
                 

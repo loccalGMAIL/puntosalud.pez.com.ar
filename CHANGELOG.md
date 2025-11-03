@@ -9,6 +9,92 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ## [2.5.9] - 2025-11-02
 
+### ⏱️ Sistema de EntreTurnos y Mejoras en Urgencias
+
+**Agregado:**
+- **Sistema completo de EntreTurnos**
+  - Switch "EntreTurno" en modal de creación/edición de turnos
+  - Campo `is_between_turn` (boolean) en tabla appointments
+  - Opción de duración de 5 minutos para turnos rápidos
+  - Destacado visual con emoji ⏱️ y colores naranjas
+  - Modal de creación con borde y header naranja cuando es entreturno
+  - Título dinámico: "Nuevo EntreTurno ⏱️" o "Editar EntreTurno ⏱️"
+
+**Mejorado:**
+- **Visualización de Urgencias**
+  - Emoji 🚨 agregado a todas las urgencias
+  - En reportes: urgencias muestran solo emoji (sin hora)
+  - En dashboard y agenda: badge rojo con "🚨 URGENCIA"
+  - Urgencias ordenadas primero en reporte daily-schedule
+
+- **Visualización de EntreTurnos**
+  - Dashboard: Badge naranja "⏱️ ENTRETURNO"
+  - Agenda (tabla): Badge naranja + fila con borde/fondo naranja claro
+  - Agenda (modal día): Div con borde naranja grueso + badge "⏱️ ENTRETURNO"
+  - Reporte daily-schedule: Emoji ⏱️ + hora separada fuera del badge
+  - NO se ordenan primero (a diferencia de urgencias)
+
+**Interfaz:**
+- **Modal de Nuevo Turno**
+  - Switch toggle naranja junto al campo de horario
+  - Indicador visual "⏱️ Sí" cuando está activado
+  - Todo el modal cambia a tema naranja cuando es entreturno:
+    - Borde grueso naranja (ring-4)
+    - Header con fondo naranja claro
+    - Emoji ⏱️ grande en lugar del icono de calendario
+    - Subtítulo: "Programa un entreturno rápido"
+
+- **Modal de Urgencia actualizado**
+  - Eliminado selector de fecha (las urgencias son siempre para hoy)
+  - Grid reorganizado de 3 a 2 columnas (Monto y Consultorio)
+  - Fecha se establece automáticamente al día actual
+
+**Técnico:**
+- Migración: `2025_11_03_120000_add_is_between_turn_to_appointments_table.php`
+- Campo agregado al fillable y casts del modelo Appointment
+- Validación en AppointmentController (store y update): `'is_between_turn' => 'nullable|boolean'`
+- Validación de duración actualizada: `in:5,10,15,20,30,40,45,60,90,120`
+- JavaScript Alpine.js actualizado para manejar el campo booleano correctamente
+- Eager loading optimizado en todos los controladores que retornan appointments
+
+**Archivos Modificados:**
+- `database/migrations/2025_11_03_120000_add_is_between_turn_to_appointments_table.php` - Nueva migración
+- `app/Models/Appointment.php` - Fillable y casts actualizados
+- `app/Http/Controllers/AppointmentController.php` - Validaciones y guardado
+- `app/Http/Controllers/DashboardController.php` - Campo agregado a datos
+- `app/Http/Controllers/ReportController.php` - Campo agregado al reporte
+- `resources/views/appointments/modal.blade.php` - Switch y tema naranja
+- `resources/views/appointments/modal-urgency.blade.php` - Fecha removida
+- `resources/views/appointments/index.blade.php` - Badge y fondo naranja, JavaScript actualizado
+- `resources/views/agenda/index.blade.php` - Badge naranja en modal de día
+- `resources/views/dashboard/dashboard.blade.php` - Badge naranja y emoji urgencia
+- `resources/views/reports/daily-schedule.blade.php` - Emoji ⏱️ + hora separada
+
+**Diferencias visuales:**
+
+**Urgencias (🚨 - ROJO):**
+- Ordenadas primero en todos los listados
+- En reportes: solo emoji, sin hora
+- Badge rojo con borde rojo
+- Fondo rojo claro en filas/cards
+
+**EntreTurnos (⏱️ - NARANJA):**
+- NO ordenados primero (mantienen orden cronológico)
+- En reportes: emoji + hora separada
+- Badge naranja con borde naranja
+- Fondo naranja claro en filas/cards
+- Modal con borde y header naranja
+
+**Impacto:**
+- ✅ Mayor flexibilidad para gestionar consultas rápidas entre turnos programados
+- ✅ Identificación visual clara con emoji ⏱️ y colores naranjas
+- ✅ Diferenciación clara entre Urgencias (rojas) y EntreTurnos (naranjas)
+- ✅ Opción de 5 minutos para atenciones muy breves
+- ✅ Mejor organización del flujo de trabajo diario
+- ✅ Experiencia de usuario consistente en todas las vistas
+
+---
+
 ### 🔄 Anulación de Pagos con Trazabilidad Completa
 
 **Agregado:**

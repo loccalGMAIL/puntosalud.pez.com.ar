@@ -20,12 +20,14 @@ class Appointment extends Model
         'final_amount',
         'notes',
         'created_by',
+        'is_between_turn',
     ];
 
     protected $casts = [
         'appointment_date' => 'datetime',
         'estimated_amount' => 'decimal:2',
         'final_amount' => 'decimal:2',
+        'is_between_turn' => 'boolean',
     ];
 
     /**

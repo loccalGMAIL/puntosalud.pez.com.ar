@@ -4,17 +4,25 @@
      class="fixed inset-0 z-50 overflow-y-auto bg-black bg-opacity-50 flex items-center justify-center p-4">
     
     <!-- Modal Content -->
-    <div @click.away="modalOpen = false" 
-         class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        
+    <div @click.away="modalOpen = false"
+         class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+         :class="form.is_between_turn ? 'ring-4 ring-orange-400 dark:ring-orange-500' : ''">
+
         <!-- Header -->
-        <div class="bg-white dark:bg-gray-800 px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+        <div class="px-6 py-4 border-b"
+             :class="form.is_between_turn ? 'bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-700' : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700'">
             <div class="flex items-center justify-between">
-                <h3 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                    <svg class="w-5 h-5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5a2.25 2.25 0 002.25-2.25m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5a2.25 2.25 0 012.25 2.25v7.5" />
-                    </svg>
-                    <span x-text="editingAppointment ? 'Editar Turno' : 'Nuevo Turno'"></span>
+                <h3 class="text-lg font-semibold flex items-center gap-2"
+                    :class="form.is_between_turn ? 'text-orange-900 dark:text-orange-100' : 'text-gray-900 dark:text-white'">
+                    <template x-if="form.is_between_turn">
+                        <span class="text-2xl">⏱️</span>
+                    </template>
+                    <template x-if="!form.is_between_turn">
+                        <svg class="w-5 h-5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5a2.25 2.25 0 002.25-2.25m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5a2.25 2.25 0 012.25 2.25v7.5" />
+                        </svg>
+                    </template>
+                    <span x-text="form.is_between_turn ? (editingAppointment ? 'Editar EntreTurno ⏱️' : 'Nuevo EntreTurno ⏱️') : (editingAppointment ? 'Editar Turno' : 'Nuevo Turno')"></span>
                 </h3>
                 <button @click="modalOpen = false" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
                     <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
@@ -22,7 +30,9 @@
                     </svg>
                 </button>
             </div>
-            <p class="mt-1 text-sm text-gray-600 dark:text-gray-400" x-text="editingAppointment ? 'Modifica los datos del turno' : 'Programa un nuevo turno para el paciente'"></p>
+            <p class="mt-1 text-sm"
+               :class="form.is_between_turn ? 'text-orange-700 dark:text-orange-300 font-medium' : 'text-gray-600 dark:text-gray-400'"
+               x-text="form.is_between_turn ? (editingAppointment ? 'Modifica los datos del entreturno' : 'Programa un entreturno rápido') : (editingAppointment ? 'Modifica los datos del turno' : 'Programa un nuevo turno para el paciente')"></p>
         </div>
 
         <!-- Body -->
@@ -78,6 +88,7 @@
                     <select x-model="form.duration"
                             class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500 dark:bg-gray-700 dark:text-white"
                             required>
+                        <option value="5">5 minutos</option>
                         <option value="10">10 minutos</option>
                         <option value="15">15 minutos</option>
                         <option value="20">20 minutos</option>
@@ -91,18 +102,33 @@
                 </div>
             </div>
 
-            <!-- Horario -->
-            <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Horario *</label>
-                <input x-model="form.appointment_time"
-                       type="time"
-                       min="08:00"
-                       max="21:00"
-                       step="900"
-                       @change="validateDateTime()"
-                       class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500 dark:bg-gray-700 dark:text-white"
-                       required>
-                <div x-show="pastTimeError" class="mt-1 text-sm text-red-600 dark:text-red-400" x-text="pastTimeError"></div>
+            <!-- Horario y EntreTurno -->
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Horario *</label>
+                    <input x-model="form.appointment_time"
+                           type="time"
+                           min="08:00"
+                           max="21:00"
+                           step="900"
+                           @change="validateDateTime()"
+                           class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500 dark:bg-gray-700 dark:text-white"
+                           required>
+                    <div x-show="pastTimeError" class="mt-1 text-sm text-red-600 dark:text-red-400" x-text="pastTimeError"></div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">EntreTurno</label>
+                    <div class="flex items-center h-[42px] px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-gray-50 dark:bg-gray-700">
+                        <label class="relative inline-flex items-center cursor-pointer w-full">
+                            <input type="checkbox"
+                                   x-model="form.is_between_turn"
+                                   class="sr-only peer">
+                            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-orange-300 dark:peer-focus:ring-orange-800 rounded-full peer dark:bg-gray-600 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-orange-500"></div>
+                            <span class="ms-3 text-sm font-medium text-gray-700 dark:text-gray-300" x-text="form.is_between_turn ? '⏱️ Sí' : 'No'"></span>
+                        </label>
+                    </div>
+                </div>
             </div>
 
             <!-- Consultorio y Monto -->

@@ -78,8 +78,12 @@ class ReportController extends Controller
                     'payment_method' => $appointment->paymentAppointments->first()?->payment?->payment_method,
                     'notes' => $appointment->notes,
                     'office' => $appointment->office?->name ?? 'No asignado',
+                    'is_urgency' => $appointment->is_urgency,
+                    'is_between_turn' => $appointment->is_between_turn,
                 ];
-            });
+            })
+            ->sortByDesc('is_urgency') // Urgencias primero
+            ->values();
 
         // Estadísticas del día
         $stats = [

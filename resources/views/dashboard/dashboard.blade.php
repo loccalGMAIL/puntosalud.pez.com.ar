@@ -266,7 +266,7 @@
                     @include('patients.modal')
                 </div>
 
-                <!-- Entreturno / Urgencia -->
+                <!-- Urgencia -->
                 <div x-data="urgencyModalDashboard()" x-init="init()">
                     <a href="#" @click.prevent="openUrgencyModal()" class="flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-red-50 to-red-100 hover:from-red-100 hover:to-red-200 border border-red-200 dark:from-red-900/20 dark:to-red-800/20 dark:border-red-700 transition-all duration-200 group">
                         <div class="flex items-center gap-3">
@@ -276,7 +276,7 @@
                                 </svg>
                             </div>
                             <div>
-                                <div class="text-sm font-medium text-red-900 dark:text-red-100">Entreturno / Urgencia</div>
+                                <div class="text-sm font-medium text-red-900 dark:text-red-100">Urgencia</div>
                             </div>
                         </div>
                         <svg class="h-4 w-4 text-red-600 dark:text-red-400 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
@@ -507,8 +507,10 @@ function urgencyModalDashboard() {
         },
         async submitUrgencyForm() {
             if (this.urgencyLoading) return;
-            if (!this.urgencyForm.professional_id || !this.urgencyForm.patient_id || !this.urgencyForm.appointment_date || !this.urgencyForm.estimated_amount) {
-                await SystemModal.show('error', 'Error', 'Complete todos los campos requeridos (Profesional, Paciente, Fecha y Monto).', 'Aceptar', false);
+            // La fecha siempre es hoy, no necesita validación
+            this.urgencyForm.appointment_date = new Date().toISOString().split('T')[0];
+            if (!this.urgencyForm.professional_id || !this.urgencyForm.patient_id || !this.urgencyForm.estimated_amount) {
+                await SystemModal.show('error', 'Error', 'Complete todos los campos requeridos (Profesional, Paciente y Monto).', 'Aceptar', false);
                 return;
             }
             this.urgencyLoading = true;
@@ -604,20 +606,31 @@ function urgencyModalDashboard() {
                         Ver todas →
                     </a>
                 </div>
-                
-                <div class="space-y-3">
-                    @php
-                        $consultasDetalleOrdenadas = collect($dashboardData['consultasDetalle'])
-                            ->sortByDesc(function($consulta) {
-                                // Prioridad: urgencias primero, luego atendidas, luego el resto
-                                return ($consulta['isUrgency'] ? 2 : 0) + ($consulta['status'] === 'attended' ? 1 : 0);
-                            })
-                            ->values();
-                    @endphp
 
-                    @forelse($consultasDetalleOrdenadas as $consulta)
-                        @if(!($consulta['status'] === 'attended' && $consulta['isPaid']) && $consulta['status'] !== 'absent')
-                        <div class="group flex items-center justify-between p-4 rounded-lg border bg-white/80 transition-all duration-200 hover:shadow-md dark:bg-gray-800/50
+                @php
+                    $consultasDetalleOrdenadas = collect($dashboardData['consultasDetalle'])
+                        ->sortByDesc(function($consulta) {
+                            // Prioridad: urgencias primero, luego atendidas, luego el resto
+                            return ($consulta['isUrgency'] ? 2 : 0) + ($consulta['status'] === 'attended' ? 1 : 0);
+                        })
+                        ->filter(function($consulta) {
+                            return !($consulta['status'] === 'attended' && $consulta['isPaid']) && $consulta['status'] !== 'absent';
+                        })
+                        ->values();
+                @endphp
+
+                <div x-data="{
+                    currentPage: 1,
+                    perPage: 10,
+                    get totalPages() { return Math.ceil({{ $consultasDetalleOrdenadas->count() }} / this.perPage); },
+                    get startIndex() { return (this.currentPage - 1) * this.perPage; },
+                    get endIndex() { return this.startIndex + this.perPage; }
+                }">
+                    <div class="space-y-3">
+
+                        @forelse($consultasDetalleOrdenadas as $index => $consulta)
+                        <div x-show="{{ $index }} >= startIndex && {{ $index }} < endIndex"
+                            class="group flex items-center justify-between p-4 rounded-lg border bg-white/80 transition-all duration-200 hover:shadow-md dark:bg-gray-800/50
                             @if($consulta['isUrgency']) border-red-300 hover:border-red-400 bg-red-50/50 dark:border-red-700 dark:hover:border-red-600 dark:bg-red-900/10
                             @elseif($consulta['status'] === 'attended') border-emerald-100 hover:border-emerald-200 dark:border-emerald-800/30 dark:hover:border-emerald-700/50
                             @elseif($consulta['status'] === 'scheduled') border-blue-100 hover:border-blue-200 dark:border-blue-800/30 dark:hover:border-blue-700/50
@@ -660,8 +673,13 @@ function urgencyModalDashboard() {
                                         <p class="font-semibold text-gray-900 dark:text-white">${{ number_format($consulta['monto'], 0, ',', '.') }}</p>
                                         <div class="flex items-center gap-1 flex-wrap">
                                             @if($consulta['isUrgency'])
-                                                <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-bold bg-red-100 text-red-800 border border-red-300 dark:bg-red-900/40 dark:text-red-300 dark:border-red-700">
-                                                    URGENCIA
+                                                <span class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-bold bg-red-100 text-red-800 border border-red-300 dark:bg-red-900/40 dark:text-red-300 dark:border-red-700">
+                                                    🚨 URGENCIA
+                                                </span>
+                                            @endif
+                                            @if($consulta['isBetweenTurn'])
+                                                <span class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-bold bg-orange-100 text-orange-800 border border-orange-300 dark:bg-orange-900/40 dark:text-orange-300 dark:border-orange-700">
+                                                    ⏱️ ENTRETURNO
                                                 </span>
                                             @endif
                                             <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium
@@ -714,7 +732,6 @@ function urgencyModalDashboard() {
                                 </div>
                             </div>
                         </div>
-                        @endif
                     @empty
                         <!-- Estado vacío -->
                         <div class="text-center py-8">
@@ -724,6 +741,29 @@ function urgencyModalDashboard() {
                             <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">No hay consultas para hoy</p>
                         </div>
                     @endforelse
+                    </div>
+
+                    <!-- Paginación -->
+                    @if($consultasDetalleOrdenadas->count() > 10)
+                    <div class="flex items-center justify-between mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                        <div class="text-sm text-gray-600 dark:text-gray-400">
+                            Mostrando <span x-text="startIndex + 1"></span> - <span x-text="Math.min(endIndex, {{ $consultasDetalleOrdenadas->count() }})"></span> de <span>{{ $consultasDetalleOrdenadas->count() }}</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button @click="currentPage = Math.max(1, currentPage - 1)" :disabled="currentPage === 1"
+                                class="px-3 py-1 rounded-md text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600">
+                                Anterior
+                            </button>
+                            <span class="text-sm text-gray-600 dark:text-gray-400">
+                                Página <span x-text="currentPage"></span> de <span x-text="totalPages"></span>
+                            </span>
+                            <button @click="currentPage = Math.min(totalPages, currentPage + 1)" :disabled="currentPage === totalPages"
+                                class="px-3 py-1 rounded-md text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600">
+                                Siguiente
+                            </button>
+                        </div>
+                    </div>
+                    @endif
                 </div>
             </div>
 

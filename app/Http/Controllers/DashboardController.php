@@ -104,8 +104,10 @@ class DashboardController extends Controller
         ];
 
         // Consultas detalladas del día - Optimizado: eager loading de paymentAppointments
+        // Excluir turnos cancelados del listado
         $consultasDetalle = Appointment::with(['patient', 'professional', 'paymentAppointments'])
             ->forDate($today)
+            ->where('status', '!=', 'cancelled')
             ->orderBy('appointment_date')
             ->get()
             ->map(function ($appointment) {
@@ -119,6 +121,7 @@ class DashboardController extends Controller
                     'statusLabel' => $this->getStatusLabel($appointment->status),
                     'isPaid' => $appointment->paymentAppointments->isNotEmpty(),
                     'isUrgency' => $appointment->is_urgency,
+                    'isBetweenTurn' => $appointment->is_between_turn,
                     'canMarkAttended' => $appointment->status === 'scheduled',
                     'canMarkCompleted' => $appointment->status === 'attended' && $appointment->paymentAppointments->isEmpty(),
                 ];
@@ -194,6 +197,7 @@ class DashboardController extends Controller
                     'isPaid' => $isPaid,
                     'paymentId' => $paymentId,
                     'isUrgency' => $appointment->is_urgency,
+                    'isBetweenTurn' => $appointment->is_between_turn,
                     'canMarkAttended' => $appointment->status === 'scheduled',
                     'canMarkCompleted' => $appointment->status === 'attended' && ! $isPaid,
                 ];

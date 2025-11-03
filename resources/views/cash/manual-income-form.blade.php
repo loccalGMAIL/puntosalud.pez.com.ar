@@ -80,6 +80,34 @@
                         </select>
                     </div>
 
+                    <!-- Método de Pago -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            Método de Pago *
+                        </label>
+                        <select x-model="form.payment_method"
+                                class="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white"
+                                required>
+                            <option value="">Seleccionar método</option>
+                            <option value="cash">💵 Efectivo</option>
+                            <option value="transfer">🏦 Transferencia</option>
+                            <option value="debit_card">💳 Tarjeta de Débito</option>
+                            <option value="credit_card">💳 Tarjeta de Crédito</option>
+                        </select>
+                    </div>
+                    <!-- Descripción -->
+                    <div >
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            Descripción del Ingreso *
+                        </label>
+                        <input x-model="form.description"
+                               type="text"
+                               maxlength="255"
+                               class="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white"
+                               placeholder="Descripción del ingreso..."
+                               required>
+                    </div>
+
                     <!-- Profesional (solo si es pago módulo profesional) -->
                     <div x-show="form.category === 'professional_module_payment'" x-cloak>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -114,18 +142,7 @@
                         @endif
                     </div>
 
-                    <!-- Descripción -->
-                    <div :class="form.category === 'professional_module_payment' ? '' : 'md:col-span-2'">
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                            Descripción del Ingreso *
-                        </label>
-                        <input x-model="form.description"
-                               type="text"
-                               maxlength="255"
-                               class="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white"
-                               placeholder="Descripción del ingreso..."
-                               required>
-                    </div>
+
                 </div>
 
                 <!-- Notas Adicionales -->
@@ -233,6 +250,7 @@ function incomeForm() {
         form: {
             amount: '',
             category: '',
+            payment_method: '',
             professional_id: '',
             description: '',
             notes: ''

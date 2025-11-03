@@ -105,11 +105,12 @@ class AppointmentController extends Controller
                 'patient_id' => 'required|exists:patients,id',
                 'appointment_date' => 'required|date',
                 'appointment_time' => 'required|date_format:H:i',
-                'duration' => 'required|integer|in:10,15,20,30,40,45,60,90,120',
+                'duration' => 'required|integer|in:5,10,15,20,30,40,45,60,90,120',
                 'office_id' => 'nullable|exists:offices,id',
                 'notes' => 'nullable|string|max:500',
                 'estimated_amount' => 'nullable|numeric|min:0',
                 'status' => 'nullable|in:scheduled,attended,cancelled,absent',
+                'is_between_turn' => 'nullable|boolean',
                 // Campos de pago
                 'pay_now' => 'nullable|in:true,false,1,0,"true","false","1","0"',
                 'payment_type' => 'nullable|in:single,package',
@@ -214,6 +215,7 @@ class AppointmentController extends Controller
                 'notes' => $validated['notes'],
                 'estimated_amount' => $validated['estimated_amount'],
                 'status' => 'scheduled',
+                'is_between_turn' => $validated['is_between_turn'] ?? false,
             ]);
 
             // Si se paga ahora, crear el pago (pero no asignarlo hasta que se atienda)
@@ -304,11 +306,12 @@ class AppointmentController extends Controller
                 'patient_id' => 'required|exists:patients,id',
                 'appointment_date' => 'required|date',
                 'appointment_time' => 'required|string',
-                'duration' => 'required|integer|in:10,15,20,30,40,45,60,90,120',
+                'duration' => 'required|integer|in:5,10,15,20,30,40,45,60,90,120',
                 'office_id' => 'nullable|exists:offices,id',
                 'notes' => 'nullable|string|max:500',
                 'estimated_amount' => 'nullable|numeric|min:0',
                 'status' => 'required|in:scheduled,attended,cancelled,absent',
+                'is_between_turn' => 'nullable|boolean',
             ]);
 
             // Limpiar campos opcionales vacíos
@@ -357,6 +360,7 @@ class AppointmentController extends Controller
                 'notes' => $validated['notes'],
                 'estimated_amount' => $validated['estimated_amount'],
                 'status' => $validated['status'],
+                'is_between_turn' => $validated['is_between_turn'] ?? false,
             ]);
 
             if ($request->ajax()) {
