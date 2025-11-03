@@ -249,11 +249,12 @@ function expenseForm() {
     return {
         loading: false,
         selectedFile: null,
-        
+
         form: {
             amount: '',
             category: '',
             professional_id: '',
+            payment_method: '',
             description: '',
             notes: ''
         },
@@ -324,6 +325,7 @@ function expenseForm() {
         isFormValid() {
             const baseValid = this.form.amount &&
                    this.form.category &&
+                   this.form.payment_method &&
                    this.form.description.trim();
 
             // Si es devolución a paciente, validar que haya profesionales disponibles y uno seleccionado
@@ -341,17 +343,18 @@ function expenseForm() {
                 const formData = new FormData();
                 formData.append('amount', this.form.amount);
                 formData.append('category', this.form.category);
+                formData.append('payment_method', this.form.payment_method);
 
                 if (this.form.professional_id) {
                     formData.append('professional_id', this.form.professional_id);
                 }
                 formData.append('description', this.form.description);
                 formData.append('notes', this.form.notes);
-                
+
                 if (this.selectedFile) {
                     formData.append('receipt_file', this.selectedFile);
                 }
-                
+
                 formData.append('_token', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
 
                 const response = await fetch('/cash/expense', {

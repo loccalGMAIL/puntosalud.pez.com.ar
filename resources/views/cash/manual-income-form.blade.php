@@ -313,6 +313,7 @@ function incomeForm() {
         isFormValid() {
             const baseValid = this.form.amount &&
                    this.form.category &&
+                   this.form.payment_method &&
                    this.form.description.trim();
 
             // Si es pago módulo profesional, validar que haya profesionales disponibles y uno seleccionado
@@ -330,6 +331,7 @@ function incomeForm() {
                 const formData = new FormData();
                 formData.append('amount', this.form.amount);
                 formData.append('category', this.form.category);
+                formData.append('payment_method', this.form.payment_method);
                 formData.append('description', this.form.description);
                 formData.append('notes', this.form.notes);
 
