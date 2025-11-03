@@ -7,6 +7,84 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [2.5.10] - 2025-11-03
+
+### 📊 Separación de Gestión Operativa de Caja y Reportes Históricos
+
+**Agregado:**
+- **Nueva vista de Reporte de Caja (reports/cash)**
+  - Vista dedicada para reportes históricos con filtrado completo
+  - Filtros de fecha, tipo de movimiento y categoría
+  - Permite ver cajas de cualquier fecha pasada
+  - Botón "Reimprimir" para cajas cerradas
+  - Acceso desde menú Reportes (visible solo para admin/profesionales)
+
+- **Nuevo método ReportController::cashReport()**
+  - Lógica completa de reporte de caja con filtrado por fecha
+  - Cálculo de saldo inicial desde día anterior
+  - Filtros por tipo de movimiento y categoría de referencia
+  - Resumen por tipo de movimiento agrupado
+  - Estado de caja (abierta/cerrada/necesita apertura)
+
+**Modificado:**
+- **Vista Cash/Daily restringida a día actual**
+  - Eliminados filtros de fecha y categoría
+  - Eliminado botón "Ver Reportes"
+  - Forzada fecha actual en controlador (no permite ver días anteriores)
+  - Enfocada en operación diaria (botones de acción presentes)
+  - Solo para recepcionistas en su turno de trabajo
+
+- **Cards de resumen por tipo de movimiento simplificadas**
+  - Eliminado cálculo "Neto" de las cards
+  - Muestra solo ingresos O egresos según tengan valores
+  - Condicional `@if($data['inflows'] > 0)` y `@if($data['outflows'] > 0)`
+  - Montos destacados con `text-lg` y `font-semibold`
+  - Mejor contraste con variantes dark mode
+  - Aplica a ambas vistas: cash/daily y reports/cash
+
+**Separación de responsabilidades:**
+- **Vista Operativa (/cash/daily)**
+  - Solo día actual, sin navegación histórica
+  - Botones de acción: Ingreso Manual, Registrar Gasto, Retirar Dinero
+  - Botón Cerrar Caja (cuando está abierta)
+  - Enfocada en operación del día
+  - Acceso: recepcionistas
+
+- **Vista de Reportes (/reports/cash)**
+  - Navegación libre por fechas
+  - Filtros completos de tipo y categoría
+  - Botón "Ver Reportes" (formato imprimible)
+  - Botón "Reimprimir" para cajas cerradas
+  - Enfocada en análisis histórico
+  - Acceso: administradores y profesionales
+
+**Técnico:**
+- Nuevo método: `ReportController::cashReport()`
+- Nueva ruta: `Route::get('/reports/cash', [ReportController::class, 'cashReport'])->name('reports.cash')`
+- Modificado: `CashController::dailyCash()` - Fuerza `$selectedDate = now()`
+- Lógica de filtrado y cálculo de balances compartida entre ambas vistas
+- JavaScript de filtros solo en reports/cash
+
+**Archivos Añadidos:**
+- `resources/views/reports/cash.blade.php` - Nueva vista de reportes históricos
+
+**Archivos Modificados:**
+- `app/Http/Controllers/ReportController.php` - Método cashReport() agregado
+- `app/Http/Controllers/CashController.php` - Fecha forzada a hoy
+- `resources/views/cash/daily.blade.php` - Filtros removidos, cards simplificadas
+- `routes/web.php` - Ruta reports/cash agregada
+
+**Impacto:**
+- ✅ Separación clara entre operación diaria y reportes históricos
+- ✅ Recepcionistas enfocadas en día actual sin distracciones
+- ✅ Administradores con acceso completo a historial
+- ✅ Cards de resumen más limpias y fáciles de leer
+- ✅ Menos información redundante (sin "Neto")
+- ✅ Mejor experiencia visual con montos destacados
+- ✅ Botón reimprimir accesible en reportes históricos
+
+---
+
 ## [2.5.9] - 2025-11-02
 
 ### ⏱️ Sistema de EntreTurnos y Mejoras en Urgencias
