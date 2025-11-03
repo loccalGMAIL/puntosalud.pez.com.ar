@@ -305,6 +305,8 @@
                         <div class="rounded-lg p-4 transition-colors"
                              :class="appointment.duration === 0 ?
                                 'border-2 border-red-400 dark:border-red-600 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30' :
+                                appointment.is_between_turn ?
+                                'border-2 border-orange-400 dark:border-orange-600 bg-orange-50 dark:bg-orange-900/20 hover:bg-orange-100 dark:hover:bg-orange-900/30' :
                                 'border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700/50'">
                             <div class="flex items-center justify-between">
                                 <div class="flex-1">
@@ -312,7 +314,12 @@
                                         <span class="font-medium text-gray-900 dark:text-white" x-text="formatTime(appointment.appointment_date)"></span>
                                         <template x-if="appointment.duration === 0">
                                             <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-bold bg-red-100 text-red-800 border border-red-300 dark:bg-red-900/40 dark:text-red-300 dark:border-red-700">
-                                                URGENCIA
+                                                🚨 URGENCIA
+                                            </span>
+                                        </template>
+                                        <template x-if="appointment.duration > 0 && appointment.is_between_turn">
+                                            <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-bold bg-orange-100 text-orange-800 border border-orange-300 dark:bg-orange-900/40 dark:text-orange-300 dark:border-orange-700">
+                                                ⏱️ ENTRETURNO
                                             </span>
                                         </template>
                                         <span :class="getStatusBadgeClass(appointment.status)"
