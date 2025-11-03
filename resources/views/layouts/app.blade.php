@@ -107,8 +107,8 @@
             '-translate-x-full': collapsed && isMobile,
             'w-64': !collapsed,
             'w-16': collapsed && !isMobile
-        }" 
-        class="fixed left-0 top-0 z-50 h-full bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 transition-all duration-300 ease-in-out flex flex-col">
+        }"
+        class="fixed left-0 top-0 z-50 h-full bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 flex flex-col w-64 max-md:-translate-x-full">
             
             <!-- Header -->
             <div class="flex items-center p-4 border-b border-gray-200 dark:border-gray-700">
@@ -117,10 +117,10 @@
                         @include('layouts.app-logo')
                     </a>
                     
-                    <button @click="toggle()" 
-                            class="ml-auto p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors duration-200 hidden lg:flex">
-                        <svg :class="{ 'rotate-180': collapsed }" 
-                             class="w-4 h-4 transition-transform duration-200" 
+                    <button @click="toggle()"
+                            class="ml-auto p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 hidden lg:flex">
+                        <svg :class="{ 'rotate-180': collapsed }"
+                             class="w-4 h-4"
                              fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
                         </svg>
@@ -145,8 +145,8 @@
         <div :class="{
             'lg:ml-64': !collapsed,
             'lg:ml-16': collapsed
-        }" 
-        class="transition-all duration-300 ease-in-out min-h-screen bg-gray-50 dark:bg-gray-900">
+        }"
+        class="min-h-screen bg-gray-50 dark:bg-gray-900 lg:ml-64">
             <!-- Mobile header -->
             <div class="lg:hidden flex items-center justify-between p-4 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
                 <button @click="collapsed = false" 
