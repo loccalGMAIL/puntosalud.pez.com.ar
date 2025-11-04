@@ -507,6 +507,123 @@ class CashController extends Controller
         }
     }
 
+    public function cashCount(Request $request)
+    {
+        // Arqueo de caja: genera reporte sin cerrar la caja
+        $selectedDate = now()->startOfDay();
+
+        // Obtener el saldo inicial del día anterior
+        $previousDay = $selectedDate->copy()->subDay();
+        $lastBalanceMovement = CashMovement::whereDate('created_at', '<=', $previousDay)
+            ->orderBy('created_at', 'desc')
+            ->first();
+
+        $initialBalance = $lastBalanceMovement ? $lastBalanceMovement->balance_after : 0;
+
+        // Obtener todos los movimientos del día
+        $movements = CashMovement::with(['user', 'reference', 'movementType'])
+            ->whereDate('created_at', $selectedDate)
+            ->orderBy('created_at')
+            ->get();
+
+        // Calcular totales (excluyendo apertura y cierre de caja)
+        $movementsForTotals = $movements->filter(function($movement) {
+            return !in_array($movement->movementType?->code, ['cash_opening', 'cash_closing']);
+        });
+        $inflows = $movementsForTotals->where('amount', '>', 0)->sum('amount');
+        $outflows = $movementsForTotals->where('amount', '<', 0)->sum('amount');
+        $finalBalance = $initialBalance + $inflows + $outflows;
+
+        // Obtener movimientos de apertura
+        $openingMovement = $movements->first(function($movement) {
+            return $movement->movementType?->code === 'cash_opening';
+        });
+
+        // Resumen general
+        $summary = [
+            'date' => $selectedDate,
+            'initial_balance' => $initialBalance,
+            'total_inflows' => $inflows,
+            'total_outflows' => abs($outflows),
+            'final_balance' => $finalBalance,
+            'opening_movement' => $openingMovement,
+            'closing_movement' => null, // No hay cierre en arqueo
+            'counted_amount' => 0,
+            'difference' => 0,
+            'is_closed' => false,
+        ];
+
+        // Agrupar por tipo de movimiento (excluyendo apertura y cierre)
+        $movementsByType = $movements
+            ->filter(function($movement) {
+                return !in_array($movement->movementType?->code, ['cash_opening', 'cash_closing']);
+            })
+            ->groupBy(function($movement) {
+                return $movement->movementType?->code ?? 'unknown';
+            })
+            ->map(function ($group, $typeCode) {
+                $firstMovement = $group->first();
+                return [
+                    'type' => $typeCode,
+                    'type_name' => $firstMovement->movementType?->name ?? ucfirst($typeCode),
+                    'icon' => $firstMovement->movementType?->icon ?? '',
+                    'inflows' => $group->where('amount', '>', 0)->sum('amount'),
+                    'outflows' => abs($group->where('amount', '<', 0)->sum('amount')),
+                    'count' => $group->count(),
+                ];
+            });
+
+        // Resumen por usuario - simplificado
+        $userSummary = collect();
+
+        // Obtener liquidaciones del día
+        $professionalLiquidations = \App\Models\ProfessionalLiquidation::with(['professional.specialty'])
+            ->whereDate('liquidation_date', $selectedDate)
+            ->orderBy('professional_id')
+            ->get();
+
+        // Formatear datos de liquidaciones
+        $professionalIncome = $professionalLiquidations->map(function ($liquidation) {
+            return [
+                'professional' => $liquidation->professional,
+                'full_name' => "Dr. {$liquidation->professional->first_name} {$liquidation->professional->last_name}",
+                'specialty' => $liquidation->professional->specialty->name ?? 'N/A',
+                'commission_percentage' => $liquidation->professional->commission_percentage ?? 0,
+                'total_collected' => $liquidation->total_collected,
+                'professional_amount' => $liquidation->professional_commission,
+                'clinic_amount' => $liquidation->clinic_amount,
+                'count' => $liquidation->appointments_attended,
+            ];
+        });
+
+        // Calcular liquidación de Dra. Zalazar (professional_id = 1)
+        $zalazarLiquidation = $professionalLiquidations->firstWhere('professional_id', 1);
+        $zalazarCommission = $zalazarLiquidation ? $zalazarLiquidation->professional_commission : 0;
+
+        // Obtener movimientos de "Pago de Saldos Dra. Zalazar"
+        $zalazarBalancePayments = $movements->filter(fn($m) => $m->movementType?->code === 'zalazar_balance_payment');
+        $zalazarBalanceTotal = $zalazarBalancePayments->sum('amount');
+
+        // Total de ingresos de Dra. Zalazar
+        $zalazarTotalIncome = $zalazarCommission + $zalazarBalanceTotal;
+
+        // Agregar al summary
+        $summary['zalazar_liquidation'] = $zalazarCommission;
+        $summary['zalazar_balance_payments'] = $zalazarBalanceTotal;
+        $summary['zalazar_total_income'] = $zalazarTotalIncome;
+        $summary['final_balance_with_zalazar'] = $finalBalance + $zalazarCommission;
+
+        return view('cash.count-report', compact(
+            'selectedDate',
+            'summary',
+            'movements',
+            'movementsByType',
+            'userSummary',
+            'professionalIncome',
+            'zalazarBalancePayments'
+        ));
+    }
+
     public function getCashStatus(Request $request)
     {
         $date = $request->get('date', now()->format('Y-m-d'));
@@ -863,6 +980,7 @@ class CashController extends Controller
                 return response()->json([
                     'success' => true,
                     'message' => 'Ingreso manual registrado exitosamente.',
+                    'cash_movement_id' => $cashMovement->id,
                     'cash_movement' => $cashMovement,
                     'new_balance' => $newBalance,
                 ]);
@@ -885,6 +1003,23 @@ class CashController extends Controller
                 ->withErrors(['error' => 'Error al registrar el ingreso: '.$e->getMessage()])
                 ->withInput();
         }
+    }
+
+    public function printIncomeReceipt(Request $request, $cashMovementId)
+    {
+        $cashMovement = CashMovement::with(['movementType', 'user', 'reference'])
+            ->findOrFail($cashMovementId);
+
+        // Verificar que sea un ingreso manual (no un pago de paciente ni apertura/cierre)
+        $excludedTypes = ['patient_payment', 'cash_opening', 'cash_closing'];
+        if (in_array($cashMovement->movementType?->code, $excludedTypes)) {
+            abort(403, 'Este movimiento no es un ingreso manual.');
+        }
+
+        // Generar número de recibo basado en el ID del movimiento
+        $receiptNumber = date('Ym', strtotime($cashMovement->created_at)) . str_pad($cashMovement->id, 4, '0', STR_PAD_LEFT);
+
+        return view('receipts.income-print', compact('cashMovement', 'receiptNumber'));
     }
 
     private function generateReportData($movements, $groupBy, $startDate, $endDate)
