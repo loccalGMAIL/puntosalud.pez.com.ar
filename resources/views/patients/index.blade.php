@@ -262,14 +262,14 @@
                                 <td class="px-6 py-4 text-right">
                                     <div class="flex items-center justify-end gap-2">
                                         <!-- Botón Ver Detalle -->
-                                        <button @click="openDetailModal(patient)"
-                                                class="p-2 text-emerald-600 hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded-lg transition-colors"
-                                                title="Ver detalle">
+                                        <a :href="`/patients/${patient.id}/detail`"
+                                           class="p-2 text-emerald-600 hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded-lg transition-colors inline-block"
+                                           title="Ver detalle">
                                             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                                                 <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
                                                 <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                             </svg>
-                                        </button>
+                                        </a>
 
                                         <!-- Botón Editar -->
                                         <button @click="openEditModal(patient)"
@@ -310,7 +310,6 @@
     </div>
 
     @include('patients.modal')
-    @include('patients.detail-modal')
 </div>
 
 <script>
@@ -325,12 +324,6 @@ function patientsPage() {
         editingPatient: null,
         loading: false,
 
-        // Estados del modal de detalle
-        detailModalOpen: false,
-        viewingPatient: null,
-        patientAppointments: [],
-        loadingDetail: false,
-        
         // Filtros
         filters: {
             search: '',
@@ -451,44 +444,6 @@ function patientsPage() {
             this.modalOpen = true;
         },
 
-        async openDetailModal(patient) {
-            this.viewingPatient = patient;
-            this.patientAppointments = [];
-            this.detailModalOpen = true;
-            this.loadingDetail = true;
-
-            console.log('Opening detail for patient:', patient);
-
-            try {
-                const response = await fetch(`/patients/${patient.id}/detail`, {
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'Accept': 'application/json'
-                    }
-                });
-
-                if (!response.ok) {
-                    throw new Error('Error al cargar detalle del paciente');
-                }
-
-                const data = await response.json();
-                console.log('Received data:', data);
-                this.patientAppointments = data.appointments || [];
-                console.log('Patient appointments:', this.patientAppointments);
-            } catch (error) {
-                console.error('Error loading patient detail:', error);
-                alert('Error al cargar el detalle del paciente');
-            } finally {
-                this.loadingDetail = false;
-            }
-        },
-
-        closeDetailModal() {
-            this.detailModalOpen = false;
-            this.viewingPatient = null;
-            this.patientAppointments = [];
-        },
-        
         resetForm() {
             this.form = {
                 first_name: '',

@@ -305,7 +305,20 @@
                             <span class="text-gray-500 dark:text-gray-400">Turnos asociados:</span>
                             <span class="text-gray-900 dark:text-white">{{ $payment->paymentAppointments->count() }}</span>
                         </div>
-                        
+
+                        @if($payment->paymentAppointments->count() > 0)
+                            <div>
+                                <span class="text-gray-500 dark:text-gray-400 block mb-1">Números de turno:</span>
+                                <div class="flex flex-wrap gap-1">
+                                    @foreach($payment->paymentAppointments as $paymentAppointment)
+                                        <span class="inline-flex px-2 py-0.5 text-xs font-mono bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400 rounded">
+                                            #{{ $paymentAppointment->appointment->id }}
+                                        </span>
+                                    @endforeach
+                                </div>
+                            </div>
+                        @endif
+
                         @if($payment->payment_type === 'package')
                             <div class="flex justify-between">
                                 <span class="text-gray-500 dark:text-gray-400">Progreso del paquete:</span>
