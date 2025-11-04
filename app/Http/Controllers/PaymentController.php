@@ -59,6 +59,8 @@ class PaymentController extends Controller
         $stats = [
             'total' => Payment::count(),
             'total_amount' => Payment::sum('amount'),
+            'total_transfers' => Payment::where('payment_method', 'transfer')->count(),
+            'total_cash' => Payment::where('payment_method', 'cash')->count(),
             'pending_liquidation' => Payment::where('liquidation_status', 'pending')->count(),
             'liquidated' => Payment::where('liquidation_status', 'liquidated')->count(),
         ];

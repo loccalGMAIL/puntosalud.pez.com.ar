@@ -12,6 +12,26 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 ### 📊 Separación de Gestión Operativa de Caja y Reportes Históricos
 
 **Agregado:**
+- **Módulo de Recesos y Feriados**
+  - Nueva gestión completa de feriados desde Configuración
+  - CRUD de feriados con activar/desactivar y eliminar
+  - Filtro por año para búsqueda de feriados
+  - Migración extendiendo tabla schedule_exceptions con tipo, estado y rango de fechas
+  - RecessController con validaciones y operaciones AJAX
+
+- **Integración de Feriados en Agenda**
+  - Visualización de días feriados con fondo rojo distintivo
+  - Bloqueo automático de creación de turnos en feriados
+  - Etiqueta con descripción del feriado en calendario
+  - Leyenda actualizada con indicador visual de feriados
+  - Validación backend en creación y edición de turnos
+
+- **Cards de Profesionales Favoritos en Agenda**
+  - Top 6 profesionales más frecuentes mostrados al iniciar
+  - Acceso directo a agenda del profesional desde cards
+  - Diseño con avatar, especialidad y cantidad de turnos
+  - Grid responsivo con efectos hover y gradientes
+
 - **Nueva vista de Reporte de Caja (reports/cash)**
   - Vista dedicada para reportes históricos con filtrado completo
   - Filtros de fecha, tipo de movimiento y categoría
@@ -27,6 +47,13 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
   - Estado de caja (abierta/cerrada/necesita apertura)
 
 **Modificado:**
+- **Vista de Pagos - Estadísticas mejoradas**
+  - Reemplazada card "Monto Total" por dos cards específicas
+  - Nueva card "💵 Efectivo" mostrando cantidad de pagos en efectivo
+  - Nueva card "🏦 Transferencias" mostrando cantidad de pagos por transferencia
+  - Grid actualizado a 5 columnas para mejor distribución
+  - Mejor visibilidad de métodos de pago para control de caja
+
 - **Vista Cash/Daily restringida a día actual**
   - Eliminados filtros de fecha y categoría
   - Eliminado botón "Ver Reportes"
