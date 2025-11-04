@@ -173,8 +173,8 @@
                 <!-- Filtro por profesional -->
                 <div>
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Profesional</label>
-                    <select x-model="filters.professionalId" 
-                            @change="applyFilters()"
+                    <select id="filter-professional-select"
+                            x-model="filters.professionalId"
                             class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500 dark:bg-gray-700 dark:text-white">
                         <option value="all">Todos los profesionales</option>
                         @foreach($professionals as $professional)
@@ -200,8 +200,8 @@
                 <!-- Contador de resultados -->
                 <div class="flex items-end">
                     <div class="text-sm text-gray-600 dark:text-gray-400">
-                        <strong x-text="filteredAppointments.length"></strong> de 
-                        <strong>{{ $stats['total'] }}</strong> turnos
+                        Mostrando <strong>{{ $appointments->firstItem() }}</strong> a <strong>{{ $appointments->lastItem() }}</strong> de
+                        <strong>{{ $appointments->total() }}</strong> turnos
                     </div>
                 </div>
             </div>
@@ -222,6 +222,7 @@
                 <table class="min-w-full divide-y divide-emerald-200/50 dark:divide-emerald-800/30">
                     <thead class="bg-emerald-50/50 dark:bg-emerald-950/20">
                         <tr>
+                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">#</th>
                             <th class="px-3 py-2 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">Fecha/Hora</th>
                             <th class="px-3 py-2 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">Paciente</th>
                             <th class="px-3 py-2 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">Profesional</th>
@@ -235,7 +236,7 @@
                     <tbody class="bg-white dark:bg-gray-800 divide-y divide-emerald-200/30 dark:divide-emerald-800/30">
                         <!-- Estado vacío -->
                         <tr x-show="filteredAppointments.length === 0">
-                            <td colspan="8" class="px-6 py-12 text-center">
+                            <td colspan="9" class="px-6 py-12 text-center">
                                 <div class="flex flex-col items-center gap-3">
                                     <svg class="w-12 h-12 text-gray-400 dark:text-gray-600" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5a2.25 2.25 0 002.25-2.25m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5a2.25 2.25 0 012.25 2.25v7.5" />
@@ -249,11 +250,16 @@
                         </tr>
                         
                         <!-- Filas de turnos -->
-                        <template x-for="appointment in filteredAppointments" :key="appointment.id">
+                        <template x-for="(appointment, index) in filteredAppointments" :key="appointment.id">
                             <tr class="transition-colors duration-200"
                                 :class="appointment.duration === 0 ? 'bg-red-50/50 dark:bg-red-900/10 hover:bg-red-100/50 dark:hover:bg-red-900/20 border-l-4 border-l-red-500' :
                                         appointment.is_between_turn ? 'bg-orange-50/50 dark:bg-orange-900/10 hover:bg-orange-100/50 dark:hover:bg-orange-900/20 border-l-4 border-l-orange-500' :
                                         'hover:bg-emerald-50/30 dark:hover:bg-emerald-950/20'">
+                                <!-- Número de turno -->
+                                <td class="px-3 py-2 whitespace-nowrap">
+                                    <span class="text-xs font-mono text-gray-500 dark:text-gray-400" x-text="'#' + appointment.id"></span>
+                                </td>
+
                                 <!-- Fecha/Hora -->
                                 <td class="px-3 py-2 whitespace-nowrap">
                                     <div class="text-xs font-medium text-gray-900 dark:text-white" x-text="formatDate(appointment.appointment_date)"></div>
@@ -422,6 +428,11 @@
                     </tbody>
                 </table>
             </div>
+
+            <!-- Paginación -->
+            <div class="px-6 py-4 border-t border-emerald-200/50 dark:border-emerald-800/30">
+                {{ $appointments->links() }}
+            </div>
         </div>
     </div>
 
@@ -432,7 +443,7 @@
 function appointmentsPage() {
     return {
         // Data inicial
-        appointments: @json($appointments),
+        appointments: @json($appointments->items()),
         professionals: @json($professionals),
         patients: @json($patients),
         offices: @json($offices),
@@ -1013,6 +1024,35 @@ document.addEventListener('DOMContentLoaded', () => {
             patientSelect = null;
         }
     }
+
+    // Inicializar Select2 para el filtro de profesionales (fuera del modal)
+    setTimeout(() => {
+        if ($('#filter-professional-select').length) {
+            const filterProfessionalSelect = $('#filter-professional-select').select2({
+                placeholder: 'Buscar profesional...',
+                allowClear: false,
+                width: '100%',
+                language: {
+                    noResults: function() {
+                        return "No se encontraron resultados";
+                    },
+                    searching: function() {
+                        return "Buscando...";
+                    }
+                }
+            });
+
+            // Sincronizar con Alpine.js cuando cambia
+            filterProfessionalSelect.on('change', function(e) {
+                const selectedValue = $(this).val();
+                const alpineComponent = Alpine.$data(document.querySelector('[x-data="appointmentsPage()"]'));
+                if (alpineComponent) {
+                    alpineComponent.filters.professionalId = selectedValue;
+                    alpineComponent.applyFilters();
+                }
+            });
+        }
+    }, 500);
 });
 </script>
 @endpush

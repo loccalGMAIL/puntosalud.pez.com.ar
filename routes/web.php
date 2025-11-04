@@ -45,6 +45,9 @@ Route::middleware(['auth'])->group(function () {
 
     Route::resource('specialties', SpecialtyController::class)->only(['index', 'store', 'update', 'destroy']);
 
+    // Patient specific routes (must be before resource route)
+    Route::get('/patients/{patient}/detail', [PatientController::class, 'detail'])->name('patients.detail');
+
     Route::resource('patients', PatientController::class);
 
     // Appointment specific routes (must be before resource route)

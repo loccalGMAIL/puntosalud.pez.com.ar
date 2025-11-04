@@ -298,4 +298,42 @@ class PatientController extends Controller
 
         return $dni; // Devolver original si no coincide con formatos esperados
     }
+
+    /**
+     * Get patient detail with appointments
+     */
+    public function detail($id)
+    {
+        $patient = Patient::findOrFail($id);
+
+        // Obtener turnos del paciente con relaciones
+        $appointments = $patient->appointments()
+            ->with(['professional', 'paymentAppointments.payment'])
+            ->orderBy('appointment_date', 'desc')
+            ->get()
+            ->map(function ($appointment) {
+                // Obtener el número de comprobante del primer pago
+                $firstPaymentAppointment = $appointment->paymentAppointments->first();
+                $paymentReceipt = $firstPaymentAppointment?->payment?->receipt_number ?? null;
+
+                return [
+                    'id' => $appointment->id,
+                    'appointment_date' => $appointment->appointment_date,
+                    'status' => $appointment->status,
+                    'estimated_amount' => $appointment->estimated_amount,
+                    'final_amount' => $appointment->final_amount,
+                    'payment_receipt' => $paymentReceipt,
+                    'professional' => [
+                        'id' => $appointment->professional->id,
+                        'first_name' => $appointment->professional->first_name,
+                        'last_name' => $appointment->professional->last_name,
+                    ],
+                ];
+            });
+
+        return response()->json([
+            'patient' => $patient,
+            'appointments' => $appointments,
+        ]);
+    }
 }
