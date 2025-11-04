@@ -180,7 +180,7 @@
                             </div>
                         </div>
                     </div>
-                </template>
+                </div>
             </div>
 
             <!-- Footer -->

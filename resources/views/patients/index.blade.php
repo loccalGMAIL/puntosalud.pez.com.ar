@@ -457,6 +457,8 @@ function patientsPage() {
             this.detailModalOpen = true;
             this.loadingDetail = true;
 
+            console.log('Opening detail for patient:', patient);
+
             try {
                 const response = await fetch(`/patients/${patient.id}/detail`, {
                     headers: {
@@ -470,7 +472,9 @@ function patientsPage() {
                 }
 
                 const data = await response.json();
+                console.log('Received data:', data);
                 this.patientAppointments = data.appointments || [];
+                console.log('Patient appointments:', this.patientAppointments);
             } catch (error) {
                 console.error('Error loading patient detail:', error);
                 alert('Error al cargar el detalle del paciente');
