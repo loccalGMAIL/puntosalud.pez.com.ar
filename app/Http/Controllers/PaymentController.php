@@ -23,62 +23,123 @@ class PaymentController extends Controller
 
     public function index(Request $request)
     {
-        $query = Payment::with(['patient', 'paymentAppointments.appointment.professional']);
+        // Obtener pagos de pacientes
+        $paymentsQuery = Payment::with(['patient', 'paymentAppointments.appointment.professional']);
 
-        // Filtros
+        // Filtros para payments
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->whereHas('patient', function ($q) use ($search) {
-                $q->where('first_name', 'like', "%{$search}%")
-                    ->orWhere('last_name', 'like', "%{$search}%")
-                    ->orWhere('dni', 'like', "%{$search}%");
-            })->orWhere('receipt_number', 'like', "%{$search}%");
+            $paymentsQuery->where(function($q) use ($search) {
+                $q->whereHas('patient', function ($subQ) use ($search) {
+                    $subQ->where('first_name', 'like', "%{$search}%")
+                        ->orWhere('last_name', 'like', "%{$search}%")
+                        ->orWhere('dni', 'like', "%{$search}%");
+                })->orWhere('receipt_number', 'like', "%{$search}%");
+            });
         }
 
         if ($request->filled('payment_type')) {
-            $query->where('payment_type', $request->payment_type);
+            $paymentsQuery->where('payment_type', $request->payment_type);
         }
 
         if ($request->filled('payment_method')) {
-            $query->where('payment_method', $request->payment_method);
+            $paymentsQuery->where('payment_method', $request->payment_method);
         }
 
         if ($request->filled('liquidation_status')) {
-            $query->where('liquidation_status', $request->liquidation_status);
+            $paymentsQuery->where('liquidation_status', $request->liquidation_status);
         }
 
         if ($request->filled('date_from')) {
-            $query->whereDate('payment_date', '>=', $request->date_from);
+            $paymentsQuery->whereDate('payment_date', '>=', $request->date_from);
         }
 
         if ($request->filled('date_to')) {
-            $query->whereDate('payment_date', '<=', $request->date_to);
+            $paymentsQuery->whereDate('payment_date', '<=', $request->date_to);
         }
 
-        // Estadísticas
+        $payments = $paymentsQuery->get()->map(function ($payment) {
+            $payment->entry_type = 'payment';
+            $payment->sort_date = $payment->payment_date;
+            return $payment;
+        });
+
+        // Obtener ingresos manuales (CashMovements de categoría income_detail)
+        $incomeQuery = CashMovement::with(['movementType', 'user', 'reference'])
+            ->whereHas('movementType', function($q) {
+                $q->where('category', 'income_detail')
+                  ->whereNotIn('code', ['patient_payment', 'cash_opening', 'cash_closing']);
+            });
+
+        // Filtros para ingresos manuales
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $incomeQuery->where('description', 'like', "%{$search}%");
+        }
+
+        if ($request->filled('date_from')) {
+            $incomeQuery->whereDate('created_at', '>=', $request->date_from);
+        }
+
+        if ($request->filled('date_to')) {
+            $incomeQuery->whereDate('created_at', '<=', $request->date_to);
+        }
+
+        $incomes = $incomeQuery->get()->map(function ($income) {
+            $income->entry_type = 'income';
+            $income->sort_date = $income->created_at;
+            // Generar receipt_number para ingresos
+            $income->receipt_number = date('Ym', strtotime($income->created_at)) . str_pad($income->id, 4, '0', STR_PAD_LEFT);
+            return $income;
+        });
+
+        // Combinar y ordenar ambas colecciones
+        $allEntries = $payments->concat($incomes)
+            ->sortByDesc('sort_date')
+            ->values();
+
+        // Paginar manualmente
+        $page = $request->get('page', 1);
+        $perPage = 15;
+        $total = $allEntries->count();
+        $entries = $allEntries->slice(($page - 1) * $perPage, $perPage)->values();
+
+        $paginator = new \Illuminate\Pagination\LengthAwarePaginator(
+            $entries,
+            $total,
+            $perPage,
+            $page,
+            ['path' => $request->url(), 'query' => $request->query()]
+        );
+
+        // Estadísticas (incluir ingresos manuales)
         $stats = [
-            'total' => Payment::count(),
-            'total_amount' => Payment::sum('amount'),
+            'total' => Payment::count() + CashMovement::whereHas('movementType', function($q) {
+                $q->where('category', 'income_detail')
+                  ->whereNotIn('code', ['patient_payment', 'cash_opening', 'cash_closing']);
+            })->count(),
+            'total_amount' => Payment::sum('amount') + CashMovement::whereHas('movementType', function($q) {
+                $q->where('category', 'income_detail')
+                  ->whereNotIn('code', ['patient_payment', 'cash_opening', 'cash_closing']);
+            })->sum('amount'),
             'total_transfers' => Payment::where('payment_method', 'transfer')->count(),
             'total_cash' => Payment::where('payment_method', 'cash')->count(),
             'pending_liquidation' => Payment::where('liquidation_status', 'pending')->count(),
             'liquidated' => Payment::where('liquidation_status', 'liquidated')->count(),
         ];
 
-        $payments = $query->orderBy('payment_date', 'desc')
-            ->orderBy('created_at', 'desc')
-            ->paginate(15)
-            ->withQueryString();
-
         if ($request->ajax()) {
             return response()->json([
                 'success' => true,
-                'payments' => $payments,
+                'payments' => $paginator,
                 'stats' => $stats,
             ]);
         }
 
-        return view('payments.index', compact('payments', 'stats'));
+        return view('payments.index', [
+            'payments' => $paginator,
+            'stats' => $stats
+        ]);
     }
 
     public function create(Request $request)

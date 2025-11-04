@@ -356,7 +356,24 @@ function incomeForm() {
                 const result = await response.json();
 
                 if (response.ok && result.success) {
-                    window.location.href = '/cash/daily';
+                    // Preguntar si desea imprimir el recibo
+                    if (result.cash_movement_id) {
+                        const printReceipt = await SystemModal.confirm(
+                            'Imprimir recibo',
+                            '¿Desea imprimir el recibo ahora?',
+                            'Sí, imprimir',
+                            'No'
+                        );
+
+                        if (printReceipt) {
+                            window.open(`/cash/income-receipt/${result.cash_movement_id}?print=1`, '_blank');
+                        }
+                    }
+
+                    // Redirigir después de un momento
+                    setTimeout(() => {
+                        window.location.href = '/cash/daily';
+                    }, 500);
                 } else {
                     alert(result.message || 'Error al registrar el ingreso');
                 }
@@ -373,4 +390,8 @@ function incomeForm() {
 @push('styles')
 <meta name="csrf-token" content="{{ csrf_token() }}">
 @endpush
+
+<!-- Modal de Sistema -->
+<x-system-modal />
+
 @endsection

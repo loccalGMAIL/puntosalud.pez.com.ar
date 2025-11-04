@@ -980,6 +980,7 @@ class CashController extends Controller
                 return response()->json([
                     'success' => true,
                     'message' => 'Ingreso manual registrado exitosamente.',
+                    'cash_movement_id' => $cashMovement->id,
                     'cash_movement' => $cashMovement,
                     'new_balance' => $newBalance,
                 ]);
@@ -1002,6 +1003,23 @@ class CashController extends Controller
                 ->withErrors(['error' => 'Error al registrar el ingreso: '.$e->getMessage()])
                 ->withInput();
         }
+    }
+
+    public function printIncomeReceipt(Request $request, $cashMovementId)
+    {
+        $cashMovement = CashMovement::with(['movementType', 'user', 'reference'])
+            ->findOrFail($cashMovementId);
+
+        // Verificar que sea un ingreso manual (no un pago de paciente ni apertura/cierre)
+        $excludedTypes = ['patient_payment', 'cash_opening', 'cash_closing'];
+        if (in_array($cashMovement->movementType?->code, $excludedTypes)) {
+            abort(403, 'Este movimiento no es un ingreso manual.');
+        }
+
+        // Generar número de recibo basado en el ID del movimiento
+        $receiptNumber = date('Ym', strtotime($cashMovement->created_at)) . str_pad($cashMovement->id, 4, '0', STR_PAD_LEFT);
+
+        return view('receipts.income-print', compact('cashMovement', 'receiptNumber'));
     }
 
     private function generateReportData($movements, $groupBy, $startDate, $endDate)

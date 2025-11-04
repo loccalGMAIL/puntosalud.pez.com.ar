@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
-@section('title', 'Pagos - ' . config('app.name'))
-@section('mobileTitle', 'Pagos')
+@section('title', 'Ingresos - ' . config('app.name'))
+@section('mobileTitle', 'Ingresos')
 
 @section('content')
 <div class="p-6" x-data="paymentsPage()">
@@ -15,8 +15,8 @@
                 </svg>
                 <span>Pagos</span>
             </nav>
-            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Gestión de Pagos</h1>
-            <p class="text-gray-600 dark:text-gray-400">Administra los pagos de pacientes y liquidaciones</p>
+            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Gestión de Ingresos</h1>
+            <p class="text-gray-600 dark:text-gray-400">Pagos de pacientes e ingresos manuales</p>
         </div>
         
         <div class="flex gap-3">
@@ -200,7 +200,7 @@
                 <svg class="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 17.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
                 </svg>
-                Lista de Pagos
+                Todos los Ingresos
             </h3>
             
             <div class="rounded-md border border-gray-200 dark:border-gray-600 overflow-hidden">
@@ -208,143 +208,163 @@
                     <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-600">
                         <thead class="bg-gray-50 dark:bg-gray-700">
                             <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">Recibo</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">Paciente</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">Fecha</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">Tipo</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">Método</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">Monto</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">Estado</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">Acciones</th>
+                                <th class="px-3 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">Recibo</th>
+                                <th class="px-3 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">Paciente / De</th>
+                                <th class="px-3 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">Fecha</th>
+                                {{-- Columna "Tipo" removida para ahorrar espacio --}}
+                                <th class="px-3 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">Método</th>
+                                <th class="px-3 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">Monto</th>
+                                <th class="px-3 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">Estado</th>
+                                <th class="px-3 py-3 text-right text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider w-24">Acciones</th>
                             </tr>
                         </thead>
                         <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-600">
                             @forelse($payments as $payment)
-                                <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200">
+                                <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200 {{ $payment->entry_type === 'income' ? 'bg-green-50/50 dark:bg-green-900/10' : '' }}">
                                     <!-- Recibo -->
-                                    <td class="px-6 py-4">
+                                    <td class="px-3 py-2">
                                         <div class="text-sm font-mono text-gray-900 dark:text-white">{{ $payment->receipt_number }}</div>
                                     </td>
-                                    
-                                    <!-- Paciente -->
-                                    <td class="px-6 py-4">
-                                        <div class="text-sm font-medium text-gray-900 dark:text-white">{{ $payment->patient->full_name }}</div>
-                                        <div class="text-sm text-gray-500 dark:text-gray-400">DNI: {{ $payment->patient->dni }}</div>
+
+                                    <!-- Paciente / De -->
+                                    <td class="px-3 py-2">
+                                        @if($payment->entry_type === 'payment')
+                                            <div class="text-sm font-medium text-gray-900 dark:text-white">{{ $payment->patient->full_name }}</div>
+                                            <div class="text-sm text-gray-500 dark:text-gray-400">DNI: {{ $payment->patient->dni }}</div>
+                                        @else
+                                            {{-- Ingreso Manual --}}
+                                            <div class="text-sm font-medium text-gray-900 dark:text-white">
+                                                @if($payment->reference_type === 'App\\Models\\Professional' && $payment->reference)
+                                                    Dr. {{ $payment->reference->full_name }}
+                                                @else
+                                                    Ingreso Manual
+                                                @endif
+                                            </div>
+                                            <div class="text-sm text-gray-500 dark:text-gray-400">{{ Str::limit($payment->description, 40) }}</div>
+                                        @endif
                                     </td>
-                                    
+
                                     <!-- Fecha -->
-                                    <td class="px-6 py-4">
-                                        <div class="text-sm text-gray-900 dark:text-white">{{ $payment->payment_date->format('d/m/Y') }}</div>
-                                        <div class="text-sm text-gray-500 dark:text-gray-400">{{ $payment->payment_date->format('H:i') }}</div>
+                                    <td class="px-3 py-2">
+                                        @php
+                                            $displayDate = $payment->entry_type === 'payment' ? $payment->payment_date : $payment->created_at;
+                                        @endphp
+                                        <div class="text-sm text-gray-900 dark:text-white">{{ $displayDate->format('d/m/Y') }}</div>
+                                        <div class="text-sm text-gray-500 dark:text-gray-400">{{ $displayDate->format('H:i') }}</div>
                                     </td>
                                     
-                                    <!-- Tipo -->
-                                    <td class="px-6 py-4">
-                                        @php
-                                            $typeColors = [
-                                                'single' => 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
-                                                'package' => 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400',
-                                                'refund' => 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
-                                            ];
-                                            $typeLabels = [
-                                                'single' => 'Individual',
-                                                'package' => 'Paquete',
-                                                'refund' => 'Reembolso'
-                                            ];
-                                        @endphp
-                                        <span class="inline-flex px-2 py-1 text-xs font-medium rounded-full {{ $typeColors[$payment->payment_type] }}">
-                                            {{ $typeLabels[$payment->payment_type] }}
-                                        </span>
-                                        @if($payment->payment_type === 'package')
-                                            <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                                                {{ $payment->sessions_used }}/{{ $payment->sessions_included }} sesiones
+                                    {{-- Columna "Tipo" eliminada (info resumida en Paciente/De o en Método) --}}
+
+                                    <!-- Método -->
+                                    <td class="px-3 py-2">
+                                        @if($payment->entry_type === 'payment')
+                                            @php
+                                                $methodLabels = [
+                                                    'cash' => 'Efectivo',
+                                                    'transfer' => 'Transferencia',
+                                                    'debit_card' => 'Débito',
+                                                    'credit_card' => 'Crédito',
+                                                    'card' => 'Tarjeta'
+                                                ];
+                                            @endphp
+                                            <span class="text-sm text-gray-900 dark:text-white">{{ $methodLabels[$payment->payment_method] ?? $payment->payment_method }}</span>
+                                        @else
+                                            <span class="text-sm text-gray-500 dark:text-gray-400">-</span>
+                                        @endif
+                                    </td>
+
+                                    <!-- Monto -->
+                                    <td class="px-3 py-2">
+                                        @if($payment->entry_type === 'payment')
+                                            <div class="text-sm font-semibold {{ $payment->payment_type === 'refund' ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400' }}">
+                                                {{ $payment->payment_type === 'refund' ? '-' : '' }}${{ number_format($payment->amount, 2) }}
+                                            </div>
+                                        @else
+                                            <div class="text-sm font-semibold text-green-600 dark:text-green-400">
+                                                ${{ number_format($payment->amount, 2) }}
                                             </div>
                                         @endif
                                     </td>
-                                    
-                                    <!-- Método -->
-                                    <td class="px-6 py-4">
-                                        @php
-                                            $methodLabels = [
-                                                'cash' => 'Efectivo',
-                                                'transfer' => 'Transferencia',
-                                                'card' => 'Tarjeta'
-                                            ];
-                                        @endphp
-                                        <span class="text-sm text-gray-900 dark:text-white">{{ $methodLabels[$payment->payment_method] }}</span>
-                                    </td>
-                                    
-                                    <!-- Monto -->
-                                    <td class="px-6 py-4">
-                                        <div class="text-sm font-semibold {{ $payment->payment_type === 'refund' ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400' }}">
-                                            {{ $payment->payment_type === 'refund' ? '-' : '' }}${{ number_format($payment->amount, 2) }}
-                                        </div>
-                                    </td>
-                                    
+
                                     <!-- Estado -->
-                                    <td class="px-6 py-4">
-                                        @php
-                                            $statusColors = [
-                                                'pending' => 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
-                                                'liquidated' => 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
-                                                'cancelled' => 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
-                                                'not_applicable' => 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400'
-                                            ];
-                                            $statusLabels = [
-                                                'pending' => 'Para liquidar',
-                                                'liquidated' => 'Liquidado',
-                                                'cancelled' => 'Cancelado',
-                                                'not_applicable' => 'No aplica'
-                                            ];
+                                    <td class="px-3 py-2">
+                                        @if($payment->entry_type === 'payment')
+                                            @php
+                                                $statusColors = [
+                                                    'pending' => 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
+                                                    'liquidated' => 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
+                                                    'cancelled' => 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
+                                                    'not_applicable' => 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400'
+                                                ];
+                                                $statusLabels = [
+                                                    'pending' => 'Para liquidar',
+                                                    'liquidated' => 'Liquidado',
+                                                    'cancelled' => 'Cancelado',
+                                                    'not_applicable' => 'No aplica'
+                                                ];
 
-                                            // Manejo especial para refunds (anulaciones)
-                                            $currentStatus = $payment->liquidation_status;
-                                            $statusColor = $statusColors[$currentStatus] ?? 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400';
-                                            $statusLabel = $statusLabels[$currentStatus] ?? ucfirst($currentStatus);
+                                                // Manejo especial para refunds (anulaciones)
+                                                $currentStatus = $payment->liquidation_status;
+                                                $statusColor = $statusColors[$currentStatus] ?? 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400';
+                                                $statusLabel = $statusLabels[$currentStatus] ?? ucfirst($currentStatus);
 
-                                            // Si es un refund, mostrar "No aplica" independiente del estado
-                                            if ($payment->payment_type === 'refund') {
-                                                $statusColor = 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400';
-                                                $statusLabel = 'No aplica';
-                                            }
-                                        @endphp
-                                        <span class="inline-flex px-2 py-1 text-xs font-medium rounded-full {{ $statusColor }}">
-                                            {{ $statusLabel }}
-                                        </span>
+                                                // Si es un refund, mostrar "No aplica" independiente del estado
+                                                if ($payment->payment_type === 'refund') {
+                                                    $statusColor = 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400';
+                                                    $statusLabel = 'No aplica';
+                                                }
+                                            @endphp
+                                            <span class="inline-flex px-2 py-1 text-xs font-medium rounded-full {{ $statusColor }}">
+                                                {{ $statusLabel }}
+                                            </span>
+                                        @else
+                                            <span class="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400">
+                                                N/A
+                                            </span>
+                                        @endif
                                     </td>
                                     
                                     <!-- Acciones -->
-                                    <td class="px-6 py-4 text-right">
+                                    <td class="px-3 py-2 text-right">
                                         <div class="flex items-center justify-end gap-2">
-                                            <!-- Ver -->
-                                            <a href="{{ route('payments.show', $payment) }}" 
-                                               class="p-2 text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                                               title="Ver detalle">
-                                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
-                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                                </svg>
-                                            </a>
-
-                                            <!-- Editar: Deshabilitado para mantener integridad contable -->
-                                            {{-- Edición removida: usar retiros/ingresos manuales para correcciones --}}
-
-                                            <!-- Anular Pago -->
-                                            @if($payment->liquidation_status === 'pending' && $payment->payment_type !== 'refund' && !str_contains($payment->concept ?? '', '[ANULADO'))
-                                                <button onclick="annulPayment({{ $payment->id }}, '{{ $payment->receipt_number }}')"
-                                                        class="p-2 text-orange-600 hover:text-orange-800 dark:text-orange-400 dark:hover:text-orange-300 hover:bg-orange-50 dark:hover:bg-orange-900/20 rounded-lg transition-colors"
-                                                        title="Anular Pago">
+                                            @if($payment->entry_type === 'payment')
+                                                <!-- Ver Pago de Paciente -->
+                                                <a href="{{ route('payments.show', $payment) }}"
+                                                   class="p-1 text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+                                                   title="Ver detalle">
                                                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                                                        <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                                                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                                     </svg>
-                                                </button>
+                                                </a>
+
+                                                <!-- Anular Pago -->
+                                                @if($payment->liquidation_status === 'pending' && $payment->payment_type !== 'refund' && !str_contains($payment->concept ?? '', '[ANULADO'))
+                                                    <button onclick="annulPayment({{ $payment->id }}, '{{ $payment->receipt_number }}')"
+                                                            class="p-1 text-orange-600 hover:text-orange-800 dark:text-orange-400 dark:hover:text-orange-300 hover:bg-orange-50 dark:hover:bg-orange-900/20 rounded transition-colors"
+                                                            title="Anular Pago">
+                                                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                                                        </svg>
+                                                    </button>
+                                                @endif
+                                            @else
+                                                <!-- Imprimir Recibo de Ingreso Manual -->
+                                                <a href="{{ route('cash.income-receipt', $payment->id) }}?print=1"
+                                                   target="_blank"
+                                                   class="p-1 text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300 hover:bg-green-50 dark:hover:bg-green-900/20 rounded transition-colors"
+                                                   title="Imprimir Recibo">
+                                                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" d="M6.72 13.829c-.24.03-.48.062-.72.096m.72-.096a42.415 42.415 0 0110.56 0m-10.56 0L6.34 18m10.94-4.171c.24.03.48.062.72.096m-.72-.096L17.66 18m0 0l.229 2.523a1.125 1.125 0 01-1.12 1.227H7.231c-.662 0-1.18-.568-1.12-1.227L6.34 18m11.318 0h1.091A2.25 2.25 0 0021 15.75V9.456c0-1.081-.768-2.015-1.837-2.175a48.055 48.055 0 00-1.913-.247M6.34 18H5.25A2.25 2.25 0 013 15.75V9.456c0-1.081.768-2.015 1.837-2.175a48.041 48.041 0 011.913-.247m10.5 0a48.536 48.536 0 00-10.5 0m10.5 0V3.375c0-.621-.504-1.125-1.125-1.125h-8.25c-.621 0-1.125.504-1.125 1.125v3.659M18 10.5h.008v.008H18V10.5zm-3 0h.008v.008H15V10.5z" />
+                                                    </svg>
+                                                </a>
                                             @endif
                                         </div>
                                     </td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="8" class="px-6 py-12 text-center">
+                                    <td colspan="7" class="px-3 py-12 text-center">
                                         <div class="flex flex-col items-center gap-3">
                                             <svg class="w-12 h-12 text-gray-400 dark:text-gray-600" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                                                 <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H4.5m2.25 0v3m0 0v.75A.75.75 0 016 10.5h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H6.75m2.25 0h3m-3 7.5h3m-3-4.5h3M6.75 7.5H12m-3 3v6m-1.5-6h1.5m-1.5 0V9" />
