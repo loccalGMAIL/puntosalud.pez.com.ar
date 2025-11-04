@@ -7,6 +7,83 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [2.5.11] - 2025-11-04
+
+### 📋 Arqueo de Caja - Reporte Informativo sin Cierre
+
+**Agregado:**
+- **Funcionalidad de Arqueo de Caja**
+  - Nuevo botón "Arqueo de Caja" en vista Cash/Daily
+  - Genera reporte informativo sin cerrar la caja
+  - Permite verificar efectivo antes de retirarse sin afectar operaciones
+  - Muestra el estado actual de caja en tiempo real
+  - Solo disponible cuando la caja está abierta
+
+- **Nuevo método CashController::cashCount()**
+  - Genera reporte de arqueo usando fecha actual
+  - Calcula todos los totales financieros (ingresos, egresos, balance)
+  - Muestra movimientos agrupados por tipo
+  - Incluye liquidaciones profesionales y pagos de Dra. Zalazar
+  - No registra cierre de caja (`is_closed = false`)
+  - No requiere conteo manual de efectivo
+
+- **Nueva vista count-report.blade.php**
+  - Basada en estructura de daily-report pero sin cierre
+  - Box informativo azul explicando que es un arqueo
+  - Texto: "Este es un arqueo de caja - La caja permanece abierta"
+  - Mantiene todas las secciones financieras del reporte de cierre
+  - Optimizada para impresión A4
+  - Auto-print con parámetro `?print=true`
+
+- **Nueva ruta /cash/count**
+  - GET route: `Route::get('/cash/count', [CashController::class, 'cashCount'])->name('cash.count')`
+  - Abre en nueva ventana para no perder contexto
+  - Compatible con impresión directa
+
+**Interfaz:**
+- **Botón en Cash/Daily**
+  - Color azul distintivo (bg-blue-600 hover:bg-blue-700)
+  - Icono de clipboard/documento
+  - Posicionado antes del botón "Cerrar Caja"
+  - Solo visible cuando caja está abierta y no cerrada
+  - Abre reporte en nueva ventana con auto-print
+
+**Diferencias vs. Cierre de Caja:**
+- NO cierra la caja (operaciones continúan normales)
+- NO requiere conteo de efectivo
+- NO registra movimiento de cierre
+- SÍ muestra todos los totales y movimientos
+- SÍ permite impresión para verificación
+- SÍ incluye todas las liquidaciones del día
+
+**Técnico:**
+- Archivos agregados:
+  - `resources/views/cash/count-report.blade.php` - Vista de arqueo
+
+- Archivos modificados:
+  - `app/Http/Controllers/CashController.php` - Método cashCount() (líneas 510-625)
+  - `routes/web.php` - Ruta cash.count (línea 85)
+  - `resources/views/cash/daily.blade.php` - Botón de arqueo (líneas 48-56)
+  - `VERSION` - Actualizado a 2.5.11
+
+**Flujo de uso:**
+1. Usuario en turno necesita verificar efectivo
+2. Click en "Arqueo de Caja" desde vista diaria
+3. Se abre nueva ventana con reporte completo
+4. Reporte se imprime automáticamente
+5. Usuario verifica efectivo con reporte impreso
+6. Caja permanece abierta para operaciones
+
+**Impacto:**
+- ✅ Permite verificación de efectivo sin cerrar operaciones
+- ✅ Ideal para cambios de turno o verificaciones intermedias
+- ✅ No interfiere con flujo normal de trabajo
+- ✅ Mantiene trazabilidad sin registros innecesarios
+- ✅ Reporte impreso para auditoría informal
+- ✅ Mejora control interno de caja
+
+---
+
 ## [2.5.10] - 2025-11-03
 
 ### 📊 Separación de Gestión Operativa de Caja y Reportes Históricos
