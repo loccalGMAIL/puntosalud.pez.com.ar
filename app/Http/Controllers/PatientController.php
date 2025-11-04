@@ -298,4 +298,20 @@ class PatientController extends Controller
 
         return $dni; // Devolver original si no coincide con formatos esperados
     }
+
+    /**
+     * Get patient detail with appointments
+     */
+    public function detail($id)
+    {
+        $patient = Patient::findOrFail($id);
+
+        // Obtener turnos del paciente con relaciones
+        $appointments = $patient->appointments()
+            ->with(['professional', 'paymentAppointments.payment'])
+            ->orderBy('appointment_date', 'desc')
+            ->get();
+
+        return view('patients.detail', compact('patient', 'appointments'));
+    }
 }

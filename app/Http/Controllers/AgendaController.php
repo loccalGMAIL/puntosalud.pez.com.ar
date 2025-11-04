@@ -8,6 +8,7 @@ use App\Models\Office;
 use App\Models\Patient;
 use App\Models\Professional;
 use App\Models\ProfessionalSchedule;
+use App\Models\ScheduleException;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 
@@ -28,6 +29,17 @@ class AgendaController extends Controller
         $patients = Patient::where('activo', true)->orderBy('last_name')->orderBy('first_name')->get();
         $offices = Office::where('is_active', true)->orderBy('name')->get();
 
+        // Obtener profesionales más frecuentes (por cantidad de turnos) para mostrar como favoritos
+        $topProfessionals = Professional::active()
+            ->with('specialty')
+            ->withCount(['appointments' => function ($query) {
+                $query->whereIn('status', ['scheduled', 'attended']);
+            }])
+            ->having('appointments_count', '>', 0)
+            ->orderBy('appointments_count', 'desc')
+            ->take(6)
+            ->get();
+
         $appointments = [];
         $professionalSchedules = [];
 
@@ -46,6 +58,13 @@ class AgendaController extends Controller
                 ->keyBy('day_of_week');
         }
 
+        // Obtener feriados activos del rango de fechas del calendario
+        $holidays = ScheduleException::holidays()
+            ->active()
+            ->whereBetween('exception_date', [$startOfCalendar, $endOfCalendar])
+            ->get()
+            ->keyBy(fn($holiday) => $holiday->exception_date->format('Y-m-d'));
+
         // Estado de caja para alertas
         $today = Carbon::today();
         $cashStatus = CashMovement::getCashStatusForDate($today);
@@ -54,6 +73,7 @@ class AgendaController extends Controller
             'professionals',
             'patients',
             'offices',
+            'topProfessionals',
             'selectedProfessional',
             'currentMonth',
             'date',
@@ -61,6 +81,7 @@ class AgendaController extends Controller
             'professionalSchedules',
             'startOfCalendar',
             'endOfCalendar',
+            'holidays',
             'cashStatus'
         ));
     }

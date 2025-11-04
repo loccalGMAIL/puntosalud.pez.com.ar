@@ -24,6 +24,8 @@ Sistema integral de gestión médica para clínicas y consultorios, desarrollado
 * Sistema de entreturnos/urgencias con registro inmediato
 * Control de estados: programado → atendido → cobrado
 * Asignación automática de pagos a turnos
+* **Vista Agenda mejorada** con acceso rápido a profesionales favoritos
+* **Gestión de feriados** integrada con bloqueo automático de turnos
 
 ### 💰 Módulo de Pagos Avanzado
 
@@ -31,6 +33,7 @@ Sistema integral de gestión médica para clínicas y consultorios, desarrollado
 * Múltiples métodos de pago: efectivo, transferencia, tarjeta
 * Generación automática de recibos en formato A5
 * Trazabilidad completa de transacciones
+* **Estadísticas segregadas** por método de pago (efectivo/transferencias)
 
 ### 🏦 Gestión de Caja Integral
 
@@ -49,6 +52,14 @@ Sistema integral de gestión médica para clínicas y consultorios, desarrollado
 * Registro completo de información personal y médica
 * Historial de citas y tratamientos
 * Seguimiento de pagos y saldos
+
+### 📅 Módulo de Recesos
+
+* **Gestión centralizada de feriados** desde Configuración
+* CRUD completo con activar/desactivar y eliminación
+* Filtrado por año para búsqueda eficiente
+* **Integración automática con Agenda** (bloqueo visual y funcional)
+* Prevención de creación de turnos en fechas bloqueadas
 
 ### 📊 Dashboard y Reportes
 

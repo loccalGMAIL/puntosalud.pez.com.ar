@@ -50,7 +50,7 @@
                 'icon' => '<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5a2.25 2.25 0 002.25-2.25m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5a2.25 2.25 0 012.25 2.25v7.5m-6 -7.5h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H18m-1.5 3H18m-1.5 3H18M9 7.5h1.5m-1.5 3h1.5m-1.5 3h1.5M6 7.5h1.5m-1.5 3h1.5m-1.5 3h1.5" /></svg>'
             ],
             [
-                'title' => 'Cobro Pacientes',
+                'title' => 'Cobros',
                 'href' => '/payments',
                 'icon' => '<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H4.5m2.25 0v3m0 0v.75A.75.75 0 016 10.5h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H6.75m2.25 0h3m-3 7.5h3m-3-4.5h3M6.75 7.5H12m-3 3v6m-1.5-6h1.5m-1.5 0V9" /></svg>'
             ],
@@ -100,6 +100,10 @@
                     [
                         'title' => 'Tipos de Movimientos',
                         'href' => '/movement-types'
+                    ],
+                    [
+                        'title' => 'Recesos',
+                        'href' => '/recesos'
                     ],
                     [
                         'title' => 'Permisos',

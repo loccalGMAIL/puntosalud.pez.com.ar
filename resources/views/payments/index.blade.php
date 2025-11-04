@@ -32,7 +32,7 @@
     </div>
 
     <!-- Estadísticas -->
-    <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6">
+    <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-5 mb-6">
         <!-- Total Pagos -->
         <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6 shadow-sm">
             <div class="flex items-center">
@@ -50,19 +50,36 @@
             </div>
         </div>
 
-        <!-- Monto Total -->
+        <!-- Efectivo -->
         <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6 shadow-sm">
             <div class="flex items-center">
                 <div class="flex-shrink-0">
                     <div class="flex items-center justify-center w-8 h-8 bg-green-100 dark:bg-green-900/30 rounded-lg">
                         <svg class="w-5 h-5 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12s-1.536-.219-2.121-.659c-1.172-.879-1.172-2.303 0-3.182C10.464 7.781 11.232 7.5 12 7.5s1.536.219 2.121.659" />
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H4.5m2.25 0v3m0 0v.75A.75.75 0 016 10.5h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H6.75m2.25 0h3m-3 7.5h3m-3-4.5h3M6.75 7.5H12m-3 3v6m-1.5-6h1.5m-1.5 0V9" />
                         </svg>
                     </div>
                 </div>
                 <div class="ml-4">
-                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Monto Total</dt>
-                    <dd class="text-2xl font-bold text-green-600 dark:text-green-400">${{ number_format($stats['total_amount'], 2) }}</dd>
+                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Efectivo</dt>
+                    <dd class="text-2xl font-bold text-green-600 dark:text-green-400">{{ $stats['total_cash'] }}</dd>
+                </div>
+            </div>
+        </div>
+
+        <!-- Transferencias -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6 shadow-sm">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <div class="flex items-center justify-center w-8 h-8 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                        <svg class="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0012 9.75c-2.551 0-5.056.2-7.5.582V21M3 21h18M12 6.75h.008v.008H12V6.75z" />
+                        </svg>
+                    </div>
+                </div>
+                <div class="ml-4">
+                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Transferencias</dt>
+                    <dd class="text-2xl font-bold text-blue-600 dark:text-blue-400">{{ $stats['total_transfers'] }}</dd>
                 </div>
             </div>
         </div>
