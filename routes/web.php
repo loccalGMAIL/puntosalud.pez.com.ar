@@ -100,6 +100,10 @@ Route::middleware(['auth'])->group(function () {
     // Professional liquidation processing
     Route::post('/liquidation/process', [App\Http\Controllers\LiquidationController::class, 'processLiquidation'])->name('liquidation.process');
 
+    // Recesos (Holidays) management
+    Route::resource('recesos', App\Http\Controllers\RecessController::class)->except(['show', 'create', 'edit']);
+    Route::patch('/recesos/{receso}/toggle-status', [App\Http\Controllers\RecessController::class, 'toggleStatus'])->name('recesos.toggle-status');
+
     // User management routes (Admin only)
     Route::middleware(['can:viewAny,App\Models\User'])->group(function () {
         Route::resource('users', UserController::class);

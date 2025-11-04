@@ -519,8 +519,18 @@ class AppointmentController extends Controller
         $slots = [];
         $date = Carbon::parse($validated['date']);
 
-        // No generar slots para fechas pasadas o fines de semana
+        // No generar slots para fechas pasadas, fines de semana o feriados
         if ($date->isPast() || $date->isWeekend()) {
+            return response()->json($slots);
+        }
+
+        // Verificar si es feriado activo
+        $isHoliday = ScheduleException::holidays()
+            ->active()
+            ->where('exception_date', $date->toDateString())
+            ->exists();
+
+        if ($isHoliday) {
             return response()->json($slots);
         }
 
@@ -695,17 +705,16 @@ class AppointmentController extends Controller
             ];
         }
 
-        // 3. Verificar excepciones de horario (días feriados/no laborables)
-        $exception = ScheduleException::where('exception_date', $appointmentDateTime->toDateString())
-            ->where(function ($query) {
-                $query->where('affects_all', true);
-            })
+        // 3. Verificar feriados activos
+        $holiday = ScheduleException::holidays()
+            ->active()
+            ->where('exception_date', $appointmentDateTime->toDateString())
             ->first();
 
-        if ($exception) {
+        if ($holiday) {
             return [
                 'available' => false,
-                'reason' => 'Día no laborable: '.$exception->reason,
+                'reason' => 'Feriado: '.$holiday->reason,
             ];
         }
 

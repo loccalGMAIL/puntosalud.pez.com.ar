@@ -102,6 +102,10 @@
                         'href' => '/movement-types'
                     ],
                     [
+                        'title' => 'Recesos',
+                        'href' => '/recesos'
+                    ],
+                    [
                         'title' => 'Permisos',
                         'href' => '/settings/permissions/menu'
                     ]
