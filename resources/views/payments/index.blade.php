@@ -220,7 +220,7 @@
                         </thead>
                         <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-600">
                             @forelse($payments as $payment)
-                                <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200 {{ $payment->entry_type === 'income' ? 'bg-green-50/50 dark:bg-green-900/10' : '' }}">
+                                <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200 {{ $payment->payment_type === 'manual_income' ? 'bg-green-50/50 dark:bg-green-900/10' : '' }}">
                                     <!-- Recibo -->
                                     <td class="px-3 py-2">
                                         <div class="text-sm font-mono text-gray-900 dark:text-white">{{ $payment->receipt_number }}</div>
@@ -228,36 +228,29 @@
 
                                     <!-- Paciente / De -->
                                     <td class="px-3 py-2">
-                                        @if($payment->entry_type === 'payment')
+                                        @if($payment->payment_type !== 'manual_income')
                                             <div class="text-sm font-medium text-gray-900 dark:text-white">{{ $payment->patient->full_name }}</div>
                                             <div class="text-sm text-gray-500 dark:text-gray-400">DNI: {{ $payment->patient->dni }}</div>
                                         @else
                                             {{-- Ingreso Manual --}}
                                             <div class="text-sm font-medium text-gray-900 dark:text-white">
-                                                @if($payment->reference_type === 'App\\Models\\Professional' && $payment->reference)
-                                                    Dr. {{ $payment->reference->full_name }}
-                                                @else
-                                                    Ingreso Manual
-                                                @endif
+                                                Ingreso Manual
                                             </div>
-                                            <div class="text-sm text-gray-500 dark:text-gray-400">{{ Str::limit($payment->description, 40) }}</div>
+                                            <div class="text-sm text-gray-500 dark:text-gray-400">{{ Str::limit($payment->concept, 40) }}</div>
                                         @endif
                                     </td>
 
                                     <!-- Fecha -->
                                     <td class="px-3 py-2">
-                                        @php
-                                            $displayDate = $payment->entry_type === 'payment' ? $payment->payment_date : $payment->created_at;
-                                        @endphp
-                                        <div class="text-sm text-gray-900 dark:text-white">{{ $displayDate->format('d/m/Y') }}</div>
-                                        <div class="text-sm text-gray-500 dark:text-gray-400">{{ $displayDate->format('H:i') }}</div>
+                                        <div class="text-sm text-gray-900 dark:text-white">{{ $payment->payment_date->format('d/m/Y') }}</div>
+                                        <div class="text-sm text-gray-500 dark:text-gray-400">{{ $payment->payment_date->format('H:i') }}</div>
                                     </td>
                                     
                                     {{-- Columna "Tipo" eliminada (info resumida en Paciente/De o en Método) --}}
 
                                     <!-- Método -->
                                     <td class="px-3 py-2">
-                                        @if($payment->entry_type === 'payment')
+                                        @if($payment->payment_type !== 'manual_income')
                                             @php
                                                 $methodLabels = [
                                                     'cash' => 'Efectivo',
@@ -275,7 +268,7 @@
 
                                     <!-- Monto -->
                                     <td class="px-3 py-2">
-                                        @if($payment->entry_type === 'payment')
+                                        @if($payment->payment_type !== 'manual_income')
                                             <div class="text-sm font-semibold {{ $payment->payment_type === 'refund' ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400' }}">
                                                 {{ $payment->payment_type === 'refund' ? '-' : '' }}${{ number_format($payment->amount, 2) }}
                                             </div>
@@ -288,7 +281,7 @@
 
                                     <!-- Estado -->
                                     <td class="px-3 py-2">
-                                        @if($payment->entry_type === 'payment')
+                                        @if($payment->payment_type !== 'manual_income')
                                             @php
                                                 $statusColors = [
                                                     'pending' => 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
@@ -327,7 +320,7 @@
                                     <!-- Acciones -->
                                     <td class="px-3 py-2 text-right">
                                         <div class="flex items-center justify-end gap-2">
-                                            @if($payment->entry_type === 'payment')
+                                            @if($payment->payment_type !== 'manual_income')
                                                 <!-- Ver Pago de Paciente -->
                                                 <a href="{{ route('payments.show', $payment) }}"
                                                    class="p-1 text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"

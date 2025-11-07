@@ -961,15 +961,28 @@ class CashController extends Controller
                 $description .= ' - '.$validated['notes'];
             }
 
-            // Usar el tipo específico de ingreso (subcategoría) en lugar del genérico 'other'
+            // Crear registro en tabla payments (genera receipt_number automáticamente)
+            $payment = \App\Models\Payment::create([
+                'patient_id' => null, // Ingresos manuales no tienen paciente
+                'payment_date' => now(),
+                'payment_type' => 'manual_income',
+                'payment_method' => $validated['payment_method'],
+                'amount' => $validated['amount'],
+                'concept' => $description,
+                'income_category' => $validated['category'],
+                'liquidation_status' => 'not_applicable', // Los ingresos manuales no se liquidan
+                'created_by' => auth()->id(),
+            ]);
+
+            // Crear registro en cash_movements vinculado al payment
             $movementTypeCode = $validated['category']; // ej: 'professional_module_payment', 'correction', etc.
 
             $cashMovement = CashMovement::create([
-                                'movement_type_id' => MovementType::getIdByCode($movementTypeCode),
+                'movement_type_id' => MovementType::getIdByCode($movementTypeCode),
                 'amount' => $validated['amount'],
                 'description' => $description,
-                'reference_type' => isset($validated['professional_id']) ? 'App\\Models\\Professional' : null,
-                'reference_id' => $validated['professional_id'] ?? null,
+                'reference_type' => 'App\\Models\\Payment', // Vincular al Payment
+                'reference_id' => $payment->id,
                 'balance_after' => $newBalance,
                 'user_id' => auth()->id(),
             ]);
@@ -980,8 +993,9 @@ class CashController extends Controller
                 return response()->json([
                     'success' => true,
                     'message' => 'Ingreso manual registrado exitosamente.',
+                    'payment_id' => $payment->id, // Retornar payment_id en lugar de cash_movement_id
+                    'receipt_number' => $payment->receipt_number,
                     'cash_movement_id' => $cashMovement->id,
-                    'cash_movement' => $cashMovement,
                     'new_balance' => $newBalance,
                 ]);
             }
@@ -1005,21 +1019,17 @@ class CashController extends Controller
         }
     }
 
-    public function printIncomeReceipt(Request $request, $cashMovementId)
+    public function printIncomeReceipt(Request $request, $paymentId)
     {
-        $cashMovement = CashMovement::with(['movementType', 'user', 'reference'])
-            ->findOrFail($cashMovementId);
+        $payment = \App\Models\Payment::with(['createdBy'])
+            ->findOrFail($paymentId);
 
-        // Verificar que sea un ingreso manual (no un pago de paciente ni apertura/cierre)
-        $excludedTypes = ['patient_payment', 'cash_opening', 'cash_closing'];
-        if (in_array($cashMovement->movementType?->code, $excludedTypes)) {
-            abort(403, 'Este movimiento no es un ingreso manual.');
+        // Verificar que sea un ingreso manual
+        if ($payment->payment_type !== 'manual_income') {
+            abort(403, 'Este no es un ingreso manual.');
         }
 
-        // Generar número de recibo basado en el ID del movimiento
-        $receiptNumber = date('Ym', strtotime($cashMovement->created_at)) . str_pad($cashMovement->id, 4, '0', STR_PAD_LEFT);
-
-        return view('receipts.income-print', compact('cashMovement', 'receiptNumber'));
+        return view('receipts.income-print', compact('payment'));
     }
 
     private function generateReportData($movements, $groupBy, $startDate, $endDate)

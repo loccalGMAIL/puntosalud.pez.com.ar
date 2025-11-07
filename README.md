@@ -133,7 +133,7 @@ php artisan config:clear
 
 ### 🔄 Últimas versiones
 
-* **v2.5.11** (2025-11-04) – Arqueo de Caja: Reporte informativo sin cierre para verificación de efectivo.
+* **v2.5.11** (2025-11-04) – Arqueo de Caja + Recibos de Ingresos Manuales: Sistema unificado de numeración de recibos.
 * **v2.5.10** (2025-11-03) – Separación de gestión operativa de caja y reportes históricos con cards simplificadas.
 * **v2.5.9** (2025-11-02) – Sistema de entreturnos, anulación de pagos con trazabilidad completa.
 * **v2.5.8** (2025-10-29) – Corrección crítica de cálculo de balance en caja (eliminación de movement_date).

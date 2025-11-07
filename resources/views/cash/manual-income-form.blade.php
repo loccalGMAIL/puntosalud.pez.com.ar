@@ -357,7 +357,7 @@ function incomeForm() {
 
                 if (response.ok && result.success) {
                     // Preguntar si desea imprimir el recibo
-                    if (result.cash_movement_id) {
+                    if (result.payment_id) {
                         const printReceipt = await SystemModal.confirm(
                             'Imprimir recibo',
                             '¿Desea imprimir el recibo ahora?',
@@ -366,7 +366,7 @@ function incomeForm() {
                         );
 
                         if (printReceipt) {
-                            window.open(`/cash/income-receipt/${result.cash_movement_id}?print=1`, '_blank');
+                            window.open(`/cash/income-receipt/${result.payment_id}?print=1`, '_blank');
                         }
                     }
 

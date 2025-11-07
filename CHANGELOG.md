@@ -82,6 +82,105 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 - ✅ Reporte impreso para auditoría informal
 - ✅ Mejora control interno de caja
 
+### 🧾 Recibos para Ingresos Manuales - Numeración Unificada
+
+**Problema resuelto:**
+Los ingresos manuales no generaban recibos numerados, causando:
+- Inconsistencia en la numeración de comprobantes
+- Imposibilidad de imprimir recibos para ingresos manuales
+- Dificultad para rastrear todos los ingresos en un solo lugar
+
+**Solución implementada:**
+Sistema unificado donde TODOS los recibos (pagos de pacientes + ingresos manuales) se almacenan en la tabla `payments` con numeración secuencial compartida.
+
+**Agregado:**
+- **Migración de Base de Datos**
+  - Campo `patient_id` ahora nullable en tabla `payments`
+  - Nuevo campo `income_category` para almacenar tipo de ingreso manual
+  - Soporte para registros sin paciente asociado
+
+- **Registro de Ingresos Manuales**
+  - Ingresos manuales ahora crean registro en tabla `payments` automáticamente
+  - Generación automática de `receipt_number` secuencial
+  - `payment_type` = 'manual_income' para identificar ingresos manuales
+  - `liquidation_status` = 'not_applicable' (no se liquidan)
+  - Registro paralelo en `cash_movements` vinculado mediante `reference_type/reference_id`
+
+- **Impresión de Recibos de Ingresos**
+  - Nueva vista `receipts/income-print.blade.php` con diseño verde distintivo
+  - Muestra: número de recibo, fecha, categoría, concepto, monto
+  - Formato A5 (12cm x 18cm) optimizado para impresoras térmicas
+  - Auto-impresión con parámetro `?print=1`
+  - Modal de confirmación con `SystemModal.confirm()` después del registro
+
+- **Vista Unificada de Ingresos (payments/index)**
+  - Ahora muestra pagos de pacientes E ingresos manuales en una sola tabla
+  - Filas de ingresos manuales con fondo verde claro distintivo
+  - Columna "Paciente / De" adaptada para ambos tipos
+  - Botón "Imprimir Recibo" para ingresos manuales
+  - Búsqueda funciona en ambos tipos (por recibo, paciente o concepto)
+  - Título actualizado: "Gestión de Ingresos"
+
+**Modificado:**
+- **CashController::manualIncomeForm()**
+  - Ahora crea Payment + CashMovement (antes solo CashMovement)
+  - Retorna `payment_id` para impresión de recibo
+  - Payment vinculado a CashMovement mediante reference
+
+- **CashController::printIncomeReceipt()**
+  - Recibe `$paymentId` en lugar de `$cashMovementId`
+  - Busca en tabla `payments` en lugar de `cash_movements`
+  - Validación: `payment_type === 'manual_income'`
+
+- **PaymentController::index()**
+  - SIMPLIFICADO: ya no combina dos tablas
+  - Query simple sobre tabla `payments` únicamente
+  - Paginación nativa de Laravel (antes manual)
+  - Estadísticas incluyen todos los registros automáticamente
+
+- **Modelo Payment**
+  - Agregado `income_category` a `$fillable`
+  - Soporte completo para registros sin paciente
+
+**Rutas:**
+- Actualizada: `GET /cash/income-receipt/{payment}` (antes `{cashMovement}`)
+
+**Numeración Unificada:**
+```
+REC-00001 - Pago de paciente (Juan Pérez)
+REC-00002 - Ingreso manual (Módulo Dr. García)
+REC-00003 - Pago de paciente (María López)
+REC-00004 - Ingreso manual (Corrección de caja)
+REC-00005 - Pago de paciente (Carlos Díaz)
+```
+
+**Archivos modificados:**
+- `database/migrations/2025_11_07_052638_make_patient_id_nullable_in_payments_table.php` - Nueva migración
+- `app/Models/Payment.php` - Agregado income_category
+- `app/Http/Controllers/CashController.php` - manualIncomeForm() crea Payment
+- `app/Http/Controllers/PaymentController.php` - index() simplificado
+- `resources/views/receipts/income-print.blade.php` - Usa objeto Payment
+- `resources/views/payments/index.blade.php` - Detecta manual_income
+- `resources/views/cash/manual-income-form.blade.php` - Usa payment_id
+- `routes/web.php` - Ruta actualizada
+
+**Flujo completo:**
+1. Usuario registra ingreso manual desde Cash/Daily
+2. Sistema crea Payment (con receipt_number) + CashMovement
+3. Modal pregunta: "¿Desea imprimir el recibo ahora?"
+4. Si acepta: abre recibo en nueva ventana con auto-print
+5. Recibo muestra número secuencial único compartido con pagos
+6. Todos los recibos visibles en payments/index con numeración ordenada
+
+**Impacto:**
+- ✅ Numeración secuencial consistente para TODOS los recibos
+- ✅ Trazabilidad completa de ingresos en un solo lugar
+- ✅ Recibos imprimibles para cualquier tipo de ingreso
+- ✅ Simplificación del código (menos queries, menos lógica de combinación)
+- ✅ Búsqueda unificada de todos los ingresos
+- ✅ Cumplimiento de normativa fiscal (todos los ingresos con comprobante)
+- ✅ Ordenamiento cronológico correcto por número de recibo
+
 ---
 
 ## [2.5.10] - 2025-11-03
