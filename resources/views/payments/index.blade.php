@@ -253,14 +253,27 @@
                                         @if($payment->payment_type !== 'manual_income')
                                             @php
                                                 $methodLabels = [
-                                                    'cash' => 'Efectivo',
-                                                    'transfer' => 'Transferencia',
-                                                    'debit_card' => 'Débito',
-                                                    'credit_card' => 'Crédito',
-                                                    'card' => 'Tarjeta'
+                                                    'cash' => '💵 Efectivo',
+                                                    'transfer' => '🏦 Transfer.',
+                                                    'debit_card' => '💳 Débito',
+                                                    'credit_card' => '💳 Crédito',
                                                 ];
+
+                                                // Obtener todos los métodos de pago de este payment
+                                                $paymentMethods = $payment->paymentDetails->pluck('payment_method')->map(function($method) use ($methodLabels) {
+                                                    return $methodLabels[$method] ?? ucfirst($method);
+                                                })->unique();
                                             @endphp
-                                            <span class="text-sm text-gray-900 dark:text-white">{{ $methodLabels[$payment->payment_method] ?? $payment->payment_method }}</span>
+                                            <div class="text-xs text-gray-900 dark:text-white">
+                                                @if($paymentMethods->count() > 1)
+                                                    <span class="text-xs">Múltiple</span>
+                                                    <div class="text-xs text-gray-500 dark:text-gray-400">
+                                                        {{ $paymentMethods->join(', ') }}
+                                                    </div>
+                                                @else
+                                                    {{ $paymentMethods->first() ?? '-' }}
+                                                @endif
+                                            </div>
                                         @else
                                             <span class="text-sm text-gray-500 dark:text-gray-400">-</span>
                                         @endif
@@ -270,11 +283,11 @@
                                     <td class="px-3 py-2">
                                         @if($payment->payment_type !== 'manual_income')
                                             <div class="text-sm font-semibold {{ $payment->payment_type === 'refund' ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400' }}">
-                                                {{ $payment->payment_type === 'refund' ? '-' : '' }}${{ number_format($payment->amount, 2) }}
+                                                {{ $payment->payment_type === 'refund' ? '-' : '' }}${{ number_format($payment->total_amount, 2) }}
                                             </div>
                                         @else
                                             <div class="text-sm font-semibold text-green-600 dark:text-green-400">
-                                                ${{ number_format($payment->amount, 2) }}
+                                                ${{ number_format($payment->total_amount, 2) }}
                                             </div>
                                         @endif
                                     </td>

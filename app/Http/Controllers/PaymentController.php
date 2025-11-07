@@ -24,7 +24,8 @@ class PaymentController extends Controller
     public function index(Request $request)
     {
         // Obtener todos los payments (ahora incluye pagos de pacientes e ingresos manuales)
-        $query = Payment::with(['patient', 'paymentAppointments.appointment.professional', 'createdBy']);
+        // Cargar paymentDetails para mostrar los métodos de pago
+        $query = Payment::with(['patient', 'paymentAppointments.appointment.professional', 'createdBy', 'paymentDetails']);
 
         // Filtros
         if ($request->filled('search')) {
@@ -44,8 +45,11 @@ class PaymentController extends Controller
             $query->where('payment_type', $request->payment_type);
         }
 
+        // Filtro por método de pago - Ahora debe buscar en payment_details
         if ($request->filled('payment_method')) {
-            $query->where('payment_method', $request->payment_method);
+            $query->whereHas('paymentDetails', function($q) use ($request) {
+                $q->where('payment_method', $request->payment_method);
+            });
         }
 
         if ($request->filled('liquidation_status')) {

@@ -116,6 +116,9 @@ class DashboardController extends Controller
             ->orderBy('appointment_date')
             ->get()
             ->map(function ($appointment) {
+                // Verificar si tiene pagos usando la relación y también con una query fresca
+                $hasPaidAppointments = $appointment->paymentAppointments()->exists();
+
                 return [
                     'id' => $appointment->id,
                     'paciente' => $appointment->patient->full_name,
@@ -124,11 +127,11 @@ class DashboardController extends Controller
                     'monto' => $appointment->final_amount ?? $appointment->estimated_amount ?? 0,
                     'status' => $appointment->status,
                     'statusLabel' => $this->getStatusLabel($appointment->status),
-                    'isPaid' => $appointment->paymentAppointments->isNotEmpty(),
+                    'isPaid' => $hasPaidAppointments,
                     'isUrgency' => $appointment->is_urgency,
                     'isBetweenTurn' => $appointment->is_between_turn,
                     'canMarkAttended' => $appointment->status === 'scheduled',
-                    'canMarkCompleted' => $appointment->status === 'attended' && $appointment->paymentAppointments->isEmpty(),
+                    'canMarkCompleted' => $appointment->status === 'attended' && !$hasPaidAppointments,
                 ];
             });
 
@@ -271,9 +274,20 @@ class DashboardController extends Controller
     {
         $validated = $request->validate([
             'final_amount' => 'required|numeric|min:0',
-            'payment_method' => 'required|in:cash,transfer,debit_card,credit_card',
             'concept' => 'nullable|string|max:500',
+            'payment_details' => 'required|array|min:1',
+            'payment_details.*.payment_method' => 'required|in:cash,transfer,debit_card,credit_card',
+            'payment_details.*.amount' => 'required|numeric|min:0.01',
         ]);
+
+        // Validar que la suma de payment_details coincida con final_amount
+        $totalPaymentDetails = collect($validated['payment_details'])->sum('amount');
+        if (abs($totalPaymentDetails - $validated['final_amount']) > 0.01) {
+            return response()->json([
+                'success' => false,
+                'message' => "La suma de las formas de pago (\${$totalPaymentDetails}) no coincide con el monto total (\${$validated['final_amount']})",
+            ], 422);
+        }
 
         try {
             DB::beginTransaction();
@@ -328,14 +342,16 @@ class DashboardController extends Controller
                 'created_by' => auth()->id(),
             ]);
 
-            // Crear payment_detail con el método de pago
-            \App\Models\PaymentDetail::create([
-                'payment_id' => $payment->id,
-                'payment_method' => $validated['payment_method'],
-                'amount' => $validated['final_amount'],
-                'received_by' => 'centro',
-                'reference' => null,
-            ]);
+            // Crear payment_details (puede haber múltiples formas de pago)
+            foreach ($validated['payment_details'] as $detail) {
+                \App\Models\PaymentDetail::create([
+                    'payment_id' => $payment->id,
+                    'payment_method' => $detail['payment_method'],
+                    'amount' => $detail['amount'],
+                    'received_by' => 'centro',
+                    'reference' => null,
+                ]);
+            }
 
             // Asignar pago al turno usando el servicio
             $this->paymentAllocationService->allocateSinglePayment($payment->id, $appointment->id);

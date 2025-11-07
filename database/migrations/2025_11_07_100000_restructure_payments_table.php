@@ -12,17 +12,22 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // PASO 0: Eliminar foreign keys de la tabla payments original para evitar conflictos
-        // Intentamos eliminar los FKs comunes, pero no fallar si no existen
-        try {
-            DB::statement('ALTER TABLE payments DROP FOREIGN KEY IF EXISTS payments_patient_id_foreign');
-            DB::statement('ALTER TABLE payments DROP FOREIGN KEY IF EXISTS payments_created_by_foreign');
-        } catch (\Exception $e) {
-            // Si no existen los FKs, continuamos
-        }
+        // Verificar si la tabla payments ya existe (indica que hay datos pre-v2.6.0)
+        $hasOldPaymentsTable = Schema::hasTable('payments');
 
-        // PASO 1: Renombrar tabla payments a payments_old
-        Schema::rename('payments', 'payments_old');
+        if ($hasOldPaymentsTable) {
+            // PASO 0: Eliminar foreign keys de la tabla payments original para evitar conflictos
+            // Intentamos eliminar los FKs comunes, pero no fallar si no existen
+            try {
+                DB::statement('ALTER TABLE payments DROP FOREIGN KEY IF EXISTS payments_patient_id_foreign');
+                DB::statement('ALTER TABLE payments DROP FOREIGN KEY IF EXISTS payments_created_by_foreign');
+            } catch (\Exception $e) {
+                // Si no existen los FKs, continuamos
+            }
+
+            // PASO 1: Renombrar tabla payments a payments_old (solo si existe)
+            Schema::rename('payments', 'payments_old');
+        }
 
         // PASO 2: Crear nueva tabla payments con estructura actualizada
         Schema::create('payments', function (Blueprint $table) {
@@ -68,14 +73,16 @@ return new class extends Migration
             $table->index('is_advance_payment');
         });
 
-        // PASO 3: Crear tabla temporal para mapeo de IDs
-        DB::statement('
-            CREATE TABLE payment_id_mapping (
-                old_payment_id BIGINT UNSIGNED PRIMARY KEY,
-                new_payment_id BIGINT UNSIGNED,
-                INDEX (new_payment_id)
-            )
-        ');
+        // PASO 3: Crear tabla temporal para mapeo de IDs (solo si hay datos antiguos)
+        if ($hasOldPaymentsTable) {
+            DB::statement('
+                CREATE TABLE payment_id_mapping (
+                    old_payment_id BIGINT UNSIGNED PRIMARY KEY,
+                    new_payment_id BIGINT UNSIGNED,
+                    INDEX (new_payment_id)
+                )
+            ');
+        }
     }
 
     /**

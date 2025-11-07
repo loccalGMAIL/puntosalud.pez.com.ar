@@ -11,6 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // Verificar si existe la tabla payments_old (solo existe si ya había datos antes de v2.6.0)
+        $hasOldData = DB::getSchemaBuilder()->hasTable('payments_old');
+
+        if (!$hasOldData) {
+            Log::info('=== MIGRACIÓN v2.6.0 SKIPPED: No hay datos antiguos que migrar (instalación limpia) ===');
+            return;
+        }
+
         // Activar modo de transacción para seguridad
         DB::beginTransaction();
 
