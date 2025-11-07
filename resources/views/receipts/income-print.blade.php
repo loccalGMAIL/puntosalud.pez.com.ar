@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Recibo de Ingreso N° {{ $receiptNumber }}</title>
+    <title>Recibo de Ingreso N° {{ $payment->receipt_number }}</title>
     <style>
         * {
             margin: 0;
@@ -295,32 +295,22 @@
             <div class="clinic-info">Tel: (3541) 705-281 | Email: puntosalud94@gmail.com</div>
 
             <div class="receipt-title">RECIBO DE INGRESO</div>
-            <div class="receipt-number">N° {{ $receiptNumber }}</div>
+            <div class="receipt-number">N° {{ $payment->receipt_number }}</div>
         </div>
 
         <!-- Información del Recibo -->
         <div class="info-section">
             <div class="info-row">
                 <span class="info-label">Fecha:</span>
-                <span class="info-value">{{ $cashMovement->created_at->format('d/m/Y H:i') }}</span>
-            </div>
-            <div class="info-row">
-                <span class="info-label">Recibido de:</span>
-                <span class="info-value">
-                    @if($cashMovement->reference_type === 'App\\Models\\Professional' && $cashMovement->reference)
-                        Dr. {{ $cashMovement->reference->full_name }}
-                    @else
-                        -
-                    @endif
-                </span>
+                <span class="info-value">{{ $payment->payment_date->format('d/m/Y H:i') }}</span>
             </div>
             <div class="info-row">
                 <span class="info-label">Categoría:</span>
-                <span class="info-value">{{ $cashMovement->movementType->name ?? 'Ingreso Manual' }}</span>
+                <span class="info-value">{{ $payment->income_category ? \App\Models\MovementType::where('code', $payment->income_category)->first()?->name : 'Ingreso Manual' }}</span>
             </div>
             <div class="info-row">
                 <span class="info-label">Registrado por:</span>
-                <span class="info-value">{{ $cashMovement->user->name ?? 'Sistema' }}</span>
+                <span class="info-value">{{ $payment->createdBy->name ?? 'Sistema' }}</span>
             </div>
         </div>
 
@@ -329,7 +319,7 @@
         <!-- Descripción/Concepto -->
         <div class="concept-section">
             <div class="concept-title">Concepto:</div>
-            <div class="concept-text">{{ $cashMovement->description }}</div>
+            <div class="concept-text">{{ $payment->concept }}</div>
         </div>
 
         <div class="divider"></div>
@@ -345,16 +335,8 @@
                         'debit_card' => '💳 Tarjeta de Débito',
                         'credit_card' => '💳 Tarjeta de Crédito',
                     ];
-                    // Extraer el método de pago de la descripción si está disponible
-                    $paymentMethod = '-';
-                    foreach($paymentMethods as $key => $label) {
-                        if(stripos($cashMovement->description, $key) !== false) {
-                            $paymentMethod = $label;
-                            break;
-                        }
-                    }
                 @endphp
-                {{ $paymentMethod }}
+                {{ $paymentMethods[$payment->payment_method] ?? '-' }}
             </span>
         </div>
 
@@ -362,7 +344,7 @@
         <div class="amount-section">
             <div class="amount-row">
                 <span class="amount-label">MONTO RECIBIDO:</span>
-                <span class="amount-value">${{ number_format($cashMovement->amount, 2, ',', '.') }}</span>
+                <span class="amount-value">${{ number_format($payment->amount, 2, ',', '.') }}</span>
             </div>
         </div>
 

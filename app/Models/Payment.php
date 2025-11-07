@@ -22,6 +22,7 @@ class Payment extends Model
         'concept',
         'receipt_number',
         'created_by',
+        'income_category', // Para ingresos manuales (código del MovementType)
     ];
 
     protected $casts = [
