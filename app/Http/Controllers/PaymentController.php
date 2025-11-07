@@ -60,12 +60,21 @@ class PaymentController extends Controller
             $query->whereDate('payment_date', '<=', $request->date_to);
         }
 
-        // Estadísticas
+        // Estadísticas - Adaptadas a nueva estructura con payment_details
         $stats = [
             'total' => Payment::count(),
-            'total_amount' => Payment::sum('amount'),
-            'total_transfers' => Payment::where('payment_method', 'transfer')->count(),
-            'total_cash' => Payment::where('payment_method', 'cash')->count(),
+            'total_amount' => Payment::sum('total_amount'),
+            // Para contar por método de pago, necesitamos verificar payment_details
+            'total_transfers' => DB::table('payments')
+                ->join('payment_details', 'payments.id', '=', 'payment_details.payment_id')
+                ->where('payment_details.payment_method', 'transfer')
+                ->distinct()
+                ->count('payments.id'),
+            'total_cash' => DB::table('payments')
+                ->join('payment_details', 'payments.id', '=', 'payment_details.payment_id')
+                ->where('payment_details.payment_method', 'cash')
+                ->distinct()
+                ->count('payments.id'),
             'pending_liquidation' => Payment::where('liquidation_status', 'pending')->count(),
             'liquidated' => Payment::where('liquidation_status', 'liquidated')->count(),
         ];
@@ -125,22 +134,43 @@ class PaymentController extends Controller
         try {
             DB::beginTransaction();
 
-            // Generar número de recibo
-            $receiptNumber = $this->generateReceiptNumber();
-
-            // Crear el pago
+            // Crear el pago (receipt_number se genera automáticamente)
             $payment = Payment::create([
                 'patient_id' => $validated['patient_id'],
                 'payment_date' => now(),
-                'payment_type' => $validated['payment_type'],
+                'payment_type' => $validated['payment_type'] === 'package' ? 'package_purchase' : $validated['payment_type'],
+                'total_amount' => $validated['amount'],
+                'is_advance_payment' => false,
+                'concept' => $validated['concept'],
+                'status' => 'confirmed',
+                'liquidation_status' => 'pending',
+                'created_by' => auth()->id(),
+            ]);
+
+            // Crear payment_detail con el método de pago
+            \App\Models\PaymentDetail::create([
+                'payment_id' => $payment->id,
                 'payment_method' => $validated['payment_method'],
                 'amount' => $validated['amount'],
-                'sessions_included' => $validated['sessions_included'] ?? null,
-                'sessions_used' => 0,
-                'liquidation_status' => 'pending',
-                'concept' => $validated['concept'],
-                'receipt_number' => $receiptNumber,
+                'received_by' => 'centro',
+                'reference' => null,
             ]);
+
+            // Si es package_purchase, crear el patient_package
+            if ($validated['payment_type'] === 'package' && isset($validated['sessions_included'])) {
+                \App\Models\PatientPackage::create([
+                    'patient_id' => $validated['patient_id'],
+                    'package_id' => null, // No viene de catálogo por ahora
+                    'payment_id' => $payment->id,
+                    'sessions_included' => $validated['sessions_included'],
+                    'sessions_used' => 0,
+                    'price_paid' => $validated['amount'],
+                    'purchase_date' => now()->toDateString(),
+                    'expires_at' => null,
+                    'status' => 'active',
+                    'notes' => $validated['concept'],
+                ]);
+            }
 
             // Si es pago individual, asignar usando el servicio
             if ($validated['payment_type'] === 'single' && ! empty($validated['appointment_ids'])) {
@@ -201,6 +231,8 @@ class PaymentController extends Controller
             'patient',
             'paymentAppointments.appointment.professional',
             'paymentAppointments.appointment.office',
+            'paymentDetails',
+            'patientPackage',
         ]);
 
         if ($request->ajax() || $request->wantsJson()) {
@@ -421,7 +453,7 @@ class PaymentController extends Controller
     public function printReceipt(Payment $payment)
     {
         // Cargar relaciones necesarias
-        $payment->load(['patient', 'paymentAppointments.appointment.professional.specialty']);
+        $payment->load(['patient', 'paymentAppointments.appointment.professional.specialty', 'paymentDetails']);
 
         // Obtener profesionales únicos asociados al pago
         $professionals = $payment->paymentAppointments
@@ -478,20 +510,32 @@ class PaymentController extends Controller
                 ], 400);
             }
 
-            // Crear pago negativo (refund)
+            // Obtener el método de pago original desde payment_details
+            $originalPaymentDetails = $payment->paymentDetails;
+
+            // Crear pago negativo (refund) - receipt_number se genera automáticamente
             $refund = Payment::create([
                 'patient_id' => $payment->patient_id,
                 'payment_date' => now(),
                 'payment_type' => 'refund',
-                'payment_method' => $payment->payment_method,
-                'amount' => $payment->amount, // El monto positivo, createCashMovement lo hace negativo
-                'sessions_included' => 0,
-                'sessions_used' => 0,
-                'liquidation_status' => 'not_applicable', // Los refunds no se liquidan
+                'total_amount' => $payment->total_amount, // El monto positivo, createCashMovement lo hace negativo
+                'is_advance_payment' => false,
                 'concept' => 'Anulación de pago - Recibo #' . $payment->receipt_number,
-                'receipt_number' => $this->generateReceiptNumber(),
+                'status' => 'confirmed',
+                'liquidation_status' => 'not_applicable', // Los refunds no se liquidan
                 'created_by' => auth()->id(),
             ]);
+
+            // Crear payment_details del refund copiando los métodos del pago original
+            foreach ($originalPaymentDetails as $detail) {
+                \App\Models\PaymentDetail::create([
+                    'payment_id' => $refund->id,
+                    'payment_method' => $detail->payment_method,
+                    'amount' => $detail->amount,
+                    'received_by' => $detail->received_by,
+                    'reference' => 'Anulación de ' . $detail->reference,
+                ]);
+            }
 
             // Registrar movimiento de caja negativo
             $this->createCashMovement($refund);
@@ -570,7 +614,7 @@ class PaymentController extends Controller
 
         // Determinar tipo y monto según si es reembolso o pago
         $movementTypeCode = $payment->payment_type === 'refund' ? 'refund' : 'patient_payment';
-        $amount = $payment->payment_type === 'refund' ? -$payment->amount : $payment->amount;
+        $amount = $payment->payment_type === 'refund' ? -$payment->total_amount : $payment->total_amount;
         $newBalance = $currentBalance + $amount;
 
         // Generar descripción del movimiento

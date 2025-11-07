@@ -191,13 +191,33 @@ return new class extends Migration
     {
         Log::info('Actualizando foreign keys en tablas relacionadas');
 
-        // payment_appointments ya tiene payment_id que coincide con el nuevo
-        // No necesita actualización porque mantuvimos los mismos IDs
+        // Actualizar FK de payment_appointments para apuntar a nueva tabla payments
+        Log::info('Actualizando FK en payment_appointments');
 
-        // liquidation_details ya tiene payment_id que coincide con el nuevo
-        // No necesita actualización porque mantuvimos los mismos IDs
+        // Eliminar FK viejo que apunta a payments_old
+        DB::statement('ALTER TABLE payment_appointments DROP FOREIGN KEY payment_appointments_payment_id_foreign');
 
-        Log::info('Foreign keys actualizadas (sin cambios necesarios)');
+        // Crear FK nuevo apuntando a payments
+        DB::statement('
+            ALTER TABLE payment_appointments
+            ADD CONSTRAINT payment_appointments_payment_id_foreign
+            FOREIGN KEY (payment_id) REFERENCES payments(id) ON DELETE CASCADE
+        ');
+
+        // Actualizar FK de liquidation_details para apuntar a nueva tabla payments
+        Log::info('Actualizando FK en liquidation_details');
+
+        // Eliminar FK viejo que apunta a payments_old
+        DB::statement('ALTER TABLE liquidation_details DROP FOREIGN KEY liquidation_details_payment_id_foreign');
+
+        // Crear FK nuevo apuntando a payments
+        DB::statement('
+            ALTER TABLE liquidation_details
+            ADD CONSTRAINT liquidation_details_payment_id_foreign
+            FOREIGN KEY (payment_id) REFERENCES payments(id) ON DELETE CASCADE
+        ');
+
+        Log::info('Foreign keys actualizadas correctamente');
     }
 
     /**

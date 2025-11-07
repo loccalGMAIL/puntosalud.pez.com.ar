@@ -58,17 +58,22 @@ class DashboardController extends Controller
             'ausentes' => $consultasStats->ausentes ?? 0,
         ];
 
-        // Ingresos del día - Optimizado: 1 query SQL en lugar de 200+ operaciones
+        // Ingresos del día - Optimizado con nueva estructura payment_details
+        // Usamos una subquery para obtener el método de pago principal de cada pago
         $ingresosStats = DB::table('appointments')
             ->join('payment_appointments', 'appointments.id', '=', 'payment_appointments.appointment_id')
             ->join('payments', 'payment_appointments.payment_id', '=', 'payments.id')
+            ->leftJoin(DB::raw('(SELECT payment_id, payment_method, amount FROM payment_details pd1
+                WHERE amount = (SELECT MAX(amount) FROM payment_details pd2 WHERE pd2.payment_id = pd1.payment_id LIMIT 1)
+                GROUP BY payment_id, payment_method, amount) as primary_payment_method'),
+                'payments.id', '=', 'primary_payment_method.payment_id')
             ->whereDate('appointments.appointment_date', $today)
             ->where('appointments.status', 'attended')
             ->selectRaw('
                 COALESCE(SUM(payment_appointments.allocated_amount), 0) as total,
-                COALESCE(SUM(CASE WHEN payments.payment_method = "cash" THEN payment_appointments.allocated_amount ELSE 0 END), 0) as efectivo,
-                COALESCE(SUM(CASE WHEN payments.payment_method = "transfer" THEN payment_appointments.allocated_amount ELSE 0 END), 0) as transferencia,
-                COALESCE(SUM(CASE WHEN payments.payment_method = "card" THEN payment_appointments.allocated_amount ELSE 0 END), 0) as tarjeta
+                COALESCE(SUM(CASE WHEN primary_payment_method.payment_method = "cash" THEN payment_appointments.allocated_amount ELSE 0 END), 0) as efectivo,
+                COALESCE(SUM(CASE WHEN primary_payment_method.payment_method = "transfer" THEN payment_appointments.allocated_amount ELSE 0 END), 0) as transferencia,
+                COALESCE(SUM(CASE WHEN primary_payment_method.payment_method IN ("debit_card", "credit_card") THEN payment_appointments.allocated_amount ELSE 0 END), 0) as tarjeta
             ')
             ->first();
 
@@ -310,21 +315,26 @@ class DashboardController extends Controller
                 'final_amount' => $validated['final_amount'],
             ]);
 
-            // Generar número de recibo
-            $receiptNumber = $this->generateReceiptNumber();
-
-            // Crear el pago individual
+            // Crear el pago individual (receipt_number se genera automáticamente)
             $payment = Payment::create([
                 'patient_id' => $appointment->patient_id,
                 'payment_date' => now(),
                 'payment_type' => 'single',
+                'total_amount' => $validated['final_amount'],
+                'is_advance_payment' => false,
+                'concept' => $validated['concept'] ?: 'Pago de consulta - '.$appointment->patient->full_name,
+                'status' => 'confirmed',
+                'liquidation_status' => 'pending',
+                'created_by' => auth()->id(),
+            ]);
+
+            // Crear payment_detail con el método de pago
+            \App\Models\PaymentDetail::create([
+                'payment_id' => $payment->id,
                 'payment_method' => $validated['payment_method'],
                 'amount' => $validated['final_amount'],
-                'sessions_included' => 1,
-                'sessions_used' => 0, // El servicio lo marcará como usado después
-                'liquidation_status' => 'pending',
-                'concept' => $validated['concept'] ?: 'Pago de consulta - '.$appointment->patient->full_name,
-                'receipt_number' => $receiptNumber,
+                'received_by' => 'centro',
+                'reference' => null,
             ]);
 
             // Asignar pago al turno usando el servicio
@@ -348,7 +358,7 @@ class DashboardController extends Controller
                     'monto' => $validated['final_amount'],
                 ],
                 'payment_id' => $payment->id,
-                'receipt_number' => $receiptNumber,
+                'receipt_number' => $payment->receipt_number,
             ]);
 
         } catch (\Exception $e) {
@@ -425,11 +435,11 @@ class DashboardController extends Controller
 
         // Obtener balance actual con lock pesimista
         $currentBalance = CashMovement::getCurrentBalanceWithLock();
-        $newBalance = $currentBalance + $payment->amount;
+        $newBalance = $currentBalance + $payment->total_amount;
 
         CashMovement::create([
             'movement_type_id' => MovementType::getIdByCode('patient_payment'),
-            'amount' => $payment->amount,
+            'amount' => $payment->total_amount,
             'description' => $payment->concept ?: 'Pago de paciente - '.$payment->patient->full_name,
             'reference_type' => Payment::class,
             'reference_id' => $payment->id,

@@ -966,12 +966,22 @@ class CashController extends Controller
                 'patient_id' => null, // Ingresos manuales no tienen paciente
                 'payment_date' => now(),
                 'payment_type' => 'manual_income',
+                'total_amount' => $validated['amount'],
+                'is_advance_payment' => false,
+                'concept' => $description,
+                'status' => 'confirmed',
+                'liquidation_status' => 'not_applicable', // Los ingresos manuales no se liquidan
+                'income_category' => $validated['category'],
+                'created_by' => auth()->id(),
+            ]);
+
+            // Crear payment_detail con el método de pago
+            \App\Models\PaymentDetail::create([
+                'payment_id' => $payment->id,
                 'payment_method' => $validated['payment_method'],
                 'amount' => $validated['amount'],
-                'concept' => $description,
-                'income_category' => $validated['category'],
-                'liquidation_status' => 'not_applicable', // Los ingresos manuales no se liquidan
-                'created_by' => auth()->id(),
+                'received_by' => 'centro', // Los ingresos manuales siempre son al centro
+                'reference' => null,
             ]);
 
             // Crear registro en cash_movements vinculado al payment

@@ -337,24 +337,33 @@
 
 
         <div class="divider"></div>
-        <div class="detail-row">
-            <span class="detail-label">Método de Pago:</span>
-            <span>
-                @if ($payment->payment_method === 'cash')
-                    💵 Efectivo
-                @elseif($payment->payment_method === 'transfer')
-                    🏦 Transferencia
-                @elseif($payment->payment_method === 'card')
-                    💳 Tarjeta
-                @endif
-            </span>
+
+        <!-- Métodos de Pago (puede haber múltiples) -->
+        <div class="payment-details">
+            <div class="detail-label" style="margin-bottom: 6px;">Forma(s) de Pago:</div>
+            @foreach($payment->paymentDetails as $detail)
+                <div class="detail-row">
+                    <span>
+                        @if ($detail->payment_method === 'cash')
+                            💵 Efectivo
+                        @elseif($detail->payment_method === 'transfer')
+                            🏦 Transferencia
+                        @elseif($detail->payment_method === 'debit_card')
+                            💳 Tarjeta de Débito
+                        @elseif($detail->payment_method === 'credit_card')
+                            💳 Tarjeta de Crédito
+                        @endif
+                    </span>
+                    <span>${{ number_format($detail->amount, 2, ',', '.') }}</span>
+                </div>
+            @endforeach
         </div>
 
         <!-- Monto Total -->
         <div class="amount-section">
             <div class="amount-row">
                 <span class="amount-label">MONTO TOTAL:</span>
-                <span class="amount-value">${{ number_format($payment->amount, 2, ',', '.') }}</span>
+                <span class="amount-value">${{ number_format($payment->total_amount, 2, ',', '.') }}</span>
             </div>
         </div>
     </div>

@@ -510,14 +510,6 @@
                                 <span class="text-green-700 dark:text-green-300">Especialidad:</span>
                                 <span class="text-green-900 dark:text-green-100" x-text="professionalDetails?.specialty?.name"></span>
                             </div>
-                            {{-- <div class="flex justify-between">
-                                <span class="text-green-700 dark:text-green-300">Comisión:</span>
-                                <span class="text-green-900 dark:text-green-100" x-text="professionalDetails?.commission_percentage + '%'"></span>
-                            </div>
-                            <div x-show="professionalDetails?.phone" class="flex justify-between">
-                                <span class="text-green-700 dark:text-green-300">Teléfono:</span>
-                                <span class="text-green-900 dark:text-green-100" x-text="professionalDetails?.phone"></span>
-                            </div> --}}
                         </div>
                     </div>
 
