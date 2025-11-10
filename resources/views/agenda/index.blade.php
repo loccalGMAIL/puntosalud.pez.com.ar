@@ -96,14 +96,6 @@
     @if(!$selectedProfessional)
         <!-- No Professional Selected - Show Top Professionals -->
         <div class="space-y-6">
-            <!-- Header -->
-            {{-- <div class="bg-gradient-to-r from-emerald-50 to-blue-50 dark:from-emerald-950/20 dark:to-blue-950/20 border border-emerald-200 dark:border-emerald-800 rounded-lg p-6 text-center">
-                <svg class="w-12 h-12 mx-auto mb-4 text-emerald-600 dark:text-emerald-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5a2.25 2.25 0 002.25-2.25m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5a2.25 2.25 0 012.25 2.25v7.5" />
-                </svg>
-                <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">Selecciona un profesional</h3>
-                <p class="text-gray-600 dark:text-gray-400">Elige un profesional del selector superior o selecciona uno de los más frecuentes</p>
-            </div> --}}
 
             <!-- Top Professionals Cards -->
             @if($topProfessionals->count() > 0)
@@ -569,7 +561,17 @@ document.addEventListener('alpine:init', () => {
                 office_id: '',
                 notes: '',
                 estimated_amount: '',
-                status: 'scheduled'
+                status: 'scheduled',
+                is_between_turn: false,
+                // Campos de pago
+                pay_now: false,
+                payment_type: 'single',
+                payment_amount: '',
+                payment_method: '',
+                payment_concept: '',
+                // Campos de paquete
+                package_sessions: '',
+                session_price: ''
             };
         },
 
@@ -604,7 +606,13 @@ document.addEventListener('alpine:init', () => {
                 
                 const formData = new FormData();
                 Object.keys(this.form).forEach(key => {
-                    const value = this.form[key];
+                    let value = this.form[key];
+
+                    // Convertir booleanos a enteros para evitar problemas con FormData
+                    if (typeof value === 'boolean') {
+                        value = value ? 1 : 0;
+                    }
+
                     if (value !== '' && value !== null && value !== undefined) {
                         formData.append(key, value);
                     } else if (key === 'status' || key === 'notes' || key === 'office_id' || key === 'estimated_amount') {
@@ -681,7 +689,7 @@ document.addEventListener('alpine:init', () => {
         openEditModal(appointment) {
             this.editingAppointment = appointment;
             const appointmentDate = new Date(appointment.appointment_date);
-            
+
             this.form = {
                 professional_id: appointment.professional.id.toString(),
                 patient_id: appointment.patient.id.toString(),
@@ -691,7 +699,8 @@ document.addEventListener('alpine:init', () => {
                 office_id: appointment.office?.id.toString() || '',
                 notes: appointment.notes || '',
                 estimated_amount: appointment.estimated_amount || '',
-                status: appointment.status || 'scheduled'
+                status: appointment.status || 'scheduled',
+                is_between_turn: appointment.is_between_turn || false
             };
             this.modalOpen = true;
         },
@@ -913,6 +922,11 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
 
+        // Función para normalizar texto (quitar acentos)
+        function normalizeText(text) {
+            return text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+        }
+
         // Inicializar Select2 para Paciente con búsqueda por DNI en el modal
         if (!patientSelect && $('#patient-select').length) {
             patientSelect = $('#patient-select').select2({
@@ -939,15 +953,15 @@ document.addEventListener('DOMContentLoaded', () => {
                         return null;
                     }
 
-                    // Convertir todo a lowercase para búsqueda case-insensitive
-                    const searchTerm = params.term.toLowerCase();
-                    const text = (data.text || '').toLowerCase();
+                    // Normalizar el término de búsqueda (quitar acentos y lowercase)
+                    const searchTerm = normalizeText(params.term);
+                    const text = normalizeText(data.text || '');
 
-                    // Obtener atributos data del elemento option
+                    // Obtener atributos data del elemento option y normalizarlos
                     const $option = $(data.element);
-                    const dni = ($option.attr('data-dni') || '').toLowerCase();
-                    const firstName = ($option.attr('data-first-name') || '').toLowerCase();
-                    const lastName = ($option.attr('data-last-name') || '').toLowerCase();
+                    const dni = normalizeText($option.attr('data-dni') || '');
+                    const firstName = normalizeText($option.attr('data-first-name') || '');
+                    const lastName = normalizeText($option.attr('data-last-name') || '');
 
                     // Buscar en texto completo, DNI, nombre o apellido
                     if (text.indexOf(searchTerm) > -1 ||
