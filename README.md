@@ -26,6 +26,8 @@ Sistema integral de gestión médica para clínicas y consultorios, desarrollado
 * Asignación automática de pagos a turnos
 * **Vista Agenda mejorada** con acceso rápido a profesionales favoritos
 * **Gestión de feriados** integrada con bloqueo automático de turnos
+* **Creación rápida de pacientes** desde modal de turnos con botón "+"
+* **Búsqueda inteligente** de pacientes sin importar acentos (Jose encuentra José)
 
 ### 💰 Módulo de Pagos Avanzado
 
