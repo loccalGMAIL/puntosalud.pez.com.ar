@@ -104,10 +104,14 @@ class PatientController extends Controller
             // Formatear DNI con puntos
             $validated['dni'] = $this->formatDni($validated['dni']);
 
-            Patient::create($validated);
+            $patient = Patient::create($validated);
 
             if ($request->ajax()) {
-                return response()->json(['success' => true, 'message' => 'Paciente creado exitosamente.']);
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Paciente creado exitosamente.',
+                    'patient' => $patient
+                ]);
             }
 
             return redirect()->route('patients.index')

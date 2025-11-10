@@ -323,6 +323,11 @@
     <!-- Include Appointment Modal -->
     @include('appointments.modal')
 
+    <!-- Include Patient Modal -->
+    <div x-data="patientModal()">
+        @include('patients.modal')
+    </div>
+
     <!-- Day Details Modal -->
     <div x-show="dayModalOpen" 
          x-cloak
@@ -1003,6 +1008,144 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 });
+
+// Componente Alpine.js para el modal de pacientes
+function patientModal() {
+    return {
+        modalOpen: false,
+        editingPatient: null,
+        loading: false,
+
+        form: {
+            first_name: '',
+            last_name: '',
+            dni: '',
+            birth_date: '',
+            email: '',
+            phone: '',
+            address: '',
+            health_insurance: '',
+            health_insurance_number: '',
+            titular_obra_social: '',
+            plan_obra_social: ''
+        },
+
+        init() {
+            // Escuchar evento para abrir el modal
+            this.$watch('modalOpen', (value) => {
+                if (!value) {
+                    this.editingPatient = null;
+                    this.resetForm();
+                }
+            });
+
+            // Escuchar evento personalizado
+            window.addEventListener('open-patient-modal', () => {
+                this.openModal();
+            });
+
+            // Seleccionar paciente recién creado si existe
+            const newPatientId = sessionStorage.getItem('newPatientId');
+            if (newPatientId) {
+                setTimeout(() => {
+                    $('#patient-select').val(newPatientId).trigger('change');
+                    sessionStorage.removeItem('newPatientId');
+                }, 1000);
+            }
+        },
+
+        openModal() {
+            this.resetForm();
+            this.modalOpen = true;
+        },
+
+        resetForm() {
+            this.form = {
+                first_name: '',
+                last_name: '',
+                dni: '',
+                birth_date: '',
+                email: '',
+                phone: '',
+                address: '',
+                health_insurance: '',
+                health_insurance_number: '',
+                titular_obra_social: '',
+                plan_obra_social: ''
+            };
+        },
+
+        async submitForm() {
+            this.loading = true;
+
+            try {
+                const formData = new FormData();
+                Object.keys(this.form).forEach(key => {
+                    if (this.form[key] !== '') {
+                        formData.append(key, this.form[key]);
+                    }
+                });
+
+                formData.append('_token', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
+
+                const response = await fetch('/patients', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    this.modalOpen = false;
+
+                    // Mostrar notificación de éxito
+                    alert('✓ Paciente creado exitosamente. La página se recargará para actualizar la lista.');
+
+                    // Guardar el ID del nuevo paciente para seleccionarlo después de recargar
+                    if (result.patient && result.patient.id) {
+                        sessionStorage.setItem('newPatientId', result.patient.id);
+                    }
+
+                    // Recargar la página
+                    setTimeout(() => {
+                        location.reload();
+                    }, 500);
+                } else {
+                    if (response.status === 422 && result.errors) {
+                        const errorMessages = Object.values(result.errors).flat().join('\n');
+                        alert('Errores de validación:\n' + errorMessages);
+                    } else {
+                        alert('Error: ' + (result.message || 'Error al guardar el paciente'));
+                    }
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error al guardar el paciente');
+            } finally {
+                this.loading = false;
+            }
+        },
+
+        calculateAge(birthDate) {
+            if (!birthDate) return '';
+            const today = new Date();
+            const birth = new Date(birthDate);
+            let age = today.getFullYear() - birth.getFullYear();
+            const monthDiff = today.getMonth() - birth.getMonth();
+            if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+                age--;
+            }
+            return age;
+        },
+
+        getMaxDate() {
+            return new Date().toISOString().split('T')[0];
+        }
+    }
+}
 </script>
 @endpush
 @endsection
