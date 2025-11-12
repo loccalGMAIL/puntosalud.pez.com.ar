@@ -23,7 +23,11 @@ class CashController extends Controller
 
         $initialBalance = $lastBalanceMovement ? $lastBalanceMovement->balance_after : 0;
 
-        $query = CashMovement::with(['user', 'movementType'])
+        $query = CashMovement::with(['user', 'movementType', 'reference' => function($morphTo) {
+                $morphTo->morphWith([
+                    Payment::class => ['paymentDetails']
+                ]);
+            }])
             ->whereDate('created_at', $selectedDate);
 
         if ($request->filled('type')) {
