@@ -26,11 +26,19 @@ class MigrateToV260 extends Command
      * Migraciones de v2.6.0 en orden de ejecución
      */
     protected $migrations = [
+        // Reestructuración base de pagos
         '2025_11_07_100000_restructure_payments_table.php',
         '2025_11_07_100001_create_payment_details_table.php',
         '2025_11_07_100002_create_packages_table.php',
         '2025_11_07_100003_create_patient_packages_table.php',
-        // '2025_11_07_100004_migrate_existing_payment_data.php',
+        '2025_11_07_100004_migrate_existing_payment_data.php',
+
+        // Correcciones del sistema de liquidaciones
+        '2025_11_12_100000_add_payment_preferences_to_professionals_table.php',
+        '2025_11_12_100001_add_liquidation_tracking_to_payment_details.php',
+        '2025_11_12_100002_add_payment_detail_id_to_liquidation_details.php',
+        '2025_11_12_100003_add_professional_id_to_payment_appointments.php',
+        '2025_11_12_100004_add_professional_direct_payments_to_liquidations.php',
     ];
 
     /**

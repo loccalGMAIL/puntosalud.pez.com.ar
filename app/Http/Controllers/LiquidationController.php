@@ -108,8 +108,44 @@ class LiquidationController extends Controller
                 ->where('status', 'absent')
                 ->count();
 
-            $totalCollected = $attendedAppointments->sum('final_amount');
+            // CAMBIO v2.6.0: Calcular comisión solo sobre payment_details recibidos por el centro y no liquidados
+            // Obtener IDs de turnos atendidos
+            $attendedAppointmentIds = $attendedAppointments->pluck('id');
+
+            // Obtener payment_details del centro pendientes de liquidación
+            $centroPaymentDetails = \App\Models\PaymentDetail::whereHas('payment.paymentAppointments', function($q) use ($attendedAppointmentIds) {
+                    $q->whereIn('appointment_id', $attendedAppointmentIds);
+                })
+                ->where('received_by', 'centro')
+                ->whereNull('liquidation_id') // Solo no liquidados
+                ->with(['payment.paymentAppointments' => function($q) use ($attendedAppointmentIds) {
+                    $q->whereIn('appointment_id', $attendedAppointmentIds);
+                }])
+                ->get();
+
+            // Calcular total solo de lo recibido por el centro
+            $totalCollected = $centroPaymentDetails->sum('amount');
             $professionalCommission = $professional->calculateCommission($totalCollected);
+            $clinicAmount = $totalCollected - $professionalCommission;
+
+            // NUEVO v2.6.0: Obtener payment_details recibidos DIRECTAMENTE por el profesional
+            $professionalPaymentDetails = \App\Models\PaymentDetail::whereHas('payment.paymentAppointments', function($q) use ($attendedAppointmentIds) {
+                    $q->whereIn('appointment_id', $attendedAppointmentIds);
+                })
+                ->where('received_by', 'profesional')
+                ->whereNull('liquidation_id') // Solo no liquidados
+                ->with(['payment.paymentAppointments' => function($q) use ($attendedAppointmentIds) {
+                    $q->whereIn('appointment_id', $attendedAppointmentIds);
+                }])
+                ->get();
+
+            // Total de pagos directos al profesional (transferencias que recibió directamente)
+            $directPaymentsTotal = $professionalPaymentDetails->sum('amount');
+
+            // Calcular la parte del centro sobre esos pagos directos
+            // Si el profesional recibió $2000, debe pagar al centro (100% - commission_percentage)
+            $clinicPercentage = 100 - $professional->commission_percentage;
+            $clinicAmountFromDirect = $directPaymentsTotal * ($clinicPercentage / 100);
 
             // Obtener reintegros del día para este profesional (usando referencias polimórficas)
             $refunds = CashMovement::byType('expense')
@@ -122,13 +158,26 @@ class LiquidationController extends Controller
                 return abs($refund->amount); // Los gastos son negativos, convertir a positivo
             });
 
-            $finalProfessionalAmount = $professionalCommission - $totalRefunds;
-            $clinicAmount = $totalCollected - $professionalCommission;
+            // NUEVO CÁLCULO: Monto neto considerando pagos directos
+            // = (Comisión sobre pagos al centro) - (Parte del centro sobre pagos directos) - (Reintegros)
+            $netProfessionalAmount = $professionalCommission - $clinicAmountFromDirect - $totalRefunds;
 
-            // Verificar que el monto ingresado coincida con la comisión calculada MENOS los reintegros
+            // Para compatibilidad, mantenemos el cálculo anterior también
+            $finalProfessionalAmount = $netProfessionalAmount;
+
+            // Verificar que el monto ingresado coincida con el monto neto calculado
             if (abs($amount - $finalProfessionalAmount) > 0.01) {
-                throw new \Exception("El monto ingresado (\${$amount}) no coincide con la comisión calculada menos reintegros (\${$finalProfessionalAmount}). ".
-                                   "Comisión base: \${$professionalCommission} - Reintegros: \${$totalRefunds} = \${$finalProfessionalAmount}");
+                $message = "El monto ingresado (\${$amount}) no coincide con el monto neto calculado (\${$finalProfessionalAmount}).\n\n";
+                $message .= "Detalle del cálculo:\n";
+                $message .= "+ Comisión sobre pagos al centro: \${$professionalCommission} (sobre \${$totalCollected})\n";
+                if ($directPaymentsTotal > 0) {
+                    $message .= "- Parte del centro sobre pagos directos: \${$clinicAmountFromDirect} (sobre \${$directPaymentsTotal})\n";
+                }
+                if ($totalRefunds > 0) {
+                    $message .= "- Reintegros: \${$totalRefunds}\n";
+                }
+                $message .= "= Monto neto: \${$finalProfessionalAmount}";
+                throw new \Exception($message);
             }
 
             // 8. Verificar que hay suficiente efectivo en caja
@@ -138,6 +187,14 @@ class LiquidationController extends Controller
             }
 
             // 9. Crear registro en professional_liquidations
+            $notes = "Liquidación procesada el {$date->format('d/m/Y')}";
+            if ($directPaymentsTotal > 0) {
+                $notes .= " - Pagos directos al profesional: \${$directPaymentsTotal}";
+            }
+            if ($totalRefunds > 0) {
+                $notes .= " - Reintegros descontados: \${$totalRefunds}";
+            }
+
             $liquidation = ProfessionalLiquidation::create([
                 'professional_id' => $professional->id,
                 'liquidation_date' => $date,
@@ -146,44 +203,108 @@ class LiquidationController extends Controller
                 'appointments_attended' => $attendedAppointments->count(),
                 'appointments_absent' => $absentAppointments,
                 'total_collected' => $totalCollected,
+                'direct_payments_total' => $directPaymentsTotal,
                 'professional_commission' => $professionalCommission,
                 'clinic_amount' => $clinicAmount,
+                'clinic_amount_from_direct' => $clinicAmountFromDirect,
+                'net_professional_amount' => $netProfessionalAmount,
                 'payment_status' => 'paid', // Se marca como pagado inmediatamente
                 'payment_method' => 'cash',
                 'paid_at' => now(),
                 'paid_by' => auth()->id(),
-                'notes' => "Liquidación procesada el {$date->format('d/m/Y')}".
-                          ($totalRefunds > 0 ? " - Reintegros descontados: \${$totalRefunds}" : ""),
+                'notes' => $notes,
             ]);
 
-            // 10. Crear detalles en liquidation_details por cada turno
+            // 10. Crear detalles en liquidation_details
             $paymentIds = [];
-            foreach ($attendedAppointments as $appointment) {
-                $paymentAppointment = $appointment->paymentAppointments->first();
-                $payment = $paymentAppointment ? $paymentAppointment->payment : null;
 
-                $appointmentAmount = $appointment->final_amount ?? 0;
-                $appointmentCommission = $professional->calculateCommission($appointmentAmount);
+            // 10.1 Procesar payment_details del centro (comisión al profesional)
+            foreach ($centroPaymentDetails as $paymentDetail) {
+                // Obtener el payment_appointment y appointment relacionado
+                $paymentAppointment = $paymentDetail->payment->paymentAppointments
+                    ->whereIn('appointment_id', $attendedAppointmentIds)
+                    ->first();
 
+                if (!$paymentAppointment) {
+                    continue; // Saltar si no hay relación (no debería pasar)
+                }
+
+                $appointment = $paymentAppointment->appointment;
+                $paymentDetailAmount = $paymentDetail->amount;
+                $paymentDetailCommission = $professional->calculateCommission($paymentDetailAmount);
+
+                // Crear detalle de liquidación vinculado al payment_detail específico
                 LiquidationDetail::create([
                     'liquidation_id' => $liquidation->id,
-                    'payment_appointment_id' => $paymentAppointment?->id,
-                    'payment_id' => $payment?->id,
+                    'payment_detail_id' => $paymentDetail->id,
+                    'payment_appointment_id' => $paymentAppointment->id,
+                    'payment_id' => $paymentDetail->payment_id,
                     'appointment_id' => $appointment->id,
-                    'amount' => $appointmentAmount,
-                    'commission_amount' => $appointmentCommission,
-                    'concept' => "Turno {$appointment->appointment_date->format('H:i')} - {$appointment->patient->full_name}",
+                    'amount' => $paymentDetailAmount,
+                    'commission_amount' => $paymentDetailCommission,
+                    'concept' => "Turno {$appointment->appointment_date->format('H:i')} - {$appointment->patient->full_name} - {$this->getPaymentMethodLabel($paymentDetail->payment_method)} (Centro)",
                 ]);
 
-                if ($payment) {
-                    $paymentIds[] = $payment->id;
-                }
+                // Marcar payment_detail como liquidado
+                $paymentDetail->update([
+                    'liquidation_id' => $liquidation->id,
+                    'liquidated_at' => now(),
+                ]);
+
+                $paymentIds[] = $paymentDetail->payment_id;
             }
 
-            // 11. Actualizar liquidation_status en payments
+            // 10.2 Procesar payment_details directos al profesional (parte del centro)
+            foreach ($professionalPaymentDetails as $paymentDetail) {
+                // Obtener el payment_appointment y appointment relacionado
+                $paymentAppointment = $paymentDetail->payment->paymentAppointments
+                    ->whereIn('appointment_id', $attendedAppointmentIds)
+                    ->first();
+
+                if (!$paymentAppointment) {
+                    continue; // Saltar si no hay relación (no debería pasar)
+                }
+
+                $appointment = $paymentAppointment->appointment;
+                $paymentDetailAmount = $paymentDetail->amount;
+                // Para pagos directos, calculamos la parte del centro (NO la comisión del profesional)
+                $clinicPart = $paymentDetailAmount * ($clinicPercentage / 100);
+
+                // Crear detalle de liquidación - nota: commission_amount es NEGATIVO porque el profesional debe pagarle al centro
+                LiquidationDetail::create([
+                    'liquidation_id' => $liquidation->id,
+                    'payment_detail_id' => $paymentDetail->id,
+                    'payment_appointment_id' => $paymentAppointment->id,
+                    'payment_id' => $paymentDetail->payment_id,
+                    'appointment_id' => $appointment->id,
+                    'amount' => $paymentDetailAmount,
+                    'commission_amount' => -$clinicPart, // Negativo: el profesional debe al centro
+                    'concept' => "Turno {$appointment->appointment_date->format('H:i')} - {$appointment->patient->full_name} - {$this->getPaymentMethodLabel($paymentDetail->payment_method)} (Profesional directo - parte centro)",
+                ]);
+
+                // Marcar payment_detail como liquidado
+                $paymentDetail->update([
+                    'liquidation_id' => $liquidation->id,
+                    'liquidated_at' => now(),
+                ]);
+
+                $paymentIds[] = $paymentDetail->payment_id;
+            }
+
+            // 11. Actualizar liquidation_status en payments (solo si todos sus payment_details están liquidados)
             if (!empty($paymentIds)) {
-                Payment::whereIn('id', $paymentIds)
-                    ->update(['liquidation_status' => 'liquidated']);
+                $uniquePaymentIds = array_unique($paymentIds);
+                foreach ($uniquePaymentIds as $paymentId) {
+                    $payment = \App\Models\Payment::find($paymentId);
+                    // Verificar si todos los payment_details del pago están liquidados
+                    $pendingDetails = $payment->paymentDetails()->whereNull('liquidation_id')->count();
+                    if ($pendingDetails === 0) {
+                        $payment->update([
+                            'liquidation_status' => 'liquidated',
+                            'liquidated_at' => now(),
+                        ]);
+                    }
+                }
             }
 
             // 12. Crear movimiento de caja por pago al profesional
@@ -247,5 +368,20 @@ class LiquidationController extends Controller
         }
 
         return $lastMovement ? $lastMovement->balance_after : 0;
+    }
+
+    /**
+     * Obtener etiqueta legible del método de pago
+     */
+    private function getPaymentMethodLabel(string $paymentMethod): string
+    {
+        return match($paymentMethod) {
+            'cash' => 'Efectivo',
+            'transfer' => 'Transferencia',
+            'debit_card' => 'Débito',
+            'credit_card' => 'Crédito',
+            'other' => 'Otro',
+            default => ucfirst($paymentMethod)
+        };
     }
 }

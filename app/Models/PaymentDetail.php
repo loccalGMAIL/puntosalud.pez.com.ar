@@ -13,10 +13,13 @@ class PaymentDetail extends Model
         'amount',
         'received_by',
         'reference',
+        'liquidation_id',
+        'liquidated_at',
     ];
 
     protected $casts = [
         'amount' => 'decimal:2',
+        'liquidated_at' => 'datetime',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
@@ -27,6 +30,14 @@ class PaymentDetail extends Model
     public function payment(): BelongsTo
     {
         return $this->belongsTo(Payment::class);
+    }
+
+    /**
+     * Relación: Un detalle de pago puede estar vinculado a una liquidación
+     */
+    public function liquidation(): BelongsTo
+    {
+        return $this->belongsTo(\App\Models\ProfessionalLiquidation::class, 'liquidation_id');
     }
 
     /**
@@ -75,6 +86,22 @@ class PaymentDetail extends Model
     public function scopeToProfesional($query)
     {
         return $query->where('received_by', 'profesional');
+    }
+
+    /**
+     * Scope: Payment details no liquidados
+     */
+    public function scopePending($query)
+    {
+        return $query->whereNull('liquidation_id');
+    }
+
+    /**
+     * Scope: Payment details liquidados
+     */
+    public function scopeLiquidated($query)
+    {
+        return $query->whereNotNull('liquidation_id');
     }
 
     /**

@@ -22,6 +22,7 @@ class PaymentAllocationService
             $paymentAppointment = PaymentAppointment::create([
                 'payment_id' => $paymentId,
                 'appointment_id' => $appointmentId,
+                'professional_id' => $appointment->professional_id,
                 'allocated_amount' => $payment->total_amount,
                 'is_liquidation_trigger' => true,
             ]);
@@ -47,6 +48,7 @@ class PaymentAllocationService
             $paymentAppointment = PaymentAppointment::create([
                 'payment_id' => $paymentId,
                 'appointment_id' => $appointmentId,
+                'professional_id' => $appointment->professional_id,
                 'allocated_amount' => $sessionAmount,
                 'is_liquidation_trigger' => $isFirstSession,
             ]);

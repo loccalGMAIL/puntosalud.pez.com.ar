@@ -19,37 +19,25 @@ return new class extends Migration
             return;
         }
 
-        // Activar modo de transacción para seguridad
-        DB::beginTransaction();
+        // Laravel maneja las transacciones automáticamente en migraciones
+        Log::info('=== INICIO MIGRACIÓN DE DATOS v2.6.0 ===');
 
-        try {
-            Log::info('=== INICIO MIGRACIÓN DE DATOS v2.6.0 ===');
+        // PASO 1: Migrar datos de payments_old a payments
+        $this->migratePayments();
 
-            // PASO 1: Migrar datos de payments_old a payments
-            $this->migratePayments();
+        // PASO 2: Crear payment_details para cada pago
+        $this->createPaymentDetails();
 
-            // PASO 2: Crear payment_details para cada pago
-            $this->createPaymentDetails();
+        // PASO 3: Crear patient_packages para pagos tipo 'package'
+        $this->createPatientPackages();
 
-            // PASO 3: Crear patient_packages para pagos tipo 'package'
-            $this->createPatientPackages();
+        // PASO 4: Actualizar foreign keys en tablas relacionadas
+        $this->updateRelatedTables();
 
-            // PASO 4: Actualizar foreign keys en tablas relacionadas
-            $this->updateRelatedTables();
+        // PASO 5: Validar integridad de datos
+        $this->validateMigration();
 
-            // PASO 5: Validar integridad de datos
-            $this->validateMigration();
-
-            DB::commit();
-            Log::info('=== MIGRACIÓN COMPLETADA EXITOSAMENTE ===');
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-            Log::error('=== ERROR EN MIGRACIÓN ===');
-            Log::error($e->getMessage());
-            Log::error($e->getTraceAsString());
-            throw $e;
-        }
+        Log::info('=== MIGRACIÓN COMPLETADA EXITOSAMENTE ===');
     }
 
     /**

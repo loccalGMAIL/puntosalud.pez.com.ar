@@ -280,8 +280,33 @@ class ReportController extends Controller
             ->orderBy('last_name')
             ->get()
             ->map(function ($professional) use ($selectedDate) {
-                $totalAmount = $professional->appointments->sum('final_amount');
-                $professionalCommission = $professional->calculateCommission($totalAmount);
+                // NUEVO v2.6.0: Calcular considerando el routing de pagos
+                $attendedAppointmentIds = $professional->appointments->pluck('id');
+
+                // Obtener payment_details recibidos por el centro
+                $centroPaymentDetails = \App\Models\PaymentDetail::whereHas('payment.paymentAppointments', function($q) use ($attendedAppointmentIds) {
+                        $q->whereIn('appointment_id', $attendedAppointmentIds);
+                    })
+                    ->where('received_by', 'centro')
+                    ->get();
+
+                // Obtener payment_details recibidos directamente por el profesional
+                $professionalPaymentDetails = \App\Models\PaymentDetail::whereHas('payment.paymentAppointments', function($q) use ($attendedAppointmentIds) {
+                        $q->whereIn('appointment_id', $attendedAppointmentIds);
+                    })
+                    ->where('received_by', 'profesional')
+                    ->get();
+
+                $totalCollectedByCenter = $centroPaymentDetails->sum('amount');
+                $totalCollectedByProfessional = $professionalPaymentDetails->sum('amount');
+                $totalAmount = $totalCollectedByCenter + $totalCollectedByProfessional;
+
+                // Calcular comisión solo sobre pagos al centro
+                $professionalCommission = $professional->calculateCommission($totalCollectedByCenter);
+
+                // Calcular parte del centro sobre pagos directos
+                $clinicPercentage = 100 - $professional->commission_percentage;
+                $clinicAmountFromDirect = $totalCollectedByProfessional * ($clinicPercentage / 100);
 
                 // Obtener reintegros del día para este profesional (usando referencias polimórficas)
                 $refunds = \App\Models\CashMovement::byType('expense')
@@ -294,15 +319,20 @@ class ReportController extends Controller
                     return abs($refund->amount); // Los gastos son negativos, convertir a positivo
                 });
 
+                // Calcular monto neto
+                $netProfessionalAmount = $professionalCommission - $clinicAmountFromDirect - $totalRefunds;
+
                 return [
                     'id' => $professional->id,
                     'full_name' => $professional->full_name,
                     'specialty' => $professional->specialty,
                     'attended_count' => $professional->appointments->count(),
                     'total_amount' => $totalAmount,
+                    'total_collected_by_center' => $totalCollectedByCenter,
+                    'total_collected_by_professional' => $totalCollectedByProfessional,
                     'refunds' => $totalRefunds,
-                    'professional_amount' => $professionalCommission - $totalRefunds,
-                    'clinic_amount' => $totalAmount - $professionalCommission,
+                    'professional_amount' => $netProfessionalAmount,
+                    'clinic_amount' => $totalCollectedByCenter - $professionalCommission,
                 ];
             })
             ->filter(function ($professional) {
@@ -324,7 +354,7 @@ class ReportController extends Controller
         $professional = Professional::with('specialty')->findOrFail($professionalId);
 
         // Obtener turnos atendidos del día con información de pagos
-        $attendedAppointments = Appointment::with(['patient', 'paymentAppointments.payment'])
+        $attendedAppointments = Appointment::with(['patient', 'paymentAppointments.payment.paymentDetails'])
             ->where('professional_id', $professionalId)
             ->forDate($selectedDate)
             ->attended()
@@ -337,9 +367,50 @@ class ReportController extends Controller
                 // Determinar si fue pago anticipado o del día
                 $isPrepaid = false;
                 $paymentDate = null;
+                $receivedBy = null;
+                $paymentMethod = null;
+                $paymentMethodsArray = [];
+                $isMultiplePayment = false;
+
                 if ($payment) {
                     $paymentDate = Carbon::parse($payment->payment_date);
                     $isPrepaid = ! $paymentDate->isSameDay($selectedDate);
+
+                    // NUEVO v2.6.0: Manejar múltiples payment_details
+                    $paymentDetails = $payment->paymentDetails;
+
+                    if ($paymentDetails->isNotEmpty()) {
+                        $isMultiplePayment = $paymentDetails->count() > 1;
+
+                        // Obtener todos los métodos de pago
+                        $paymentMethodsArray = $paymentDetails->map(function($detail) {
+                            return [
+                                'method' => $detail->payment_method,
+                                'amount' => $detail->amount,
+                                'received_by' => $detail->received_by,
+                            ];
+                        })->toArray();
+
+                        // Determinar método de pago a mostrar
+                        if ($isMultiplePayment) {
+                            // Múltiples métodos: concatenar
+                            $methods = $paymentDetails->pluck('payment_method')->unique()->toArray();
+                            $paymentMethod = 'multiple'; // Marcador especial
+                        } else {
+                            // Un solo método
+                            $paymentMethod = $paymentDetails->first()->payment_method;
+                        }
+
+                        // Determinar receptor
+                        $receivers = $paymentDetails->pluck('received_by')->unique();
+                        if ($receivers->count() === 1) {
+                            // Todos van al mismo receptor
+                            $receivedBy = $receivers->first();
+                        } else {
+                            // Pago mixto (parte al centro, parte al profesional)
+                            $receivedBy = 'mixed';
+                        }
+                    }
                 }
 
                 return [
@@ -349,7 +420,10 @@ class ReportController extends Controller
                     'patient_dni' => $appointment->patient->dni,
                     'final_amount' => $appointment->final_amount ?? 0,
                     'is_paid' => $paymentAppointment ? true : false,
-                    'payment_method' => $payment ? $payment->payment_method : null,
+                    'payment_method' => $paymentMethod,
+                    'payment_methods_array' => $paymentMethodsArray, // Detalle completo
+                    'is_multiple_payment' => $isMultiplePayment,
+                    'received_by' => $receivedBy,
                     'payment_date' => $paymentDate ? $paymentDate->format('d/m/Y') : null,
                     'is_prepaid' => $isPrepaid,
                     'payment_type' => $payment ? $payment->payment_type : null,
@@ -359,9 +433,36 @@ class ReportController extends Controller
                 ];
             });
 
-        // Calcular estadísticas de liquidación
-        $totalAmount = $attendedAppointments->sum('final_amount');
-        $professionalCommission = $professional->calculateCommission($totalAmount);
+        // NUEVO v2.6.0: Calcular estadísticas de liquidación considerando el routing de pagos
+
+        // Obtener IDs de appointments atendidos para filtrar payment_details
+        $attendedAppointmentIds = $attendedAppointments->pluck('id');
+
+        // Obtener payment_details recibidos por el CENTRO
+        $centroPaymentDetails = \App\Models\PaymentDetail::whereHas('payment.paymentAppointments', function($q) use ($attendedAppointmentIds) {
+                $q->whereIn('appointment_id', $attendedAppointmentIds);
+            })
+            ->where('received_by', 'centro')
+            ->get();
+
+        // Obtener payment_details recibidos DIRECTAMENTE por el profesional
+        $professionalPaymentDetails = \App\Models\PaymentDetail::whereHas('payment.paymentAppointments', function($q) use ($attendedAppointmentIds) {
+                $q->whereIn('appointment_id', $attendedAppointmentIds);
+            })
+            ->where('received_by', 'profesional')
+            ->get();
+
+        // Calcular totales por destino de pago
+        $totalCollectedByCenter = $centroPaymentDetails->sum('amount');
+        $totalCollectedByProfessional = $professionalPaymentDetails->sum('amount');
+        $totalAmount = $totalCollectedByCenter + $totalCollectedByProfessional;
+
+        // Calcular comisión del profesional solo sobre pagos recibidos por el centro
+        $professionalCommission = $professional->calculateCommission($totalCollectedByCenter);
+
+        // Calcular la parte del centro sobre los pagos directos al profesional
+        $clinicPercentage = 100 - $professional->commission_percentage;
+        $clinicAmountFromDirect = $totalCollectedByProfessional * ($clinicPercentage / 100);
 
         // Obtener reintegros del día para este profesional (usando referencias polimórficas)
         $refunds = \App\Models\CashMovement::byType('expense')
@@ -374,8 +475,10 @@ class ReportController extends Controller
             return abs($refund->amount); // Los gastos son negativos, convertir a positivo
         });
 
-        $clinicAmount = $totalAmount - $professionalCommission;
-        $finalProfessionalAmount = $professionalCommission - $totalRefunds;
+        // Calcular montos finales
+        $clinicAmount = $totalCollectedByCenter - $professionalCommission;
+        $netProfessionalAmount = $professionalCommission - $clinicAmountFromDirect - $totalRefunds;
+        $finalProfessionalAmount = $netProfessionalAmount; // Alias para compatibilidad
 
         // Separar por tipo de pago
         $prepaidAppointments = $attendedAppointments->where('is_prepaid', true);
@@ -392,10 +495,15 @@ class ReportController extends Controller
             'refunds' => $refunds,
             'totals' => [
                 'total_amount' => $totalAmount,
+                'total_collected_by_center' => $totalCollectedByCenter,
+                'total_collected_by_professional' => $totalCollectedByProfessional,
                 'professional_commission' => $professionalCommission,
+                'clinic_amount_from_direct' => $clinicAmountFromDirect,
                 'total_refunds' => $totalRefunds,
+                'net_professional_amount' => $netProfessionalAmount,
                 'professional_amount' => $finalProfessionalAmount,
                 'clinic_amount' => $clinicAmount,
+                'clinic_percentage' => $clinicPercentage,
                 'commission_percentage' => $professional->commission_percentage,
                 'prepaid_amount' => $prepaidAppointments->sum('final_amount'),
                 'today_paid_amount' => $todayPaidAppointments->sum('final_amount'),

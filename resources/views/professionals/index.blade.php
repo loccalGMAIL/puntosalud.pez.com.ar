@@ -339,6 +339,7 @@ function professionalsPage() {
             license_number: '',
             specialty_id: '',
             commission_percentage: '',
+            receives_transfers_directly: false,
             notes: '',
             is_active: true
         },

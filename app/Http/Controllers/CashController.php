@@ -980,12 +980,13 @@ class CashController extends Controller
             ]);
 
             // Crear payment_detail con el método de pago
+            // Nota: Los ingresos manuales siempre van al centro porque no están vinculados a turnos ni profesionales
             \App\Models\PaymentDetail::create([
                 'payment_id' => $payment->id,
                 'payment_method' => $validated['payment_method'],
                 'amount' => $validated['amount'],
-                'received_by' => 'centro', // Los ingresos manuales siempre son al centro
-                'reference' => null,
+                'received_by' => 'centro',
+                'reference' => $validated['reference'] ?? null,
             ]);
 
             // Crear registro en cash_movements vinculado al payment

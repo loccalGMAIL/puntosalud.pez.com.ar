@@ -231,19 +231,81 @@
         </div>
     </div>
     
-    <!-- Liquidation Summary -->
+    <!-- Liquidation Summary v2.6.0 -->
     <div class="liquidation-summary">
-        <div class="summary-row">
-            <span>Total Facturado:</span>
+        <div class="summary-row" style="font-weight: bold; border-bottom: 1px solid #4caf50; padding-bottom: 5px; margin-bottom: 8px;">
+            <span>Total Facturado del Día:</span>
             <span>${{ number_format($liquidationData['totals']['total_amount'], 0, ',', '.') }}</span>
         </div>
-        <div class="summary-row">
-            <span>Comisión Clínica ({{ 100 - $liquidationData['totals']['commission_percentage'] }}%):</span>
-            <span>-${{ number_format($liquidationData['totals']['clinic_amount'], 0, ',', '.') }}</span>
+
+        @if($liquidationData['totals']['total_collected_by_center'] > 0)
+        <div style="background: #e3f2fd; padding: 8px; margin-bottom: 8px; border-left: 3px solid #2196f3;">
+            <div class="summary-row" style="font-weight: bold;">
+                <span>💵 Pagos recibidos por el centro:</span>
+                <span>${{ number_format($liquidationData['totals']['total_collected_by_center'], 0, ',', '.') }}</span>
+            </div>
+            <div class="summary-row" style="font-size: 10px; padding-left: 15px; color: #1976d2;">
+                <span>Comisión profesional ({{ $liquidationData['totals']['commission_percentage'] }}%):</span>
+                <span style="color: #2e7d32;">+${{ number_format($liquidationData['totals']['professional_commission'], 0, ',', '.') }}</span>
+            </div>
+            <div class="summary-row" style="font-size: 10px; padding-left: 15px; color: #1976d2;">
+                <span>Parte del centro ({{ $liquidationData['totals']['clinic_percentage'] }}%):</span>
+                <span>${{ number_format($liquidationData['totals']['clinic_amount'], 0, ',', '.') }}</span>
+            </div>
         </div>
-        <div class="summary-row total">
-            <span>MONTO A ENTREGAR AL PROFESIONAL:</span>
-            <span class="amount-to-pay">${{ number_format($liquidationData['totals']['professional_amount'], 0, ',', '.') }}</span>
+        @endif
+
+        @if($liquidationData['totals']['total_collected_by_professional'] > 0)
+        <div style="background: #fff8e1; padding: 8px; margin-bottom: 8px; border-left: 3px solid #ffc107;">
+            <div class="summary-row" style="font-weight: bold;">
+                <span>🏦 Pagos directos al profesional:</span>
+                <span>${{ number_format($liquidationData['totals']['total_collected_by_professional'], 0, ',', '.') }}</span>
+            </div>
+            <div class="summary-row" style="font-size: 10px; padding-left: 15px; color: #f57c00;">
+                <span>Parte del centro a descontar ({{ $liquidationData['totals']['clinic_percentage'] }}%):</span>
+                <span style="color: #c62828;">-${{ number_format($liquidationData['totals']['clinic_amount_from_direct'], 0, ',', '.') }}</span>
+            </div>
+        </div>
+        @endif
+
+        @if($liquidationData['totals']['total_refunds'] > 0)
+        <div class="summary-row" style="color: #c62828;">
+            <span>🔄 Reintegros a Pacientes:</span>
+            <span>-${{ number_format($liquidationData['totals']['total_refunds'], 0, ',', '.') }}</span>
+        </div>
+        @endif
+
+        <div style="border-top: 2px solid #4caf50; padding-top: 8px; margin-top: 8px;">
+            <div style="font-size: 10px; color: #666; margin-bottom: 5px;">
+                <div class="summary-row">
+                    <span>Comisión sobre pagos al centro:</span>
+                    <span>+${{ number_format($liquidationData['totals']['professional_commission'], 0, ',', '.') }}</span>
+                </div>
+                @if($liquidationData['totals']['total_collected_by_professional'] > 0)
+                <div class="summary-row">
+                    <span>Menos: parte del centro sobre pagos directos:</span>
+                    <span>-${{ number_format($liquidationData['totals']['clinic_amount_from_direct'], 0, ',', '.') }}</span>
+                </div>
+                @endif
+                @if($liquidationData['totals']['total_refunds'] > 0)
+                <div class="summary-row">
+                    <span>Menos: reintegros:</span>
+                    <span>-${{ number_format($liquidationData['totals']['total_refunds'], 0, ',', '.') }}</span>
+                </div>
+                @endif
+            </div>
+            <div class="summary-row total">
+                <span>
+                    @if($liquidationData['totals']['net_professional_amount'] >= 0)
+                        MONTO A ENTREGAR AL PROFESIONAL:
+                    @else
+                        MONTO QUE EL PROFESIONAL DEBE AL CENTRO:
+                    @endif
+                </span>
+                <span class="amount-to-pay" style="color: {{ $liquidationData['totals']['net_professional_amount'] >= 0 ? '#2e7d32' : '#c62828' }}">
+                    ${{ number_format(abs($liquidationData['totals']['net_professional_amount']), 0, ',', '.') }}
+                </span>
+            </div>
         </div>
     </div>
     
@@ -261,7 +323,8 @@
                         <th class="time-column">Hora</th>
                         <th class="patient-column">Paciente</th>
                         <th class="amount-column">Monto</th>
-                        <th class="payment-column">Pago</th>
+                        <th class="payment-column">Método</th>
+                        <th style="width: 15%;">Receptor</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -275,17 +338,44 @@
                             <td class="amount-column">${{ number_format($appointment['final_amount'], 0, ',', '.') }}</td>
                             <td class="payment-column">
                                 <small>
-                                    {{ match($appointment['payment_method']) {
-                                        'cash' => 'Efectivo',
-                                        'transfer' => 'Transferencia', 
-                                        'card' => 'Tarjeta',
-                                        default => $appointment['payment_method']
-                                    } }}<br>
-                                    {{ $appointment['payment_date'] }}
+                                    @if($appointment['is_multiple_payment'])
+                                        <strong style="color: #7e22ce;">Múltiple</strong><br>
+                                        @foreach($appointment['payment_methods_array'] as $detail)
+                                            {{ match($detail['method']) {
+                                                'cash' => 'Efectivo',
+                                                'transfer' => 'Transferencia',
+                                                'debit_card' => 'Débito',
+                                                'credit_card' => 'Crédito',
+                                                default => ucfirst($detail['method'])
+                                            } }}: ${{ number_format($detail['amount'], 0, ',', '.') }}<br>
+                                        @endforeach
+                                    @elseif($appointment['payment_method'])
+                                        {{ match($appointment['payment_method']) {
+                                            'cash' => 'Efectivo',
+                                            'transfer' => 'Transferencia',
+                                            'debit_card' => 'Débito',
+                                            'credit_card' => 'Crédito',
+                                            default => ucfirst($appointment['payment_method'])
+                                        } }}
+                                    @else
+                                        -
+                                    @endif
+                                    <br>{{ $appointment['payment_date'] }}
                                     @if($appointment['receipt_number'])
                                         <br>Rec: {{ $appointment['receipt_number'] }}
                                     @endif
                                 </small>
+                            </td>
+                            <td style="text-align: center; font-size: 10px;">
+                                @if($appointment['received_by'] === 'profesional')
+                                    <strong style="color: #f57c00;">👤 Profesional</strong>
+                                @elseif($appointment['received_by'] === 'centro')
+                                    <strong style="color: #1976d2;">🏥 Centro</strong>
+                                @elseif($appointment['received_by'] === 'mixed')
+                                    <strong style="color: #7e22ce;">🔀 Mixto</strong>
+                                @else
+                                    -
+                                @endif
                             </td>
                         </tr>
                     @endforeach
@@ -309,6 +399,7 @@
                         <th class="patient-column">Paciente</th>
                         <th class="amount-column">Monto</th>
                         <th class="payment-column">Método</th>
+                        <th style="width: 15%;">Receptor</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -322,16 +413,43 @@
                             <td class="amount-column">${{ number_format($appointment['final_amount'], 0, ',', '.') }}</td>
                             <td class="payment-column">
                                 <small>
-                                    {{ match($appointment['payment_method']) {
-                                        'cash' => 'Efectivo',
-                                        'transfer' => 'Transferencia', 
-                                        'card' => 'Tarjeta',
-                                        default => $appointment['payment_method']
-                                    } }}
+                                    @if($appointment['is_multiple_payment'])
+                                        <strong style="color: #7e22ce;">Múltiple</strong><br>
+                                        @foreach($appointment['payment_methods_array'] as $detail)
+                                            {{ match($detail['method']) {
+                                                'cash' => 'Efectivo',
+                                                'transfer' => 'Transferencia',
+                                                'debit_card' => 'Débito',
+                                                'credit_card' => 'Crédito',
+                                                default => ucfirst($detail['method'])
+                                            } }}: ${{ number_format($detail['amount'], 0, ',', '.') }}<br>
+                                        @endforeach
+                                    @elseif($appointment['payment_method'])
+                                        {{ match($appointment['payment_method']) {
+                                            'cash' => 'Efectivo',
+                                            'transfer' => 'Transferencia',
+                                            'debit_card' => 'Débito',
+                                            'credit_card' => 'Crédito',
+                                            default => ucfirst($appointment['payment_method'])
+                                        } }}
+                                    @else
+                                        -
+                                    @endif
                                     @if($appointment['receipt_number'])
                                         <br>Rec: {{ $appointment['receipt_number'] }}
                                     @endif
                                 </small>
+                            </td>
+                            <td style="text-align: center; font-size: 10px;">
+                                @if($appointment['received_by'] === 'profesional')
+                                    <strong style="color: #f57c00;">👤 Profesional</strong>
+                                @elseif($appointment['received_by'] === 'centro')
+                                    <strong style="color: #1976d2;">🏥 Centro</strong>
+                                @elseif($appointment['received_by'] === 'mixed')
+                                    <strong style="color: #7e22ce;">🔀 Mixto</strong>
+                                @else
+                                    -
+                                @endif
                             </td>
                         </tr>
                     @endforeach

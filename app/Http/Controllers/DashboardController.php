@@ -342,14 +342,17 @@ class DashboardController extends Controller
                 'created_by' => auth()->id(),
             ]);
 
+            // Cargar profesional para determinar received_by
+            $professional = $appointment->professional;
+
             // Crear payment_details (puede haber múltiples formas de pago)
             foreach ($validated['payment_details'] as $detail) {
                 \App\Models\PaymentDetail::create([
                     'payment_id' => $payment->id,
                     'payment_method' => $detail['payment_method'],
                     'amount' => $detail['amount'],
-                    'received_by' => 'centro',
-                    'reference' => null,
+                    'received_by' => $this->determineReceivedBy($detail['payment_method'], $professional),
+                    'reference' => $detail['reference'] ?? null,
                 ]);
             }
 
@@ -473,5 +476,33 @@ class DashboardController extends Controller
             'absent' => 'Ausente',
             default => 'Desconocido'
         };
+    }
+
+    /**
+     * Determina quién recibe el pago según el método de pago y la configuración del profesional
+     *
+     * @param string $paymentMethod Método de pago (cash, transfer, debit_card, credit_card, other)
+     * @param \App\Models\Professional $professional Profesional del turno
+     * @return string 'centro' o 'profesional'
+     */
+    private function determineReceivedBy(string $paymentMethod, $professional): string
+    {
+        // Efectivo siempre va al centro (caja física)
+        if ($paymentMethod === 'cash') {
+            return 'centro';
+        }
+
+        // Tarjetas (débito/crédito) siempre van al centro (terminales del centro)
+        if (in_array($paymentMethod, ['debit_card', 'credit_card'])) {
+            return 'centro';
+        }
+
+        // Transferencias: depende de la configuración del profesional
+        if ($paymentMethod === 'transfer') {
+            return $professional->receives_transfers_directly ? 'profesional' : 'centro';
+        }
+
+        // Otros métodos: por defecto al centro
+        return 'centro';
     }
 }
