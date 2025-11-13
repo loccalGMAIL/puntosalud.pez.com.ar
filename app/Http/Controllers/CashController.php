@@ -995,6 +995,7 @@ class CashController extends Controller
             $cashMovement = CashMovement::create([
                 'movement_type_id' => MovementType::getIdByCode($movementTypeCode),
                 'amount' => $validated['amount'],
+                'payment_method' => $validated['payment_method'],
                 'description' => $description,
                 'reference_type' => 'App\\Models\\Payment', // Vincular al Payment
                 'reference_id' => $payment->id,

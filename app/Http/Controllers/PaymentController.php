@@ -613,26 +613,50 @@ class PaymentController extends Controller
             throw new \Exception('No se pueden registrar pagos. La caja debe estar abierta para realizar esta operación.');
         }
 
-        // Obtener balance actual con lock pesimista
-        $currentBalance = CashMovement::getCurrentBalanceWithLock();
+        // NUEVO v2.6.0: Crear movimientos de caja solo para payment_details recibidos por el centro
+        $paymentDetails = $payment->paymentDetails()->where('received_by', 'centro')->get();
 
-        // Determinar tipo y monto según si es reembolso o pago
+        if ($paymentDetails->isEmpty()) {
+            // No hay movimientos para la caja del centro (todo fue directo a profesionales)
+            return;
+        }
+
+        // Determinar tipo según si es reembolso o pago
         $movementTypeCode = $payment->payment_type === 'refund' ? 'refund' : 'patient_payment';
-        $amount = $payment->payment_type === 'refund' ? -$payment->total_amount : $payment->total_amount;
-        $newBalance = $currentBalance + $amount;
 
-        // Generar descripción del movimiento
-        $description = $payment->concept ?: $this->getDefaultConcept($payment);
+        // Generar descripción base del movimiento
+        $baseDescription = $payment->concept ?: $this->getDefaultConcept($payment);
 
-        CashMovement::create([
-            'movement_type_id' => MovementType::getIdByCode($movementTypeCode),
-            'amount' => $amount,
-            'description' => $description,
-            'reference_type' => Payment::class,
-            'reference_id' => $payment->id,
-            'balance_after' => $newBalance,
-            'user_id' => auth()->id(),
-        ]);
+        // Crear UN movimiento por cada payment_detail del centro
+        foreach ($paymentDetails as $paymentDetail) {
+            // Obtener balance actual con lock pesimista
+            $currentBalance = CashMovement::getCurrentBalanceWithLock();
+
+            // Monto: negativo si es refund, positivo si es pago
+            $amount = $payment->payment_type === 'refund' ? -$paymentDetail->amount : $paymentDetail->amount;
+            $newBalance = $currentBalance + $amount;
+
+            // Descripción con método de pago
+            $methodLabel = match($paymentDetail->payment_method) {
+                'cash' => 'Efectivo',
+                'transfer' => 'Transferencia',
+                'debit_card' => 'Débito',
+                'credit_card' => 'Crédito',
+                default => ucfirst($paymentDetail->payment_method)
+            };
+            $description = $baseDescription . ' - ' . $methodLabel;
+
+            CashMovement::create([
+                'movement_type_id' => MovementType::getIdByCode($movementTypeCode),
+                'amount' => $amount,
+                'payment_method' => $paymentDetail->payment_method,
+                'description' => $description,
+                'reference_type' => Payment::class,
+                'reference_id' => $payment->id,
+                'balance_after' => $newBalance,
+                'user_id' => auth()->id(),
+            ]);
+        }
     }
 
     // Métodos removidos: updateCashMovement() y reverseCashMovement()

@@ -240,7 +240,7 @@
                                     <div class="h-8 w-8 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white text-xs font-medium">
                                         {{ strtoupper(substr($movement->user->name ?? 'SYS', 0, 2)) }}
                                     </div>
-                                    <span>{{ $movement->user->name ?? 'Sistema' }}</span>
+                                    {{-- <span>{{ $movement->user->name ?? 'Sistema' }}</span> --}}
                                 </div>
                             </td>
                             <td class="py-3 px-4 text-sm text-gray-900 dark:text-white">
