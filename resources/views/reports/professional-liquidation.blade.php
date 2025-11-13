@@ -141,8 +141,9 @@
                                         <div class="text-sm text-gray-600 dark:text-gray-400">
                                             {{ match($appointment['payment_method']) {
                                                 'cash' => 'Efectivo',
-                                                'transfer' => 'Transferencia', 
+                                                'transfer' => 'Transferencia',
                                                 'card' => 'Tarjeta',
+                                                'qr' => 'QR',
                                                 default => $appointment['payment_method']
                                             } }}
                                         </div>
@@ -205,8 +206,9 @@
                                         <div class="text-sm text-gray-600 dark:text-gray-400">
                                             {{ match($appointment['payment_method']) {
                                                 'cash' => 'Efectivo',
-                                                'transfer' => 'Transferencia', 
+                                                'transfer' => 'Transferencia',
                                                 'card' => 'Tarjeta',
+                                                'qr' => 'QR',
                                                 default => $appointment['payment_method']
                                             } }}
                                         </div>

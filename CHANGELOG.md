@@ -12,6 +12,15 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 ### 🐛 Fixes
 
 **Corregido:**
+- **Método de pago QR agregado al sistema**
+  - Agregado 'qr' al enum de payment_method en todas las tablas relevantes
+  - Actualizadas validaciones en controladores (CashController, DashboardController, PaymentController)
+  - Agregados match statements para mostrar 'QR' en reportes de liquidación
+  - Agregada opción QR en todos los formularios de pago (📱 QR)
+  - Actualizado recibo de pago (receipts/print.blade.php) para mostrar método QR
+  - Actualizado recibo de ingreso (receipts/income-print.blade.php) para mostrar método QR
+  - Ahora el método de pago QR aparece correctamente en impresiones de recibos
+
 - **Error 422 al crear entreturno en Agenda**
   - Inicializado campo `is_between_turn` en `resetForm()` para evitar undefined
   - Inicializados todos los campos de pago (pay_now, payment_type, etc.) para consistencia

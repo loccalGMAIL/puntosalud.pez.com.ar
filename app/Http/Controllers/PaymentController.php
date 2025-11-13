@@ -112,7 +112,7 @@ class PaymentController extends Controller
         $validated = $request->validate([
             'patient_id' => 'required|exists:patients,id',
             'payment_type' => 'required|in:single,package,refund',
-            'payment_method' => 'required|in:cash,transfer,debit_card,credit_card',
+            'payment_method' => 'required|in:cash,transfer,debit_card,credit_card,qr',
             'amount' => 'required|numeric|min:0',
             'concept' => 'nullable|string|max:500',
             'sessions_included' => 'required_if:payment_type,package|nullable|integer|min:1',

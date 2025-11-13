@@ -340,13 +340,15 @@
         <div class="detail-row">
             <span class="detail-label">Método de Pago:</span>
             <span>
-                @if ($payment->payment_method === 'cash')
-                    💵 Efectivo
-                @elseif($payment->payment_method === 'transfer')
-                    🏦 Transferencia
-                @elseif($payment->payment_method === 'card')
-                    💳 Tarjeta
-                @endif
+                {{ match($payment->payment_method) {
+                    'cash' => '💵 Efectivo',
+                    'transfer' => '🏦 Transferencia',
+                    'card' => '💳 Tarjeta',
+                    'debit_card' => '💳 Tarjeta de Débito',
+                    'credit_card' => '💳 Tarjeta de Crédito',
+                    'qr' => '📱 QR',
+                    default => ucfirst($payment->payment_method)
+                } }}
             </span>
         </div>
 

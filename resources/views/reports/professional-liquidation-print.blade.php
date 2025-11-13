@@ -277,8 +277,9 @@
                                 <small>
                                     {{ match($appointment['payment_method']) {
                                         'cash' => 'Efectivo',
-                                        'transfer' => 'Transferencia', 
+                                        'transfer' => 'Transferencia',
                                         'card' => 'Tarjeta',
+                                        'qr' => 'QR',
                                         default => $appointment['payment_method']
                                     } }}<br>
                                     {{ $appointment['payment_date'] }}
@@ -324,8 +325,9 @@
                                 <small>
                                     {{ match($appointment['payment_method']) {
                                         'cash' => 'Efectivo',
-                                        'transfer' => 'Transferencia', 
+                                        'transfer' => 'Transferencia',
                                         'card' => 'Tarjeta',
+                                        'qr' => 'QR',
                                         default => $appointment['payment_method']
                                     } }}
                                     @if($appointment['receipt_number'])
