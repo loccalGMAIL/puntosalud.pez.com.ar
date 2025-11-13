@@ -32,7 +32,7 @@ Sistema integral de gestión médica para clínicas y consultorios, desarrollado
 ### 💰 Módulo de Pagos Avanzado
 
 * Pagos individuales o en paquetes
-* Múltiples métodos de pago: efectivo, transferencia, tarjeta
+* Múltiples métodos de pago: efectivo, transferencia, tarjeta de débito, tarjeta de crédito, QR
 * Generación automática de recibos en formato A5
 * Trazabilidad completa de transacciones
 * **Estadísticas segregadas** por método de pago (efectivo/transferencias)
