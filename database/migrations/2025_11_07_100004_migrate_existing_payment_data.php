@@ -104,6 +104,7 @@ return new class extends Migration
         // Determinar received_by basado en el método de pago
         // - Transferencias a profesionales: 'profesional'
         // - Todo lo demás: 'centro'
+        // NOTA: Convertir 'card' antiguo a 'other' para compatibilidad
         DB::statement("
             INSERT INTO payment_details (
                 payment_id,
@@ -116,7 +117,10 @@ return new class extends Migration
             )
             SELECT
                 id as payment_id,
-                payment_method,
+                CASE
+                    WHEN payment_method = 'card' THEN 'other'
+                    ELSE payment_method
+                END as payment_method,
                 amount,
                 CASE
                     WHEN payment_method = 'transfer' AND patient_id IS NOT NULL THEN 'profesional'

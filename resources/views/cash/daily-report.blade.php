@@ -313,6 +313,15 @@
 
                 <!-- Liquidación por Profesional -->
                 @if ($professionalIncome->count() > 0)
+                    @php
+                        $methodConfig = [
+                            'cash' => ['emoji' => '💵', 'label' => 'Efectivo'],
+                            'transfer' => ['emoji' => '🏦', 'label' => 'Transf.'],
+                            'debit_card' => ['emoji' => '💳', 'label' => 'Débito'],
+                            'credit_card' => ['emoji' => '💳', 'label' => 'Crédito'],
+                            'qr' => ['emoji' => '📱', 'label' => 'QR'],
+                        ];
+                    @endphp
                     <div class="mb-2 print:mb-0.5">
                         <h5 class="report-section-title">👨‍⚕️Liquidación por Profesional</h5>
                         <div class="overflow-x-auto">
@@ -323,17 +332,19 @@
                                             class="text-left py-[1px] px-1 font-semibold text-gray-900 dark:text-white print:text-black">
                                             Profesional</th>
                                         <th
-                                            class="text-left py-[1px] px-1 font-semibold text-gray-900 dark:text-white print:text-black">
-                                            Especialidad</th>
-                                        <th
                                             class="text-center py-[1px] px-1 font-semibold text-gray-900 dark:text-white print:text-black">
                                             Cons.</th>
+                                        @foreach($activePaymentMethods as $method)
+                                            <th
+                                                class="text-right py-[1px] px-1 font-semibold text-gray-900 dark:text-white print:text-black">
+                                                {{ $methodConfig[$method]['emoji'] ?? strtoupper($method) }}</th>
+                                        @endforeach
                                         <th
                                             class="text-right py-[1px] px-1 font-semibold text-gray-900 dark:text-white print:text-black">
-                                            Total Cobrado</th>
+                                            Total</th>
                                         <th
                                             class="text-right py-[1px] px-1 font-semibold text-gray-900 dark:text-white print:text-black">
-                                            Profesional</th>
+                                            Prof.</th>
                                         <th
                                             class="text-right py-[1px] px-1 font-semibold text-gray-900 dark:text-white print:text-black">
                                             Clínica</th>
@@ -344,40 +355,46 @@
                                         <tr>
                                             <td class="py-[1px] px-1 text-gray-900 dark:text-white print:text-black">
                                                 {{ $data['full_name'] }}</td>
-                                            <td class="py-[1px] px-1 text-gray-600 dark:text-gray-400 print:text-gray-700">
-                                                {{ $data['specialty'] }}</td>
                                             <td
                                                 class="py-[1px] px-1 text-center text-gray-600 dark:text-gray-400 print:text-gray-700">
                                                 {{ $data['count'] }}</td>
+                                            @foreach($activePaymentMethods as $method)
+                                                <td class="py-[1px] px-1 text-right text-gray-600 dark:text-gray-400 print:text-gray-700">
+                                                    @if($data[$method] > 0)${{ number_format($data[$method], 0) }}@else-@endif</td>
+                                            @endforeach
                                             <td
                                                 class="py-[1px] px-1 text-right font-medium text-gray-900 dark:text-white print:text-black">
-                                                ${{ number_format($data['total_collected'], 2) }}
+                                                ${{ number_format($data['total_collected'], 0) }}
                                             </td>
                                             <td
                                                 class="py-[1px] px-1 text-right font-medium text-blue-600 dark:text-blue-400 print:text-blue-700">
-                                                ${{ number_format($data['professional_amount'], 2) }}
+                                                ${{ number_format($data['professional_amount'], 0) }}
                                             </td>
                                             <td
                                                 class="py-[1px] px-1 text-right font-medium text-green-600 dark:text-green-400 print:text-green-700">
-                                                ${{ number_format($data['clinic_amount'], 2) }}
+                                                ${{ number_format($data['clinic_amount'], 0) }}
                                             </td>
                                         </tr>
                                     @endforeach
                                     <tr class="border-t-2 border-gray-300 dark:border-gray-500 print:border-gray-500">
-                                        <td colspan="3"
+                                        <td colspan="2"
                                             class="py-[1px] px-1 text-right font-bold text-gray-900 dark:text-white print:text-black">
                                             TOTALES:</td>
+                                        @foreach($activePaymentMethods as $method)
+                                            <td class="py-[1px] px-1 text-right font-bold text-gray-900 dark:text-white print:text-black">
+                                                ${{ number_format($professionalIncome->sum($method), 0) }}</td>
+                                        @endforeach
                                         <td
                                             class="py-[1px] px-1 text-right font-bold text-gray-900 dark:text-white print:text-black">
-                                            ${{ number_format($professionalIncome->sum('total_collected'), 2) }}
+                                            ${{ number_format($professionalIncome->sum('total_collected'), 0) }}
                                         </td>
                                         <td
                                             class="py-[1px] px-1 text-right font-bold text-blue-600 dark:text-blue-400 print:text-blue-700">
-                                            ${{ number_format($professionalIncome->sum('professional_amount'), 2) }}
+                                            ${{ number_format($professionalIncome->sum('professional_amount'), 0) }}
                                         </td>
                                         <td
                                             class="py-[1px] px-1 text-right font-bold text-green-600 dark:text-green-400 print:text-green-700">
-                                            ${{ number_format($professionalIncome->sum('clinic_amount'), 2) }}
+                                            ${{ number_format($professionalIncome->sum('clinic_amount'), 0) }}
                                         </td>
                                     </tr>
                                 </tbody>
@@ -397,46 +414,77 @@
                                         <th
                                             class="text-left py-[2px] px-1 font-semibold text-gray-900 dark:text-white print:text-black">
                                             Concepto</th>
-                                        <th
-                                            class="text-left py-[2px] px-1 font-semibold text-gray-900 dark:text-white print:text-black">
-                                            Descripción</th>
+                                            <th>Detalle</th>
+                                        @foreach($activePaymentMethods as $method)
+                                            <th
+                                                class="text-right py-[2px] px-1 font-semibold text-gray-900 dark:text-white print:text-black">
+                                                {{ $methodConfig[$method]['emoji'] ?? strtoupper($method) }}</th>
+                                        @endforeach
                                         <th
                                             class="text-right py-[2px] px-1 font-semibold text-gray-900 dark:text-white print:text-black">
-                                            Monto</th>
+                                            Total</th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-gray-200 dark:divide-gray-700 print:divide-gray-400">
                                     @if ($summary['zalazar_liquidation'] > 0)
+                                        @php
+                                            $zalazarData = $professionalIncome->firstWhere('professional_id', 1);
+                                        @endphp
                                         <tr>
                                             <td class="py-[1px] px-1 text-gray-900 dark:text-white print:text-black">
                                                 Liquidación de Pacientes</td>
-                                            <td class="py-[1px] px-1 text-gray-600 dark:text-gray-400 print:text-gray-700">
-                                                Comisión por consultas del día</td>
+                                                <td></td>
+                                            @foreach($activePaymentMethods as $method)
+                                                <td class="py-[1px] px-1 text-right text-gray-600 dark:text-gray-400 print:text-gray-700">
+                                                    @if($zalazarData && $zalazarData[$method] > 0)${{ number_format($zalazarData[$method], 0) }}@else-@endif</td>
+                                            @endforeach
                                             <td
                                                 class="py-[1px] px-1 text-right text-green-600 dark:text-green-400 print:text-green-700">
-                                                +${{ number_format($summary['zalazar_liquidation'], 2) }}</td>
+                                                +${{ number_format($summary['zalazar_liquidation'], 0) }}
+                                            </td>
                                         </tr>
                                     @endif
 
                                     @foreach ($zalazarBalancePayments as $movement)
+                                        @php
+                                            // Obtener payment_details del pago referenciado
+                                            $paymentDetailsBreakdown = collect();
+                                            if ($movement->reference && $movement->reference instanceof \App\Models\Payment) {
+                                                $paymentDetailsBreakdown = $movement->reference->paymentDetails->keyBy('payment_method');
+                                            }
+                                        @endphp
                                         <tr>
                                             <td class="py-[1px] px-1 text-gray-900 dark:text-white print:text-black">
                                                 Pago de Saldos</td>
-                                            <td class="py-[1px] px-1 text-gray-600 dark:text-gray-400 print:text-gray-700">
-                                                {{ $movement->description }}</td>
+                                                <td class="py-[1px] px-1 text-gray-600 dark:text-gray-400 print:text-gray-700">
+                                                    {{ $movement->description }}</td>
+                                            @foreach($activePaymentMethods as $method)
+                                                <td class="py-[1px] px-1 text-right text-gray-600 dark:text-gray-400 print:text-gray-700">
+                                                    @if($paymentDetailsBreakdown->has($method))
+                                                        ${{ number_format($paymentDetailsBreakdown[$method]->amount, 0) }}
+                                                    @else
+                                                        -
+                                                    @endif
+                                                </td>
+                                            @endforeach
                                             <td
                                                 class="py-[1px] px-1 text-right text-green-600 dark:text-green-400 print:text-green-700">
-                                                +${{ number_format($movement->amount, 2) }}</td>
+                                                +${{ number_format($movement->amount, 0) }}
+                                            </td>
                                         </tr>
                                     @endforeach
 
                                     <tr class="border-t-2 border-gray-300 dark:border-gray-500 print:border-gray-500">
-                                        <td colspan="2"
-                                            class="py-[1px] px-1 text-right font-bold text-gray-900 dark:text-white print:text-black">
+                                        <td class="py-[1px] px-1 text-right font-bold text-gray-900 dark:text-white print:text-black">
                                             TOTAL:</td>
+                                        <td></td>
+                                        @foreach($activePaymentMethods as $method)
+                                            <td class="py-[1px] px-1 text-right font-bold text-gray-900 dark:text-white print:text-black">
+                                                @if($summary['zalazar_payment_breakdown'][$method] > 0)${{ number_format($summary['zalazar_payment_breakdown'][$method], 0) }}@else-@endif</td>
+                                        @endforeach
                                         <td
                                             class="py-[1px] px-1 text-right font-bold text-green-600 dark:text-green-400 print:text-green-700">
-                                            +${{ number_format($summary['zalazar_total_income'], 2) }}
+                                            +${{ number_format($summary['zalazar_total_income'], 0) }}
                                         </td>
                                     </tr>
                                 </tbody>

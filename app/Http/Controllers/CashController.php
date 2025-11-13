@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\CashMovement;
 use App\Models\MovementType;
+use App\Models\Payment;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -525,7 +526,12 @@ class CashController extends Controller
         $initialBalance = $lastBalanceMovement ? $lastBalanceMovement->balance_after : 0;
 
         // Obtener todos los movimientos del día
-        $movements = CashMovement::with(['user', 'reference', 'movementType'])
+        $movements = CashMovement::with(['user', 'movementType'])
+            ->with(['reference' => function($morphTo) {
+                $morphTo->morphWith([
+                    Payment::class => ['paymentDetails']
+                ]);
+            }])
             ->whereDate('created_at', $selectedDate)
             ->orderBy('created_at')
             ->get();
@@ -580,29 +586,82 @@ class CashController extends Controller
         // Resumen por usuario - simplificado
         $userSummary = collect();
 
-        // Obtener liquidaciones del día
-        $professionalLiquidations = \App\Models\ProfessionalLiquidation::with(['professional.specialty'])
-            ->whereDate('liquidation_date', $selectedDate)
-            ->orderBy('professional_id')
-            ->get();
+        // NUEVO v2.6.0: Consulta directa por método de pago
+        $paymentsByProfessionalAndMethod = DB::select("
+            SELECT
+                pr.id AS professional_id,
+                CONCAT(pr.last_name, ', ', pr.first_name) AS profesional,
+                s.name AS specialty,
+                pr.commission_percentage,
+                pd.payment_method,
+                SUM(pd.amount) AS total_amount,
+                COUNT(DISTINCT pa.appointment_id) AS appointment_count
+            FROM payment_details pd
+            JOIN payments pay ON pay.id = pd.payment_id
+            JOIN payment_appointments pa ON pa.payment_id = pay.id
+            JOIN appointments a ON a.id = pa.appointment_id
+            JOIN professionals pr ON pr.id = pa.professional_id
+            LEFT JOIN specialties s ON s.id = pr.specialty_id
+            WHERE pay.status = 'confirmed'
+              AND DATE(pay.payment_date) = ?
+            GROUP BY pr.id, pr.last_name, pr.first_name, s.name, pr.commission_percentage, pd.payment_method
+            ORDER BY profesional, pd.payment_method
+        ", [$selectedDate->format('Y-m-d')]);
 
-        // Formatear datos de liquidaciones
-        $professionalIncome = $professionalLiquidations->map(function ($liquidation) {
-            return [
-                'professional' => $liquidation->professional,
-                'full_name' => "Dr. {$liquidation->professional->first_name} {$liquidation->professional->last_name}",
-                'specialty' => $liquidation->professional->specialty->name ?? 'N/A',
-                'commission_percentage' => $liquidation->professional->commission_percentage ?? 0,
-                'total_collected' => $liquidation->total_collected,
-                'professional_amount' => $liquidation->professional_commission,
-                'clinic_amount' => $liquidation->clinic_amount,
-                'count' => $liquidation->appointments_attended,
-            ];
-        });
+        // Determinar qué métodos de pago tienen datos (para columnas dinámicas)
+        $activePaymentMethods = collect($paymentsByProfessionalAndMethod)
+            ->pluck('payment_method')
+            ->unique()
+            ->sort()
+            ->values();
+
+        // Transformar resultados agrupando por profesional
+        $professionalIncome = collect($paymentsByProfessionalAndMethod)
+            ->groupBy('professional_id')
+            ->map(function($group) use ($activePaymentMethods) {
+                $first = $group->first();
+
+                // Crear array con todos los métodos en 0
+                $paymentMethods = [];
+                foreach(['cash', 'transfer', 'debit_card', 'credit_card', 'qr'] as $method) {
+                    $paymentMethods[$method] = 0;
+                }
+
+                // Sumar montos por método
+                $totalCollected = 0;
+                $totalAppointments = 0;
+                foreach($group as $row) {
+                    $paymentMethods[$row->payment_method] = $row->total_amount;
+                    $totalCollected += $row->total_amount;
+                    $totalAppointments += $row->appointment_count;
+                }
+
+                // Calcular comisiones
+                $commissionPercentage = $first->commission_percentage ?? 0;
+                $professionalAmount = $totalCollected * ($commissionPercentage / 100);
+                $clinicAmount = $totalCollected - $professionalAmount;
+
+                return [
+                    'professional_id' => $first->professional_id,
+                    'full_name' => "Dr. " . $first->profesional,
+                    'specialty' => $first->specialty ?? 'N/A',
+                    'commission_percentage' => $commissionPercentage,
+                    'total_collected' => $totalCollected,
+                    'professional_amount' => $professionalAmount,
+                    'clinic_amount' => $clinicAmount,
+                    'count' => $totalAppointments,
+                    'cash' => $paymentMethods['cash'],
+                    'transfer' => $paymentMethods['transfer'],
+                    'debit_card' => $paymentMethods['debit_card'],
+                    'credit_card' => $paymentMethods['credit_card'],
+                    'qr' => $paymentMethods['qr'],
+                ];
+            })
+            ->values();
 
         // Calcular liquidación de Dra. Zalazar (professional_id = 1)
-        $zalazarLiquidation = $professionalLiquidations->firstWhere('professional_id', 1);
-        $zalazarCommission = $zalazarLiquidation ? $zalazarLiquidation->professional_commission : 0;
+        $zalazarData = $professionalIncome->firstWhere('professional_id', 1);
+        $zalazarCommission = $zalazarData ? $zalazarData['professional_amount'] : 0;
 
         // Obtener movimientos de "Pago de Saldos Dra. Zalazar"
         $zalazarBalancePayments = $movements->filter(fn($m) => $m->movementType?->code === 'zalazar_balance_payment');
@@ -611,11 +670,40 @@ class CashController extends Controller
         // Total de ingresos de Dra. Zalazar
         $zalazarTotalIncome = $zalazarCommission + $zalazarBalanceTotal;
 
+        // Calcular desglose por método de pago de Dra. Zalazar
+        $zalazarPaymentBreakdown = collect([
+            'cash' => 0,
+            'transfer' => 0,
+            'debit_card' => 0,
+            'credit_card' => 0,
+            'qr' => 0,
+        ]);
+
+        // Sumar liquidación de pacientes (desde $zalazarData)
+        if ($zalazarData) {
+            foreach(['cash', 'transfer', 'debit_card', 'credit_card', 'qr'] as $method) {
+                $zalazarPaymentBreakdown[$method] = $zalazarData[$method] ?? 0;
+            }
+        }
+
+        // Sumar pagos de saldos (desde payment_details del pago referenciado en cash_movements)
+        foreach ($zalazarBalancePayments as $movement) {
+            // Si el movimiento tiene reference que es un Payment, usar sus payment_details
+            if ($movement->reference instanceof Payment) {
+                foreach ($movement->reference->paymentDetails as $detail) {
+                    if (isset($zalazarPaymentBreakdown[$detail->payment_method])) {
+                        $zalazarPaymentBreakdown[$detail->payment_method] += $detail->amount;
+                    }
+                }
+            }
+        }
+
         // Agregar al summary
         $summary['zalazar_liquidation'] = $zalazarCommission;
         $summary['zalazar_balance_payments'] = $zalazarBalanceTotal;
         $summary['zalazar_total_income'] = $zalazarTotalIncome;
         $summary['final_balance_with_zalazar'] = $finalBalance + $zalazarCommission;
+        $summary['zalazar_payment_breakdown'] = $zalazarPaymentBreakdown;
 
         return view('cash.count-report', compact(
             'selectedDate',
@@ -624,7 +712,8 @@ class CashController extends Controller
             'movementsByType',
             'userSummary',
             'professionalIncome',
-            'zalazarBalancePayments'
+            'zalazarBalancePayments',
+            'activePaymentMethods'
         ));
     }
 
@@ -659,7 +748,12 @@ class CashController extends Controller
         $initialBalance = $lastBalanceMovement ? $lastBalanceMovement->balance_after : 0;
 
         // Obtener todos los movimientos del día
-        $movements = CashMovement::with(['user', 'reference', 'movementType'])
+        $movements = CashMovement::with(['user', 'movementType'])
+            ->with(['reference' => function($morphTo) {
+                $morphTo->morphWith([
+                    Payment::class => ['paymentDetails']
+                ]);
+            }])
             ->whereDate('created_at', $selectedDate)
             ->orderBy('created_at')
             ->get();
@@ -730,29 +824,82 @@ class CashController extends Controller
         // Resumen por usuario - simplificado para debug
         $userSummary = collect(); // Temporalmente vacío para evitar errores
 
-        // Obtener liquidaciones del día desde la tabla de liquidaciones
-        $professionalLiquidations = \App\Models\ProfessionalLiquidation::with(['professional.specialty'])
-            ->whereDate('liquidation_date', $selectedDate)
-            ->orderBy('professional_id')
-            ->get();
+        // NUEVO v2.6.0: Consulta directa por método de pago
+        $paymentsByProfessionalAndMethod = DB::select("
+            SELECT
+                pr.id AS professional_id,
+                CONCAT(pr.last_name, ', ', pr.first_name) AS profesional,
+                s.name AS specialty,
+                pr.commission_percentage,
+                pd.payment_method,
+                SUM(pd.amount) AS total_amount,
+                COUNT(DISTINCT pa.appointment_id) AS appointment_count
+            FROM payment_details pd
+            JOIN payments pay ON pay.id = pd.payment_id
+            JOIN payment_appointments pa ON pa.payment_id = pay.id
+            JOIN appointments a ON a.id = pa.appointment_id
+            JOIN professionals pr ON pr.id = pa.professional_id
+            LEFT JOIN specialties s ON s.id = pr.specialty_id
+            WHERE pay.status = 'confirmed'
+              AND DATE(pay.payment_date) = ?
+            GROUP BY pr.id, pr.last_name, pr.first_name, s.name, pr.commission_percentage, pd.payment_method
+            ORDER BY profesional, pd.payment_method
+        ", [$selectedDate->format('Y-m-d')]);
 
-        // Formatear datos de liquidaciones
-        $professionalIncome = $professionalLiquidations->map(function ($liquidation) {
-            return [
-                'professional' => $liquidation->professional,
-                'full_name' => "Dr. {$liquidation->professional->first_name} {$liquidation->professional->last_name}",
-                'specialty' => $liquidation->professional->specialty->name ?? 'N/A',
-                'commission_percentage' => $liquidation->professional->commission_percentage ?? 0,
-                'total_collected' => $liquidation->total_collected,
-                'professional_amount' => $liquidation->professional_commission,
-                'clinic_amount' => $liquidation->clinic_amount,
-                'count' => $liquidation->appointments_attended,
-            ];
-        });
+        // Determinar qué métodos de pago tienen datos (para columnas dinámicas)
+        $activePaymentMethods = collect($paymentsByProfessionalAndMethod)
+            ->pluck('payment_method')
+            ->unique()
+            ->sort()
+            ->values();
+
+        // Transformar resultados agrupando por profesional
+        $professionalIncome = collect($paymentsByProfessionalAndMethod)
+            ->groupBy('professional_id')
+            ->map(function($group) use ($activePaymentMethods) {
+                $first = $group->first();
+
+                // Crear array con todos los métodos en 0
+                $paymentMethods = [];
+                foreach(['cash', 'transfer', 'debit_card', 'credit_card', 'qr'] as $method) {
+                    $paymentMethods[$method] = 0;
+                }
+
+                // Sumar montos por método
+                $totalCollected = 0;
+                $totalAppointments = 0;
+                foreach($group as $row) {
+                    $paymentMethods[$row->payment_method] = $row->total_amount;
+                    $totalCollected += $row->total_amount;
+                    $totalAppointments += $row->appointment_count;
+                }
+
+                // Calcular comisiones
+                $commissionPercentage = $first->commission_percentage ?? 0;
+                $professionalAmount = $totalCollected * ($commissionPercentage / 100);
+                $clinicAmount = $totalCollected - $professionalAmount;
+
+                return [
+                    'professional_id' => $first->professional_id,
+                    'full_name' => "Dr. " . $first->profesional,
+                    'specialty' => $first->specialty ?? 'N/A',
+                    'commission_percentage' => $commissionPercentage,
+                    'total_collected' => $totalCollected,
+                    'professional_amount' => $professionalAmount,
+                    'clinic_amount' => $clinicAmount,
+                    'count' => $totalAppointments,
+                    'cash' => $paymentMethods['cash'],
+                    'transfer' => $paymentMethods['transfer'],
+                    'debit_card' => $paymentMethods['debit_card'],
+                    'credit_card' => $paymentMethods['credit_card'],
+                    'qr' => $paymentMethods['qr'],
+                ];
+            })
+            ->values();
 
         // Calcular liquidación de Dra. Zalazar (professional_id = 1) para saldo final
-        $zalazarLiquidation = $professionalLiquidations->firstWhere('professional_id', 1);
-        $zalazarCommission = $zalazarLiquidation ? $zalazarLiquidation->professional_commission : 0;
+        $zalazarData = $professionalIncome->firstWhere('professional_id', 1);
+        $zalazarCommission = $zalazarData ? $zalazarData['professional_amount'] : 0;
 
         // Obtener movimientos de "Pago de Saldos Dra. Zalazar"
         $zalazarBalancePayments = $movements->filter(fn($m) => $m->movementType?->code === 'zalazar_balance_payment');
@@ -762,12 +909,41 @@ class CashController extends Controller
         // NOTA: Los pagos de saldos ya están incluidos en $finalBalance (son ingresos del día)
         $zalazarTotalIncome = $zalazarCommission + $zalazarBalanceTotal;
 
+        // Calcular desglose por método de pago de Dra. Zalazar
+        $zalazarPaymentBreakdown = collect([
+            'cash' => 0,
+            'transfer' => 0,
+            'debit_card' => 0,
+            'credit_card' => 0,
+            'qr' => 0,
+        ]);
+
+        // Sumar liquidación de pacientes (desde $zalazarData)
+        if ($zalazarData) {
+            foreach(['cash', 'transfer', 'debit_card', 'credit_card', 'qr'] as $method) {
+                $zalazarPaymentBreakdown[$method] = $zalazarData[$method] ?? 0;
+            }
+        }
+
+        // Sumar pagos de saldos (desde payment_details del pago referenciado en cash_movements)
+        foreach ($zalazarBalancePayments as $movement) {
+            // Si el movimiento tiene reference que es un Payment, usar sus payment_details
+            if ($movement->reference instanceof Payment) {
+                foreach ($movement->reference->paymentDetails as $detail) {
+                    if (isset($zalazarPaymentBreakdown[$detail->payment_method])) {
+                        $zalazarPaymentBreakdown[$detail->payment_method] += $detail->amount;
+                    }
+                }
+            }
+        }
+
         // Agregar al summary el saldo final que incluye SOLO la liquidación de Zalazar
         // Los pagos de saldos ya están incluidos en finalBalance, por eso no se suman de nuevo
         $summary['zalazar_liquidation'] = $zalazarCommission;
         $summary['zalazar_balance_payments'] = $zalazarBalanceTotal;
         $summary['zalazar_total_income'] = $zalazarTotalIncome;
         $summary['final_balance_with_zalazar'] = $finalBalance + $zalazarCommission;
+        $summary['zalazar_payment_breakdown'] = $zalazarPaymentBreakdown;
 
         return view('cash.daily-report', compact(
             'selectedDate',
@@ -776,7 +952,8 @@ class CashController extends Controller
             'movementsByType',
             'userSummary',
             'professionalIncome',
-            'zalazarBalancePayments'
+            'zalazarBalancePayments',
+            'activePaymentMethods'
         ));
     }
 

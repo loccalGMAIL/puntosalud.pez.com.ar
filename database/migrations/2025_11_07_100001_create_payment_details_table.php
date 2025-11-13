@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('payment_details', function (Blueprint $table) {
             $table->id();
             $table->foreignId('payment_id')->constrained('payments')->cascadeOnDelete();
-            $table->enum('payment_method', ['cash', 'transfer', 'debit_card', 'credit_card', 'other']);
+            $table->enum('payment_method', ['cash', 'transfer', 'debit_card', 'credit_card', 'qr', 'other']);
             $table->decimal('amount', 10, 2);
             $table->enum('received_by', ['centro', 'profesional'])->default('centro');
             $table->string('reference')->nullable()->comment('Número de comprobante, referencia de transferencia, etc.');
