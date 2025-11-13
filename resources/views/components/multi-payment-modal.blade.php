@@ -44,7 +44,7 @@
                         <input x-model="totalAmount"
                                type="number"
                                step="0.01"
-                               min="0.01"
+                               min="0"
                                :readonly="isReadonlyAmount"
                                @input="updateRemaining()"
                                class="w-full pl-7 pr-3 py-2.5 text-lg font-semibold rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-750 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -112,7 +112,7 @@
                             <input x-model="method.amount"
                                    type="number"
                                    step="0.01"
-                                   min="0.01"
+                                   min="0"
                                    @input="updateRemaining()"
                                    class="w-full pl-7 pr-3 py-2 text-sm font-medium border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
                                    required>
@@ -194,8 +194,10 @@ function multiPaymentModal(readonlyAmount = false) {
             this.onSubmitCallback = callback;
             this.show = true;
 
-            // Agregar una forma de pago por defecto con el monto completo
-            this.addPaymentMethod();
+            // Agregar una forma de pago por defecto con el monto completo solo si amount > 0
+            if (parseFloat(amount) > 0) {
+                this.addPaymentMethod();
+            }
         },
 
         hide() {
@@ -233,10 +235,15 @@ function multiPaymentModal(readonlyAmount = false) {
         },
 
         canSubmit() {
+            // Si es monto cero, permitir sin métodos de pago
+            if (parseFloat(this.totalAmount) === 0) {
+                return true;
+            }
+
             if (this.paymentMethods.length === 0) return false;
 
             const allValid = this.paymentMethods.every(method => {
-                return method.type && parseFloat(method.amount) > 0;
+                return method.type && parseFloat(method.amount) >= 0;
             });
             if (!allValid) return false;
 

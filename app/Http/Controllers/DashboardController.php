@@ -272,17 +272,34 @@ class DashboardController extends Controller
 
     public function markCompletedAndPaid(Request $request, Appointment $appointment)
     {
-        $validated = $request->validate([
+        // Validación condicional basada en el monto
+        $rules = [
             'final_amount' => 'required|numeric|min:0',
             'concept' => 'nullable|string|max:500',
-            'payment_details' => 'required|array|min:1',
-            'payment_details.*.payment_method' => 'required|in:cash,transfer,debit_card,credit_card',
-            'payment_details.*.amount' => 'required|numeric|min:0.01',
-        ]);
+        ];
+
+        // Si el monto es mayor a 0, requerir payment_details
+        if ($request->input('final_amount') > 0) {
+            $rules['payment_details'] = 'required|array|min:1';
+            $rules['payment_details.*.payment_method'] = 'required|in:cash,transfer,debit_card,credit_card,qr';
+            $rules['payment_details.*.amount'] = 'required|numeric|min:0';
+        } else {
+            // Si el monto es 0, payment_details es opcional
+            $rules['payment_details'] = 'nullable|array';
+            $rules['payment_details.*.payment_method'] = 'nullable|in:cash,transfer,debit_card,credit_card,qr';
+            $rules['payment_details.*.amount'] = 'nullable|numeric|min:0';
+        }
+
+        $validated = $request->validate($rules);
 
         // Validar que la suma de payment_details coincida con final_amount
-        $totalPaymentDetails = collect($validated['payment_details'])->sum('amount');
-        if (abs($totalPaymentDetails - $validated['final_amount']) > 0.01) {
+        $paymentDetails = $validated['payment_details'] ?? [];
+        $totalPaymentDetails = collect($paymentDetails)->sum('amount');
+
+        // Si final_amount es 0, payment_details puede estar vacío
+        if ($validated['final_amount'] == 0 && empty($paymentDetails)) {
+            // Permitir pago en $0 sin métodos de pago
+        } elseif (abs($totalPaymentDetails - $validated['final_amount']) > 0.01) {
             return response()->json([
                 'success' => false,
                 'message' => "La suma de las formas de pago (\${$totalPaymentDetails}) no coincide con el monto total (\${$validated['final_amount']})",
@@ -346,14 +363,25 @@ class DashboardController extends Controller
             $professional = $appointment->professional;
 
             // Crear payment_details (puede haber múltiples formas de pago)
-            foreach ($validated['payment_details'] as $detail) {
+            // Si no hay payment_details (pago en $0), crear un registro con método 'cash' y monto 0
+            if (empty($paymentDetails)) {
                 \App\Models\PaymentDetail::create([
                     'payment_id' => $payment->id,
-                    'payment_method' => $detail['payment_method'],
-                    'amount' => $detail['amount'],
-                    'received_by' => $this->determineReceivedBy($detail['payment_method'], $professional),
-                    'reference' => $detail['reference'] ?? null,
+                    'payment_method' => 'cash',
+                    'amount' => 0,
+                    'received_by' => 'centro',
+                    'reference' => null,
                 ]);
+            } else {
+                foreach ($paymentDetails as $detail) {
+                    \App\Models\PaymentDetail::create([
+                        'payment_id' => $payment->id,
+                        'payment_method' => $detail['payment_method'],
+                        'amount' => $detail['amount'],
+                        'received_by' => $this->determineReceivedBy($detail['payment_method'], $professional),
+                        'reference' => $detail['reference'] ?? null,
+                    ]);
+                }
             }
 
             // Asignar pago al turno usando el servicio
