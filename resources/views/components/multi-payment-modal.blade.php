@@ -42,6 +42,7 @@
                     <div class="relative">
                         <span class="absolute left-3 top-2.5 text-gray-500 dark:text-gray-400">$</span>
                         <input x-model="totalAmount"
+                               x-ref="amountInput"
                                type="number"
                                step="0.01"
                                min="0"
@@ -198,6 +199,14 @@ function multiPaymentModal(readonlyAmount = false) {
             if (parseFloat(amount) > 0) {
                 this.addPaymentMethod();
             }
+
+            // Hacer foco en el campo de monto después de abrir el modal
+            this.$nextTick(() => {
+                if (this.$refs.amountInput && !this.isReadonlyAmount) {
+                    this.$refs.amountInput.focus();
+                    this.$refs.amountInput.select();
+                }
+            });
         },
 
         hide() {
