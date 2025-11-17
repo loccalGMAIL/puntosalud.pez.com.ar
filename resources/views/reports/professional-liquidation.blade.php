@@ -26,7 +26,7 @@
                 </svg>
                 Imprimir
             </button>
-            @if($liquidationData['totals']['professional_amount'] > 0)
+            @if($liquidationData['totals']['professional_amount'] > 0 || $liquidationData['professional']->id == 1)
             <button onclick="liquidarProfesional({{ $liquidationData['professional']->id }}, '{{ $liquidationData['professional']->full_name }}', {{ $liquidationData['totals']['professional_amount'] }})"
                     class="inline-flex items-center px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-lg shadow-sm transition-colors">
                 <svg class="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
