@@ -368,7 +368,8 @@ async function liquidarProfesional(professionalId, professionalName, amount) {
 
         const result = await response.json();
 
-        if (!result.success) {
+        // Verificar si hubo error (422, 500, etc.) o si success es false
+        if (!response.ok || !result.success) {
             throw new Error(result.message || 'Error en la operación');
         }
 
