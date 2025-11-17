@@ -30,6 +30,9 @@ class LiquidationController extends Controller
             $amount = $request->amount;
             $date = Carbon::parse($request->date);
 
+            // TEMPORAL: Excepción para Dra. Zalazar (ID=1) - Cobra directamente, no retira de caja
+            $isDraZalazar = $professional->id === 1;
+
             // 1. Verificar que NO exista ya una liquidación para este profesional en esta fecha
             $existingLiquidation = ProfessionalLiquidation::where('professional_id', $professional->id)
                 ->whereDate('liquidation_date', $date)
@@ -131,10 +134,14 @@ class LiquidationController extends Controller
                                    "Comisión base: \${$professionalCommission} - Reintegros: \${$totalRefunds} = \${$finalProfessionalAmount}");
             }
 
-            // 8. Verificar que hay suficiente efectivo en caja
-            $currentBalance = $this->getCurrentCashBalance($date);
-            if ($currentBalance < $amount) {
-                throw new \Exception('Saldo insuficiente en caja. Disponible: $'.number_format($currentBalance, 2));
+            // 8. Verificar que hay suficiente efectivo en caja (excepto Dra. Zalazar)
+            if (!$isDraZalazar) {
+                $currentBalance = $this->getCurrentCashBalance($date);
+                if ($currentBalance < $amount) {
+                    throw new \Exception('Saldo insuficiente en caja. Disponible: $'.number_format($currentBalance, 2));
+                }
+            } else {
+                $currentBalance = $this->getCurrentCashBalance($date);
             }
 
             // 9. Crear registro en professional_liquidations
@@ -153,7 +160,8 @@ class LiquidationController extends Controller
                 'paid_at' => now(),
                 'paid_by' => auth()->id(),
                 'notes' => "Liquidación procesada el {$date->format('d/m/Y')}".
-                          ($totalRefunds > 0 ? " - Reintegros descontados: \${$totalRefunds}" : ""),
+                          ($totalRefunds > 0 ? " - Reintegros descontados: \${$totalRefunds}" : "").
+                          ($isDraZalazar ? " - PAGO DIRECTO: Profesional cobra directamente, no retira de caja" : ""),
             ]);
 
             // 10. Crear detalles en liquidation_details por cada turno
@@ -186,16 +194,18 @@ class LiquidationController extends Controller
                     ->update(['liquidation_status' => 'liquidated']);
             }
 
-            // 12. Crear movimiento de caja por pago al profesional
-            CashMovement::create([
-                'movement_type_id' => MovementType::getIdByCode('professional_payment'),
-                'amount' => -$amount, // Negativo porque es una salida de dinero
-                'description' => "Liquidación profesional: {$professional->full_name} - {$attendedAppointments->count()} turnos",
-                'reference_type' => ProfessionalLiquidation::class,
-                'reference_id' => $liquidation->id,
-                'balance_after' => $currentBalance - $amount,
-                'user_id' => auth()->id(),
-            ]);
+            // 12. Crear movimiento de caja por pago al profesional (excepto Dra. Zalazar)
+            if (!$isDraZalazar) {
+                CashMovement::create([
+                    'movement_type_id' => MovementType::getIdByCode('professional_payment'),
+                    'amount' => -$amount, // Negativo porque es una salida de dinero
+                    'description' => "Liquidación profesional: {$professional->full_name} - {$attendedAppointments->count()} turnos",
+                    'reference_type' => ProfessionalLiquidation::class,
+                    'reference_id' => $liquidation->id,
+                    'balance_after' => $currentBalance - $amount,
+                    'user_id' => auth()->id(),
+                ]);
+            }
 
             DB::commit();
 
