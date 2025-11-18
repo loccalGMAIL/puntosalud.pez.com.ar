@@ -14,7 +14,7 @@
         body {
             font-family: Arial, sans-serif;
             font-size: 12px;
-            line-height: 1.4;
+            line-height: 1.2;
             color: #333;
             background: white;
         }
@@ -101,9 +101,10 @@
         .appointments-table th,
         .appointments-table td {
             border: 1px solid #dee2e6;
-            padding: 6px 8px;
+            padding: 3px 6px;
             text-align: left;
             font-size: 11px;
+            line-height: 1.1;
         }
         
         .appointments-table th {
@@ -143,6 +144,12 @@
         .patient-column {
             width: 35%;
         }
+
+        .patient-column small {
+            line-height: 1;
+            display: block;
+            margin-top: 1px;
+        }
         
         .amount-column {
             width: 80px;
@@ -152,6 +159,10 @@
         .payment-column {
             width: 15%;
             font-size: 10px;
+        }
+
+        .payment-column small {
+            line-height: 1;
         }
         
         .footer {
@@ -248,10 +259,6 @@
                 <span>Comisión profesional ({{ $liquidationData['totals']['commission_percentage'] }}%):</span>
                 <span style="color: #2e7d32;">+${{ number_format($liquidationData['totals']['professional_commission'], 0, ',', '.') }}</span>
             </div>
-            {{-- <div class="summary-row" style="font-size: 10px; padding-left: 15px; color: #1976d2;">
-                <span>Parte del centro ({{ $liquidationData['totals']['clinic_percentage'] }}%):</span>
-                <span>${{ number_format($liquidationData['totals']['clinic_amount'], 0, ',', '.') }}</span>
-            </div> --}}
         </div>
         @endif
 
@@ -320,88 +327,50 @@
             <table class="appointments-table">
                 <thead>
                     <tr>
-                        <th class="time-column">Hora</th>
+                        <th style="width: 5%;">Turno</th>
+                        <th style="width: 6%;">Hora</th>
                         <th class="patient-column">Paciente</th>
-                        <th class="amount-column">Monto</th>
-                        <th class="payment-column">Método</th>
-                        <th style="width: 15%;">Receptor</th>
+                        <th style="width: 8%;">Efectivo</th>
+                        <th style="width: 8%;">Digital</th>
+                        <th style="width: 10%;">Método</th>
+                        <th style="width: 8%;">Receptor</th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach($liquidationData['prepaid_appointments'] as $appointment)
+                        @php
+                            $isCash = $appointment['payment_method'] === 'cash';
+                            $cashAmount = $isCash ? $appointment['final_amount'] : 0;
+                            $otherAmount = !$isCash ? $appointment['final_amount'] : 0;
+                        @endphp
                         <tr>
-                            <td class="time-column">{{ $appointment['time'] }}</td>
+                            <td style="text-align: center; font-size: 9px;">{{ $appointment['id'] }}</td>
+                            <td class="time-column" style="font-size: 9px;">{{ $appointment['time'] }}</td>
                             <td class="patient-column">
                                 <strong>{{ $appointment['patient_name'] }}</strong>
                                 <br><small>DNI: {{ $appointment['patient_dni'] }}</small>
                             </td>
-                            <td class="amount-column">${{ number_format($appointment['final_amount'], 0, ',', '.') }}</td>
-                            <td class="payment-column">
-                                <small>
-                                    {{ match($appointment['payment_method']) {
-                                        'cash' => 'Efectivo',
-                                        'transfer' => 'Transferencia',
-                                        'card' => 'Tarjeta',
-                                        'qr' => 'QR',
-                                        default => $appointment['payment_method']
-                                    } }}<br>
-                                    {{ $appointment['payment_date'] }}
-                                    @if($appointment['receipt_number'])
-                                        <br>Rec: {{ $appointment['receipt_number'] }}
-                                    @endif
-                                </small>
-                            </td>
-                            <td style="text-align: center; font-size: 10px;">
-                                @if($appointment['received_by'] === 'profesional')
-                                    <strong style="color: #f57c00;">👤 Profesional</strong>
-                                @elseif($appointment['received_by'] === 'centro')
-                                    <strong style="color: #1976d2;">🏥 Centro</strong>
-                                @elseif($appointment['received_by'] === 'mixed')
-                                    <strong style="color: #7e22ce;">🔀 Mixto</strong>
+                            <td class="amount-column" style="font-size: 10px;">
+                                @if($cashAmount > 0)
+                                    ${{ number_format($cashAmount, 0, ',', '.') }}
                                 @else
                                     -
                                 @endif
                             </td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
-    @endif
-    
-    <!-- Turnos Pagados Hoy -->
-    @if($liquidationData['today_paid_appointments']->count() > 0)
-        <div class="section-title">💰 Turnos Cobrados Hoy ({{ $liquidationData['today_paid_appointments']->count() }})</div>
-        <div class="today-paid-section">
-            <div class="section-header">
-                Total: ${{ number_format($liquidationData['totals']['today_paid_amount'], 0, ',', '.') }} | 
-                Su comisión: ${{ number_format($liquidationData['totals']['today_paid_professional'], 0, ',', '.') }}
-            </div>
-            <table class="appointments-table">
-                <thead>
-                    <tr>
-                        <th class="time-column">Hora</th>
-                        <th class="patient-column">Paciente</th>
-                        <th class="amount-column">Monto</th>
-                        <th class="payment-column">Método</th>
-                        <th style="width: 15%;">Receptor</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($liquidationData['today_paid_appointments'] as $appointment)
-                        <tr>
-                            <td class="time-column">{{ $appointment['time'] }}</td>
-                            <td class="patient-column">
-                                <strong>{{ $appointment['patient_name'] }}</strong>
-                                <br><small>DNI: {{ $appointment['patient_dni'] }}</small>
+                            <td class="amount-column" style="font-size: 10px;">
+                                @if($otherAmount > 0)
+                                    ${{ number_format($otherAmount, 0, ',', '.') }}
+                                @else
+                                    -
+                                @endif
                             </td>
-                            <td class="amount-column">${{ number_format($appointment['final_amount'], 0, ',', '.') }}</td>
-                            <td class="payment-column">
+                            <td class="payment-column" style="font-size: 9px;">
                                 <small>
                                     {{ match($appointment['payment_method']) {
                                         'cash' => 'Efectivo',
-                                        'transfer' => 'Transferencia',
-                                        'card' => 'Tarjeta',
+                                        'transfer' => 'Transf',
+                                        'debit_card' => 'Débito',
+                                        'credit_card' => 'Crédito',
                                         'qr' => 'QR',
                                         default => $appointment['payment_method']
                                     } }}
@@ -412,7 +381,107 @@
                             </td>
                             <td style="text-align: center; font-size: 10px;">
                                 @if($appointment['received_by'] === 'profesional')
-                                    <strong style="color: #f57c00;">👤 Profesional</strong>
+                                    <strong style="color: #f57c00;">👤</strong>
+                                @elseif($appointment['received_by'] === 'centro')
+                                    <strong style="color: #1976d2;">🏥</strong>
+                                @elseif($appointment['received_by'] === 'mixed')
+                                    <strong style="color: #7e22ce;">🔀</strong>
+                                @else
+                                    -
+                                @endif
+                            </td>
+                        </tr>
+                    @endforeach
+                </tbody>
+                <tfoot>
+                    <tr style="border-top: 2px solid #333; font-weight: bold;">
+                        <td colspan="3" style="text-align: right; padding: 5px; font-size: 11px;">TOTALES:</td>
+                        <td class="amount-column" style="font-size: 11px;">
+                            @php
+                                $totalCash = $liquidationData['prepaid_appointments']->filter(fn($a) => $a['payment_method'] === 'cash')->sum('final_amount');
+                            @endphp
+                            ${{ number_format($totalCash, 0, ',', '.') }}
+                        </td>
+                        <td class="amount-column" style="font-size: 11px;">
+                            @php
+                                $totalOther = $liquidationData['prepaid_appointments']->filter(fn($a) => $a['payment_method'] !== 'cash')->sum('final_amount');
+                            @endphp
+                            ${{ number_format($totalOther, 0, ',', '.') }}
+                        </td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    @endif
+    
+    <!-- Turnos Pagados Hoy -->
+    @if($liquidationData['today_paid_appointments']->count() > 0)
+        <div class="section-title">💰 Turnos Cobrados Hoy ({{ $liquidationData['today_paid_appointments']->count() }})</div>
+        <div class="today-paid-section">
+            {{-- <div class="section-header">
+                Total: ${{ number_format($liquidationData['totals']['today_paid_amount'], 0, ',', '.') }} | 
+                Su comisión: ${{ number_format($liquidationData['totals']['today_paid_professional'], 0, ',', '.') }}
+            </div> --}}
+            <table class="appointments-table">
+                <thead>
+                    <tr>
+                        <th style="width: 5%;">Turno</th>
+                        <th style="width: 6%;">Hora</th>
+                        <th class="patient-column">Paciente</th>
+                        <th style="width: 8%;">Efectivo</th>
+                        <th style="width: 8%;">Digital</th>
+                        <th style="width: 10%;">Método</th>
+                        <th style="width: 8%;">Receptor</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($liquidationData['today_paid_appointments'] as $appointment)
+                        @php
+                            $isCash = $appointment['payment_method'] === 'cash';
+                            $cashAmount = $isCash ? $appointment['final_amount'] : 0;
+                            $otherAmount = !$isCash ? $appointment['final_amount'] : 0;
+                        @endphp
+                        <tr>
+                            <td style="text-align: center; font-size: 9px;">{{ $appointment['id'] }}</td>
+                            <td class="time-column" style="font-size: 9px;">{{ $appointment['time'] }}</td>
+                            <td class="patient-column">
+                                <strong>{{ $appointment['patient_name'] }}</strong>
+                                <br><small>DNI: {{ $appointment['patient_dni'] }}</small>
+                            </td>
+                            <td class="amount-column" style="font-size: 10px;">
+                                @if($cashAmount > 0)
+                                    ${{ number_format($cashAmount, 0, ',', '.') }}
+                                @else
+                                    -
+                                @endif
+                            </td>
+                            <td class="amount-column" style="font-size: 10px;">
+                                @if($otherAmount > 0)
+                                    ${{ number_format($otherAmount, 0, ',', '.') }}
+                                @else
+                                    -
+                                @endif
+                            </td>
+                            <td class="payment-column" style="font-size: 9px;">
+                                <small>
+                                    {{ match($appointment['payment_method']) {
+                                        'cash' => 'Efectivo',
+                                        'transfer' => 'Transf',
+                                        'debit_card' => 'Débito',
+                                        'credit_card' => 'Crédito',
+                                        'qr' => 'QR',
+                                        default => $appointment['payment_method']
+                                    } }}
+                                    @if($appointment['receipt_number'])
+                                        <br>Rec: {{ $appointment['receipt_number'] }}
+                                    @endif
+                                </small>
+                            </td>
+                            <td style="text-align: center; font-size: 10px;">
+                                @if($appointment['received_by'] === 'profesional')
+                                    <strong style="color: #f57c00;">👤 Prof.</strong>
                                 @elseif($appointment['received_by'] === 'centro')
                                     <strong style="color: #1976d2;">🏥 Centro</strong>
                                 @elseif($appointment['received_by'] === 'mixed')
@@ -424,6 +493,25 @@
                         </tr>
                     @endforeach
                 </tbody>
+                <tfoot>
+                    <tr style="border-top: 2px solid #333; font-weight: bold;">
+                        <td colspan="3" style="text-align: right; padding: 5px; font-size: 11px;">TOTALES:</td>
+                        <td class="amount-column" style="font-size: 11px;">
+                            @php
+                                $totalCash = $liquidationData['today_paid_appointments']->filter(fn($a) => $a['payment_method'] === 'cash')->sum('final_amount');
+                            @endphp
+                            ${{ number_format($totalCash, 0, ',', '.') }}
+                        </td>
+                        <td class="amount-column" style="font-size: 11px;">
+                            @php
+                                $totalOther = $liquidationData['today_paid_appointments']->filter(fn($a) => $a['payment_method'] !== 'cash')->sum('final_amount');
+                            @endphp
+                            ${{ number_format($totalOther, 0, ',', '.') }}
+                        </td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                </tfoot>
             </table>
         </div>
     @endif
