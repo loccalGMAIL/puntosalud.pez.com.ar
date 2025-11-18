@@ -18,12 +18,14 @@ class Professional extends Model
         'phone',
         'email',
         'commission_percentage',
+        'receives_transfers_directly',
         'notes',
         'is_active',
     ];
 
     protected $casts = [
         'commission_percentage' => 'decimal:2',
+        'receives_transfers_directly' => 'boolean',
         'is_active' => 'boolean',
     ];
 

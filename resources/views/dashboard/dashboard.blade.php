@@ -860,8 +860,8 @@ function urgencyModalDashboard() {
         </div>
     </div>
 
-    <!-- Modal para finalizar y cobrar -->
-    <x-payment-modal />
+    <!-- Modal para finalizar y cobrar con múltiples formas de pago -->
+    <x-multi-payment-modal title="Finalizar y Cobrar Consulta" />
 
     <!-- Modal del sistema para notificaciones y confirmaciones -->
     <x-system-modal />
@@ -901,8 +901,68 @@ function urgencyModalDashboard() {
         }
     };
 
-    // Global modal reference
-    let globalPaymentModal = null;
+    // Función para abrir el modal de múltiples formas de pago
+    function openMultiPaymentModal(appointmentId, estimatedAmount = 0) {
+        const modalElement = document.querySelector('[x-data*="multiPaymentModal"]');
+        if (!modalElement) {
+            console.error('Multi-payment modal not found');
+            return;
+        }
+
+        const modal = Alpine.$data(modalElement);
+
+        modal.open(estimatedAmount, async (paymentData) => {
+            let result;
+            try {
+                result = await DashboardAPI.makeRequest(
+                    `/dashboard/appointments/${appointmentId}/mark-completed-paid`,
+                    {
+                        method: 'POST',
+                        body: JSON.stringify({
+                            final_amount: paymentData.total_amount,
+                            concept: paymentData.concept,
+                            payment_details: paymentData.payment_details
+                        })
+                    }
+                );
+
+                console.log('Payment completed successfully:', result);
+            } catch (error) {
+                console.error('Error in payment request:', error);
+                await DashboardAPI.showNotification(error.message || 'Error al procesar el pago', 'error');
+                return; // Salir si hay error en el pago
+            }
+
+            // Programar recarga ANTES de mostrar diálogos
+            console.log('Scheduling page reload...');
+            const reloadTimer = setTimeout(() => {
+                console.log('Reloading page now...');
+                window.location.reload();
+            }, 2000);
+
+            // Mostrar diálogos de forma no bloqueante
+            try {
+                // Preguntar si desea imprimir el recibo
+                if (result.payment_id) {
+                    const printReceipt = await SystemModal.confirm(
+                        'Imprimir recibo',
+                        '¿Desea imprimir el recibo ahora?',
+                        'Sí, imprimir',
+                        'No'
+                    );
+
+                    if (printReceipt) {
+                        window.open(`/payments/${result.payment_id}/print-receipt?print=1`, '_blank');
+                    }
+                }
+
+                await DashboardAPI.showNotification('Turno cobrado exitosamente', 'success');
+            } catch (error) {
+                console.error('Error showing dialogs:', error);
+                // Continuar con la recarga de todas formas
+            }
+        });
+    }
 
     // Alpine.js appointment actions component
     function appointmentActions(appointmentId, estimatedAmount = 0) {
@@ -919,15 +979,19 @@ function urgencyModalDashboard() {
                     });
 
                     await DashboardAPI.showNotification('Turno marcado como atendido exitosamente', 'success');
-                    DashboardAPI.reloadPage();
+
+                    // Forzar recarga inmediata
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 500);
                 } catch (error) {
-                    await DashboardAPI.showNotification(error.message, 'error');
+                    await DashboardAPI.showNotification(error.message || 'Error al marcar como atendido', 'error');
                     this.loading = false;
                 }
             },
 
             markCompletedAndPaid() {
-                globalPaymentModal?.showModal(appointmentId, estimatedAmount);
+                openMultiPaymentModal(appointmentId, estimatedAmount);
             },
 
             async markAbsent() {
@@ -949,88 +1013,19 @@ function urgencyModalDashboard() {
                     });
 
                     await DashboardAPI.showNotification('Turno marcado como ausente', 'success');
-                    DashboardAPI.reloadPage();
+
+                    // Forzar recarga inmediata
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 500);
                 } catch (error) {
-                    await DashboardAPI.showNotification(error.message, 'error');
+                    await DashboardAPI.showNotification(error.message || 'Error al marcar como ausente', 'error');
                     this.loading = false;
                 }
             }
         };
     }
     
-    // Alpine.js payment modal component
-    function paymentModal() {
-        return {
-            show: false,
-            loading: false,
-            currentAppointmentId: null,
-            paymentForm: { final_amount: '', payment_method: '', concept: '' },
-            
-            init() {
-                globalPaymentModal = this;
-            },
-            
-            showModal(appointmentId, estimatedAmount = 0) {
-                this.currentAppointmentId = appointmentId;
-                this.paymentForm = {
-                    final_amount: estimatedAmount || '',
-                    payment_method: '',
-                    concept: ''
-                };
-                this.show = true;
-            },
-            
-            hide() {
-                this.show = false;
-                this.currentAppointmentId = null;
-                this.loading = false;
-            },
-            
-            async submitPayment() {
-                if (this.loading) return;
-
-                // Validation
-                if (!this.paymentForm.final_amount || !this.paymentForm.payment_method) {
-                    await DashboardAPI.showNotification('Complete todos los campos requeridos', 'error');
-                    return;
-                }
-
-                this.loading = true;
-
-                try {
-                    const result = await DashboardAPI.makeRequest(
-                        `/dashboard/appointments/${this.currentAppointmentId}/mark-completed-paid`,
-                        {
-                            method: 'POST',
-                            body: JSON.stringify(this.paymentForm)
-                        }
-                    );
-
-                    // Cerrar el modal de pago primero
-                    this.hide();
-
-                    // Preguntar si desea imprimir el recibo
-                    if (result.payment_id) {
-                        const printReceipt = await SystemModal.confirm(
-                            'Imprimir recibo',
-                            '¿Desea imprimir el recibo ahora?',
-                            'Sí, imprimir',
-                            'No'
-                        );
-
-                        if (printReceipt) {
-                            window.open(`/payments/${result.payment_id}/print-receipt?print=1`, '_blank');
-                        }
-                    }
-
-                    DashboardAPI.reloadPage();
-                } catch (error) {
-                    await DashboardAPI.showNotification(error.message, 'error');
-                    this.loading = false;
-                }
-            }
-        };
-    }
 
     // Alpine.js cash alerts component
     function cashAlerts() {

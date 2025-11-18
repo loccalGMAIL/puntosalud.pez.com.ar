@@ -22,11 +22,10 @@ class PaymentAllocationService
             $paymentAppointment = PaymentAppointment::create([
                 'payment_id' => $paymentId,
                 'appointment_id' => $appointmentId,
-                'allocated_amount' => $payment->amount,
+                'professional_id' => $appointment->professional_id,
+                'allocated_amount' => $payment->total_amount,
                 'is_liquidation_trigger' => true,
             ]);
-
-            $payment->update(['sessions_used' => 1]);
 
             return $paymentAppointment;
         });
@@ -38,26 +37,29 @@ class PaymentAllocationService
             $payment = Payment::findOrFail($paymentId);
             $appointment = Appointment::findOrFail($appointmentId);
 
+            // Buscar el paquete asociado al pago (nueva estructura v2.6.0)
+            $patientPackage = \App\Models\PatientPackage::where('payment_id', $paymentId)->firstOrFail();
+
             $this->validatePackageSessionAllocation($payment, $appointment);
 
-            $isFirstSession = $payment->sessions_used == 0;
-            $sessionAmount = $payment->amount / $payment->sessions_included;
+            $isFirstSession = $patientPackage->sessions_used == 0;
+            $sessionAmount = $patientPackage->price_paid / $patientPackage->sessions_included;
 
             $paymentAppointment = PaymentAppointment::create([
                 'payment_id' => $paymentId,
                 'appointment_id' => $appointmentId,
+                'professional_id' => $appointment->professional_id,
                 'allocated_amount' => $sessionAmount,
                 'is_liquidation_trigger' => $isFirstSession,
             ]);
 
-            $newSessionsUsed = $payment->sessions_used + 1;
-            $updateData = ['sessions_used' => $newSessionsUsed];
+            // Usar método del modelo PatientPackage para incrementar sesiones
+            $patientPackage->useSession();
 
-            if ($newSessionsUsed >= $payment->sessions_included) {
-                $updateData['liquidation_status'] = 'liquidated';
+            // Si se completó el paquete, liquidar el pago
+            if ($patientPackage->status === 'completed') {
+                $payment->update(['liquidation_status' => 'liquidated']);
             }
-
-            $payment->update($updateData);
 
             return $paymentAppointment;
         });
@@ -75,23 +77,23 @@ class PaymentAllocationService
             return null;
         }
 
-        // Buscar paquetes disponibles para este paciente
-        $availablePackage = Payment::where('patient_id', $appointment->patient_id)
-            ->where('payment_type', 'package')
-            ->where('liquidation_status', '!=', 'cancelled')
+        // Buscar paquetes activos con sesiones disponibles para este paciente (nueva estructura v2.6.0)
+        $availablePackage = \App\Models\PatientPackage::where('patient_id', $appointment->patient_id)
+            ->where('status', 'active')
             ->whereColumn('sessions_used', '<', 'sessions_included')
             ->orderBy('created_at', 'asc')
             ->first();
 
         if ($availablePackage) {
-            return $this->allocatePackageSession($availablePackage->id, $appointmentId);
+            // Usar el payment_id del paquete para asignar
+            return $this->allocatePackageSession($availablePackage->payment_id, $appointmentId);
         }
 
         // Si no hay paquetes, buscar pagos individuales sin asignar
         $availableSinglePayment = Payment::where('patient_id', $appointment->patient_id)
             ->where('payment_type', 'single')
+            ->where('status', 'confirmed')
             ->where('liquidation_status', '!=', 'cancelled')
-            ->where('sessions_used', 0) // No usado aún
             ->whereDoesntHave('paymentAppointments') // No asignado a ningún turno
             ->orderBy('created_at', 'asc')
             ->first();
@@ -109,17 +111,18 @@ class PaymentAllocationService
             $paymentAppointment = PaymentAppointment::findOrFail($paymentAppointmentId);
             $payment = $paymentAppointment->payment;
 
-            if ($payment->payment_type === 'single') {
-                $payment->update(['sessions_used' => 0]);
-            } else {
-                $newSessionsUsed = max(0, $payment->sessions_used - 1);
-                $updateData = ['sessions_used' => $newSessionsUsed];
+            // Si es un paquete, devolver la sesión
+            if ($payment->payment_type === 'package_purchase') {
+                $patientPackage = \App\Models\PatientPackage::where('payment_id', $payment->id)->first();
 
-                if ($payment->liquidation_status === 'liquidated' && $newSessionsUsed < $payment->sessions_included) {
-                    $updateData['liquidation_status'] = 'pending';
+                if ($patientPackage) {
+                    $patientPackage->returnSession();
+
+                    // Si estaba liquidado y ahora tiene sesiones disponibles, volver a pending
+                    if ($payment->liquidation_status === 'liquidated' && $patientPackage->sessions_remaining > 0) {
+                        $payment->update(['liquidation_status' => 'pending']);
+                    }
                 }
-
-                $payment->update($updateData);
             }
 
             $paymentAppointment->delete();
@@ -128,30 +131,41 @@ class PaymentAllocationService
 
     public function getAvailablePackagesForPatient(int $patientId): \Illuminate\Database\Eloquent\Collection
     {
-        return Payment::where('patient_id', $patientId)
-            ->where('payment_type', 'package')
-            ->where('liquidation_status', '!=', 'cancelled')
+        // Retornar paquetes activos con sesiones disponibles (nueva estructura v2.6.0)
+        return \App\Models\PatientPackage::where('patient_id', $patientId)
+            ->where('status', 'active')
             ->whereColumn('sessions_used', '<', 'sessions_included')
-            ->with(['patient', 'paymentAppointments.appointment'])
+            ->with(['patient', 'payment.paymentAppointments.appointment'])
             ->orderBy('created_at', 'asc')
             ->get();
     }
 
     public function getPaymentAllocationSummary(int $paymentId): array
     {
-        $payment = Payment::with(['paymentAppointments.appointment.professional'])
+        $payment = Payment::with(['paymentAppointments.appointment.professional', 'patientPackage'])
             ->findOrFail($paymentId);
 
         $allocatedAmount = $payment->paymentAppointments->sum('allocated_amount');
-        $remainingSessions = $payment->sessions_included - $payment->sessions_used;
-        $remainingAmount = $payment->amount - $allocatedAmount;
+        $remainingAmount = $payment->total_amount - $allocatedAmount;
+
+        // Si es un paquete, obtener info de sesiones del PatientPackage
+        if ($payment->payment_type === 'package_purchase' && $payment->patientPackage) {
+            $package = $payment->patientPackage;
+            $totalSessions = $package->sessions_included;
+            $usedSessions = $package->sessions_used;
+            $remainingSessions = $package->sessions_remaining;
+        } else {
+            $totalSessions = 1;
+            $usedSessions = $payment->paymentAppointments->count();
+            $remainingSessions = max(0, 1 - $usedSessions);
+        }
 
         return [
             'payment' => $payment,
-            'total_sessions' => $payment->sessions_included,
-            'used_sessions' => $payment->sessions_used,
+            'total_sessions' => $totalSessions,
+            'used_sessions' => $usedSessions,
             'remaining_sessions' => $remainingSessions,
-            'total_amount' => $payment->amount,
+            'total_amount' => $payment->total_amount,
             'allocated_amount' => $allocatedAmount,
             'remaining_amount' => $remainingAmount,
             'is_fully_allocated' => $remainingSessions <= 0,
@@ -186,15 +200,15 @@ class PaymentAllocationService
             throw new InvalidArgumentException('El pago y el turno deben pertenecer al mismo paciente');
         }
 
-        if ($payment->sessions_used > 0) {
+        if ($payment->paymentAppointments()->exists()) {
             throw new RuntimeException('El pago individual ya fue utilizado');
         }
     }
 
     private function validatePackageSessionAllocation(Payment $payment, Appointment $appointment): void
     {
-        if ($payment->payment_type !== 'package') {
-            throw new InvalidArgumentException('El pago debe ser de tipo paquete (package)');
+        if ($payment->payment_type !== 'package_purchase') {
+            throw new InvalidArgumentException('El pago debe ser de tipo paquete (package_purchase)');
         }
 
         if ($appointment->status !== 'attended') {
@@ -209,12 +223,19 @@ class PaymentAllocationService
             throw new InvalidArgumentException('El pago y el turno deben pertenecer al mismo paciente');
         }
 
-        if ($payment->sessions_used >= $payment->sessions_included) {
+        // Verificar sesiones disponibles desde PatientPackage
+        $patientPackage = \App\Models\PatientPackage::where('payment_id', $payment->id)->first();
+
+        if (!$patientPackage) {
+            throw new RuntimeException('No se encontró el paquete asociado al pago');
+        }
+
+        if ($patientPackage->sessions_remaining <= 0) {
             throw new RuntimeException('No quedan sesiones disponibles en este paquete');
         }
 
-        if ($payment->liquidation_status === 'cancelled') {
-            throw new RuntimeException('No se pueden usar sesiones de un paquete cancelado');
+        if ($patientPackage->status !== 'active') {
+            throw new RuntimeException('No se pueden usar sesiones de un paquete ' . $patientPackage->status);
         }
     }
 }

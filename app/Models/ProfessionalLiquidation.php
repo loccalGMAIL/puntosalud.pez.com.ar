@@ -17,8 +17,11 @@ class ProfessionalLiquidation extends Model
         'appointments_attended',
         'appointments_absent',
         'total_collected',
+        'direct_payments_total',
         'professional_commission',
         'clinic_amount',
+        'clinic_amount_from_direct',
+        'net_professional_amount',
         'payment_status',
         'payment_method',
         'paid_at',
@@ -34,8 +37,11 @@ class ProfessionalLiquidation extends Model
             'appointments_attended' => 'integer',
             'appointments_absent' => 'integer',
             'total_collected' => 'decimal:2',
+            'direct_payments_total' => 'decimal:2',
             'professional_commission' => 'decimal:2',
             'clinic_amount' => 'decimal:2',
+            'clinic_amount_from_direct' => 'decimal:2',
+            'net_professional_amount' => 'decimal:2',
             'paid_at' => 'datetime',
         ];
     }

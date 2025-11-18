@@ -64,11 +64,13 @@
                                 $typeColors = [
                                     'single' => 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
                                     'package' => 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400',
+                                    'package_purchase' => 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400',
                                     'refund' => 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
                                 ];
                                 $typeLabels = [
                                     'single' => 'Pago Individual',
                                     'package' => 'Paquete de Sesiones',
+                                    'package_purchase' => 'Paquete de Sesiones',
                                     'refund' => 'Reembolso'
                                 ];
                             @endphp
@@ -78,7 +80,7 @@
                         </div>
                         
                         <div>
-                            <label class="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Método de Pago</label>
+                            <label class="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Método(s) de Pago</label>
                             @php
                                 $methodLabels = [
                                     'cash' => 'Efectivo',
@@ -88,13 +90,17 @@
                                     'qr' => 'Pago QR'
                                 ];
                             @endphp
-                            <div class="text-lg text-gray-900 dark:text-white">{{ $methodLabels[$payment->payment_method] }}</div>
+                            <div class="text-lg text-gray-900 dark:text-white">
+                                @foreach($payment->paymentDetails as $detail)
+                                    <div>{{ $methodLabels[$detail->payment_method] ?? $detail->payment_method }} - ${{ number_format($detail->amount, 2) }}</div>
+                                @endforeach
+                            </div>
                         </div>
                         
                         <div>
                             <label class="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Monto</label>
                             <div class="text-2xl font-bold {{ $payment->payment_type === 'refund' ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400' }}">
-                                {{ $payment->payment_type === 'refund' ? '-' : '' }}${{ number_format($payment->amount, 2) }}
+                                {{ $payment->payment_type === 'refund' ? '-' : '' }}${{ number_format($payment->total_amount, 2) }}
                             </div>
                         </div>
                         
@@ -104,12 +110,14 @@
                                 $statusColors = [
                                     'pending' => 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
                                     'liquidated' => 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
-                                    'cancelled' => 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
+                                    'cancelled' => 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
+                                    'not_applicable' => 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400'
                                 ];
                                 $statusLabels = [
                                     'pending' => 'Pendiente de Liquidación',
                                     'liquidated' => 'Liquidado',
-                                    'cancelled' => 'Cancelado'
+                                    'cancelled' => 'Cancelado',
+                                    'not_applicable' => 'No Aplica'
                                 ];
                             @endphp
                             <span class="inline-flex px-3 py-1 text-sm font-medium rounded-full {{ $statusColors[$payment->liquidation_status] }}">
@@ -118,25 +126,25 @@
                         </div>
                     </div>
                     
-                    @if($payment->payment_type === 'package')
+                    @if($payment->payment_type === 'package_purchase' && $payment->patientPackage)
                         <div class="mt-6 p-4 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg">
                             <h4 class="font-medium text-purple-900 dark:text-purple-200 mb-2">Información del Paquete</h4>
                             <div class="grid grid-cols-2 gap-4 text-sm">
                                 <div>
                                     <span class="text-purple-700 dark:text-purple-300">Sesiones incluidas:</span>
-                                    <span class="font-medium text-purple-900 dark:text-purple-100 ml-1">{{ $payment->sessions_included }}</span>
+                                    <span class="font-medium text-purple-900 dark:text-purple-100 ml-1">{{ $payment->patientPackage->sessions_included }}</span>
                                 </div>
                                 <div>
                                     <span class="text-purple-700 dark:text-purple-300">Sesiones utilizadas:</span>
-                                    <span class="font-medium text-purple-900 dark:text-purple-100 ml-1">{{ $payment->sessions_used }}</span>
+                                    <span class="font-medium text-purple-900 dark:text-purple-100 ml-1">{{ $payment->patientPackage->sessions_used }}</span>
                                 </div>
                                 <div>
                                     <span class="text-purple-700 dark:text-purple-300">Sesiones restantes:</span>
-                                    <span class="font-medium text-purple-900 dark:text-purple-100 ml-1">{{ $payment->sessions_included - $payment->sessions_used }}</span>
+                                    <span class="font-medium text-purple-900 dark:text-purple-100 ml-1">{{ $payment->patientPackage->sessions_remaining }}</span>
                                 </div>
                                 <div>
                                     <span class="text-purple-700 dark:text-purple-300">Valor por sesión:</span>
-                                    <span class="font-medium text-purple-900 dark:text-purple-100 ml-1">${{ number_format($payment->amount / $payment->sessions_included, 2) }}</span>
+                                    <span class="font-medium text-purple-900 dark:text-purple-100 ml-1">${{ number_format($payment->patientPackage->price_paid / $payment->patientPackage->sessions_included, 2) }}</span>
                                 </div>
                             </div>
                         </div>
@@ -259,7 +267,7 @@
             </div>
 
             <!-- Acciones Rápidas -->
-            @if($payment->payment_type === 'package' && $payment->sessions_used < $payment->sessions_included)
+            @if($payment->payment_type === 'package_purchase' && $payment->patientPackage && $payment->patientPackage->sessions_remaining > 0)
                 <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
                     <div class="p-6">
                         <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
@@ -269,15 +277,15 @@
                             </svg>
                             Usar Sesión del Paquete
                         </h3>
-                        
+
                         <div class="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg p-4 mb-4">
                             <div class="text-sm text-purple-700 dark:text-purple-300">
-                                <div class="font-medium">Sesiones disponibles: {{ $payment->sessions_included - $payment->sessions_used }}</div>
-                                <div>Valor por sesión: ${{ number_format($payment->amount / $payment->sessions_included, 2) }}</div>
+                                <div class="font-medium">Sesiones disponibles: {{ $payment->patientPackage->sessions_remaining }}</div>
+                                <div>Valor por sesión: ${{ number_format($payment->patientPackage->price_paid / $payment->patientPackage->sessions_included, 2) }}</div>
                             </div>
                         </div>
-                        
-                        <button @click="showSessionModal = true" 
+
+                        <button @click="showSessionModal = true"
                                 class="w-full px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-lg transition-colors">
                             Usar Sesión
                         </button>
@@ -321,10 +329,10 @@
                             </div>
                         @endif
 
-                        @if($payment->payment_type === 'package')
+                        @if($payment->payment_type === 'package_purchase' && $payment->patientPackage)
                             <div class="flex justify-between">
                                 <span class="text-gray-500 dark:text-gray-400">Progreso del paquete:</span>
-                                <span class="text-gray-900 dark:text-white">{{ $payment->sessions_used }}/{{ $payment->sessions_included }}</span>
+                                <span class="text-gray-900 dark:text-white">{{ $payment->patientPackage->sessions_used }}/{{ $payment->patientPackage->sessions_included }}</span>
                             </div>
                         @endif
                     </div>

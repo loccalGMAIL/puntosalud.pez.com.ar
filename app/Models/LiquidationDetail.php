@@ -11,6 +11,7 @@ class LiquidationDetail extends Model
 
     protected $fillable = [
         'liquidation_id',
+        'payment_detail_id',
         'payment_appointment_id',
         'payment_id',
         'appointment_id',
@@ -30,6 +31,11 @@ class LiquidationDetail extends Model
     public function liquidation()
     {
         return $this->belongsTo(ProfessionalLiquidation::class, 'liquidation_id');
+    }
+
+    public function paymentDetail()
+    {
+        return $this->belongsTo(PaymentDetail::class);
     }
 
     public function paymentAppointment()

@@ -13,24 +13,22 @@ class Payment extends Model
         'patient_id',
         'payment_date',
         'payment_type',
-        'payment_method',
-        'amount',
-        'sessions_included',
-        'sessions_used',
+        'total_amount',
+        'is_advance_payment',
+        'concept',
+        'status',
         'liquidation_status',
         'liquidated_at',
-        'concept',
+        'income_category', // Para ingresos manuales (código del MovementType)
         'receipt_number',
         'created_by',
-        'income_category', // Para ingresos manuales (código del MovementType)
     ];
 
     protected $casts = [
         'payment_date' => 'datetime',
         'liquidated_at' => 'datetime',
-        'amount' => 'decimal:2',
-        'sessions_included' => 'integer',
-        'sessions_used' => 'integer',
+        'total_amount' => 'decimal:2',
+        'is_advance_payment' => 'boolean',
     ];
 
     /**
@@ -63,6 +61,16 @@ class Payment extends Model
         return $this->hasMany(LiquidationDetail::class);
     }
 
+    public function paymentDetails()
+    {
+        return $this->hasMany(PaymentDetail::class);
+    }
+
+    public function patientPackage()
+    {
+        return $this->hasOne(PatientPackage::class);
+    }
+
     /**
      * Scopes
      */
@@ -78,7 +86,7 @@ class Payment extends Model
 
     public function scopePackages($query)
     {
-        return $query->where('payment_type', 'package');
+        return $query->where('payment_type', 'package_purchase');
     }
 
     public function scopeSinglePayments($query)
@@ -91,6 +99,11 @@ class Payment extends Model
         return $query->where('payment_type', 'refund');
     }
 
+    public function scopeManualIncome($query)
+    {
+        return $query->where('payment_type', 'manual_income');
+    }
+
     public function scopeForPatient($query, $patientId)
     {
         return $query->where('patient_id', $patientId);
@@ -101,27 +114,86 @@ class Payment extends Model
         return $query->whereBetween('payment_date', [$start, $end]);
     }
 
+    public function scopeAdvancePayments($query)
+    {
+        return $query->where('is_advance_payment', true);
+    }
+
+    public function scopeConfirmed($query)
+    {
+        return $query->where('status', 'confirmed');
+    }
+
+    public function scopeCancelled($query)
+    {
+        return $query->where('status', 'cancelled');
+    }
+
     /**
      * Accessors
      */
-    public function getSessionsRemainingAttribute()
-    {
-        if ($this->payment_type !== 'package') {
-            return 0;
-        }
 
-        return $this->sessions_included - $this->sessions_used;
+    /**
+     * Determina si el pago es de un paciente o un ingreso manual
+     */
+    public function getEntryTypeAttribute()
+    {
+        return $this->payment_type === 'manual_income' ? 'income' : 'payment';
     }
 
-    public function getIsPackageCompleteAttribute()
+    /**
+     * Obtiene el método de pago principal del primer payment_detail
+     * Para compatibilidad con vistas que esperan payment_method directo
+     */
+    public function getPaymentMethodAttribute()
     {
-        return $this->payment_type === 'package' &&
-               $this->sessions_used >= $this->sessions_included;
+        // Si ya está cargada la relación, usarla
+        if ($this->relationLoaded('paymentDetails')) {
+            $firstDetail = $this->paymentDetails->first();
+            return $firstDetail ? $firstDetail->payment_method : null;
+        }
+
+        // Sino, hacer query
+        $firstDetail = $this->paymentDetails()->first();
+        return $firstDetail ? $firstDetail->payment_method : null;
+    }
+
+    /**
+     * Alias para total_amount (compatibilidad con código legacy)
+     */
+    public function getAmountAttribute()
+    {
+        return $this->total_amount;
     }
 
     public function getIsRefundAttribute()
     {
-        return $this->amount < 0;
+        return $this->total_amount < 0;
+    }
+
+    public function getIsManualIncomeAttribute()
+    {
+        return $this->payment_type === 'manual_income';
+    }
+
+    public function getIsPackagePurchaseAttribute()
+    {
+        return $this->payment_type === 'package_purchase';
+    }
+
+    public function getIsAdvanceAttribute()
+    {
+        return $this->is_advance_payment;
+    }
+
+    public function getIsCancelledAttribute()
+    {
+        return $this->status === 'cancelled';
+    }
+
+    public function getIsConfirmedAttribute()
+    {
+        return $this->status === 'confirmed';
     }
 
     /**
@@ -137,25 +209,18 @@ class Payment extends Model
         ]);
     }
 
-    public function useSession()
-    {
-        if ($this->payment_type === 'package' && $this->sessions_remaining > 0) {
-            $this->increment('sessions_used');
-
-            return true;
-        }
-
-        return false;
-    }
-
     public function canBeUsedForAppointment()
     {
-        if ($this->payment_type === 'single') {
-            return $this->paymentAppointments()->count() === 0;
+        // Si es compra de paquete, verificar que el paquete tenga sesiones disponibles
+        if ($this->payment_type === 'package_purchase') {
+            return $this->patientPackage &&
+                   $this->patientPackage->sessions_remaining > 0 &&
+                   $this->patientPackage->status === 'active';
         }
 
-        if ($this->payment_type === 'package') {
-            return $this->sessions_remaining > 0;
+        // Si es pago individual, solo puede usarse una vez
+        if ($this->payment_type === 'single') {
+            return $this->paymentAppointments()->count() === 0;
         }
 
         return false;
@@ -167,6 +232,30 @@ class Payment extends Model
             'liquidation_status' => 'liquidated',
             'liquidated_at' => now(),
         ]);
+    }
+
+    public function cancel()
+    {
+        $this->update(['status' => 'cancelled']);
+    }
+
+    public function confirm()
+    {
+        $this->update(['status' => 'confirmed']);
+    }
+
+    public function getTotalReceivedByCentro()
+    {
+        return $this->paymentDetails()
+            ->where('received_by', 'centro')
+            ->sum('amount');
+    }
+
+    public function getTotalReceivedByProfesional()
+    {
+        return $this->paymentDetails()
+            ->where('received_by', 'profesional')
+            ->sum('amount');
     }
 
     /**

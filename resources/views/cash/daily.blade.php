@@ -202,6 +202,7 @@
                             <th class="text-left py-3 px-4 font-semibold text-gray-900 dark:text-white">Tipo</th>
                             <th class="text-left py-3 px-4 font-semibold text-gray-900 dark:text-white">Usuario</th>
                             <th class="text-left py-3 px-4 font-semibold text-gray-900 dark:text-white">Concepto</th>
+                            <th class="text-left py-3 px-4 font-semibold text-gray-900 dark:text-white">Método</th>
                             <th class="text-right py-3 px-4 font-semibold text-gray-900 dark:text-white">Monto</th>
                             <th class="text-right py-3 px-4 font-semibold text-gray-900 dark:text-white">Saldo</th>
                             <th class="w-16"></th>
@@ -239,7 +240,7 @@
                                     <div class="h-8 w-8 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white text-xs font-medium">
                                         {{ strtoupper(substr($movement->user->name ?? 'SYS', 0, 2)) }}
                                     </div>
-                                    <span>{{ $movement->user->name ?? 'Sistema' }}</span>
+                                    {{-- <span>{{ $movement->user->name ?? 'Sistema' }}</span> --}}
                                 </div>
                             </td>
                             <td class="py-3 px-4 text-sm text-gray-900 dark:text-white">
@@ -257,6 +258,34 @@
                                     @endif
                                 @else
                                     {{ $movement->description }}
+                                @endif
+                            </td>
+                            <td class="py-3 px-4 text-sm text-gray-700 dark:text-gray-300">
+                                @if($movement->reference_type === 'App\\Models\\Payment' && $movement->reference)
+                                    @php
+                                        $methodLabels = [
+                                            'cash' => '💵 Efectivo',
+                                            'transfer' => '🏦 Transfer.',
+                                            'debit_card' => '💳 Débito',
+                                            'credit_card' => '💳 Crédito',
+                                        ];
+
+                                        $paymentMethods = $movement->reference->paymentDetails
+                                            ->pluck('payment_method')
+                                            ->map(fn($method) => $methodLabels[$method] ?? ucfirst($method))
+                                            ->unique();
+                                    @endphp
+
+                                    @if($paymentMethods->count() > 1)
+                                        <div class="text-xs">
+                                            <div class="font-medium text-gray-900 dark:text-white">Múltiple</div>
+                                            <div class="text-gray-500 dark:text-gray-400">{{ $paymentMethods->join(', ') }}</div>
+                                        </div>
+                                    @else
+                                        <span class="text-xs">{{ $paymentMethods->first() ?? '-' }}</span>
+                                    @endif
+                                @else
+                                    <span class="text-xs text-gray-400">-</span>
                                 @endif
                             </td>
                             <td class="py-3 px-4 text-right text-sm font-medium">
@@ -510,14 +539,6 @@
                                 <span class="text-green-700 dark:text-green-300">Especialidad:</span>
                                 <span class="text-green-900 dark:text-green-100" x-text="professionalDetails?.specialty?.name"></span>
                             </div>
-                            {{-- <div class="flex justify-between">
-                                <span class="text-green-700 dark:text-green-300">Comisión:</span>
-                                <span class="text-green-900 dark:text-green-100" x-text="professionalDetails?.commission_percentage + '%'"></span>
-                            </div>
-                            <div x-show="professionalDetails?.phone" class="flex justify-between">
-                                <span class="text-green-700 dark:text-green-300">Teléfono:</span>
-                                <span class="text-green-900 dark:text-green-100" x-text="professionalDetails?.phone"></span>
-                            </div> --}}
                         </div>
                     </div>
 

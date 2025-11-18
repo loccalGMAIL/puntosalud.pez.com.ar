@@ -102,7 +102,7 @@
                         'href' => '/movement-types'
                     ],
                     [
-                        'title' => 'Recesos',
+                        'title' => 'Recesos y Feriados',
                         'href' => '/recesos'
                     ],
                     [

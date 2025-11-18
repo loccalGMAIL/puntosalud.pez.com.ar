@@ -117,7 +117,7 @@ class AppointmentController extends Controller
                 'notes' => 'nullable|string|max:500',
                 'estimated_amount' => 'nullable|numeric|min:0',
                 'status' => 'nullable|in:scheduled,attended,cancelled,absent',
-                'is_between_turn' => 'nullable|boolean',
+                'is_between_turn' => 'nullable',
                 // Campos de pago
                 'pay_now' => 'nullable|in:true,false,1,0,"true","false","1","0"',
                 'payment_type' => 'nullable|in:single,package',
@@ -212,6 +212,12 @@ class AppointmentController extends Controller
 
             DB::beginTransaction();
 
+            // Convertir is_between_turn a booleano real
+            $isBetweenTurn = false;
+            if (isset($validated['is_between_turn'])) {
+                $isBetweenTurn = in_array($validated['is_between_turn'], ['true', 'True', '1', 1, true], true);
+            }
+
             // Crear turno
             $appointment = Appointment::create([
                 'professional_id' => $validated['professional_id'],
@@ -222,7 +228,7 @@ class AppointmentController extends Controller
                 'notes' => $validated['notes'],
                 'estimated_amount' => $validated['estimated_amount'],
                 'status' => 'scheduled',
-                'is_between_turn' => $validated['is_between_turn'] ?? false,
+                'is_between_turn' => $isBetweenTurn,
             ]);
 
             // Si se paga ahora, crear el pago (pero no asignarlo hasta que se atienda)
@@ -575,22 +581,38 @@ class AppointmentController extends Controller
      */
     private function createPackagePayment(Appointment $appointment, array $validated, bool $assignImmediately = true)
     {
-        // Generar número de recibo
-        $receiptNumber = $this->generateReceiptNumber();
-
-        // Crear el pago de paquete
+        // Crear el pago de paquete (nueva estructura v2.6.0)
         $payment = Payment::create([
             'patient_id' => $appointment->patient_id,
             'payment_date' => now(),
-            'payment_type' => 'package', // ← Tipo paquete
-            'payment_method' => $validated['payment_method'],
-            'amount' => $validated['payment_amount'],
-            'sessions_included' => $validated['package_sessions'], // ← Sesiones del paquete
-            'sessions_used' => 0, // ← Se irá incrementando con cada turno
+            'payment_type' => 'package_purchase', // ← Tipo paquete
+            'total_amount' => $validated['payment_amount'],
+            'is_advance_payment' => false,
             'liquidation_status' => 'pending',
             'concept' => ($validated['payment_concept'] ?? '') ?: 'Paquete '.$validated['package_sessions'].' sesiones - '.$appointment->patient->full_name,
-            'receipt_number' => $receiptNumber,
+            'status' => 'confirmed',
             'created_by' => auth()->id(),
+        ]);
+
+        // Crear payment_detail (nueva estructura v2.6.0)
+        \App\Models\PaymentDetail::create([
+            'payment_id' => $payment->id,
+            'payment_method' => $validated['payment_method'],
+            'amount' => $validated['payment_amount'],
+            'received_by' => $this->determineReceivedBy($validated['payment_method'], $appointment->professional),
+        ]);
+
+        // Crear patient_package (nueva estructura v2.6.0)
+        \App\Models\PatientPackage::create([
+            'patient_id' => $appointment->patient_id,
+            'package_id' => null,
+            'payment_id' => $payment->id,
+            'sessions_included' => $validated['package_sessions'],
+            'sessions_used' => 0,
+            'price_paid' => $validated['payment_amount'],
+            'purchase_date' => now()->toDateString(),
+            'status' => 'active',
+            'notes' => $payment->concept,
         ]);
 
         // Asignar la primera sesión al turno actual solo si se debe hacer inmediatamente
@@ -607,22 +629,25 @@ class AppointmentController extends Controller
      */
     private function createPrepayment(Appointment $appointment, array $validated, bool $assignImmediately = true)
     {
-        // Generar número de recibo
-        $receiptNumber = $this->generateReceiptNumber();
-
-        // Crear el pago
+        // Crear el pago (nueva estructura v2.6.0)
         $payment = Payment::create([
             'patient_id' => $appointment->patient_id,
             'payment_date' => now(),
             'payment_type' => 'single',
-            'payment_method' => $validated['payment_method'],
-            'amount' => $validated['payment_amount'],
-            'sessions_included' => 1,
-            'sessions_used' => 0,
+            'total_amount' => $validated['payment_amount'],
+            'is_advance_payment' => true,
             'liquidation_status' => 'pending',
             'concept' => ($validated['payment_concept'] ?? '') ?: 'Pago anticipado - '.$appointment->patient->full_name,
-            'receipt_number' => $receiptNumber,
+            'status' => 'confirmed',
             'created_by' => auth()->id(),
+        ]);
+
+        // Crear payment_detail (nueva estructura v2.6.0)
+        \App\Models\PaymentDetail::create([
+            'payment_id' => $payment->id,
+            'payment_method' => $validated['payment_method'],
+            'amount' => $validated['payment_amount'],
+            'received_by' => $this->determineReceivedBy($validated['payment_method'], $appointment->professional),
         ]);
 
         // Asignar pago al turno solo si se debe hacer inmediatamente
@@ -669,11 +694,11 @@ class AppointmentController extends Controller
 
         // Obtener balance actual con lock pesimista
         $currentBalance = CashMovement::getCurrentBalanceWithLock();
-        $newBalance = $currentBalance + $payment->amount;
+        $newBalance = $currentBalance + $payment->total_amount;
 
         CashMovement::create([
             'movement_type_id' => MovementType::getIdByCode('patient_payment'),
-            'amount' => $payment->amount,
+            'amount' => $payment->total_amount,
             'description' => $payment->concept ?: 'Pago anticipado - '.$payment->patient->full_name,
             'reference_type' => Payment::class,
             'reference_id' => $payment->id,
@@ -781,5 +806,33 @@ class AppointmentController extends Controller
             'available' => true,
             'reason' => null,
         ];
+    }
+
+    /**
+     * Determina quién recibe el pago según el método de pago y la configuración del profesional
+     *
+     * @param string $paymentMethod Método de pago (cash, transfer, debit_card, credit_card, other)
+     * @param \App\Models\Professional $professional Profesional del turno
+     * @return string 'centro' o 'profesional'
+     */
+    private function determineReceivedBy(string $paymentMethod, $professional): string
+    {
+        // Efectivo siempre va al centro (caja física)
+        if ($paymentMethod === 'cash') {
+            return 'centro';
+        }
+
+        // Tarjetas (débito/crédito) siempre van al centro (terminales del centro)
+        if (in_array($paymentMethod, ['debit_card', 'credit_card'])) {
+            return 'centro';
+        }
+
+        // Transferencias: depende de la configuración del profesional
+        if ($paymentMethod === 'transfer') {
+            return $professional->receives_transfers_directly ? 'profesional' : 'centro';
+        }
+
+        // Otros métodos: por defecto al centro
+        return 'centro';
     }
 }

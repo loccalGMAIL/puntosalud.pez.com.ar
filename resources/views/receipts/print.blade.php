@@ -356,7 +356,7 @@
         <div class="amount-section">
             <div class="amount-row">
                 <span class="amount-label">MONTO TOTAL:</span>
-                <span class="amount-value">${{ number_format($payment->amount, 2, ',', '.') }}</span>
+                <span class="amount-value">${{ number_format($payment->total_amount, 2, ',', '.') }}</span>
             </div>
         </div>
     </div>

@@ -12,6 +12,7 @@ class PaymentAppointment extends Model
     protected $fillable = [
         'payment_id',
         'appointment_id',
+        'professional_id',
         'allocated_amount',
         'is_liquidation_trigger',
     ];
@@ -32,6 +33,11 @@ class PaymentAppointment extends Model
     public function appointment()
     {
         return $this->belongsTo(Appointment::class);
+    }
+
+    public function professional()
+    {
+        return $this->belongsTo(Professional::class);
     }
 
     public function liquidationDetails()

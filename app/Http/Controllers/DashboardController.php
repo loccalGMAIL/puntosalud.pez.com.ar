@@ -58,17 +58,22 @@ class DashboardController extends Controller
             'ausentes' => $consultasStats->ausentes ?? 0,
         ];
 
-        // Ingresos del día - Optimizado: 1 query SQL en lugar de 200+ operaciones
+        // Ingresos del día - Optimizado con nueva estructura payment_details
+        // Usamos una subquery para obtener el método de pago principal de cada pago
         $ingresosStats = DB::table('appointments')
             ->join('payment_appointments', 'appointments.id', '=', 'payment_appointments.appointment_id')
             ->join('payments', 'payment_appointments.payment_id', '=', 'payments.id')
+            ->leftJoin(DB::raw('(SELECT payment_id, payment_method, amount FROM payment_details pd1
+                WHERE amount = (SELECT MAX(amount) FROM payment_details pd2 WHERE pd2.payment_id = pd1.payment_id LIMIT 1)
+                GROUP BY payment_id, payment_method, amount) as primary_payment_method'),
+                'payments.id', '=', 'primary_payment_method.payment_id')
             ->whereDate('appointments.appointment_date', $today)
             ->where('appointments.status', 'attended')
             ->selectRaw('
                 COALESCE(SUM(payment_appointments.allocated_amount), 0) as total,
-                COALESCE(SUM(CASE WHEN payments.payment_method = "cash" THEN payment_appointments.allocated_amount ELSE 0 END), 0) as efectivo,
-                COALESCE(SUM(CASE WHEN payments.payment_method = "transfer" THEN payment_appointments.allocated_amount ELSE 0 END), 0) as transferencia,
-                COALESCE(SUM(CASE WHEN payments.payment_method = "card" THEN payment_appointments.allocated_amount ELSE 0 END), 0) as tarjeta
+                COALESCE(SUM(CASE WHEN primary_payment_method.payment_method = "cash" THEN payment_appointments.allocated_amount ELSE 0 END), 0) as efectivo,
+                COALESCE(SUM(CASE WHEN primary_payment_method.payment_method = "transfer" THEN payment_appointments.allocated_amount ELSE 0 END), 0) as transferencia,
+                COALESCE(SUM(CASE WHEN primary_payment_method.payment_method IN ("debit_card", "credit_card") THEN payment_appointments.allocated_amount ELSE 0 END), 0) as tarjeta
             ')
             ->first();
 
@@ -111,6 +116,9 @@ class DashboardController extends Controller
             ->orderBy('appointment_date')
             ->get()
             ->map(function ($appointment) {
+                // Verificar si tiene pagos usando la relación y también con una query fresca
+                $hasPaidAppointments = $appointment->paymentAppointments()->exists();
+
                 return [
                     'id' => $appointment->id,
                     'paciente' => $appointment->patient->full_name,
@@ -119,11 +127,11 @@ class DashboardController extends Controller
                     'monto' => $appointment->final_amount ?? $appointment->estimated_amount ?? 0,
                     'status' => $appointment->status,
                     'statusLabel' => $this->getStatusLabel($appointment->status),
-                    'isPaid' => $appointment->paymentAppointments->isNotEmpty(),
+                    'isPaid' => $hasPaidAppointments,
                     'isUrgency' => $appointment->is_urgency,
                     'isBetweenTurn' => $appointment->is_between_turn,
                     'canMarkAttended' => $appointment->status === 'scheduled',
-                    'canMarkCompleted' => $appointment->status === 'attended' && $appointment->paymentAppointments->isEmpty(),
+                    'canMarkCompleted' => $appointment->status === 'attended' && !$hasPaidAppointments,
                 ];
             });
 
@@ -264,11 +272,40 @@ class DashboardController extends Controller
 
     public function markCompletedAndPaid(Request $request, Appointment $appointment)
     {
-        $validated = $request->validate([
+        // Validación condicional basada en el monto
+        $rules = [
             'final_amount' => 'required|numeric|min:0',
             'payment_method' => 'required|in:cash,transfer,debit_card,credit_card,qr',
             'concept' => 'nullable|string|max:500',
-        ]);
+        ];
+
+        // Si el monto es mayor a 0, requerir payment_details
+        if ($request->input('final_amount') > 0) {
+            $rules['payment_details'] = 'required|array|min:1';
+            $rules['payment_details.*.payment_method'] = 'required|in:cash,transfer,debit_card,credit_card,qr';
+            $rules['payment_details.*.amount'] = 'required|numeric|min:0';
+        } else {
+            // Si el monto es 0, payment_details es opcional
+            $rules['payment_details'] = 'nullable|array';
+            $rules['payment_details.*.payment_method'] = 'nullable|in:cash,transfer,debit_card,credit_card,qr';
+            $rules['payment_details.*.amount'] = 'nullable|numeric|min:0';
+        }
+
+        $validated = $request->validate($rules);
+
+        // Validar que la suma de payment_details coincida con final_amount
+        $paymentDetails = $validated['payment_details'] ?? [];
+        $totalPaymentDetails = collect($paymentDetails)->sum('amount');
+
+        // Si final_amount es 0, payment_details puede estar vacío
+        if ($validated['final_amount'] == 0 && empty($paymentDetails)) {
+            // Permitir pago en $0 sin métodos de pago
+        } elseif (abs($totalPaymentDetails - $validated['final_amount']) > 0.01) {
+            return response()->json([
+                'success' => false,
+                'message' => "La suma de las formas de pago (\${$totalPaymentDetails}) no coincide con el monto total (\${$validated['final_amount']})",
+            ], 422);
+        }
 
         try {
             DB::beginTransaction();
@@ -310,22 +347,43 @@ class DashboardController extends Controller
                 'final_amount' => $validated['final_amount'],
             ]);
 
-            // Generar número de recibo
-            $receiptNumber = $this->generateReceiptNumber();
-
-            // Crear el pago individual
+            // Crear el pago individual (receipt_number se genera automáticamente)
             $payment = Payment::create([
                 'patient_id' => $appointment->patient_id,
                 'payment_date' => now(),
                 'payment_type' => 'single',
-                'payment_method' => $validated['payment_method'],
-                'amount' => $validated['final_amount'],
-                'sessions_included' => 1,
-                'sessions_used' => 0, // El servicio lo marcará como usado después
-                'liquidation_status' => 'pending',
+                'total_amount' => $validated['final_amount'],
+                'is_advance_payment' => false,
                 'concept' => $validated['concept'] ?: 'Pago de consulta - '.$appointment->patient->full_name,
-                'receipt_number' => $receiptNumber,
+                'status' => 'confirmed',
+                'liquidation_status' => 'pending',
+                'created_by' => auth()->id(),
             ]);
+
+            // Cargar profesional para determinar received_by
+            $professional = $appointment->professional;
+
+            // Crear payment_details (puede haber múltiples formas de pago)
+            // Si no hay payment_details (pago en $0), crear un registro con método 'cash' y monto 0
+            if (empty($paymentDetails)) {
+                \App\Models\PaymentDetail::create([
+                    'payment_id' => $payment->id,
+                    'payment_method' => 'cash',
+                    'amount' => 0,
+                    'received_by' => 'centro',
+                    'reference' => null,
+                ]);
+            } else {
+                foreach ($paymentDetails as $detail) {
+                    \App\Models\PaymentDetail::create([
+                        'payment_id' => $payment->id,
+                        'payment_method' => $detail['payment_method'],
+                        'amount' => $detail['amount'],
+                        'received_by' => $this->determineReceivedBy($detail['payment_method'], $professional),
+                        'reference' => $detail['reference'] ?? null,
+                    ]);
+                }
+            }
 
             // Asignar pago al turno usando el servicio
             $this->paymentAllocationService->allocateSinglePayment($payment->id, $appointment->id);
@@ -348,7 +406,7 @@ class DashboardController extends Controller
                     'monto' => $validated['final_amount'],
                 ],
                 'payment_id' => $payment->id,
-                'receipt_number' => $receiptNumber,
+                'receipt_number' => $payment->receipt_number,
             ]);
 
         } catch (\Exception $e) {
@@ -425,11 +483,11 @@ class DashboardController extends Controller
 
         // Obtener balance actual con lock pesimista
         $currentBalance = CashMovement::getCurrentBalanceWithLock();
-        $newBalance = $currentBalance + $payment->amount;
+        $newBalance = $currentBalance + $payment->total_amount;
 
         CashMovement::create([
             'movement_type_id' => MovementType::getIdByCode('patient_payment'),
-            'amount' => $payment->amount,
+            'amount' => $payment->total_amount,
             'description' => $payment->concept ?: 'Pago de paciente - '.$payment->patient->full_name,
             'reference_type' => Payment::class,
             'reference_id' => $payment->id,
@@ -447,5 +505,33 @@ class DashboardController extends Controller
             'absent' => 'Ausente',
             default => 'Desconocido'
         };
+    }
+
+    /**
+     * Determina quién recibe el pago según el método de pago y la configuración del profesional
+     *
+     * @param string $paymentMethod Método de pago (cash, transfer, debit_card, credit_card, other)
+     * @param \App\Models\Professional $professional Profesional del turno
+     * @return string 'centro' o 'profesional'
+     */
+    private function determineReceivedBy(string $paymentMethod, $professional): string
+    {
+        // Efectivo siempre va al centro (caja física)
+        if ($paymentMethod === 'cash') {
+            return 'centro';
+        }
+
+        // Tarjetas (débito/crédito) siempre van al centro (terminales del centro)
+        if (in_array($paymentMethod, ['debit_card', 'credit_card'])) {
+            return 'centro';
+        }
+
+        // Transferencias: depende de la configuración del profesional
+        if ($paymentMethod === 'transfer') {
+            return $professional->receives_transfers_directly ? 'profesional' : 'centro';
+        }
+
+        // Otros métodos: por defecto al centro
+        return 'centro';
     }
 }
