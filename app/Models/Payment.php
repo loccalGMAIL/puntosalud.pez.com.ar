@@ -132,6 +132,40 @@ class Payment extends Model
     /**
      * Accessors
      */
+
+    /**
+     * Determina si el pago es de un paciente o un ingreso manual
+     */
+    public function getEntryTypeAttribute()
+    {
+        return $this->payment_type === 'manual_income' ? 'income' : 'payment';
+    }
+
+    /**
+     * Obtiene el método de pago principal del primer payment_detail
+     * Para compatibilidad con vistas que esperan payment_method directo
+     */
+    public function getPaymentMethodAttribute()
+    {
+        // Si ya está cargada la relación, usarla
+        if ($this->relationLoaded('paymentDetails')) {
+            $firstDetail = $this->paymentDetails->first();
+            return $firstDetail ? $firstDetail->payment_method : null;
+        }
+
+        // Sino, hacer query
+        $firstDetail = $this->paymentDetails()->first();
+        return $firstDetail ? $firstDetail->payment_method : null;
+    }
+
+    /**
+     * Alias para total_amount (compatibilidad con código legacy)
+     */
+    public function getAmountAttribute()
+    {
+        return $this->total_amount;
+    }
+
     public function getIsRefundAttribute()
     {
         return $this->total_amount < 0;

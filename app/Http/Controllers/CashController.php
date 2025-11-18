@@ -681,8 +681,9 @@ class CashController extends Controller
 
         // Sumar liquidación de pacientes (desde $zalazarData)
         if ($zalazarData) {
+            $commissionPercentage = $zalazarData['commission_percentage'] / 100;
             foreach(['cash', 'transfer', 'debit_card', 'credit_card', 'qr'] as $method) {
-                $zalazarPaymentBreakdown[$method] = $zalazarData[$method] ?? 0;
+                $zalazarPaymentBreakdown[$method] = ($zalazarData[$method] ?? 0) * $commissionPercentage;
             }
         }
 
@@ -920,8 +921,9 @@ class CashController extends Controller
 
         // Sumar liquidación de pacientes (desde $zalazarData)
         if ($zalazarData) {
+            $commissionPercentage = $zalazarData['commission_percentage'] / 100;
             foreach(['cash', 'transfer', 'debit_card', 'credit_card', 'qr'] as $method) {
-                $zalazarPaymentBreakdown[$method] = $zalazarData[$method] ?? 0;
+                $zalazarPaymentBreakdown[$method] = ($zalazarData[$method] ?? 0) * $commissionPercentage;
             }
         }
 

@@ -2,7 +2,7 @@
 
 [![Laravel](https://img.shields.io/badge/Laravel-12.x-red?style=flat\&logo=laravel)](https://laravel.com)
 [![PHP](https://img.shields.io/badge/PHP-8.2-blue?style=flat\&logo=php)](https://php.net)
-[![Version](https://img.shields.io/badge/Version-2.5.11-green?style=flat)](#changelog)
+[![Version](https://img.shields.io/badge/Version-2.6.0-green?style=flat)](#changelog)
 [![License](https://img.shields.io/badge/License-MIT-yellow?style=flat)](#license)
 
 Sistema integral de gestión médica para clínicas y consultorios, desarrollado con Laravel 12 y tecnologías modernas.
@@ -27,13 +27,16 @@ Sistema integral de gestión médica para clínicas y consultorios, desarrollado
 * **Vista Agenda mejorada** con acceso rápido a profesionales favoritos
 * **Gestión de feriados** integrada con bloqueo automático de turnos
 
-### 💰 Módulo de Pagos Avanzado
+### 💰 Módulo de Pagos Avanzado (v2.6.0)
 
+* **Nuevo sistema de payment_details** para pagos mixtos
+* Soporte para **cobros en múltiples métodos** (efectivo + transferencia)
 * Pagos individuales o en paquetes
-* Múltiples métodos de pago: efectivo, transferencia, tarjeta
+* Múltiples métodos de pago: efectivo, transferencia, tarjeta débito/crédito, QR
 * Generación automática de recibos en formato A5
 * Trazabilidad completa de transacciones
-* **Estadísticas segregadas** por método de pago (efectivo/transferencias)
+* **Estadísticas segregadas** por método de pago
+* **Tracking de quién recibe el pago** (centro vs profesional)
 
 ### 🏦 Gestión de Caja Integral
 
@@ -46,6 +49,8 @@ Sistema integral de gestión médica para clínicas y consultorios, desarrollado
 
 * Configuración de comisiones y horarios
 * Liquidaciones automáticas con control de pendientes
+* **Configuración de cobro directo** (receives_transfers_directly)
+* Cálculo automático de comisión según porcentaje configurado
 
 ### 👥 Gestión de Pacientes
 
@@ -114,7 +119,9 @@ php artisan config:clear
 ### Modelos Principales
 
 * **Appointment**: Citas médicas
-* **Payment**: Pagos individuales y paquetes
+* **Payment**: Pagos individuales, paquetes e ingresos manuales
+* **PaymentDetail**: Detalles de métodos de pago (v2.6.0)
+* **PatientPackage**: Gestión de paquetes de sesiones (v2.6.0)
 * **Professional**: Configuración de médicos
 * **Patient**: Datos de pacientes
 * **CashMovement**: Movimientos de caja
@@ -133,11 +140,11 @@ php artisan config:clear
 
 ### 🔄 Últimas versiones
 
+* **v2.6.0** (2025-11-18) – 🚀 Reestructuración Sistema de Pagos: payment_details, pagos mixtos, comando de migración automático.
 * **v2.5.11** (2025-11-04) – Arqueo de Caja + Recibos de Ingresos Manuales: Sistema unificado de numeración de recibos.
 * **v2.5.10** (2025-11-03) – Separación de gestión operativa de caja y reportes históricos con cards simplificadas.
 * **v2.5.9** (2025-11-02) – Sistema de entreturnos, anulación de pagos con trazabilidad completa.
 * **v2.5.8** (2025-10-29) – Corrección crítica de cálculo de balance en caja (eliminación de movement_date).
-* **v2.5.7** (2025-10-28) – Sistema de tipos de movimiento en base de datos con gestión admin.
 
 👉 [Ver changelog completo](CHANGELOG.md)
 

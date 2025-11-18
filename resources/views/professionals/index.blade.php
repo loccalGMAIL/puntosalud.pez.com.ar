@@ -429,6 +429,7 @@ function professionalsPage() {
                 license_number: professional.license_number || '',
                 specialty_id: professional.specialty.id.toString(),
                 commission_percentage: professional.commission_percentage,
+                receives_transfers_directly: professional.receives_transfers_directly || false,
                 notes: professional.notes || '',
                 is_active: professional.is_active.toString()
             };
@@ -445,6 +446,7 @@ function professionalsPage() {
                 license_number: '',
                 specialty_id: '',
                 commission_percentage: '',
+                receives_transfers_directly: false,
                 notes: '',
                 is_active: 'true'
             };
@@ -461,10 +463,13 @@ function professionalsPage() {
                 
                 const formData = new FormData();
                 Object.keys(this.form).forEach(key => {
-                    if (this.form[key] !== '' || key === 'is_active') {
+                    if (this.form[key] !== '' || key === 'is_active' || key === 'receives_transfers_directly') {
                         // Convertir is_active a 1 o 0 para Laravel
                         if (key === 'is_active') {
                             formData.append(key, this.form[key] === 'true' ? '1' : '0');
+                        } else if (key === 'receives_transfers_directly') {
+                            // Convertir receives_transfers_directly a 1 o 0 para Laravel
+                            formData.append(key, this.form[key] ? '1' : '0');
                         } else {
                             formData.append(key, this.form[key]);
                         }

@@ -404,7 +404,10 @@
                 @endif
 
                 <!-- Desglose de Ingresos Dra. Zalazar -->
-                @if ($summary['zalazar_liquidation'] > 0 || $zalazarBalancePayments->count() > 0)
+                @php
+                    $zalazarData = $professionalIncome->firstWhere('professional_id', 1);
+                @endphp
+                @if ($zalazarData || $zalazarBalancePayments->count() > 0)
                     <div class="mb-2 print:mb-0.5">
                         <h5 class="report-section-title">💰 Ingresos Dra. Natalia Zalazar</h5>
                         <div class="overflow-x-auto">
@@ -426,21 +429,21 @@
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-gray-200 dark:divide-gray-700 print:divide-gray-400">
-                                    @if ($summary['zalazar_liquidation'] > 0)
-                                        @php
-                                            $zalazarData = $professionalIncome->firstWhere('professional_id', 1);
-                                        @endphp
+                                    @if ($zalazarData)
                                         <tr>
                                             <td class="py-[1px] px-1 text-gray-900 dark:text-white print:text-black">
-                                                Liquidación de Pacientes</td>
-                                                <td></td>
+                                                Facturación de Pacientes</td>
+                                                <td class="py-[1px] px-1 text-gray-600 dark:text-gray-400 print:text-gray-700">
+                                                    {{ $zalazarData['count'] }} consulta{{ $zalazarData['count'] != 1 ? 's' : '' }}
+                                                   
+                                                </td>
                                             @foreach($activePaymentMethods as $method)
                                                 <td class="py-[1px] px-1 text-right text-gray-600 dark:text-gray-400 print:text-gray-700">
-                                                    @if($zalazarData && $zalazarData[$method] > 0)${{ number_format($zalazarData[$method], 0) }}@else-@endif</td>
+                                                    @if($zalazarData[$method] > 0)${{ number_format($zalazarData[$method], 0) }}@else-@endif</td>
                                             @endforeach
                                             <td
                                                 class="py-[1px] px-1 text-right text-green-600 dark:text-green-400 print:text-green-700">
-                                                +${{ number_format($summary['zalazar_liquidation'], 0) }}
+                                                +${{ number_format($zalazarData['total_collected'], 0) }}
                                             </td>
                                         </tr>
                                     @endif

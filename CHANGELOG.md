@@ -7,6 +7,145 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [2.6.0] - 2025-11-18
+
+### 🚀 Reestructuración Mayor del Sistema de Pagos
+
+**⚠️ BREAKING CHANGE**: Esta versión introduce cambios estructurales importantes en la base de datos que requieren migración de datos.
+
+**Nuevo Sistema de Payment Details:**
+- **Nueva tabla `payment_details`** para soportar pagos con múltiples métodos
+- **Nueva tabla `patient_packages`** para gestión de paquetes de sesiones
+- **Nueva tabla `packages`** para definición de paquetes pre-configurados
+- **Reestructuración de tabla `payments`** para soporte de pagos mixtos e ingresos manuales
+
+**Comando de Migración Automático:**
+```bash
+php artisan migrate:v2.6.0
+```
+- Migra automáticamente todos los datos de payments a la nueva estructura
+- Crea payment_details desde payment_method legacy
+- Migra packages a patient_packages
+- Valida integridad de datos post-migración
+- Soporte para rollback con `--rollback`
+- Modo forzado con `--force` para scripts automatizados
+
+**Agregado:**
+- **PaymentDetail Model & Migration**
+  - `payment_id`: FK a payments
+  - `payment_method`: cash, transfer, debit_card, credit_card, qr, other
+  - `amount`: monto de este método específico
+  - `received_by`: 'centro' o 'profesional' (tracking de quién recibe el dinero)
+  - `reference`: referencia opcional (número de transferencia, comprobante, etc.)
+  - Soporte para pagos mixtos (ej: $5000 efectivo + $3000 transferencia)
+
+- **PatientPackage Model & Migration**
+  - Separación de paquetes de pacientes de la tabla payments
+  - `patient_id`, `package_id`, `payment_id`
+  - `sessions_included`, `sessions_used`, `sessions_remaining` (computed)
+  - `purchase_date`, `expires_at`
+  - `status`: active, expired, completed
+  - Tracking completo de uso de sesiones
+
+- **Package Model & Migration**
+  - Plantillas de paquetes pre-configurados
+  - `name`, `description`, `sessions`, `price`
+  - `validity_days`: duración del paquete
+  - Permite crear paquetes estándar (ej: "Paquete 10 sesiones")
+
+- **Professional: Campo `receives_transfers_directly`**
+  - Nuevo campo boolean en professionals table
+  - Indica si el profesional cobra transferencias directamente
+  - Afecta cálculo de liquidaciones en reportes de caja
+  - UI: Checkbox en formulario de edición de profesionales
+
+- **Payment Model: Accessors de compatibilidad**
+  - `entry_type`: 'payment' o 'income' (determina si es pago de paciente o ingreso manual)
+  - `payment_method`: obtiene método desde payment_details (compatibilidad con vistas legacy)
+  - `amount`: alias para total_amount
+
+**Modificado:**
+- **Payments Table Structure**
+  - `patient_id` ahora nullable (para ingresos manuales)
+  - `payment_type`: single, package_purchase, refund, manual_income
+  - `total_amount` reemplaza a `amount` (es la suma de payment_details)
+  - `is_advance_payment`: boolean para pagos anticipados
+  - `status`: pending, confirmed, cancelled
+  - `liquidation_status`: pending, liquidated, cancelled, not_applicable
+  - `income_category`: código de MovementType para ingresos manuales
+
+- **CashController: Cálculo de comisión Dra. Zalazar**
+  - Aplicación correcta de `commission_percentage` en reportes de caja
+  - Diferenciación entre total facturado vs comisión del profesional
+  - Líneas 684, 924: `$amount * ($commission_percentage / 100)`
+
+- **Daily Report View: Mejora en presentación Dra. Zalazar**
+  - Cambio de "Liquidación" a "Facturación de Pacientes" (más claro)
+  - Muestra cantidad de consultas junto al desglose de métodos
+  - Validación mejorada de existencia de datos antes de renderizar
+
+**Migración de Datos (migrate:v2.6.0):**
+1. Renombra `payments` a `payments_old`
+2. Crea nueva tabla `payments` con estructura v2.6.0
+3. Migra registros de payments_old → payments
+4. Crea `payment_details` para cada pago (basado en payment_method legacy)
+5. Determina `received_by`: 'profesional' si es transferencia con patient_id, sino 'centro'
+6. Crea `patient_packages` para pagos tipo 'package'
+7. Actualiza foreign keys en payment_appointments y liquidation_details
+8. Valida integridad: conteos, montos, referencias
+
+**Validaciones Post-Migración:**
+- ✅ Mismo número de pagos en old vs new
+- ✅ Todos los pagos tienen payment_details
+- ✅ Montos de payments coinciden con suma de payment_details
+- ✅ Paquetes migrados correctamente
+- ✅ No existen payment_appointments o liquidation_details huérfanos
+
+**Archivos Modificados:**
+- `app/Models/Payment.php` - Nuevos accessors y relaciones
+- `app/Models/PaymentDetail.php` - Nuevo modelo
+- `app/Models/PatientPackage.php` - Nuevo modelo
+- `app/Models/Package.php` - Nuevo modelo
+- `app/Http/Controllers/CashController.php` - Cálculo de comisión
+- `app/Console/Commands/MigrateToV260.php` - Comando de migración
+- `database/migrations/2025_11_07_100000_restructure_payments_table.php`
+- `database/migrations/2025_11_07_100001_create_payment_details_table.php`
+- `database/migrations/2025_11_07_100002_create_packages_table.php`
+- `database/migrations/2025_11_07_100003_create_patient_packages_table.php`
+- `database/migrations/2025_11_07_100004_migrate_existing_payment_data.php`
+- `database/migrations/2025_11_12_100000_add_payment_preferences_to_professionals_table.php`
+- `resources/views/cash/daily-report.blade.php` - Mejoras UI
+- `resources/views/professionals/index.blade.php` - Campo receives_transfers_directly
+
+**Impacto:**
+- ✅ Sistema preparado para pagos mixtos (múltiples métodos en un solo pago)
+- ✅ Tracking preciso de quién recibe cada pago (centro vs profesional)
+- ✅ Liquidaciones más precisas según configuración de cada profesional
+- ✅ Base sólida para futuras funcionalidades (pagos parciales, adelantos, etc.)
+- ✅ Migración automática preserva todos los datos históricos
+- ⚠️ Requiere backup antes de migrar (recomendado)
+- ⚠️ Migración puede tardar varios minutos en bases de datos grandes
+
+**Instrucciones de Actualización:**
+```bash
+# 1. Hacer backup de la base de datos
+mysqldump -u usuario -p database > backup_pre_v2.6.0.sql
+
+# 2. Actualizar código
+git pull origin v2.6.0
+
+# 3. Ejecutar migración (con confirmación)
+php artisan migrate:v2.6.0
+
+# 4. Verificar logs
+tail -f storage/logs/laravel.log
+
+# 5. En caso de problemas, rollback
+php artisan migrate:v2.6.0 --rollback
+```
+
+---
+
 ## [2.5.11] - 2025-11-04
 
 ### 📋 Arqueo de Caja - Reporte Informativo sin Cierre
