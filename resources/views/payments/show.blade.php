@@ -85,8 +85,9 @@
                                 $methodLabels = [
                                     'cash' => 'Efectivo',
                                     'transfer' => 'Transferencia',
-                                    'debit_card' => 'Tarjeta de Débito',
-                                    'credit_card' => 'Tarjeta de Crédito'
+                                    'credit_card' => 'Tarjeta Crédito',
+                                    'debit_card' => 'Tarjeta Débito',
+                                    'qr' => 'Pago QR'
                                 ];
                             @endphp
                             <div class="text-lg text-gray-900 dark:text-white">

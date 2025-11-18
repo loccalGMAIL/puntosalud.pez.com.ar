@@ -26,13 +26,15 @@ Sistema integral de gestión médica para clínicas y consultorios, desarrollado
 * Asignación automática de pagos a turnos
 * **Vista Agenda mejorada** con acceso rápido a profesionales favoritos
 * **Gestión de feriados** integrada con bloqueo automático de turnos
+* **Creación rápida de pacientes** desde modal de turnos con botón "+"
+* **Búsqueda inteligente** de pacientes sin importar acentos (Jose encuentra José)
 
 ### 💰 Módulo de Pagos Avanzado (v2.6.0)
 
 * **Nuevo sistema de payment_details** para pagos mixtos
 * Soporte para **cobros en múltiples métodos** (efectivo + transferencia)
 * Pagos individuales o en paquetes
-* Múltiples métodos de pago: efectivo, transferencia, tarjeta débito/crédito, QR
+* Múltiples métodos de pago: efectivo, transferencia, tarjeta de débito, tarjeta de crédito, QR
 * Generación automática de recibos en formato A5
 * Trazabilidad completa de transacciones
 * **Estadísticas segregadas** por método de pago

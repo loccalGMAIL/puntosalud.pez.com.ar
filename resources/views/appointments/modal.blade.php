@@ -56,19 +56,29 @@
             <!-- Paciente -->
             <div>
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Paciente *</label>
-                <select id="patient-select"
-                        x-model="form.patient_id"
-                        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500 dark:bg-gray-700 dark:text-white"
-                        required>
-                    <option value="">Seleccionar paciente...</option>
-                    <template x-for="patient in patients" :key="patient.id">
-                        <option :value="patient.id"
-                                :data-dni="patient.dni"
-                                :data-first-name="patient.first_name"
-                                :data-last-name="patient.last_name"
-                                x-text="patient.last_name + ', ' + patient.first_name + ' - DNI: ' + patient.dni"></option>
-                    </template>
-                </select>
+                <div class="flex gap-2">
+                    <select id="patient-select"
+                            x-model="form.patient_id"
+                            class="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500 dark:bg-gray-700 dark:text-white"
+                            required>
+                        <option value="">Seleccionar paciente...</option>
+                        <template x-for="patient in patients" :key="patient.id">
+                            <option :value="patient.id"
+                                    :data-dni="patient.dni"
+                                    :data-first-name="patient.first_name"
+                                    :data-last-name="patient.last_name"
+                                    x-text="patient.last_name + ', ' + patient.first_name + ' - DNI: ' + patient.dni"></option>
+                        </template>
+                    </select>
+                    <button type="button"
+                            @click="$dispatch('open-patient-modal')"
+                            class="flex-shrink-0 w-[42px] h-[42px] flex items-center justify-center bg-emerald-600 hover:bg-emerald-700 text-white rounded-md shadow-sm transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
+                            title="Crear nuevo paciente">
+                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                        </svg>
+                    </button>
+                </div>
             </div>
 
             <!-- Fecha y Duración -->
@@ -242,6 +252,7 @@
                                 <option value="transfer">🏦 Transferencia</option>
                                 <option value="debit_card">💳 Tarjeta de Débito</option>
                                 <option value="credit_card">💳 Tarjeta de Crédito</option>
+                                <option value="qr">📱 QR</option>
                             </select>
                         </div>
                     </div>

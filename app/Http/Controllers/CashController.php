@@ -196,7 +196,7 @@ class CashController extends Controller
 
         $validated = $request->validate([
             'amount' => 'required|numeric|min:0.01',
-            'payment_method' => 'required|string|in:cash,transfer,debit_card,credit_card',
+            'payment_method' => 'required|string|in:cash,transfer,debit_card,credit_card,qr',
             'description' => 'required|string|max:500',
             'category' => 'required|string|in:' . implode(',', $validCodes),
             'professional_id' => 'nullable|exists:professionals,id|required_if:category,patient_refund',
@@ -1099,7 +1099,7 @@ class CashController extends Controller
         $validated = $request->validate([
             'amount' => 'required|numeric|min:0.01',
             'category' => 'required|string|in:' . implode(',', $validCodes),
-            'payment_method' => 'required|string|in:cash,transfer,debit_card,credit_card',
+            'payment_method' => 'required|string|in:cash,transfer,debit_card,credit_card,qr',
             'description' => 'required|string|max:500',
             'professional_id' => 'nullable|exists:professionals,id|required_if:category,professional_module_payment',
             'receipt_file' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',

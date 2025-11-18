@@ -148,6 +148,39 @@ php artisan migrate:v2.6.0 --rollback
 
 ## [2.5.11] - 2025-11-04
 
+### 🐛 Fixes
+
+**Corregido:**
+- **Método de pago QR agregado al sistema**
+  - Agregado 'qr' al enum de payment_method en todas las tablas relevantes
+  - Actualizadas validaciones en controladores (CashController, DashboardController, PaymentController)
+  - Agregados match statements para mostrar 'QR' en reportes de liquidación
+  - Agregada opción QR en todos los formularios de pago (📱 QR)
+  - Actualizado recibo de pago (receipts/print.blade.php) para mostrar método QR
+  - Actualizado recibo de ingreso (receipts/income-print.blade.php) para mostrar método QR
+  - Ahora el método de pago QR aparece correctamente en impresiones de recibos
+
+- **Error 422 al crear entreturno en Agenda**
+  - Inicializado campo `is_between_turn` en `resetForm()` para evitar undefined
+  - Inicializados todos los campos de pago (pay_now, payment_type, etc.) para consistencia
+  - Conversión automática de booleanos a enteros (0/1) en FormData antes de enviar
+  - Agregado `is_between_turn` en `openEditModal()` al cargar turno existente
+  - Ahora funciona correctamente crear entreturno con checkbox activo
+
+- **Búsqueda con acentos en Select2 (pacientes)**
+  - Implementada función `normalizeText()` usando `normalize('NFD')` para quitar acentos
+  - Aplicada normalización a término de búsqueda y todos los campos (text, dni, firstName, lastName)
+  - Ahora buscar "Jose" encuentra "José", "Gomez" encuentra "Gómez", "Maria" encuentra "María", etc.
+  - Búsqueda case-insensitive y accent-insensitive
+
+- **Creación rápida de pacientes desde modal de turnos**
+  - Agregado botón "+" estético (42x42px, emerald-600) al lado del select de pacientes
+  - Modal de nuevo paciente se abre sin salir del flujo de creación de turno
+  - Componente Alpine.js `patientModal()` para manejar creación desde agenda
+  - PatientController devuelve paciente creado en respuesta JSON
+  - Uso de sessionStorage para seleccionar automáticamente paciente después de recargar
+  - Recarga automática de página con nuevo paciente preseleccionado
+
 ### 📋 Arqueo de Caja - Reporte Informativo sin Cierre
 
 **Agregado:**

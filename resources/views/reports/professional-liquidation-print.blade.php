@@ -338,29 +338,14 @@
                             <td class="amount-column">${{ number_format($appointment['final_amount'], 0, ',', '.') }}</td>
                             <td class="payment-column">
                                 <small>
-                                    @if($appointment['is_multiple_payment'])
-                                        <strong style="color: #7e22ce;">Múltiple</strong><br>
-                                        @foreach($appointment['payment_methods_array'] as $detail)
-                                            {{ match($detail['method']) {
-                                                'cash' => 'Efectivo',
-                                                'transfer' => 'Transferencia',
-                                                'debit_card' => 'Débito',
-                                                'credit_card' => 'Crédito',
-                                                default => ucfirst($detail['method'])
-                                            } }}: ${{ number_format($detail['amount'], 0, ',', '.') }}<br>
-                                        @endforeach
-                                    @elseif($appointment['payment_method'])
-                                        {{ match($appointment['payment_method']) {
-                                            'cash' => 'Efectivo',
-                                            'transfer' => 'Transferencia',
-                                            'debit_card' => 'Débito',
-                                            'credit_card' => 'Crédito',
-                                            default => ucfirst($appointment['payment_method'])
-                                        } }}
-                                    @else
-                                        -
-                                    @endif
-                                    <br>{{ $appointment['payment_date'] }}
+                                    {{ match($appointment['payment_method']) {
+                                        'cash' => 'Efectivo',
+                                        'transfer' => 'Transferencia',
+                                        'card' => 'Tarjeta',
+                                        'qr' => 'QR',
+                                        default => $appointment['payment_method']
+                                    } }}<br>
+                                    {{ $appointment['payment_date'] }}
                                     @if($appointment['receipt_number'])
                                         <br>Rec: {{ $appointment['receipt_number'] }}
                                     @endif
@@ -413,28 +398,13 @@
                             <td class="amount-column">${{ number_format($appointment['final_amount'], 0, ',', '.') }}</td>
                             <td class="payment-column">
                                 <small>
-                                    @if($appointment['is_multiple_payment'])
-                                        <strong style="color: #7e22ce;">Múltiple</strong><br>
-                                        @foreach($appointment['payment_methods_array'] as $detail)
-                                            {{ match($detail['method']) {
-                                                'cash' => 'Efectivo',
-                                                'transfer' => 'Transferencia',
-                                                'debit_card' => 'Débito',
-                                                'credit_card' => 'Crédito',
-                                                default => ucfirst($detail['method'])
-                                            } }}: ${{ number_format($detail['amount'], 0, ',', '.') }}<br>
-                                        @endforeach
-                                    @elseif($appointment['payment_method'])
-                                        {{ match($appointment['payment_method']) {
-                                            'cash' => 'Efectivo',
-                                            'transfer' => 'Transferencia',
-                                            'debit_card' => 'Débito',
-                                            'credit_card' => 'Crédito',
-                                            default => ucfirst($appointment['payment_method'])
-                                        } }}
-                                    @else
-                                        -
-                                    @endif
+                                    {{ match($appointment['payment_method']) {
+                                        'cash' => 'Efectivo',
+                                        'transfer' => 'Transferencia',
+                                        'card' => 'Tarjeta',
+                                        'qr' => 'QR',
+                                        default => $appointment['payment_method']
+                                    } }}
                                     @if($appointment['receipt_number'])
                                         <br>Rec: {{ $appointment['receipt_number'] }}
                                     @endif

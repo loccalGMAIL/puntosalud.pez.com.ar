@@ -275,6 +275,7 @@ class DashboardController extends Controller
         // Validación condicional basada en el monto
         $rules = [
             'final_amount' => 'required|numeric|min:0',
+            'payment_method' => 'required|in:cash,transfer,debit_card,credit_card,qr',
             'concept' => 'nullable|string|max:500',
         ];
 

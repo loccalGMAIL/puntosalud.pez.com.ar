@@ -334,6 +334,7 @@
                         'transfer' => '🏦 Transferencia',
                         'debit_card' => '💳 Tarjeta de Débito',
                         'credit_card' => '💳 Tarjeta de Crédito',
+                        'qr' => '📱 QR',
                     ];
                 @endphp
                 {{ $paymentMethods[$payment->payment_method] ?? '-' }}
@@ -350,8 +351,8 @@
 
         <!-- Nota Informativa -->
         <div style="margin-top: 20px; text-align: center; font-size: 10px; color: #666;">
-            <p>Este recibo es válido como comprobante de ingreso</p>
-            <p>Conserve para control administrativo</p>
+            {{-- <p>Este recibo es válido como comprobante de ingreso</p>
+            <p>Conserve para control administrativo</p> --}}
         </div>
     </div>
 

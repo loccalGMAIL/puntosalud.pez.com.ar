@@ -337,26 +337,19 @@
 
 
         <div class="divider"></div>
-
-        <!-- Métodos de Pago (puede haber múltiples) -->
-        <div class="payment-details">
-            <div class="detail-label" style="margin-bottom: 6px;">Forma(s) de Pago:</div>
-            @foreach($payment->paymentDetails as $detail)
-                <div class="detail-row">
-                    <span>
-                        @if ($detail->payment_method === 'cash')
-                            💵 Efectivo
-                        @elseif($detail->payment_method === 'transfer')
-                            🏦 Transferencia
-                        @elseif($detail->payment_method === 'debit_card')
-                            💳 Tarjeta de Débito
-                        @elseif($detail->payment_method === 'credit_card')
-                            💳 Tarjeta de Crédito
-                        @endif
-                    </span>
-                    <span>${{ number_format($detail->amount, 2, ',', '.') }}</span>
-                </div>
-            @endforeach
+        <div class="detail-row">
+            <span class="detail-label">Método de Pago:</span>
+            <span>
+                {{ match($payment->payment_method) {
+                    'cash' => '💵 Efectivo',
+                    'transfer' => '🏦 Transferencia',
+                    'card' => '💳 Tarjeta',
+                    'debit_card' => '💳 Tarjeta de Débito',
+                    'credit_card' => '💳 Tarjeta de Crédito',
+                    'qr' => '📱 QR',
+                    default => ucfirst($payment->payment_method)
+                } }}
+            </span>
         </div>
 
         <!-- Monto Total -->
