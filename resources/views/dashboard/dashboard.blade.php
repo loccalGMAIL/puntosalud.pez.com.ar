@@ -920,6 +920,7 @@ function urgencyModalDashboard() {
                         method: 'POST',
                         body: JSON.stringify({
                             final_amount: paymentData.total_amount,
+                            payment_method: paymentData.payment_details?.[0]?.payment_method || 'cash',
                             concept: paymentData.concept,
                             payment_details: paymentData.payment_details
                         })
