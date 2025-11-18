@@ -238,15 +238,38 @@ class CashController extends Controller
                 $description .= ' - '.$validated['notes'];
             }
 
+            // Crear registro en tabla payments (genera receipt_number automáticamente)
+            $payment = \App\Models\Payment::create([
+                'patient_id' => null, // Gastos no tienen paciente
+                'payment_date' => now(),
+                'payment_type' => 'expense',
+                'total_amount' => -$validated['amount'], // Negativo para egreso
+                'is_advance_payment' => false,
+                'concept' => $description,
+                'status' => 'confirmed',
+                'liquidation_status' => 'not_applicable',
+                'income_category' => $validated['category'],
+                'created_by' => auth()->id(),
+            ]);
+
+            // Crear payment_detail con el método de pago
+            \App\Models\PaymentDetail::create([
+                'payment_id' => $payment->id,
+                'payment_method' => $validated['payment_method'],
+                'amount' => $validated['amount'],
+                'received_by' => 'centro',
+                'reference' => null,
+            ]);
+
             // Usar el tipo específico de gasto (subcategoría) en lugar del genérico 'expense'
             $movementTypeCode = $validated['category']; // ej: 'office_supplies', 'medical_supplies', etc.
 
             $cashMovement = CashMovement::create([
-                                'movement_type_id' => MovementType::getIdByCode($movementTypeCode),
+                'movement_type_id' => MovementType::getIdByCode($movementTypeCode),
                 'amount' => -$validated['amount'], // Negativo para egreso
                 'description' => $description,
-                'reference_type' => isset($validated['professional_id']) ? 'App\\Models\\Professional' : null,
-                'reference_id' => $validated['professional_id'] ?? null,
+                'reference_type' => 'App\\Models\\Payment', // Vincular al Payment
+                'reference_id' => $payment->id,
                 'balance_after' => $newBalance,
                 'user_id' => auth()->id(),
             ]);
@@ -257,7 +280,10 @@ class CashController extends Controller
                 return response()->json([
                     'success' => true,
                     'message' => 'Gasto registrado exitosamente.',
-                    'cash_movement' => $cashMovement,
+                    'payment_id' => $payment->id,
+                    'receipt_number' => $payment->receipt_number,
+                    'cash_movement_id' => $cashMovement->id,
+                    'new_balance' => $newBalance,
                 ]);
             }
 
@@ -983,6 +1009,7 @@ class CashController extends Controller
 
         $validated = $request->validate([
             'amount' => 'required|numeric|min:0.01',
+            'payment_method' => 'required|string|in:cash,transfer,debit_card,credit_card,qr',
             'withdrawal_type' => 'required|string|in:' . implode(',', $validCodes),
             'description' => 'required|string|max:500',
             'recipient' => 'nullable|string|max:255',
@@ -1020,15 +1047,38 @@ class CashController extends Controller
                 $description .= ' - '.$validated['notes'];
             }
 
+            // Crear registro en tabla payments (genera receipt_number automáticamente)
+            $payment = \App\Models\Payment::create([
+                'patient_id' => null, // Retiros no tienen paciente
+                'payment_date' => now(),
+                'payment_type' => 'withdrawal',
+                'total_amount' => -$validated['amount'], // Negativo para retiro
+                'is_advance_payment' => false,
+                'concept' => $description,
+                'status' => 'confirmed',
+                'liquidation_status' => 'not_applicable',
+                'income_category' => $validated['withdrawal_type'],
+                'created_by' => auth()->id(),
+            ]);
+
+            // Crear payment_detail con el método de pago
+            \App\Models\PaymentDetail::create([
+                'payment_id' => $payment->id,
+                'payment_method' => $validated['payment_method'],
+                'amount' => $validated['amount'],
+                'received_by' => 'centro',
+                'reference' => null,
+            ]);
+
             // Usar el tipo específico de retiro (subcategoría) en lugar del genérico 'cash_withdrawal'
             $movementTypeCode = $validated['withdrawal_type']; // ej: 'bank_deposit', 'safe_custody', etc.
 
             $cashMovement = CashMovement::create([
-                                'movement_type_id' => MovementType::getIdByCode($movementTypeCode),
+                'movement_type_id' => MovementType::getIdByCode($movementTypeCode),
                 'amount' => -$validated['amount'], // Negativo para salida
                 'description' => $description,
-                'reference_type' => null,
-                'reference_id' => null,
+                'reference_type' => 'App\\Models\\Payment', // Vincular al Payment
+                'reference_id' => $payment->id,
                 'balance_after' => $newBalance,
                 'user_id' => auth()->id(),
             ]);
@@ -1039,7 +1089,9 @@ class CashController extends Controller
                 return response()->json([
                     'success' => true,
                     'message' => 'Retiro registrado exitosamente.',
-                    'cash_movement' => $cashMovement,
+                    'payment_id' => $payment->id,
+                    'receipt_number' => $payment->receipt_number,
+                    'cash_movement_id' => $cashMovement->id,
                     'new_balance' => $newBalance,
                 ]);
             }
@@ -1174,7 +1226,6 @@ class CashController extends Controller
             $cashMovement = CashMovement::create([
                 'movement_type_id' => MovementType::getIdByCode($movementTypeCode),
                 'amount' => $validated['amount'],
-                'payment_method' => $validated['payment_method'],
                 'description' => $description,
                 'reference_type' => 'App\\Models\\Payment', // Vincular al Payment
                 'reference_id' => $payment->id,
