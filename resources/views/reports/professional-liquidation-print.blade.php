@@ -59,21 +59,21 @@
         .liquidation-summary {
             background-color: #e8f5e8;
             border: 2px solid #4caf50;
-            padding: 15px;
-            margin-bottom: 20px;
+            padding: 10px;
+            margin-bottom: 15px;
             border-radius: 5px;
         }
-        
+
         .summary-row {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 5px;
+            margin-bottom: 3px;
         }
         
         .summary-row.total {
             border-top: 2px solid #4caf50;
-            padding-top: 8px;
-            margin-top: 8px;
+            padding-top: 5px;
+            margin-top: 5px;
             font-weight: bold;
             font-size: 14px;
         }
@@ -233,13 +233,13 @@
     
     <!-- Liquidation Summary v2.6.0 -->
     <div class="liquidation-summary">
-        <div class="summary-row" style="font-weight: bold; border-bottom: 1px solid #4caf50; padding-bottom: 5px; margin-bottom: 8px;">
+        <div class="summary-row" style="font-weight: bold; border-bottom: 1px solid #4caf50; padding-bottom: 3px; margin-bottom: 5px;">
             <span>Total Facturado del Día:</span>
             <span>${{ number_format($liquidationData['totals']['total_amount'], 0, ',', '.') }}</span>
         </div>
 
         @if($liquidationData['totals']['total_collected_by_center'] > 0)
-        <div style="background: #e3f2fd; padding: 8px; margin-bottom: 8px; border-left: 3px solid #2196f3;">
+        <div style="background: #e3f2fd; padding: 5px; margin-bottom: 5px; border-left: 3px solid #2196f3;">
             <div class="summary-row" style="font-weight: bold;">
                 <span>💵 Pagos recibidos por el centro:</span>
                 <span>${{ number_format($liquidationData['totals']['total_collected_by_center'], 0, ',', '.') }}</span>
@@ -248,15 +248,15 @@
                 <span>Comisión profesional ({{ $liquidationData['totals']['commission_percentage'] }}%):</span>
                 <span style="color: #2e7d32;">+${{ number_format($liquidationData['totals']['professional_commission'], 0, ',', '.') }}</span>
             </div>
-            <div class="summary-row" style="font-size: 10px; padding-left: 15px; color: #1976d2;">
+            {{-- <div class="summary-row" style="font-size: 10px; padding-left: 15px; color: #1976d2;">
                 <span>Parte del centro ({{ $liquidationData['totals']['clinic_percentage'] }}%):</span>
                 <span>${{ number_format($liquidationData['totals']['clinic_amount'], 0, ',', '.') }}</span>
-            </div>
+            </div> --}}
         </div>
         @endif
 
         @if($liquidationData['totals']['total_collected_by_professional'] > 0)
-        <div style="background: #fff8e1; padding: 8px; margin-bottom: 8px; border-left: 3px solid #ffc107;">
+        <div style="background: #fff8e1; padding: 5px; margin-bottom: 5px; border-left: 3px solid #ffc107;">
             <div class="summary-row" style="font-weight: bold;">
                 <span>🏦 Pagos directos al profesional:</span>
                 <span>${{ number_format($liquidationData['totals']['total_collected_by_professional'], 0, ',', '.') }}</span>
@@ -275,8 +275,8 @@
         </div>
         @endif
 
-        <div style="border-top: 2px solid #4caf50; padding-top: 8px; margin-top: 8px;">
-            <div style="font-size: 10px; color: #666; margin-bottom: 5px;">
+        <div style="border-top: 2px solid #4caf50; padding-top: 5px; margin-top: 5px;">
+            <div style="font-size: 10px; color: #666; margin-bottom: 3px;">
                 <div class="summary-row">
                     <span>Comisión sobre pagos al centro:</span>
                     <span>+${{ number_format($liquidationData['totals']['professional_commission'], 0, ',', '.') }}</span>
