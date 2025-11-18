@@ -12,7 +12,6 @@ class CashMovement extends Model
     protected $fillable = [
         'movement_type_id',
         'amount',
-        'payment_method',
         'description',
         'reference_type',
         'reference_id',

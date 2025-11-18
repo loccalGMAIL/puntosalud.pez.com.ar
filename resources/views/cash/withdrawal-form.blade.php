@@ -74,6 +74,23 @@
                         </select>
                     </div>
 
+                    <!-- Método de Pago -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Método de Pago *
+                        </label>
+                        <select x-model="form.payment_method"
+                                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 dark:bg-gray-700 dark:text-white"
+                                required>
+                            <option value="">Seleccionar método</option>
+                            <option value="cash">Efectivo</option>
+                            <option value="transfer">Transferencia</option>
+                            <option value="debit_card">Tarjeta de Débito</option>
+                            <option value="credit_card">Tarjeta de Crédito</option>
+                            <option value="qr">QR / Mercado Pago</option>
+                        </select>
+                    </div>
+
                     <!-- Destinatario -->
                     <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -133,7 +150,7 @@
                         Cancelar
                     </button>
                     <button type="submit"
-                            :disabled="loading || !form.amount || !form.withdrawal_type || !form.description"
+                            :disabled="loading || !form.amount || !form.payment_method || !form.withdrawal_type || !form.description"
                             class="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white rounded-lg transition-colors disabled:cursor-not-allowed">
                         <span x-show="!loading">Registrar Retiro</span>
                         <span x-show="loading">Procesando...</span>
@@ -152,6 +169,7 @@ function withdrawalForm() {
 
         form: {
             amount: '',
+            payment_method: '',
             withdrawal_type: '',
             description: '',
             recipient: '',
@@ -191,7 +209,7 @@ function withdrawalForm() {
             if (this.loading) return;
 
             // Validaciones básicas
-            if (!this.form.amount || !this.form.withdrawal_type || !this.form.description) {
+            if (!this.form.amount || !this.form.payment_method || !this.form.withdrawal_type || !this.form.description) {
                 this.showNotification('Complete todos los campos requeridos', 'error');
                 return;
             }
