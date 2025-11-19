@@ -7,6 +7,74 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [2.6.0-fix] - 2025-11-19
+
+### 🐛 Correcciones y Mejoras Post-Lanzamiento v2.6.0
+
+**Liquidaciones Negativas:**
+- **Agregado**: Soporte para liquidar profesionales con saldo negativo (profesional debe al centro)
+  - Profesionales que reciben pagos directos pueden tener liquidaciones negativas
+  - Botón "Liquidar" ahora visible independientemente del signo del monto
+  - NO se crea movimiento de caja cuando el monto es negativo
+  - Los payment_details SÍ se marcan como liquidados en todos los casos
+  - Permite cerrar caja sin bloqueos por liquidaciones pendientes
+- **Modificado**: `LiquidationController.php`
+  - Validación: quitar `min:0` para permitir montos negativos
+  - Condición: NO crear CashMovement si `net_professional_amount < 0`
+- **Modificado**: `professional-liquidation.blade.php` y `professional-liquidation-select.blade.php`
+  - Mostrar botón "Liquidar" cuando hay turnos atendidos (antes solo si monto > 0)
+
+**Movimientos de Caja - Corrección Crítica:**
+- **Corregido**: DashboardController y AppointmentController registraban en caja pagos que no ingresaban físicamente
+  - **Problema**: Pagos directos a profesionales (`received_by='profesional'`) se contaban en caja del centro
+  - **Resultado**: Caja del sistema tenía más dinero del real, no coincidía con arqueo físico
+- **Modificado**: `DashboardController.createCashMovement()` (líneas 477-523)
+  - Filtra `payment_details` por `received_by='centro'` antes de crear movimientos
+  - Crea UN movimiento por cada payment_detail (no uno solo por el total)
+  - Solo registra dinero que realmente ingresa al centro
+- **Modificado**: `AppointmentController.createCashMovement()` (líneas 688-734)
+  - Misma lógica que DashboardController
+  - Filtra por `received_by='centro'`
+- **Modificado**: `AppointmentController.determineReceivedBy()` (líneas 844-870)
+  - Hecho explícito que QR siempre va al centro
+  - Documentación mejorada de la lógica de routing
+
+**Recibos con Pagos Mixtos:**
+- **Corregido**: `receipts/print.blade.php` no soportaba múltiples payment_details
+  - **Problema**: Intentaba acceder a `$payment->payment_method` (campo legacy que no existe en v2.6.0)
+  - **Error**: No mostraba método de pago en recibos
+- **Modificado**: Vista de recibo ahora lee de `paymentDetails` (líneas 341-381)
+  - Si hay UN método: muestra el método directamente
+  - Si hay MÚLTIPLES métodos: muestra "Mixto" + desglose con monto de cada uno
+  - Ejemplo: `💵 Efectivo $15.000 | 💳 Débito $10.000`
+
+**Otras Correcciones:**
+- **Corregido**: Error "Attempt to read property 'full_name' on null" en payments/index
+  - Vista intentaba acceder a `$payment->patient` sin verificar si existe
+  - Agregada validación `@if($payment->patient)` antes de acceder a propiedades
+- **Agregado**: Botón "Reimprimir Recibo" en payments/show
+  - Permite reimprimir recibos desde el detalle de cualquier pago
+  - Se abre en nueva ventana para facilitar impresión
+
+**Archivos Modificados:**
+- `app/Http/Controllers/LiquidationController.php`
+- `app/Http/Controllers/DashboardController.php`
+- `app/Http/Controllers/AppointmentController.php`
+- `resources/views/reports/professional-liquidation.blade.php`
+- `resources/views/reports/professional-liquidation-select.blade.php`
+- `resources/views/receipts/print.blade.php`
+- `resources/views/payments/index.blade.php`
+- `resources/views/payments/show.blade.php`
+
+**Impacto:**
+- ✅ Caja del sistema ahora coincide con arqueo físico
+- ✅ Liquidaciones negativas se procesan correctamente
+- ✅ Recibos muestran correctamente pagos mixtos
+- ✅ No más errores por pacientes null
+- ✅ Facilita reimpresión de recibos
+
+---
+
 ## [2.6.0] - 2025-11-18
 
 ### 🚀 Reestructuración Mayor del Sistema de Pagos

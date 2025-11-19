@@ -230,8 +230,12 @@
                                     <!-- Paciente / De -->
                                     <td class="px-3 py-2">
                                         @if($payment->entry_type === 'payment')
-                                            <div class="text-sm font-medium text-gray-900 dark:text-white">{{ $payment->patient->full_name }}</div>
-                                            <div class="text-sm text-gray-500 dark:text-gray-400">DNI: {{ $payment->patient->dni }}</div>
+                                            @if($payment->patient)
+                                                <div class="text-sm font-medium text-gray-900 dark:text-white">{{ $payment->patient->full_name }}</div>
+                                                <div class="text-sm text-gray-500 dark:text-gray-400">DNI: {{ $payment->patient->dni }}</div>
+                                            @else
+                                                <div class="text-sm font-medium text-gray-500 dark:text-gray-400 italic">Sin paciente asociado</div>
+                                            @endif
                                         @else
                                             {{-- Ingreso Manual --}}
                                             <div class="text-sm font-medium text-gray-900 dark:text-white">
