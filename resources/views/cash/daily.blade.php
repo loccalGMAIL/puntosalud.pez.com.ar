@@ -268,6 +268,7 @@
                                             'transfer' => '🏦 Transfer.',
                                             'debit_card' => '💳 Débito',
                                             'credit_card' => '💳 Crédito',
+                                            'qr' => '🔗 QR',
                                         ];
 
                                         $paymentMethods = $movement->reference->paymentDetails
