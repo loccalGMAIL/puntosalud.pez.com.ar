@@ -481,19 +481,44 @@ class DashboardController extends Controller
             throw new \Exception('No se pueden registrar pagos. La caja debe estar abierta para realizar esta operación.');
         }
 
-        // Obtener balance actual con lock pesimista
-        $currentBalance = CashMovement::getCurrentBalanceWithLock();
-        $newBalance = $currentBalance + $payment->total_amount;
+        // NUEVO v2.6.0: Crear movimientos de caja SOLO para payment_details recibidos por el CENTRO
+        // Los pagos directos a profesionales (received_by='profesional') NO ingresan a caja del centro
+        $paymentDetails = $payment->paymentDetails()
+            ->where('received_by', 'centro')
+            ->get();
 
-        CashMovement::create([
-            'movement_type_id' => MovementType::getIdByCode('patient_payment'),
-            'amount' => $payment->total_amount,
-            'description' => $payment->concept ?: 'Pago de paciente - '.$payment->patient->full_name,
-            'reference_type' => Payment::class,
-            'reference_id' => $payment->id,
-            'balance_after' => $newBalance,
-            'user_id' => request()->user()->id,
-        ]);
+        if ($paymentDetails->isEmpty()) {
+            // No hay movimientos para la caja del centro (todo fue directo a profesionales)
+            return;
+        }
+
+        $movementTypeId = MovementType::getIdByCode('patient_payment');
+        $baseDescription = $payment->concept ?: 'Pago de paciente - '.$payment->patient->full_name;
+
+        // Crear UN movimiento por cada payment_detail del centro
+        foreach ($paymentDetails as $paymentDetail) {
+            $currentBalance = CashMovement::getCurrentBalanceWithLock();
+            $newBalance = $currentBalance + $paymentDetail->amount;
+
+            $methodLabel = match($paymentDetail->payment_method) {
+                'cash' => 'Efectivo',
+                'transfer' => 'Transferencia',
+                'debit_card' => 'Débito',
+                'credit_card' => 'Crédito',
+                'qr' => 'QR',
+                default => ucfirst($paymentDetail->payment_method),
+            };
+
+            CashMovement::create([
+                'movement_type_id' => $movementTypeId,
+                'amount' => $paymentDetail->amount,
+                'description' => $baseDescription . ' - ' . $methodLabel,
+                'reference_type' => Payment::class,
+                'reference_id' => $payment->id,
+                'balance_after' => $newBalance,
+                'user_id' => request()->user()->id,
+            ]);
+        }
     }
 
     private function getStatusLabel($status)

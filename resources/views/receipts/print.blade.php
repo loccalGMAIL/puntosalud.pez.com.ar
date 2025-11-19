@@ -337,20 +337,48 @@
 
 
         <div class="divider"></div>
-        <div class="detail-row">
-            <span class="detail-label">Método de Pago:</span>
-            <span>
-                {{ match($payment->payment_method) {
-                    'cash' => '💵 Efectivo',
-                    'transfer' => '🏦 Transferencia',
-                    'card' => '💳 Tarjeta',
-                    'debit_card' => '💳 Tarjeta de Débito',
-                    'credit_card' => '💳 Tarjeta de Crédito',
-                    'qr' => '📱 QR',
-                    default => ucfirst($payment->payment_method)
-                } }}
-            </span>
-        </div>
+
+        <!-- Métodos de Pago (v2.6.0: soporta múltiples payment_details) -->
+        @if ($payment->paymentDetails->count() === 1)
+            {{-- Pago simple: un solo método --}}
+            <div class="detail-row">
+                <span class="detail-label">Método de Pago:</span>
+                <span>
+                    @php
+                        $method = $payment->paymentDetails->first()->payment_method;
+                    @endphp
+                    {{ match($method) {
+                        'cash' => '💵 Efectivo',
+                        'transfer' => '🏦 Transferencia',
+                        'debit_card' => '💳 Tarjeta de Débito',
+                        'credit_card' => '💳 Tarjeta de Crédito',
+                        'qr' => '📱 QR',
+                        default => ucfirst($method)
+                    } }}
+                </span>
+            </div>
+        @else
+            {{-- Pago mixto: múltiples métodos --}}
+            <div class="detail-row">
+                <span class="detail-label">Método de Pago:</span>
+                <span style="font-weight: 600; color: #2563eb;">Mixto</span>
+            </div>
+            @foreach ($payment->paymentDetails as $detail)
+                <div class="detail-row" style="padding-left: 20px; font-size: 12px;">
+                    <span>
+                        {{ match($detail->payment_method) {
+                            'cash' => '💵 Efectivo',
+                            'transfer' => '🏦 Transferencia',
+                            'debit_card' => '💳 Débito',
+                            'credit_card' => '💳 Crédito',
+                            'qr' => '📱 QR',
+                            default => ucfirst($detail->payment_method)
+                        } }}
+                    </span>
+                    <span style="font-weight: 600;">${{ number_format($detail->amount, 2, ',', '.') }}</span>
+                </div>
+            @endforeach
+        @endif
 
         <!-- Monto Total -->
         <div class="amount-section">
