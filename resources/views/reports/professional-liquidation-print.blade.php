@@ -290,13 +290,13 @@
                 </div>
                 @if($liquidationData['totals']['total_collected_by_professional'] > 0)
                 <div class="summary-row">
-                    <span>Menos: parte del centro sobre pagos directos:</span>
+                    <span>Comisión parte del centro sobre pagos directos:</span>
                     <span>-${{ number_format($liquidationData['totals']['clinic_amount_from_direct'], 0, ',', '.') }}</span>
                 </div>
                 @endif
                 @if($liquidationData['totals']['total_refunds'] > 0)
                 <div class="summary-row">
-                    <span>Menos: reintegros:</span>
+                    <span>Reintegros:</span>
                     <span>-${{ number_format($liquidationData['totals']['total_refunds'], 0, ',', '.') }}</span>
                 </div>
                 @endif

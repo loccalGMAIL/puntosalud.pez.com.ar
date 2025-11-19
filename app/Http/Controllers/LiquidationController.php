@@ -19,7 +19,7 @@ class LiquidationController extends Controller
     {
         $request->validate([
             'professional_id' => 'required|exists:professionals,id',
-            'amount' => 'required|numeric|min:0',
+            'amount' => 'required|numeric', // Permitir montos negativos (profesional debe al centro)
             'date' => 'required|date',
         ]);
 
@@ -316,8 +316,14 @@ class LiquidationController extends Controller
                 }
             }
 
-            // 12. Crear movimiento de caja por pago al profesional (excepto Dra. Zalazar)
-            if (!$isDraZalazar) {
+            // 12. Crear movimiento de caja por pago al profesional
+            // Solo si:
+            // - NO es Dra. Zalazar (ella cobra directamente, no retira de caja)
+            // - El monto es POSITIVO (centro debe al profesional)
+            // Si el monto es negativo, el profesional debe al centro → no hay salida de caja
+            $shouldCreateCashMovement = !$isDraZalazar && $netProfessionalAmount > 0;
+
+            if ($shouldCreateCashMovement) {
                 CashMovement::create([
                     'movement_type_id' => MovementType::getIdByCode('professional_payment'),
                     'amount' => -$amount, // Negativo porque es una salida de dinero
