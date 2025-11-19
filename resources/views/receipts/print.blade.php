@@ -387,6 +387,13 @@
                 <span class="amount-value">${{ number_format($payment->total_amount, 2, ',', '.') }}</span>
             </div>
         </div>
+
+        <!-- Disclaimer Legal -->
+        <div style="margin-top: 16px; padding-top: 12px; border-top: 1px solid #e5e7eb; text-align: center;">
+            <p style="font-size: 9px; color: #6b7280; line-height: 1.4; margin: 0;">
+                Comprobante interno - No válido como factura
+            </p>
+        </div>
     </div>
 
     <script>

@@ -90,23 +90,28 @@ class ProfessionalController extends Controller
             $validated = $request->validate([
                 'first_name' => ['required', 'string', 'max:255', 'regex:/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/'],
                 'last_name' => ['required', 'string', 'max:255', 'regex:/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/'],
-                'email' => 'nullable|string|email|max:255',
+                'email' => ['nullable', 'string', 'max:255', 'regex:/^[a-zA-Z0-9._%+\-ñÑ]+@[a-zA-Z0-9.\-ñÑ]+\.[a-zA-Z]{2,}$/'],
                 'phone' => 'nullable|string|max:255',
                 'dni' => ['required', 'string', 'max:20', 'unique:professionals', 'regex:/^[0-9.]+$/'],
                 'license_number' => 'nullable|string|max:255',
                 'specialty_id' => 'required|exists:specialties,id',
                 'commission_percentage' => 'required|numeric|min:0|max:100',
+                'receives_transfers_directly' => 'boolean',
                 'notes' => 'nullable|string|max:1000',
             ], [
                 'first_name.regex' => 'El nombre solo puede contener letras y espacios.',
                 'last_name.regex' => 'El apellido solo puede contener letras y espacios.',
                 'dni.regex' => 'El DNI solo puede contener números y puntos.',
                 'dni.unique' => 'El DNI ingresado ya está registrado en el sistema.',
+                'email.regex' => 'El email solo puede contener letras sin acentos, números, puntos, guiones y la letra ñ.',
             ]);
 
             // Formatear DNI con puntos
             $validated['dni'] = $this->formatDni($validated['dni']);
             $validated['is_active'] = true; // Por defecto activo
+
+            // Convertir receives_transfers_directly a booleano (por defecto false si no se envía)
+            $validated['receives_transfers_directly'] = $request->boolean('receives_transfers_directly');
 
             Professional::create($validated);
 
@@ -189,12 +194,13 @@ class ProfessionalController extends Controller
             $validated = $request->validate([
                 'first_name' => ['required', 'string', 'max:255', 'regex:/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/'],
                 'last_name' => ['required', 'string', 'max:255', 'regex:/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/'],
-                'email' => 'nullable|string|email|max:255',
+                'email' => ['nullable', 'string', 'max:255', 'regex:/^[a-zA-Z0-9._%+\-ñÑ]+@[a-zA-Z0-9.\-ñÑ]+\.[a-zA-Z]{2,}$/'],
                 'phone' => 'nullable|string|max:255',
                 'dni' => ['required', 'string', 'max:20', 'unique:professionals,dni,'.$professional->id, 'regex:/^[0-9.]+$/'],
                 'license_number' => 'nullable|string|max:255',
                 'specialty_id' => 'required|exists:specialties,id',
                 'commission_percentage' => 'required|numeric|min:0|max:100',
+                'receives_transfers_directly' => 'boolean',
                 'notes' => 'nullable|string|max:1000',
                 'is_active' => 'required|in:0,1',
             ], [
@@ -202,6 +208,7 @@ class ProfessionalController extends Controller
                 'last_name.regex' => 'El apellido solo puede contener letras y espacios.',
                 'dni.regex' => 'El DNI solo puede contener números y puntos.',
                 'dni.unique' => 'El DNI ingresado ya está registrado en el sistema.',
+                'email.regex' => 'El email solo puede contener letras sin acentos, números, puntos, guiones y la letra ñ.',
             ]);
 
             // Formatear DNI con puntos
@@ -209,6 +216,9 @@ class ProfessionalController extends Controller
 
             // Convertir is_active a booleano
             $validated['is_active'] = $validated['is_active'] === '1';
+
+            // Convertir receives_transfers_directly a booleano
+            $validated['receives_transfers_directly'] = $request->boolean('receives_transfers_directly');
 
             $professional->update($validated);
 
