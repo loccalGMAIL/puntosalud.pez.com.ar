@@ -105,6 +105,7 @@
                             <option value="transfer">🏦 Transferencia</option>
                             <option value="debit_card">💳 Débito</option>
                             <option value="credit_card">💳 Crédito</option>
+                            <option value="qr">🔗 QR</option>
                         </select>
 
                         <!-- Monto -->
