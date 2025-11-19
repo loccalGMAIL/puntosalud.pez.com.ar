@@ -266,6 +266,11 @@ class Payment extends Model
         parent::boot();
 
         static::creating(function ($payment) {
+            // No generar receipt_number para gastos (expenses)
+            if ($payment->payment_type === 'expense') {
+                return;
+            }
+
             if (empty($payment->receipt_number)) {
                 $payment->receipt_number = self::generateReceiptNumber();
             }

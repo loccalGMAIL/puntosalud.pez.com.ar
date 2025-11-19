@@ -87,7 +87,7 @@ class PatientController extends Controller
                 'last_name' => ['required', 'string', 'max:255', 'regex:/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/'],
                 'dni' => ['required', 'string', 'max:20', 'unique:patients', 'regex:/^[0-9.]+$/'],
                 'birth_date' => 'required|date|before:today',
-                'email' => 'nullable|email|max:255',
+                'email' => ['nullable', 'string', 'max:255', 'regex:/^[a-zA-Z0-9._%+\-ñÑ]+@[a-zA-Z0-9.\-ñÑ]+\.[a-zA-Z]{2,}$/'],
                 'phone' => 'required|string|max:255',
                 'address' => 'nullable|string|max:500',
                 'health_insurance' => 'nullable|string|max:255',
@@ -99,6 +99,7 @@ class PatientController extends Controller
                 'last_name.regex' => 'El apellido solo puede contener letras y espacios.',
                 'dni.regex' => 'El DNI solo puede contener números y puntos.',
                 'dni.unique' => 'El DNI ingresado ya está registrado en el sistema.',
+                'email.regex' => 'El email solo puede contener letras sin acentos, números, puntos, guiones y la letra ñ.',
             ]);
 
             // Formatear DNI con puntos
@@ -190,7 +191,7 @@ class PatientController extends Controller
                 'last_name' => ['required', 'string', 'max:255', 'regex:/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/'],
                 'dni' => ['required', 'string', 'max:20', 'unique:patients,dni,'.$patient->id, 'regex:/^[0-9.]+$/'],
                 'birth_date' => 'required|date|before:today',
-                'email' => 'nullable|email|max:255',
+                'email' => ['nullable', 'string', 'max:255', 'regex:/^[a-zA-Z0-9._%+\-ñÑ]+@[a-zA-Z0-9.\-ñÑ]+\.[a-zA-Z]{2,}$/'],
                 'phone' => 'required|string|max:255',
                 'address' => 'nullable|string|max:500',
                 'health_insurance' => 'nullable|string|max:255',
@@ -202,6 +203,7 @@ class PatientController extends Controller
                 'last_name.regex' => 'El apellido solo puede contener letras y espacios.',
                 'dni.regex' => 'El DNI solo puede contener números y puntos.',
                 'dni.unique' => 'El DNI ingresado ya está registrado en el sistema.',
+                'email.regex' => 'El email solo puede contener letras sin acentos, números, puntos, guiones y la letra ñ.',
             ]);
 
             // Formatear DNI con puntos
