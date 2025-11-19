@@ -124,7 +124,7 @@
                                     </svg>
                                     Imprimir
                                 </button>
-                                @if($professional['professional_amount'] > 0)
+                                @if($professional['professional_amount'] != 0)
                                 <button onclick="liquidarProfesional({{ $professional['id'] }}, '{{ $professional['full_name'] }}', {{ $professional['professional_amount'] }}, '{{ $selectedDate->format('Y-m-d') }}')"
                                         class="inline-flex items-center px-3 py-1 bg-orange-100 hover:bg-orange-200 text-orange-800 text-xs font-medium rounded transition-colors">
                                     <svg class="w-3 h-3 mr-1" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
