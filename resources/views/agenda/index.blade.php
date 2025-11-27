@@ -560,7 +560,7 @@ document.addEventListener('alpine:init', () => {
             this.form = {
                 professional_id: '',
                 patient_id: '',
-                appointment_date: new Date().toISOString().split('T')[0],
+                appointment_date: this.getTodayDate(),
                 appointment_time: '',
                 duration: 30,
                 office_id: '',
@@ -578,6 +578,14 @@ document.addEventListener('alpine:init', () => {
                 package_sessions: '',
                 session_price: ''
             };
+        },
+
+        getTodayDate() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
         },
 
         validateDateTime() {
@@ -711,7 +719,9 @@ document.addEventListener('alpine:init', () => {
         },
 
         formatDateSpanish(dateString) {
-            const date = new Date(dateString);
+            // Parse como fecha local para evitar problemas de timezone
+            const [year, month, day] = dateString.split('-');
+            const date = new Date(year, month - 1, day);
             return date.toLocaleDateString('es-ES', {
                 weekday: 'long',
                 day: 'numeric',
@@ -750,11 +760,9 @@ document.addEventListener('alpine:init', () => {
 
         isDayInPast() {
             if (!this.selectedDayDate) return false;
-            const selectedDate = new Date(this.selectedDayDate);
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            selectedDate.setHours(0, 0, 0, 0);
-            return selectedDate < today;
+            // Comparar solo las fechas como strings para evitar problemas de timezone
+            const today = this.getTodayDate();
+            return this.selectedDayDate < today;
         },
 
         isAppointmentInPast(appointment) {

@@ -7,6 +7,57 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [2.6.0-hotfix] - 2025-11-27
+
+### 🕐 Corregido - Problema Crítico de Zona Horaria en Vista Agenda
+
+**Descripción del Problema:**
+- El modal de turnos diarios mostraba fecha incorrecta (día anterior)
+- Botón "Nuevo Turno" deshabilitado incorrectamente para días actuales
+- Causado por conversión automática a UTC en funciones JavaScript de fecha
+- **Impacto**: Los usuarios NO podían crear turnos desde la vista Agenda
+
+**Causa Raíz:**
+- Uso de `new Date().toISOString().split('T')[0]` que convierte a UTC
+- Argentina (UTC-3): Antes de las 3 AM, la fecha resultante era del día anterior
+- Funciones `formatDateSpanish()` e `isDayInPast()` también afectadas
+
+**Solución Implementada:**
+
+1. **Nueva función helper `getTodayDate()`** (líneas 583-589):
+   ```javascript
+   getTodayDate() {
+       const now = new Date();
+       const year = now.getFullYear();
+       const month = String(now.getMonth() + 1).padStart(2, '0');
+       const day = String(now.getDate()).padStart(2, '0');
+       return `${year}-${month}-${day}`;
+   }
+   ```
+
+2. **Función `resetForm()` corregida** (línea 563):
+   - Antes: `appointment_date: new Date().toISOString().split('T')[0]`
+   - Ahora: `appointment_date: this.getTodayDate()`
+
+3. **Función `isDayInPast()` simplificada** (líneas 759-764):
+   - Comparación directa de strings de fecha para evitar timezone
+   - Usa `getTodayDate()` para obtener fecha actual correcta
+
+4. **Función `formatDateSpanish()` corregida** (líneas 721-730):
+   - Parse como fecha local: `new Date(year, month-1, day)`
+   - Evita interpretación UTC de strings de fecha
+
+**Archivos Modificados:**
+- `resources/views/agenda/index.blade.php` (líneas 563, 583-589, 721-730, 759-764)
+
+**Impacto:**
+- ✅ Modal de agenda muestra fecha correcta en el título
+- ✅ Botón "Nuevo Turno" se habilita/deshabilita correctamente
+- ✅ Usuarios pueden crear turnos sin confusión de fechas
+- ✅ Fix crítico que desbloqueó operación normal del sistema
+
+---
+
 ## [2.6.0-fix] - 2025-11-19
 
 ### 🐛 Correcciones y Mejoras Post-Lanzamiento v2.6.0
