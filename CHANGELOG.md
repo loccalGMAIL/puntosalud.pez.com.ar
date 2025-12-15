@@ -7,6 +7,41 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [2.6.1-fix] - 2024-12-15
+
+### 🐛 Corregido - Categorización de Pagos Múltiples en Liquidaciones
+
+**Descripción del Problema:**
+- Los pagos múltiples aparecían completamente en la columna "Digital" de la liquidación impresa
+- Incluso cuando TODOS los payment_details eran efectivo, el monto completo se mostraba en "Digital"
+- **Caso reportado**: Recibo 2025120193 (12/12) - pago múltiple con 2 payment_details en efectivo
+
+**Causa Raíz:**
+- En `professional-liquidation-print.blade.php`, cuando un pago tenía múltiples payment_details:
+  - Se asignaba `payment_method = 'multiple'` como marcador
+  - La condición `$isCash = ($appointment['payment_method'] === 'cash')` evaluaba a `false`
+  - Todo el monto se asignaba a `$otherAmount` (columna "Digital")
+- El código no evaluaba el método de cada payment_detail individual
+
+**Solución Implementada:**
+- Modificar la lógica para evaluar cada `payment_detail` de forma individual en pagos múltiples
+- Sumar montos con `method='cash'` → columna **Efectivo**
+- Sumar montos con otros métodos (transfer, debit_card, credit_card) → columna **Digital**
+- Aplicado en ambas secciones:
+  - Turnos Pagados Previamente (`prepaid_appointments`)
+  - Turnos Cobrados Hoy (`today_paid_appointments`)
+
+**Archivos Modificados:**
+- `resources/views/reports/professional-liquidation-print.blade.php` (líneas 341-357, 453-469)
+
+**Impacto:**
+- ✅ Pagos múltiples ahora se categorizan correctamente en columnas Efectivo/Digital
+- ✅ El recibo 2025120193 ahora muestra los montos en la columna correcta
+- ✅ Liquidaciones reflejan correctamente el flujo de efectivo vs. pagos digitales
+- ✅ Cálculos de totales por método de pago son precisos
+
+---
+
 ## [2.6.0-hotfix] - 2025-11-27
 
 ### 🕐 Corregido - Problema Crítico de Zona Horaria en Vista Agenda

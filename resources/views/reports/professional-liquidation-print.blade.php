@@ -339,9 +339,21 @@
                 <tbody>
                     @foreach($liquidationData['prepaid_appointments'] as $appointment)
                         @php
-                            $isCash = $appointment['payment_method'] === 'cash';
-                            $cashAmount = $isCash ? $appointment['final_amount'] : 0;
-                            $otherAmount = !$isCash ? $appointment['final_amount'] : 0;
+                            // NUEVO v2.6.0: Manejar pagos múltiples correctamente
+                            if ($appointment['is_multiple_payment'] && !empty($appointment['payment_methods_array'])) {
+                                // Sumar por método: cash vs otros
+                                $cashAmount = collect($appointment['payment_methods_array'])
+                                    ->where('method', 'cash')
+                                    ->sum('amount');
+                                $otherAmount = collect($appointment['payment_methods_array'])
+                                    ->where('method', '!=', 'cash')
+                                    ->sum('amount');
+                            } else {
+                                // Pago simple: lógica original
+                                $isCash = $appointment['payment_method'] === 'cash';
+                                $cashAmount = $isCash ? $appointment['final_amount'] : 0;
+                                $otherAmount = !$isCash ? $appointment['final_amount'] : 0;
+                            }
                         @endphp
                         <tr>
                             <td style="text-align: center; font-size: 9px;">{{ $appointment['id'] }}</td>
@@ -439,9 +451,21 @@
                 <tbody>
                     @foreach($liquidationData['today_paid_appointments'] as $appointment)
                         @php
-                            $isCash = $appointment['payment_method'] === 'cash';
-                            $cashAmount = $isCash ? $appointment['final_amount'] : 0;
-                            $otherAmount = !$isCash ? $appointment['final_amount'] : 0;
+                            // NUEVO v2.6.0: Manejar pagos múltiples correctamente
+                            if ($appointment['is_multiple_payment'] && !empty($appointment['payment_methods_array'])) {
+                                // Sumar por método: cash vs otros
+                                $cashAmount = collect($appointment['payment_methods_array'])
+                                    ->where('method', 'cash')
+                                    ->sum('amount');
+                                $otherAmount = collect($appointment['payment_methods_array'])
+                                    ->where('method', '!=', 'cash')
+                                    ->sum('amount');
+                            } else {
+                                // Pago simple: lógica original
+                                $isCash = $appointment['payment_method'] === 'cash';
+                                $cashAmount = $isCash ? $appointment['final_amount'] : 0;
+                                $otherAmount = !$isCash ? $appointment['final_amount'] : 0;
+                            }
                         @endphp
                         <tr>
                             <td style="text-align: center; font-size: 9px;">{{ $appointment['id'] }}</td>
