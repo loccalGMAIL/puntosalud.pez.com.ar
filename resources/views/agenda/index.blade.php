@@ -190,6 +190,11 @@
                         // Verificar si es feriado activo
                         $isHoliday = $holidays->has($dayKey);
                         $holidayData = $isHoliday ? $holidays->get($dayKey) : null;
+
+                        // Verificar si hay cumpleaños
+                        $hasBirthdays = $birthdays->has($dayKey);
+                        $birthdayProfessionals = $hasBirthdays ? $birthdays->get($dayKey) : collect();
+                        $birthdaysText = $birthdayProfessionals->map(fn($p) => "Dr. {$p['name']} ({$p['age']} años)")->join(', ');
                     @endphp
                     
                     <div class="min-h-[120px] p-2 border-r border-b border-gray-200 dark:border-gray-600 last:border-r-0
@@ -211,6 +216,9 @@
                                     <svg class="w-3.5 h-3.5 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" title="{{ $holidayData->reason }}">
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
                                     </svg>
+                                @endif
+                                @if($hasBirthdays)
+                                    <span class="text-base cursor-help" title="🎉 Cumpleaños: {{ $birthdaysText }}" style="filter: drop-shadow(0 1px 2px rgba(0,0,0,0.2));">🎂</span>
                                 @endif
                             </div>
 

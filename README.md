@@ -2,7 +2,7 @@
 
 [![Laravel](https://img.shields.io/badge/Laravel-12.x-red?style=flat\&logo=laravel)](https://laravel.com)
 [![PHP](https://img.shields.io/badge/PHP-8.2-blue?style=flat\&logo=php)](https://php.net)
-[![Version](https://img.shields.io/badge/Version-2.6.0-green?style=flat)](#changelog)
+[![Version](https://img.shields.io/badge/Version-2.6.2-green?style=flat)](#changelog)
 [![License](https://img.shields.io/badge/License-MIT-yellow?style=flat)](#license)
 
 Sistema integral de gestión médica para clínicas y consultorios, desarrollado con Laravel 12 y tecnologías modernas.
@@ -53,6 +53,9 @@ Sistema integral de gestión médica para clínicas y consultorios, desarrollado
 * Liquidaciones automáticas con control de pendientes
 * **Configuración de cobro directo** (receives_transfers_directly)
 * Cálculo automático de comisión según porcentaje configurado
+* **Sistema de cumpleaños** con visualización en agenda 🎂
+* Registro de fecha de nacimiento con cálculo automático de edad
+* Recordatorios visuales en calendario con tooltip informativo
 
 ### 👥 Gestión de Pacientes
 
@@ -142,11 +145,11 @@ php artisan config:clear
 
 ### 🔄 Últimas versiones
 
+* **v2.6.2** (2026-01-05) – 🎂 Sistema de Cumpleaños de Profesionales: Registro de fecha de nacimiento, visualización en agenda con icono 🎂 y cálculo automático de edad.
 * **v2.6.0** (2025-11-18) – 🚀 Reestructuración Sistema de Pagos: payment_details, pagos mixtos, comando de migración automático.
 * **v2.5.11** (2025-11-04) – Arqueo de Caja + Recibos de Ingresos Manuales: Sistema unificado de numeración de recibos.
 * **v2.5.10** (2025-11-03) – Separación de gestión operativa de caja y reportes históricos con cards simplificadas.
 * **v2.5.9** (2025-11-02) – Sistema de entreturnos, anulación de pagos con trazabilidad completa.
-* **v2.5.8** (2025-10-29) – Corrección crítica de cálculo de balance en caja (eliminación de movement_date).
 
 👉 [Ver changelog completo](CHANGELOG.md)
 

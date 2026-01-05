@@ -65,6 +65,47 @@ class AgendaController extends Controller
             ->get()
             ->keyBy(fn($holiday) => $holiday->exception_date->format('Y-m-d'));
 
+        // Obtener cumpleaños de profesionales activos
+        $birthdays = Professional::active()
+            ->whereNotNull('birthday')
+            ->with('specialty')
+            ->get()
+            ->groupBy(function($prof) use ($startOfCalendar) {
+                if (!$prof->birthday) return null;
+
+                // Obtener mes-día del cumpleaños
+                $birthMonth = $prof->birthday->format('m');
+                $birthDay = $prof->birthday->format('d');
+
+                // Calcular año del cumpleaños en el rango del calendario
+                $year = $startOfCalendar->year;
+                $birthdayThisYear = Carbon::createFromFormat('Y-m-d', "{$year}-{$birthMonth}-{$birthDay}");
+
+                // Si el cumpleaños ya pasó en este año del calendario, usar el año siguiente
+                if ($birthdayThisYear->lt($startOfCalendar)) {
+                    $year++;
+                    $birthdayThisYear = Carbon::createFromFormat('Y-m-d', "{$year}-{$birthMonth}-{$birthDay}");
+                }
+
+                return $birthdayThisYear->format('Y-m-d');
+            })
+            ->filter()
+            ->map(function($professionals, $date) {
+                return $professionals->map(function($prof) use ($date) {
+                    // Calcular la edad que cumple en esta fecha
+                    $birthdayYear = Carbon::parse($date)->year;
+                    $birthYear = $prof->birthday->year;
+                    $age = $birthdayYear - $birthYear;
+
+                    return [
+                        'id' => $prof->id,
+                        'name' => $prof->full_name,
+                        'specialty' => $prof->specialty->name,
+                        'age' => $age
+                    ];
+                });
+            });
+
         // Estado de caja para alertas
         $today = Carbon::today();
         $cashStatus = CashMovement::getCashStatusForDate($today);
@@ -82,6 +123,7 @@ class AgendaController extends Controller
             'startOfCalendar',
             'endOfCalendar',
             'holidays',
+            'birthdays',
             'cashStatus'
         ));
     }

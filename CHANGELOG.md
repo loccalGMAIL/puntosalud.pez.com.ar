@@ -7,7 +7,58 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
-## [2.6.1-fix] - 2024-12-15
+## [2.6.1] - 2026-01-05
+
+### 🎂 Nuevo - Sistema de Cumpleaños de Profesionales
+
+**Descripción:**
+- Sistema completo de registro y visualización de cumpleaños de profesionales
+- Visualización automática en el calendario de agenda
+- Cálculo automático de edad en formularios y agenda
+
+**Características Implementadas:**
+
+1. **Campo de Fecha de Nacimiento en Profesionales:**
+   - Nuevo campo `birthday` en tabla `professionals`
+   - Input type="date" con validación (debe ser anterior a hoy)
+   - Límite automático de fecha máxima (hoy)
+   - Cálculo automático de edad al seleccionar fecha
+   - Muestra edad en tiempo real debajo del campo (ej: "45 años")
+
+2. **Visualización en Agenda:**
+   - Icono 🎂 en días donde algún profesional cumple años
+   - Visible en todo el calendario, independiente del profesional seleccionado
+   - Tooltip informativo al pasar el mouse
+   - Muestra nombre completo y edad que cumple (ej: "🎉 Cumpleaños: Dr. Juan Pérez (45 años)")
+   - Soporte para múltiples cumpleaños en el mismo día
+
+3. **Cálculo de Edad:**
+   - En formulario: Actualización automática al seleccionar/cambiar fecha
+   - En agenda: Calcula edad que cumple considerando el año del calendario
+   - Considera correctamente mes y día para cálculo preciso
+
+**Archivos Modificados:**
+- `app/Models/Professional.php` - Agregado campo `birthday` con cast `date:Y-m-d`
+- `app/Http/Controllers/ProfessionalController.php` - Validación del campo birthday
+- `app/Http/Controllers/AgendaController.php` - Lógica de cálculo de cumpleaños
+- `resources/views/professionals/modal.blade.php` - Campo de fecha con cálculo de edad
+- `resources/views/professionals/index.blade.php` - Funciones calculateAge() y getMaxDate()
+- `resources/views/agenda/index.blade.php` - Visualización de cumpleaños con icono
+
+**Validaciones:**
+- Campo `birthday`: `nullable|date|before:today`
+- Mensaje de error: "La fecha de nacimiento debe ser anterior a hoy"
+
+**Impacto:**
+- ✅ Registro completo de datos de profesionales
+- ✅ Recordatorio visual de cumpleaños en agenda
+- ✅ Mejora la gestión de recursos humanos
+- ✅ UX mejorada con cálculo automático de edad
+- ✅ Tooltip informativo sin saturar la interfaz
+
+---
+
+## [2.6.0-fix] - 2024-12-15
 
 ### 🐛 Corregido - Categorización de Pagos Múltiples en Liquidaciones
 

@@ -17,6 +17,7 @@ class Professional extends Model
         'license_number',
         'phone',
         'email',
+        'birthday',
         'commission_percentage',
         'receives_transfers_directly',
         'notes',
@@ -24,6 +25,7 @@ class Professional extends Model
     ];
 
     protected $casts = [
+        'birthday' => 'date:Y-m-d',
         'commission_percentage' => 'decimal:2',
         'receives_transfers_directly' => 'boolean',
         'is_active' => 'boolean',
