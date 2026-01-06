@@ -56,6 +56,62 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 - ✅ UX mejorada con cálculo automático de edad
 - ✅ Tooltip informativo sin saturar la interfaz
 
+### 🔧 Mejora - Cierre Automático de Caja Fuera de Horario
+
+**Descripción del Problema:**
+- Cuando se cierra la caja después de las 23:59 del día de apertura (ej: fines de semana, feriados)
+- El movimiento de cierre se registraba con la fecha/hora actual del servidor (día siguiente)
+- Generaba saldos negativos en la caja anterior y estado incorrecto
+- **Solución manual anterior:** Modificar manualmente la fecha en BD a las 23:59 del día de apertura
+
+**Causa Raíz:**
+- El campo `created_at` se generaba automáticamente con la hora actual del servidor
+- Las búsquedas con `whereDate('created_at')` no encontraban apertura y cierre juntos
+- El sistema consideraba que eran días diferentes
+
+**Solución Implementada:**
+
+1. **Búsqueda Inteligente de Apertura:**
+   - Busca la última apertura sin cierre correspondiente (independiente de la fecha)
+   - No depende de `close_date` del frontend
+   - Query optimizado con `whereNotExists` para verificar ausencia de cierre
+
+2. **Ajuste Automático de Fecha:**
+   - Fuerza `created_at` a las 23:59:59 del día de apertura
+   - Mantiene `updated_at` con la hora real del cierre (auditoría)
+   - Deshabilita timestamps temporalmente para control preciso
+
+3. **Descripción Mejorada con Auditoría:**
+   - Nuevo método `buildClosingDescription()`
+   - Incluye nota automática cuando se cierra en día diferente
+   - Formato: "Cierre de caja del día 10/01/2026 (cerrado el 13/01/2026 00:15)"
+
+**Archivos Modificados:**
+- `app/Http/Controllers/CashController.php` (método `closeCash()`, líneas 432-523)
+  - Búsqueda de apertura sin cierre (líneas 432-455)
+  - Ajuste de fecha a 23:59:59 (líneas 505-523)
+  - Método helper `buildClosingDescription()` (líneas 1376-1392)
+
+**Ejemplo de Funcionamiento:**
+```
+Apertura: Viernes 10/01/2026 08:00
+Cierre real: Lunes 13/01/2026 00:15
+
+Registro en BD:
+- created_at: 2026-01-10 23:59:59
+- updated_at: 2026-01-13 00:15:30
+- description: "Cierre de caja del día 10/01/2026 - Efectivo contado: $5,000.00
+               - Saldo retirado: $5,000.00 (cerrado el 13/01/2026 00:15)"
+```
+
+**Impacto:**
+- ✅ No más correcciones manuales en base de datos
+- ✅ Balance correcto en reportes diarios
+- ✅ Estado preciso de caja (abierta/cerrada)
+- ✅ Auditoría completa con hora real de cierre
+- ✅ Transparencia con nota de cuándo se cerró realmente
+- ✅ Previene negativos en caja anterior
+
 ---
 
 ## [2.6.0-fix] - 2024-12-15

@@ -429,25 +429,30 @@ class CashController extends Controller
         try {
             DB::beginTransaction();
 
-            $closeDate = $validated['close_date'] ? Carbon::parse($validated['close_date']) : now()->startOfDay();
+            // Buscar la última apertura sin cierre correspondiente (independiente de la fecha)
+            $openingTypeId = MovementType::getIdByCode('cash_opening');
+            $closingTypeId = MovementType::getIdByCode('cash_closing');
 
-            // Verificar que exista apertura para esa fecha
-            $opening = CashMovement::forDate($closeDate)->openingMovements()->first();
+            $opening = CashMovement::where('movement_type_id', $openingTypeId)
+                ->whereNotExists(function ($query) use ($closingTypeId) {
+                    $query->select('id')
+                        ->from('cash_movements as cm2')
+                        ->whereRaw('DATE(cm2.created_at) = DATE(cash_movements.created_at)')
+                        ->where('cm2.movement_type_id', $closingTypeId);
+                })
+                ->orderBy('created_at', 'desc')
+                ->first();
+
             if (! $opening) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'No se encontró apertura de caja para la fecha especificada.',
+                    'message' => 'No se encontró una caja abierta para cerrar.',
                 ], 400);
             }
 
-            // Verificar que no exista ya un cierre
-            $existingClosing = CashMovement::forDate($closeDate)->closingMovements()->first();
-            if ($existingClosing) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Ya existe un cierre de caja para esa fecha.',
-                ], 400);
-            }
+            // La fecha del cierre debe ser la del día de apertura
+            $openingDate = $opening->created_at->format('Y-m-d');
+            $closeDate = Carbon::parse($openingDate);
 
             // Verificar que todos los profesionales con turnos atendidos del día hayan sido liquidados
             // EXCLUIR profesionales cuyo monto total de turnos sea $0
@@ -497,18 +502,25 @@ class CashController extends Controller
 
             $currentBalance = $lastMovement ? $lastMovement->balance_after : 0;
 
+            // Calcular la fecha/hora del cierre: mismo día de apertura a las 23:59:59
+            $closingDateTime = Carbon::parse($openingDate)->setTime(23, 59, 59);
+
             // Crear movimiento de cierre que retira todo el saldo
-            $cashMovement = CashMovement::create([
-                                'movement_type_id' => MovementType::getIdByCode('cash_closing'),
+            $cashMovement = new CashMovement([
+                'movement_type_id' => MovementType::getIdByCode('cash_closing'),
                 'amount' => -$currentBalance, // Retirar todo el saldo actual
-                'description' => 'Cierre de caja - Efectivo contado: $'.number_format($validated['closing_amount'], 2).
-                               ' - Saldo retirado: $'.number_format($currentBalance, 2).
-                               ($validated['notes'] ? ' - '.$validated['notes'] : ''),
+                'description' => $this->buildClosingDescription($validated, $closingDateTime, $currentBalance),
                 'reference_type' => null,
                 'reference_id' => null,
                 'balance_after' => 0, // Balance queda en cero
                 'user_id' => auth()->id(),
             ]);
+
+            // Deshabilitar timestamps automáticos para poder forzar created_at
+            $cashMovement->timestamps = false;
+            $cashMovement->created_at = $closingDateTime;
+            $cashMovement->updated_at = now(); // Mantener la hora real de actualización para auditoría
+            $cashMovement->save();
 
             $difference = $validated['closing_amount'] - $currentBalance;
 
@@ -1351,5 +1363,31 @@ class CashController extends Controller
         }
 
         return $data->reverse();
+    }
+
+    /**
+     * Construir descripción del cierre de caja
+     *
+     * @param array $validated
+     * @param Carbon $closingDateTime
+     * @param float $currentBalance
+     * @return string
+     */
+    private function buildClosingDescription($validated, $closingDateTime, $currentBalance)
+    {
+        $description = 'Cierre de caja del día ' . $closingDateTime->format('d/m/Y');
+        $description .= ' - Efectivo contado: $'.number_format($validated['closing_amount'], 2);
+        $description .= ' - Saldo retirado: $'.number_format($currentBalance, 2);
+
+        // Si se cierra en un día diferente al de apertura, agregar nota de auditoría
+        if ($closingDateTime->format('Y-m-d') !== now()->format('Y-m-d')) {
+            $description .= ' (cerrado el ' . now()->format('d/m/Y H:i') . ')';
+        }
+
+        if (!empty($validated['notes'])) {
+            $description .= ' - ' . $validated['notes'];
+        }
+
+        return $description;
     }
 }
