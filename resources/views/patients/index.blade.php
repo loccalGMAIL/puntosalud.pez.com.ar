@@ -214,7 +214,7 @@
                                 <!-- Paciente -->
                                 <td class="px-6 py-4">
                                     <div>
-                                        <div class="text-sm font-semibold text-gray-900 dark:text-white" x-text="patient.first_name + ' ' + patient.last_name"></div>
+                                        <div class="text-sm font-semibold text-gray-900 dark:text-white" x-text="patient.last_name + ' ' + patient.first_name"></div>
                                     </div>
                                 </td>
                                 

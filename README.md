@@ -61,6 +61,7 @@ Sistema integral de gestión médica para clínicas y consultorios, desarrollado
 ### 👥 Gestión de Pacientes
 
 * Registro completo de información personal y médica
+* **Formato de visualización profesional**: Apellido, Nombre
 * Historial de citas y tratamientos
 * Seguimiento de pagos y saldos
 
@@ -146,7 +147,7 @@ php artisan config:clear
 
 ### 🔄 Últimas versiones
 
-* **v2.6.1** (2026-01-05) – 🎂 Sistema de Cumpleaños de Profesionales + 🔧 Cierre Automático de Caja: Registro de fecha de nacimiento con visualización en agenda, y ajuste automático del cierre de caja a las 23:59 del día de apertura (sin correcciones manuales en BD).
+* **v2.6.1** (2026-01-05) – 🎂 Sistema de Cumpleaños de Profesionales + 🔧 Cierre Automático de Caja + 🔄 Orden de Nombres: Registro de fecha de nacimiento con visualización en agenda, ajuste automático del cierre de caja a las 23:59 del día de apertura, y cambio de visualización de pacientes a formato "Apellido, Nombre".
 * **v2.6.0** (2025-11-18) – 🚀 Reestructuración Sistema de Pagos: payment_details, pagos mixtos, comando de migración automático.
 * **v2.5.11** (2025-11-04) – Arqueo de Caja + Recibos de Ingresos Manuales: Sistema unificado de numeración de recibos.
 * **v2.5.10** (2025-11-03) – Separación de gestión operativa de caja y reportes históricos con cards simplificadas.

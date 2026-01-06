@@ -56,6 +56,26 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 - ✅ UX mejorada con cálculo automático de edad
 - ✅ Tooltip informativo sin saturar la interfaz
 
+### 🔄 Mejora - Orden de Visualización de Nombres de Pacientes
+
+**Descripción:**
+- Cambio en el orden de visualización de nombres de pacientes en todo el sistema
+- Ahora se muestra: **Apellido, Nombre** (formato estándar)
+
+**Implementación:**
+- Modificado el orden de concatenación en vistas y listados
+- Formato anterior: "Juan Pérez"
+- Formato nuevo: "Pérez, Juan"
+
+**Archivos Modificados:**
+- `resources/views/patients/index.blade.php` - Vista principal de listado de pacientes
+
+**Impacto:**
+- ✅ Mejor organización alfabética por apellido
+- ✅ Formato estándar profesional para listados médicos
+- ✅ Facilita búsqueda y lectura de registros
+- ✅ Consistencia con prácticas de gestión clínica
+
 ### 🔧 Mejora - Cierre Automático de Caja Fuera de Horario
 
 **Descripción del Problema:**
