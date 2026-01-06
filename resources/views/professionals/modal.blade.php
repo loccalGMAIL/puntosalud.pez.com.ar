@@ -84,7 +84,7 @@
                     <!-- Información de Contacto -->
                     <div>
                         <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Información de Contacto</h3>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email</label>
                                 <input x-model="form.email" type="email" placeholder="juan.perez@ejemplo.com"
@@ -95,6 +95,13 @@
                                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Teléfono</label>
                                 <input x-model="form.phone" type="tel" placeholder="+54 11 1234-5678"
                                        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500 dark:bg-gray-700 dark:text-white">
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Fecha de Nacimiento</label>
+                                <input x-model="form.birthday" type="date" :max="getMaxDate()"
+                                       class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500 dark:bg-gray-700 dark:text-white">
+                                <p x-show="form.birthday" class="text-xs text-gray-500 dark:text-gray-400 mt-1" x-text="calculateAge(form.birthday) + ' años'"></p>
                             </div>
                         </div>
                     </div>

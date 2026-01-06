@@ -2,7 +2,7 @@
 
 [![Laravel](https://img.shields.io/badge/Laravel-12.x-red?style=flat\&logo=laravel)](https://laravel.com)
 [![PHP](https://img.shields.io/badge/PHP-8.2-blue?style=flat\&logo=php)](https://php.net)
-[![Version](https://img.shields.io/badge/Version-2.6.0-green?style=flat)](#changelog)
+[![Version](https://img.shields.io/badge/Version-2.6.1-green?style=flat)](#changelog)
 [![License](https://img.shields.io/badge/License-MIT-yellow?style=flat)](#license)
 
 Sistema integral de gestión médica para clínicas y consultorios, desarrollado con Laravel 12 y tecnologías modernas.
@@ -43,8 +43,9 @@ Sistema integral de gestión médica para clínicas y consultorios, desarrollado
 ### 🏦 Gestión de Caja Integral
 
 * Apertura/cierre con validaciones automáticas
+* **Cierre automático ajustado** a 23:59 del día de apertura (sin correcciones manuales)
 * Alertas inteligentes y balance en tiempo real
-* Trazabilidad completa por usuario
+* Trazabilidad completa por usuario con auditoría de hora real
 * Reportes diarios y por período
 
 ### 👨‍⚕️ Administración de Profesionales
@@ -53,10 +54,14 @@ Sistema integral de gestión médica para clínicas y consultorios, desarrollado
 * Liquidaciones automáticas con control de pendientes
 * **Configuración de cobro directo** (receives_transfers_directly)
 * Cálculo automático de comisión según porcentaje configurado
+* **Sistema de cumpleaños** con visualización en agenda 🎂
+* Registro de fecha de nacimiento con cálculo automático de edad
+* Recordatorios visuales en calendario con tooltip informativo
 
 ### 👥 Gestión de Pacientes
 
 * Registro completo de información personal y médica
+* **Formato de visualización profesional**: Apellido, Nombre
 * Historial de citas y tratamientos
 * Seguimiento de pagos y saldos
 
@@ -142,11 +147,11 @@ php artisan config:clear
 
 ### 🔄 Últimas versiones
 
+* **v2.6.1** (2026-01-05) – 🎂 Sistema de Cumpleaños de Profesionales + 🔧 Cierre Automático de Caja + 🔄 Orden de Nombres: Registro de fecha de nacimiento con visualización en agenda, ajuste automático del cierre de caja a las 23:59 del día de apertura, y cambio de visualización de pacientes a formato "Apellido, Nombre".
 * **v2.6.0** (2025-11-18) – 🚀 Reestructuración Sistema de Pagos: payment_details, pagos mixtos, comando de migración automático.
 * **v2.5.11** (2025-11-04) – Arqueo de Caja + Recibos de Ingresos Manuales: Sistema unificado de numeración de recibos.
 * **v2.5.10** (2025-11-03) – Separación de gestión operativa de caja y reportes históricos con cards simplificadas.
 * **v2.5.9** (2025-11-02) – Sistema de entreturnos, anulación de pagos con trazabilidad completa.
-* **v2.5.8** (2025-10-29) – Corrección crítica de cálculo de balance en caja (eliminación de movement_date).
 
 👉 [Ver changelog completo](CHANGELOG.md)
 

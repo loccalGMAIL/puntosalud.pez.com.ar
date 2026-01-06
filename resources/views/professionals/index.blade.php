@@ -335,6 +335,7 @@ function professionalsPage() {
             last_name: '',
             email: '',
             phone: '',
+            birthday: '',
             dni: '',
             license_number: '',
             specialty_id: '',
@@ -425,6 +426,7 @@ function professionalsPage() {
                 last_name: professional.last_name,
                 email: professional.email || '',
                 phone: professional.phone || '',
+                birthday: professional.birthday || '',
                 dni: professional.dni,
                 license_number: professional.license_number || '',
                 specialty_id: professional.specialty.id.toString(),
@@ -442,6 +444,7 @@ function professionalsPage() {
                 last_name: '',
                 email: '',
                 phone: '',
+                birthday: '',
                 dni: '',
                 license_number: '',
                 specialty_id: '',
@@ -559,6 +562,22 @@ function professionalsPage() {
         showNotification(message, type = 'info') {
             // Aquí podrías implementar un sistema de notificaciones
             alert(message);
+        },
+
+        calculateAge(birthDate) {
+            if (!birthDate) return '';
+            const today = new Date();
+            const birth = new Date(birthDate);
+            let age = today.getFullYear() - birth.getFullYear();
+            const monthDiff = today.getMonth() - birth.getMonth();
+            if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+                age--;
+            }
+            return age;
+        },
+
+        getMaxDate() {
+            return new Date().toISOString().split('T')[0];
         },
         
         // Funciones para especialidades

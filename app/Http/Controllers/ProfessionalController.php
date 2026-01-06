@@ -92,6 +92,7 @@ class ProfessionalController extends Controller
                 'last_name' => ['required', 'string', 'max:255', 'regex:/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/'],
                 'email' => ['nullable', 'string', 'max:255', 'regex:/^[a-zA-Z0-9._%+\-ñÑ]+@[a-zA-Z0-9.\-ñÑ]+\.[a-zA-Z]{2,}$/'],
                 'phone' => 'nullable|string|max:255',
+                'birthday' => 'nullable|date|before:today',
                 'dni' => ['required', 'string', 'max:20', 'unique:professionals', 'regex:/^[0-9.]+$/'],
                 'license_number' => 'nullable|string|max:255',
                 'specialty_id' => 'required|exists:specialties,id',
@@ -104,6 +105,7 @@ class ProfessionalController extends Controller
                 'dni.regex' => 'El DNI solo puede contener números y puntos.',
                 'dni.unique' => 'El DNI ingresado ya está registrado en el sistema.',
                 'email.regex' => 'El email solo puede contener letras sin acentos, números, puntos, guiones y la letra ñ.',
+                'birthday.before' => 'La fecha de nacimiento debe ser anterior a hoy.',
             ]);
 
             // Formatear DNI con puntos
@@ -196,6 +198,7 @@ class ProfessionalController extends Controller
                 'last_name' => ['required', 'string', 'max:255', 'regex:/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/'],
                 'email' => ['nullable', 'string', 'max:255', 'regex:/^[a-zA-Z0-9._%+\-ñÑ]+@[a-zA-Z0-9.\-ñÑ]+\.[a-zA-Z]{2,}$/'],
                 'phone' => 'nullable|string|max:255',
+                'birthday' => 'nullable|date|before:today',
                 'dni' => ['required', 'string', 'max:20', 'unique:professionals,dni,'.$professional->id, 'regex:/^[0-9.]+$/'],
                 'license_number' => 'nullable|string|max:255',
                 'specialty_id' => 'required|exists:specialties,id',
@@ -209,6 +212,7 @@ class ProfessionalController extends Controller
                 'dni.regex' => 'El DNI solo puede contener números y puntos.',
                 'dni.unique' => 'El DNI ingresado ya está registrado en el sistema.',
                 'email.regex' => 'El email solo puede contener letras sin acentos, números, puntos, guiones y la letra ñ.',
+                'birthday.before' => 'La fecha de nacimiento debe ser anterior a hoy.',
             ]);
 
             // Formatear DNI con puntos
