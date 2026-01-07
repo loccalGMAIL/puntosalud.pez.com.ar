@@ -251,7 +251,7 @@ function incomeForm() {
         form: {
             amount: '',
             category: '',
-            payment_method: '',
+            payment_method: 'cash', // Valor por defecto
             professional_id: '',
             description: '',
             notes: ''
@@ -259,6 +259,42 @@ function incomeForm() {
 
         categories: @json($incomeCategories),
         hasProfessionals: {{ count($professionals) > 0 ? 'true' : 'false' }},
+
+        init() {
+            // Leer parámetros de URL para precargar el formulario
+            const urlParams = new URLSearchParams(window.location.search);
+
+            if (urlParams.has('amount')) {
+                this.form.amount = urlParams.get('amount');
+            }
+            if (urlParams.has('category')) {
+                this.form.category = urlParams.get('category');
+            }
+            if (urlParams.has('payment_method')) {
+                this.form.payment_method = urlParams.get('payment_method');
+            }
+            if (urlParams.has('professional_id')) {
+                this.form.professional_id = urlParams.get('professional_id');
+            }
+            if (urlParams.has('description')) {
+                this.form.description = decodeURIComponent(urlParams.get('description'));
+            }
+            if (urlParams.has('notes')) {
+                this.form.notes = decodeURIComponent(urlParams.get('notes'));
+            }
+
+            // Si hay una liquidación precargada, mostrar un mensaje
+            if (urlParams.has('from_liquidation')) {
+                setTimeout(() => {
+                    const message = '💰 Liquidación con monto negativo detectada.\n\nPor favor registre el ingreso del profesional al centro.';
+                    if (typeof SystemModal !== 'undefined') {
+                        SystemModal.show('info', 'Registrar Ingreso', message, 'Entendido');
+                    } else {
+                        alert(message);
+                    }
+                }, 500);
+            }
+        },
 
         handleCategoryChange() {
             // Limpiar professional_id si no es pago módulo profesional

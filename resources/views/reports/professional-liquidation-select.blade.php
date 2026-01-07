@@ -277,21 +277,50 @@ async function liquidarProfesional(professionalId, professionalName, amount, dat
             throw new Error(result.message || 'Error en la operación');
         }
 
-        // Mostrar mensaje de éxito y recargar
-        SystemModal.show(
-            'success',
-            'Liquidación Procesada',
-            `Dr. ${professionalName}\nMonto: $${amount.toLocaleString()}\nNuevo saldo en caja: $${result.data.new_balance.toLocaleString()}`,
-            'Aceptar'
-        ).then(() => {
-            // Recargar la página después de cerrar el modal
-            window.location.reload();
-        });
+        // Verificar si el monto fue negativo (profesional debe entregar al centro)
+        const netAmount = result.data.net_professional_amount || result.data.amount;
 
-        // Backup: recargar después de 3 segundos si el modal no se cierra
-        setTimeout(() => {
-            window.location.reload();
-        }, 3000);
+        if (netAmount < 0) {
+            // Monto negativo: redirigir a formulario de ingreso manual
+            const absAmount = Math.abs(netAmount);
+            const description = encodeURIComponent(`Liquidación Dr. ${professionalName} - ${date}`);
+            const notes = encodeURIComponent(`El profesional entrega al centro`);
+
+            SystemModal.show(
+                'info',
+                'Liquidación con Monto Negativo',
+                `Dr. ${professionalName}\n\nEl profesional debe entregar: $${absAmount.toLocaleString()}\n\nSerá redirigido al formulario de ingreso manual para registrar esta entrega.`,
+                'Continuar'
+            ).then(() => {
+                // Redirigir a formulario de ingreso manual con datos precargados
+                const url = new URL('{{ route("cash.manual-income-form") }}', window.location.origin);
+                url.searchParams.set('amount', absAmount);
+                url.searchParams.set('category', 'professional_module_payment');
+                url.searchParams.set('payment_method', 'cash');
+                url.searchParams.set('professional_id', professionalId);
+                url.searchParams.set('description', description);
+                url.searchParams.set('notes', notes);
+                url.searchParams.set('from_liquidation', '1');
+
+                window.location.href = url.toString();
+            });
+        } else {
+            // Monto positivo o cero: recargar normalmente
+            SystemModal.show(
+                'success',
+                'Liquidación Procesada',
+                `Dr. ${professionalName}\nMonto entregado: $${amount.toLocaleString()}\nNuevo saldo en caja: $${result.data.new_balance.toLocaleString()}`,
+                'Aceptar'
+            ).then(() => {
+                // Recargar la página después de cerrar el modal
+                window.location.reload();
+            });
+
+            // Backup: recargar después de 3 segundos si el modal no se cierra
+            setTimeout(() => {
+                window.location.reload();
+            }, 3000);
+        }
 
     } catch (error) {
         // Mostrar modal de error
