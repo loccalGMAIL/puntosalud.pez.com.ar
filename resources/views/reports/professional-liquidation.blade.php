@@ -30,7 +30,7 @@
                     Imprimir
                 </a>
                 {{-- Mostrar botón siempre que haya turnos atendidos (incluso con monto $0 como Dra. Zalazar) --}}
-                @if ($liquidationData['appointments']->count() > 0)
+                {{-- @if ($liquidationData['appointments']->count() > 0)
                     <button
                         onclick="liquidarProfesional({{ $liquidationData['professional']->id }}, '{{ $liquidationData['professional']->full_name }}', {{ $liquidationData['totals']['professional_amount'] }})"
                         class="inline-flex items-center px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-lg shadow-sm transition-colors">
@@ -41,7 +41,7 @@
                         </svg>
                         Liquidar
                     </button>
-                @endif
+                @endif --}}
             </div>
         </div>
 
@@ -169,7 +169,191 @@
             </div>
         </div>
 
-        <!-- Turnos Pagados Previamente -->
+        <!-- Liquidaciones Realizadas -->
+        @if($liquidationData['liquidations_grouped']->count() > 0)
+            @foreach($liquidationData['liquidations_grouped'] as $liquidation)
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border-2 border-green-300 dark:border-green-700 mb-6">
+                    <div class="bg-green-50 dark:bg-green-900/20 border-b border-green-200 dark:border-green-700 px-6 py-4">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h3 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                                    ✅ Liquidación #{{ $liquidation['number'] }}
+                                    <span class="text-sm font-normal text-gray-600 dark:text-gray-400">({{ $liquidation['appointments_count'] }} {{ $liquidation['appointments_count'] === 1 ? 'turno' : 'turnos' }})</span>
+                                </h3>
+                                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                    Liquidada el {{ $liquidation['created_at']->format('d/m/Y H:i') }}
+                                </p>
+                            </div>
+                            <div class="text-right">
+                                <div class="text-sm text-gray-600 dark:text-gray-400">
+                                    @if($liquidation['amount'] >= 0)
+                                        Monto entregado
+                                    @else
+                                        Profesional Entrega
+                                    @endif
+                                </div>
+                                <div class="text-xl font-bold {{ $liquidation['amount'] >= 0 ? 'text-green-700 dark:text-green-400' : 'text-red-700 dark:text-red-400' }}">
+                                    ${{ number_format(abs($liquidation['amount']), 0, ',', '.') }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="p-6">
+                        <div class="overflow-x-auto">
+                            <table class="w-full">
+                                <thead>
+                                    <tr class="border-b border-gray-200 dark:border-gray-600">
+                                        <th class="text-left py-2 px-3 text-sm font-medium text-gray-700 dark:text-gray-300">Hora</th>
+                                        <th class="text-left py-2 px-3 text-sm font-medium text-gray-700 dark:text-gray-300">Paciente</th>
+                                        <th class="text-right py-2 px-3 text-sm font-medium text-gray-700 dark:text-gray-300">Monto</th>
+                                        <th class="text-left py-2 px-3 text-sm font-medium text-gray-700 dark:text-gray-300">Método</th>
+                                        <th class="text-left py-2 px-3 text-sm font-medium text-gray-700 dark:text-gray-300">Receptor</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($liquidation['appointments'] as $appointment)
+                                        <tr class="border-b border-gray-100 dark:border-gray-700 @if($appointment['is_urgency']) bg-red-50/30 dark:bg-red-900/10 @endif">
+                                            <td class="py-3 px-3">
+                                                <div class="flex items-center gap-2">
+                                                    @if($appointment['is_urgency'])
+                                                        <span class="inline-flex items-center rounded px-1 py-0.5 text-xs font-bold bg-red-100 text-red-800 border border-red-300 dark:bg-red-900/40 dark:text-red-300 dark:border-red-700" title="Urgencia">
+                                                            🚨
+                                                        </span>
+                                                    @endif
+                                                    <span class="font-medium text-gray-900 dark:text-white">{{ $appointment['time'] }}</span>
+                                                </div>
+                                            </td>
+                                            <td class="py-3 px-3">
+                                                <div class="font-medium text-gray-900 dark:text-white">{{ $appointment['patient_name'] }}</div>
+                                                <div class="text-xs text-gray-500 dark:text-gray-400">DNI: {{ $appointment['patient_dni'] }}</div>
+                                            </td>
+                                            <td class="py-3 px-3 text-right font-medium text-gray-900 dark:text-white">
+                                                ${{ number_format($appointment['final_amount'], 0, ',', '.') }}
+                                            </td>
+                                            <td class="py-3 px-3">
+                                                <div class="text-sm text-gray-600 dark:text-gray-400">
+                                                    @if($appointment['is_multiple_payment'])
+                                                        <span class="font-medium text-purple-700 dark:text-purple-400">Múltiple</span>
+                                                        <div class="text-xs text-gray-500 dark:text-gray-400 mt-1 space-y-0.5">
+                                                            @foreach($appointment['payment_methods_array'] as $detail)
+                                                                <div>• {{ match($detail['method']) {
+                                                                    'cash' => 'Efectivo',
+                                                                    'transfer' => 'Transferencia',
+                                                                    'debit_card' => 'Débito',
+                                                                    'credit_card' => 'Crédito',
+                                                                    default => ucfirst($detail['method']),
+                                                                } }}: ${{ number_format($detail['amount'], 0, ',', '.') }}</div>
+                                                            @endforeach
+                                                        </div>
+                                                    @elseif($appointment['payment_method'])
+                                                        {{ match($appointment['payment_method']) {
+                                                            'cash' => 'Efectivo',
+                                                            'transfer' => 'Transferencia',
+                                                            'debit_card' => 'Débito',
+                                                            'credit_card' => 'Crédito',
+                                                            default => ucfirst($appointment['payment_method']),
+                                                        } }}
+                                                    @else
+                                                        <span class="text-gray-400">-</span>
+                                                    @endif
+                                                </div>
+                                            </td>
+                                            <td class="py-3 px-3">
+                                                @if($appointment['received_by'] === 'profesional')
+                                                    <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300" title="Pago recibido directamente por el profesional">
+                                                        👤 Profesional
+                                                    </span>
+                                                @elseif($appointment['received_by'] === 'centro')
+                                                    <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300" title="Pago recibido por el centro">
+                                                        🏥 Centro
+                                                    </span>
+                                                @elseif($appointment['received_by'] === 'mixed')
+                                                    <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300" title="Pago mixto">
+                                                        🔀 Mixto
+                                                    </span>
+                                                @else
+                                                    <span class="text-gray-400">-</span>
+                                                @endif
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            @endforeach
+        @endif
+
+        <!-- Turnos Pendientes de Liquidar -->
+        @if($liquidationData['pending_appointments']->count() > 0)
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border-2 border-orange-300 dark:border-orange-700 mb-6">
+                <div class="bg-orange-50 dark:bg-orange-900/20 border-b border-orange-200 dark:border-orange-700 px-6 py-4">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                        ⏳ Turnos Pendientes de Liquidar ({{ $liquidationData['pending_appointments']->count() }})
+                    </h3>
+                    <p class="text-sm text-gray-600 dark:text-gray-400">
+                        Estos turnos aún no han sido liquidados
+                    </p>
+                </div>
+                <div class="p-6">
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead>
+                                <tr class="border-b border-gray-200 dark:border-gray-600">
+                                    <th class="text-left py-2 px-3 text-sm font-medium text-gray-700 dark:text-gray-300">Hora</th>
+                                    <th class="text-left py-2 px-3 text-sm font-medium text-gray-700 dark:text-gray-300">Paciente</th>
+                                    <th class="text-right py-2 px-3 text-sm font-medium text-gray-700 dark:text-gray-300">Monto</th>
+                                    <th class="text-left py-2 px-3 text-sm font-medium text-gray-700 dark:text-gray-300">Método</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($liquidationData['pending_appointments'] as $appointment)
+                                    <tr class="border-b border-gray-100 dark:border-gray-700 @if($appointment['is_urgency']) bg-red-50/30 dark:bg-red-900/10 @endif">
+                                        <td class="py-3 px-3">
+                                            <div class="flex items-center gap-2">
+                                                @if($appointment['is_urgency'])
+                                                    <span class="inline-flex items-center rounded px-1 py-0.5 text-xs font-bold bg-red-100 text-red-800 border border-red-300 dark:bg-red-900/40 dark:text-red-300 dark:border-red-700" title="Urgencia">
+                                                        🚨
+                                                    </span>
+                                                @endif
+                                                <span class="font-medium text-gray-900 dark:text-white">{{ $appointment['time'] }}</span>
+                                            </div>
+                                        </td>
+                                        <td class="py-3 px-3">
+                                            <div class="font-medium text-gray-900 dark:text-white">{{ $appointment['patient_name'] }}</div>
+                                            <div class="text-xs text-gray-500 dark:text-gray-400">DNI: {{ $appointment['patient_dni'] }}</div>
+                                        </td>
+                                        <td class="py-3 px-3 text-right font-medium text-gray-900 dark:text-white">
+                                            ${{ number_format($appointment['final_amount'], 0, ',', '.') }}
+                                        </td>
+                                        <td class="py-3 px-3">
+                                            <div class="text-sm text-gray-600 dark:text-gray-400">
+                                                @if($appointment['is_multiple_payment'])
+                                                    <span class="font-medium text-purple-700 dark:text-purple-400">Múltiple</span>
+                                                @elseif($appointment['payment_method'])
+                                                    {{ match($appointment['payment_method']) {
+                                                        'cash' => 'Efectivo',
+                                                        'transfer' => 'Transferencia',
+                                                        'debit_card' => 'Débito',
+                                                        'credit_card' => 'Crédito',
+                                                        default => ucfirst($appointment['payment_method']),
+                                                    } }}
+                                                @else
+                                                    <span class="text-gray-400">-</span>
+                                                @endif
+                                            </div>
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        @endif
+
+        <!-- Turnos Pagados Previamente (se mantiene para referencia histórica) -->
         @if ($liquidationData['prepaid_appointments']->count() > 0)
             <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 mb-6">
                 <div class="bg-yellow-50 dark:bg-yellow-900/20 border-b border-gray-200 dark:border-gray-700 px-6 py-4">
@@ -246,368 +430,6 @@
                 </div>
             </div>
         @endif
-
-        <!-- Turnos Pagados del Día -->
-        @if ($liquidationData['today_paid_appointments']->count() > 0)
-            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 mb-6">
-                <div class="bg-yellow-50 dark:bg-yellow-900/20 border-b border-gray-200 dark:border-gray-700 px-6 py-4">
-                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                        💳 Turnos Pagados Previamente ({{ $liquidationData['prepaid_appointments']->count() }})
-                    </h3>
-                    <p class="text-sm text-gray-600 dark:text-gray-400">
-                        Total: ${{ number_format($liquidationData['totals']['prepaid_amount'], 0, ',', '.') }} |
-                        Su comisión: ${{ number_format($liquidationData['totals']['prepaid_professional'], 0, ',', '.') }}
-                    </p>
-                </div>
-                <div class="p-6">
-                    <div class="overflow-x-auto">
-                        <table class="w-full">
-                            <thead>
-                                <tr class="border-b border-gray-200 dark:border-gray-600">
-                                    <th class="text-left py-2 px-3 text-sm font-medium text-gray-700 dark:text-gray-300">
-                                        Hora</th>
-                                    <th class="text-left py-2 px-3 text-sm font-medium text-gray-700 dark:text-gray-300">
-                                        Paciente</th>
-                                    <th class="text-right py-2 px-3 text-sm font-medium text-gray-700 dark:text-gray-300">
-                                        Monto</th>
-                                    <th class="text-left py-2 px-3 text-sm font-medium text-gray-700 dark:text-gray-300">
-                                        Método</th>
-                                    <th class="text-left py-2 px-3 text-sm font-medium text-gray-700 dark:text-gray-300">
-                                        Receptor</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach ($liquidationData['prepaid_appointments'] as $appointment)
-                                    <tr
-                                        class="border-b border-gray-100 dark:border-gray-700 @if ($appointment['is_urgency']) bg-red-50/30 dark:bg-red-900/10 @endif">
-                                        <td class="py-3 px-3">
-                                            <div class="flex items-center gap-2">
-                                                @if ($appointment['is_urgency'])
-                                                    <span
-                                                        class="inline-flex items-center rounded px-1 py-0.5 text-xs font-bold bg-red-100 text-red-800 border border-red-300 dark:bg-red-900/40 dark:text-red-300 dark:border-red-700"
-                                                        title="Urgencia">
-                                                        🚨
-                                                    </span>
-                                                @endif
-                                                <span
-                                                    class="font-medium text-gray-900 dark:text-white">{{ $appointment['time'] }}</span>
-                                            </div>
-                                        </td>
-                                        <td class="py-3 px-3">
-                                            <div class="font-medium text-gray-900 dark:text-white">
-                                                {{ $appointment['patient_name'] }}</div>
-                                            <div class="text-xs text-gray-500 dark:text-gray-400">DNI:
-                                                {{ $appointment['patient_dni'] }}</div>
-                                        </td>
-                                        <td class="py-3 px-3 text-right font-medium text-gray-900 dark:text-white">
-                                            ${{ number_format($appointment['final_amount'], 0, ',', '.') }}</td>
-                                        <td class="py-3 px-3">
-                                            <div class="text-sm text-gray-600 dark:text-gray-400">
-                                                @if ($appointment['is_multiple_payment'])
-                                                    <span
-                                                        class="font-medium text-purple-700 dark:text-purple-400">Múltiple</span>
-                                                    <div class="text-xs text-gray-500 dark:text-gray-400 mt-1 space-y-0.5">
-                                                        @foreach ($appointment['payment_methods_array'] as $detail)
-                                                            <div>•
-                                                                {{ match ($detail['method']) {
-                                                                    'cash' => 'Efectivo',
-                                                                    'transfer' => 'Transferencia',
-                                                                    'debit_card' => 'Débito',
-                                                                    'credit_card' => 'Crédito',
-                                                                    default => ucfirst($detail['method']),
-                                                                } }}:
-                                                                ${{ number_format($detail['amount'], 0, ',', '.') }}</div>
-                                                        @endforeach
-                                                    </div>
-                                                @elseif($appointment['payment_method'])
-                                                    {{ match ($appointment['payment_method']) {
-                                                        'cash' => 'Efectivo',
-                                                        'transfer' => 'Transferencia',
-                                                        'debit_card' => 'Débito',
-                                                        'credit_card' => 'Crédito',
-                                                        default => ucfirst($appointment['payment_method']),
-                                                    } }}
-                                                @else
-                                                    <span class="text-gray-400">-</span>
-                                                @endif
-                                            </div>
-                                            <div class="text-xs text-gray-500 dark:text-gray-400">
-                                                {{ $appointment['payment_date'] }}</div>
-                                            @if ($appointment['receipt_number'])
-                                                <div class="text-xs text-gray-500 dark:text-gray-400">Rec:
-                                                    {{ $appointment['receipt_number'] }}</div>
-                                            @endif
-                                        </td>
-                                        <td class="py-3 px-3">
-                                            @if ($appointment['received_by'] === 'profesional')
-                                                <span
-                                                    class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300"
-                                                    title="Pago recibido directamente por el profesional">
-                                                    👤 Profesional
-                                                </span>
-                                            @elseif($appointment['received_by'] === 'centro')
-                                                <span
-                                                    class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300"
-                                                    title="Pago recibido por el centro">
-                                                    🏥 Centro
-                                                </span>
-                                            @elseif($appointment['received_by'] === 'mixed')
-                                                <span
-                                                    class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300"
-                                                    title="Pago mixto: parte al centro, parte al profesional">
-                                                    🔀 Mixto
-                                                </span>
-                                                @if ($appointment['is_multiple_payment'])
-                                                    <div class="text-xs text-gray-500 dark:text-gray-400 mt-1 space-y-0.5">
-                                                        @foreach ($appointment['payment_methods_array'] as $detail)
-                                                            <div>•
-                                                                {{ $detail['received_by'] === 'profesional' ? '👤' : '🏥' }}
-                                                            </div>
-                                                        @endforeach
-                                                    </div>
-                                                @endif
-                                            @else
-                                                <span class="text-gray-400 text-xs">-</span>
-                                            @endif
-                                            <span
-                                                class="font-medium text-gray-900 dark:text-white">{{ $appointment['time'] }}</span>
-                    </div>
-                    </td>
-                    <td class="py-3 px-3">
-                        <div class="font-medium text-gray-900 dark:text-white">{{ $appointment['patient_name'] }}</div>
-                        <div class="text-xs text-gray-500 dark:text-gray-400">DNI: {{ $appointment['patient_dni'] }}</div>
-                    </td>
-                    <td class="py-3 px-3 text-right font-medium text-gray-900 dark:text-white">
-                        ${{ number_format($appointment['final_amount'], 0, ',', '.') }}</td>
-                    <td class="py-3 px-3">
-                        <div class="text-sm text-gray-600 dark:text-gray-400">
-                            {{ match ($appointment['payment_method']) {
-                                'cash' => 'Efectivo',
-                                'transfer' => 'Transferencia',
-                                'card' => 'Tarjeta',
-                                'qr' => 'QR',
-                                default => $appointment['payment_method'],
-                            } }}
-                        </div>
-                        @if ($appointment['receipt_number'])
-                            <div class="text-xs text-gray-500 dark:text-gray-400">Rec:
-                                {{ $appointment['receipt_number'] }}</div>
-                        @endif
-                    </td>
-                    </tr>
-        @endforeach
-        </tbody>
-        </table>
-    </div>
-    </div>
-    @endif
-
-    <!-- Turnos Pagados Hoy -->
-    @if ($liquidationData['today_paid_appointments']->count() > 0)
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 mb-6">
-            <div class="bg-green-50 dark:bg-green-900/20 border-b border-gray-200 dark:border-gray-700 px-6 py-4">
-                <h3 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                    💰 Turnos Cobrados Hoy ({{ $liquidationData['today_paid_appointments']->count() }})
-                </h3>
-                <p class="text-sm text-gray-600 dark:text-gray-400">
-                    Total: ${{ number_format($liquidationData['totals']['today_paid_amount'], 0, ',', '.') }} |
-                    Comisión Profesional:
-                    ${{ number_format($liquidationData['totals']['today_paid_professional'], 0, ',', '.') }}
-                </p>
-            </div>
-            <div class="p-6">
-                <div class="overflow-x-auto">
-                    <table class="w-full">
-                        <thead>
-                            <tr class="border-b border-gray-200 dark:border-gray-600">
-                                <th class="text-left py-2 px-3 text-sm font-medium text-gray-700 dark:text-gray-300">#
-                                </th>
-                                <th class="text-left py-2 px-3 text-sm font-medium text-gray-700 dark:text-gray-300">
-                                    Hora</th>
-                                <th class="text-left py-2 px-3 text-sm font-medium text-gray-700 dark:text-gray-300">
-                                    Paciente</th>
-                                <th class="text-right py-2 px-3 text-sm font-medium text-gray-700 dark:text-gray-300">
-                                    Monto</th>
-                                <th class="text-left py-2 px-3 text-sm font-medium text-gray-700 dark:text-gray-300">
-                                    Método</th>
-                                <th class="text-left py-2 px-3 text-sm font-medium text-gray-700 dark:text-gray-300">
-                                    Receptor</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach ($liquidationData['today_paid_appointments'] as $appointment)
-                                <tr
-                                    class="border-b border-gray-100 dark:border-gray-700 @if ($appointment['is_urgency']) bg-red-50/30 dark:bg-red-900/10 @endif">
-                                    <td class="py-3 px-3">
-                                        {{-- <div class="font-medium text-gray-900 dark:text-white">
-                                                {{ $appointment['patient_name'] }}</div> --}}
-                                        <div class="text-xs text-gray-500 dark:text-gray-400">
-                                            {{ $appointment['id'] }}</div>
-                                    </td>
-                                    <td class="py-3 px-3">
-                                        <div class="flex items-center gap-2">
-                                            @if ($appointment['is_urgency'])
-                                                <span
-                                                    class="inline-flex items-center rounded px-1 py-0.5 text-xs font-bold bg-red-100 text-red-800 border border-red-300 dark:bg-red-900/40 dark:text-red-300 dark:border-red-700"
-                                                    title="Urgencia">
-                                                    🚨
-                                                </span>
-                                            @endif
-                                            <span
-                                                class="font-medium text-gray-900 dark:text-white">{{ $appointment['time'] }}</span>
-                                        </div>
-                                    </td>
-                                    <td class="py-3 px-3">
-                                        <div class="font-medium text-gray-900 dark:text-white">
-                                            {{ $appointment['patient_name'] }}</div>
-                                        <div class="text-xs text-gray-500 dark:text-gray-400">DNI:
-                                            {{ $appointment['patient_dni'] }}</div>
-                                    </td>
-                                    <td class="py-3 px-3 text-right font-medium text-gray-900 dark:text-white">
-                                        ${{ number_format($appointment['final_amount'], 0, ',', '.') }}</td>
-                                    <td class="py-3 px-3">
-                                        <div class="text-sm text-gray-600 dark:text-gray-400">
-                                            @if ($appointment['is_multiple_payment'])
-                                                <span
-                                                    class="font-medium text-purple-700 dark:text-purple-400">Múltiple</span>
-                                                <div class="text-xs text-gray-500 dark:text-gray-400 mt-1 space-y-0.5">
-                                                    @foreach ($appointment['payment_methods_array'] as $detail)
-                                                        <div>•
-                                                            {{ match ($detail['method']) {
-                                                                'cash' => 'Efectivo',
-                                                                'transfer' => 'Transferencia',
-                                                                'debit_card' => 'Débito',
-                                                                'credit_card' => 'Crédito',
-                                                                default => ucfirst($detail['method']),
-                                                            } }}:
-                                                            ${{ number_format($detail['amount'], 0, ',', '.') }}</div>
-                                                    @endforeach
-                                                </div>
-                                            @elseif($appointment['payment_method'])
-                                                {{ match ($appointment['payment_method']) {
-                                                    'cash' => 'Efectivo',
-                                                    'transfer' => 'Transferencia',
-                                                    'debit_card' => 'Débito',
-                                                    'credit_card' => 'Crédito',
-                                                    default => ucfirst($appointment['payment_method']),
-                                                } }}
-                                            @else
-                                                <span class="text-gray-400">-</span>
-                                            @endif
-                                        </div>
-                                        @if ($appointment['receipt_number'])
-                                            <div class="text-xs text-gray-500 dark:text-gray-400">Rec:
-                                                {{ $appointment['receipt_number'] }}</div>
-                                        @endif
-                                    </td>
-                                    <td class="py-3 px-3">
-                                        @if ($appointment['received_by'] === 'profesional')
-                                            <span
-                                                class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300"
-                                                title="Pago recibido directamente por el profesional">
-                                                👤 Profesional
-                                            </span>
-                                        @elseif($appointment['received_by'] === 'centro')
-                                            <span
-                                                class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300"
-                                                title="Pago recibido por el centro">
-                                                🏥 Centro
-                                            </span>
-                                        @elseif($appointment['received_by'] === 'mixed')
-                                            <span
-                                                class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300"
-                                                title="Pago mixto: parte al centro, parte al profesional">
-                                                🔀 Mixto
-                                            </span>
-                                            @if ($appointment['is_multiple_payment'])
-                                                <div class="text-xs text-gray-500 dark:text-gray-400 mt-1 space-y-0.5">
-                                                    @foreach ($appointment['payment_methods_array'] as $detail)
-                                                        <div>•
-                                                            {{ $detail['received_by'] === 'profesional' ? '👤' : '🏥' }}
-                                                        </div>
-                                                    @endforeach
-                                                </div>
-                                            @endif
-                                        @else
-                                            <span class="text-gray-400 text-xs">-</span>
-                                        @endif
-                                    </td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    @endif
-
-    <!-- Turnos Sin Pagar -->
-    @if ($liquidationData['unpaid_appointments']->count() > 0)
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 mb-6">
-            <div class="bg-red-50 dark:bg-red-900/20 border-b border-gray-200 dark:border-gray-700 px-6 py-4">
-                <h3 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                    ⚠️ Turnos Pendientes de Pago ({{ $liquidationData['unpaid_appointments']->count() }})
-                </h3>
-                <p class="text-sm text-gray-600 dark:text-gray-400">
-                    Total pendiente: ${{ number_format($liquidationData['totals']['unpaid_amount'], 0, ',', '.') }} |
-                    Su comisión pendiente:
-                    ${{ number_format($liquidationData['totals']['unpaid_professional'], 0, ',', '.') }}
-                </p>
-            </div>
-            <div class="p-6">
-                <div class="overflow-x-auto">
-                    <table class="w-full">
-                        <thead>
-                            <tr class="border-b border-gray-200 dark:border-gray-600">
-                                <th class="text-left py-2 px-3 text-sm font-medium text-gray-700 dark:text-gray-300">
-                                    Hora</th>
-                                <th class="text-left py-2 px-3 text-sm font-medium text-gray-700 dark:text-gray-300">
-                                    Paciente</th>
-                                <th class="text-right py-2 px-3 text-sm font-medium text-gray-700 dark:text-gray-300">
-                                    Monto</th>
-                                <th class="text-left py-2 px-3 text-sm font-medium text-gray-700 dark:text-gray-300">
-                                    Estado</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach ($liquidationData['unpaid_appointments'] as $appointment)
-                                <tr
-                                    class="border-b border-gray-100 dark:border-gray-700 @if ($appointment['is_urgency']) bg-red-50/30 dark:bg-red-900/10 @endif">
-                                    <td class="py-3 px-3">
-                                        <div class="flex items-center gap-2">
-                                            @if ($appointment['is_urgency'])
-                                                <span
-                                                    class="inline-flex items-center rounded px-1 py-0.5 text-xs font-bold bg-red-100 text-red-800 border border-red-300 dark:bg-red-900/40 dark:text-red-300 dark:border-red-700"
-                                                    title="Urgencia">
-                                                    🚨
-                                                </span>
-                                            @endif
-                                            <span
-                                                class="font-medium text-gray-900 dark:text-white">{{ $appointment['time'] }}</span>
-                                        </div>
-                                    </td>
-                                    <td class="py-3 px-3">
-                                        <div class="font-medium text-gray-900 dark:text-white">
-                                            {{ $appointment['patient_name'] }}</div>
-                                        <div class="text-xs text-gray-500 dark:text-gray-400">DNI:
-                                            {{ $appointment['patient_dni'] }}</div>
-                                    </td>
-                                    <td class="py-3 px-3 text-right font-medium text-gray-900 dark:text-white">
-                                        ${{ number_format($appointment['final_amount'], 0, ',', '.') }}</td>
-                                    <td class="py-3 px-3">
-                                        <span
-                                            class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400">
-                                            PENDIENTE
-                                        </span>
-                                    </td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    @endif
 
     <!-- Reintegros a Pacientes -->
     @if (count($liquidationData['refunds']) > 0)

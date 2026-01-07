@@ -283,18 +283,20 @@ class ReportController extends Controller
                 // NUEVO v2.6.0: Calcular considerando el routing de pagos
                 $attendedAppointmentIds = $professional->appointments->pluck('id');
 
-                // Obtener payment_details recibidos por el centro
+                // Obtener payment_details recibidos por el centro (solo pendientes de liquidar)
                 $centroPaymentDetails = \App\Models\PaymentDetail::whereHas('payment.paymentAppointments', function($q) use ($attendedAppointmentIds) {
                         $q->whereIn('appointment_id', $attendedAppointmentIds);
                     })
                     ->where('received_by', 'centro')
+                    ->whereNull('liquidation_id')
                     ->get();
 
-                // Obtener payment_details recibidos directamente por el profesional
+                // Obtener payment_details recibidos directamente por el profesional (solo pendientes de liquidar)
                 $professionalPaymentDetails = \App\Models\PaymentDetail::whereHas('payment.paymentAppointments', function($q) use ($attendedAppointmentIds) {
                         $q->whereIn('appointment_id', $attendedAppointmentIds);
                     })
                     ->where('received_by', 'profesional')
+                    ->whereNull('liquidation_id')
                     ->get();
 
                 $totalCollectedByCenter = $centroPaymentDetails->sum('amount');
@@ -336,7 +338,9 @@ class ReportController extends Controller
                 ];
             })
             ->filter(function ($professional) {
-                return $professional['attended_count'] > 0;
+                // Mostrar solo si tiene turnos atendidos Y si tiene monto pendiente diferente de $0
+                // Si el monto es $0, significa que ya fue liquidado completamente
+                return $professional['attended_count'] > 0 && $professional['professional_amount'] != 0;
             });
 
         // Obtener todos los profesionales para el dropdown
@@ -345,9 +349,39 @@ class ReportController extends Controller
             ->orderBy('last_name')
             ->get();
 
+        // Obtener liquidaciones ya realizadas en el día
+        $completedLiquidations = \App\Models\ProfessionalLiquidation::with(['professional.specialty', 'details'])
+            ->whereDate('liquidation_date', $selectedDate)
+            ->orderBy('professional_id')
+            ->orderBy('created_at')
+            ->get()
+            ->groupBy('professional_id')
+            ->map(function ($liquidations, $professionalId) {
+                $professional = $liquidations->first()->professional;
+                $liquidationsList = $liquidations->map(function ($liq, $index) {
+                    // Contar turnos únicos de esta liquidación específica
+                    $uniqueAppointments = $liq->details->pluck('appointment_id')->unique()->count();
+
+                    return [
+                        'id' => $liq->id,
+                        'number' => $index + 1,
+                        'amount' => $liq->net_professional_amount,
+                        'created_at' => $liq->created_at,
+                        'appointments_count' => $uniqueAppointments,
+                    ];
+                });
+
+                return [
+                    'professional' => $professional,
+                    'liquidations' => $liquidationsList,
+                    'total_liquidations' => $liquidations->count(),
+                    'total_amount' => $liquidations->sum('net_professional_amount'),
+                ];
+            });
+
         // Si no se especifica profesional, mostrar vista de selección
         if (! $professionalId) {
-            return view('reports.professional-liquidation-select', compact('allProfessionals', 'professionalsWithLiquidation', 'selectedDate'));
+            return view('reports.professional-liquidation-select', compact('allProfessionals', 'professionalsWithLiquidation', 'selectedDate', 'completedLiquidations'));
         }
 
         // Obtener el profesional seleccionado
@@ -485,10 +519,51 @@ class ReportController extends Controller
         $todayPaidAppointments = $attendedAppointments->where('is_paid', true)->where('is_prepaid', false);
         $unpaidAppointments = $attendedAppointments->where('is_paid', false);
 
+        // Calcular número de liquidación del día (para preview)
+        $liquidationNumber = \App\Models\ProfessionalLiquidation::where('professional_id', $professionalId)
+            ->whereDate('liquidation_date', $selectedDate)
+            ->count() + 1;
+
+        // Obtener liquidaciones realizadas en el día y agrupar turnos
+        $liquidationsGrouped = \App\Models\ProfessionalLiquidation::with(['details.appointment.patient', 'details.appointment.paymentAppointments.payment.paymentDetails'])
+            ->where('professional_id', $professionalId)
+            ->whereDate('liquidation_date', $selectedDate)
+            ->orderBy('created_at')
+            ->get()
+            ->map(function ($liquidation, $index) use ($attendedAppointments, $selectedDate) {
+                // Obtener IDs de turnos de esta liquidación
+                $appointmentIds = $liquidation->details->pluck('appointment_id')->unique();
+
+                // Filtrar turnos que pertenecen a esta liquidación
+                $liquidationAppointments = $attendedAppointments->filter(function ($apt) use ($appointmentIds) {
+                    return $appointmentIds->contains($apt['id']);
+                });
+
+                return [
+                    'number' => $index + 1,
+                    'id' => $liquidation->id,
+                    'amount' => $liquidation->net_professional_amount,
+                    'created_at' => $liquidation->created_at,
+                    'appointments' => $liquidationAppointments,
+                    'appointments_count' => $liquidationAppointments->count(),
+                ];
+            });
+
+        // Turnos sin liquidar (pendientes)
+        $liquidatedAppointmentIds = $liquidationsGrouped->flatMap(function ($liq) {
+            return $liq['appointments']->pluck('id');
+        });
+        $pendingAppointments = $attendedAppointments->filter(function ($apt) use ($liquidatedAppointmentIds) {
+            return !$liquidatedAppointmentIds->contains($apt['id']);
+        });
+
         $liquidationData = [
             'professional' => $professional,
             'date' => $selectedDate,
+            'liquidation_number' => $liquidationNumber,
             'appointments' => $attendedAppointments,
+            'liquidations_grouped' => $liquidationsGrouped,
+            'pending_appointments' => $pendingAppointments,
             'prepaid_appointments' => $prepaidAppointments,
             'today_paid_appointments' => $todayPaidAppointments,
             'unpaid_appointments' => $unpaidAppointments,

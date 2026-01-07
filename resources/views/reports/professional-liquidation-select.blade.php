@@ -155,6 +155,72 @@
             </div>
         </div>
     @endif
+
+    <!-- Liquidaciones Ya Realizadas -->
+    @if($completedLiquidations->count() > 0)
+        <div class="mt-8">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                ✅ Liquidaciones Ya Realizadas
+                <span class="text-sm font-normal text-gray-500 dark:text-gray-400">
+                    ({{ $completedLiquidations->count() }} {{ $completedLiquidations->count() === 1 ? 'profesional liquidado' : 'profesionales liquidados' }})
+                </span>
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                @foreach($completedLiquidations as $item)
+                    <div class="bg-green-50 dark:bg-green-900/20 rounded-lg shadow-sm border-2 border-green-200 dark:border-green-700 p-4">
+                        <div class="flex items-start justify-between mb-3">
+                            <div class="flex-1">
+                                <h4 class="font-medium text-gray-900 dark:text-white">
+                                    Dr. {{ $item['professional']->full_name }}
+                                </h4>
+                                <p class="text-sm text-gray-600 dark:text-gray-400">
+                                    {{ $item['professional']->specialty->name }}
+                                </p>
+                            </div>
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100">
+                                {{ $item['total_liquidations'] }} {{ $item['total_liquidations'] === 1 ? 'liquidación' : 'liquidaciones' }}
+                            </span>
+                        </div>
+
+                        <!-- Lista de liquidaciones -->
+                        <div class="space-y-2 mb-3">
+                            @foreach($item['liquidations'] as $liq)
+                                <div class="flex justify-between items-center text-sm bg-white dark:bg-gray-800 p-2 rounded border border-gray-200 dark:border-gray-600">
+                                    <span class="font-medium text-gray-700 dark:text-gray-300">
+                                        Liquidación #{{ $liq['number'] }}
+                                    </span>
+                                    <span class="text-gray-600 dark:text-gray-400">
+                                        {{ $liq['appointments_count'] }} turnos
+                                    </span>
+                                    <span class="font-medium text-gray-900 dark:text-white">
+                                        ${{ number_format($liq['amount'], 0, ',', '.') }}
+                                    </span>
+                                </div>
+                            @endforeach
+                        </div>
+
+                        <!-- Total del día -->
+                        <div class="flex justify-between items-center pt-3 border-t-2 border-green-300 dark:border-green-600">
+                            <span class="font-semibold text-gray-900 dark:text-white">Total del día:</span>
+                            <span class="font-bold text-lg text-green-700 dark:text-green-400">${{ number_format($item['total_amount'], 0, ',', '.') }}</span>
+                        </div>
+
+                        <!-- Botón ver detalle (última liquidación) -->
+                        <div class="mt-3 pt-3 border-t border-green-200 dark:border-green-700">
+                            <a href="{{ route('reports.professional-liquidation', ['professional_id' => $item['professional']->id, 'date' => $selectedDate->format('Y-m-d')]) }}"
+                               class="inline-flex items-center px-3 py-1 bg-green-100 hover:bg-green-200 text-green-800 text-xs font-medium rounded transition-colors w-full justify-center">
+                                <svg class="w-3 h-3 mr-1" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                </svg>
+                                Ver Detalle
+                            </a>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        </div>
+    @endif
 </div>
 
 <script>
@@ -211,16 +277,21 @@ async function liquidarProfesional(professionalId, professionalName, amount, dat
             throw new Error(result.message || 'Error en la operación');
         }
 
-        // Mostrar mensaje de éxito
-        await SystemModal.show(
+        // Mostrar mensaje de éxito y recargar
+        SystemModal.show(
             'success',
             'Liquidación Procesada',
             `Dr. ${professionalName}\nMonto: $${amount.toLocaleString()}\nNuevo saldo en caja: $${result.data.new_balance.toLocaleString()}`,
             'Aceptar'
-        );
+        ).then(() => {
+            // Recargar la página después de cerrar el modal
+            window.location.reload();
+        });
 
-        // Recargar la página para actualizar los datos
-        window.location.reload();
+        // Backup: recargar después de 3 segundos si el modal no se cierra
+        setTimeout(() => {
+            window.location.reload();
+        }, 3000);
 
     } catch (error) {
         // Mostrar modal de error

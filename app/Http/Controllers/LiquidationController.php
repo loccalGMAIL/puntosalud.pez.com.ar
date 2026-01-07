@@ -33,24 +33,13 @@ class LiquidationController extends Controller
             // TEMPORAL: Excepción para Dra. Zalazar (ID=1) - Cobra directamente, no retira de caja
             $isDraZalazar = $professional->id === 1;
 
-            // 1. Verificar que NO exista ya una liquidación para este profesional en esta fecha
-            $existingLiquidation = ProfessionalLiquidation::where('professional_id', $professional->id)
-                ->whereDate('liquidation_date', $date)
-                ->first();
-
-            if ($existingLiquidation) {
-                throw new \Exception("Ya existe una liquidación para {$professional->full_name} en la fecha {$date->format('d/m/Y')}. ".
-                                   "ID de liquidación: {$existingLiquidation->id}. ".
-                                   "No se permite liquidar dos veces el mismo día.");
-            }
-
-            // 2. Verificar que la caja esté abierta
+            // 1. Verificar que la caja esté abierta
             $cashStatus = CashMovement::getCashStatusForDate($date);
             if (! $cashStatus['is_open']) {
                 throw new \Exception('La caja debe estar abierta para procesar liquidaciones.');
             }
 
-            // 3. Verificar turnos pendientes del profesional
+            // 2. Verificar turnos pendientes del profesional
             $pendingAppointments = Appointment::where('professional_id', $professional->id)
                 ->whereDate('appointment_date', $date)
                 ->where('status', 'scheduled')
@@ -62,7 +51,7 @@ class LiquidationController extends Controller
                                    " sin atender del día {$date->format('d/m/Y')}.");
             }
 
-            // 4. Verificar turnos atendidos sin cobrar
+            // 3. Verificar turnos atendidos sin cobrar
             $unpaidAppointments = Appointment::where('professional_id', $professional->id)
                 ->whereDate('appointment_date', $date)
                 ->where('status', 'attended')
@@ -75,7 +64,7 @@ class LiquidationController extends Controller
                                    " sin cobrar del día {$date->format('d/m/Y')}.");
             }
 
-            // 5. Obtener todos los turnos atendidos del día con sus pagos
+            // 4. Obtener todos los turnos atendidos del día con sus pagos
             $attendedAppointments = Appointment::with(['paymentAppointments.payment'])
                 ->where('professional_id', $professional->id)
                 ->whereDate('appointment_date', $date)
@@ -86,22 +75,7 @@ class LiquidationController extends Controller
                 throw new \Exception("No hay turnos atendidos para liquidar en la fecha {$date->format('d/m/Y')}.");
             }
 
-            // 6. Validar que ningún pago ya esté liquidado
-            $alreadyLiquidatedPayments = [];
-            foreach ($attendedAppointments as $appointment) {
-                foreach ($appointment->paymentAppointments as $pa) {
-                    if ($pa->payment && $pa->payment->liquidation_status === 'liquidated') {
-                        $alreadyLiquidatedPayments[] = $pa->payment->id;
-                    }
-                }
-            }
-
-            if (!empty($alreadyLiquidatedPayments)) {
-                throw new \Exception("Algunos pagos ya fueron liquidados anteriormente. IDs: ".implode(', ', $alreadyLiquidatedPayments).". ".
-                                   "No se puede liquidar dos veces el mismo pago.");
-            }
-
-            // 7. Calcular estadísticas y montos
+            // 5. Calcular estadísticas y montos
             $totalAppointments = Appointment::where('professional_id', $professional->id)
                 ->whereDate('appointment_date', $date)
                 ->count();
@@ -145,6 +119,12 @@ class LiquidationController extends Controller
             // Total de pagos directos al profesional (transferencias que recibió directamente)
             $directPaymentsTotal = $professionalPaymentDetails->sum('amount');
 
+            // 6. Validar que haya payment_details pendientes de liquidar
+            if ($centroPaymentDetails->isEmpty() && $professionalPaymentDetails->isEmpty()) {
+                throw new \Exception("No hay turnos pendientes de liquidar para {$professional->full_name} en la fecha {$date->format('d/m/Y')}. ".
+                                   "Todos los pagos del día ya han sido liquidados.");
+            }
+
             // Calcular la parte del centro sobre esos pagos directos
             // Si el profesional recibió $2000, debe pagar al centro (100% - commission_percentage)
             $clinicPercentage = 100 - $professional->commission_percentage;
@@ -183,6 +163,11 @@ class LiquidationController extends Controller
                 throw new \Exception($message);
             }
 
+            // 7. Calcular número de liquidación del día
+            $liquidationNumber = ProfessionalLiquidation::where('professional_id', $professional->id)
+                ->whereDate('liquidation_date', $date)
+                ->count() + 1;
+
             // 8. Verificar que hay suficiente efectivo en caja (excepto Dra. Zalazar)
             if (!$isDraZalazar) {
                 $currentBalance = $this->getCurrentCashBalance($date);
@@ -194,14 +179,6 @@ class LiquidationController extends Controller
             }
 
             // 9. Crear registro en professional_liquidations
-            $notes = "Liquidación procesada el {$date->format('d/m/Y')}";
-            if ($directPaymentsTotal > 0) {
-                $notes .= " - Pagos directos al profesional: \${$directPaymentsTotal}";
-            }
-            if ($totalRefunds > 0) {
-                $notes .= " - Reintegros descontados: \${$totalRefunds}";
-            }
-
             $liquidation = ProfessionalLiquidation::create([
                 'professional_id' => $professional->id,
                 'liquidation_date' => $date,
@@ -219,7 +196,7 @@ class LiquidationController extends Controller
                 'payment_method' => 'cash',
                 'paid_at' => now(),
                 'paid_by' => auth()->id(),
-                'notes' => "Liquidación procesada el {$date->format('d/m/Y')}".
+                'notes' => "Liquidación #{$liquidationNumber} del día {$date->format('d/m/Y')}".
                           ($totalRefunds > 0 ? " - Reintegros descontados: \${$totalRefunds}" : "").
                           ($isDraZalazar ? " - PAGO DIRECTO: Profesional cobra directamente, no retira de caja" : ""),
             ]);
