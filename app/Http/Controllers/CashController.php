@@ -473,12 +473,16 @@ class CashController extends Controller
                     return false;
                 }
 
-                // Verificar si existe liquidación para este profesional en esta fecha
-                $hasLiquidation = \App\Models\ProfessionalLiquidation::where('professional_id', $professional->id)
-                    ->whereDate('liquidation_date', $closeDate)
+                // Verificar si hay payment_details pendientes de liquidar
+                $hasPendingPayments = \App\Models\PaymentDetail::whereHas('paymentAppointment.appointment', function ($query) use ($professional, $closeDate) {
+                        $query->where('professional_id', $professional->id)
+                              ->whereDate('appointment_date', $closeDate)
+                              ->where('status', 'attended');
+                    })
+                    ->whereNull('liquidation_id')
                     ->exists();
 
-                return !$hasLiquidation; // Retorna true si NO tiene liquidación
+                return $hasPendingPayments; // Retorna true si HAY payment_details pendientes
             });
 
             if ($professionalsNotLiquidated->isNotEmpty()) {

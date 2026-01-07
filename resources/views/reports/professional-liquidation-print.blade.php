@@ -220,7 +220,11 @@
     <!-- Header -->
     <div class="header">
         <div class="clinic-name">PUNTO SALUD</div>
-        <div class="report-title">LIQUIDACIÓN DIARIA DEL PROFESIONAL</div>
+        <div class="report-title">LIQUIDACIÓN DIARIA DEL PROFESIONAL
+            @if(isset($liquidationData['liquidation_number']) && $liquidationData['liquidation_number'] > 1)
+                - #{{ $liquidationData['liquidation_number'] }}
+            @endif
+        </div>
     </div>
     
     <!-- Report Info -->
@@ -428,14 +432,10 @@
         </div>
     @endif
     
-    <!-- Turnos Pagados Hoy -->
-    @if($liquidationData['today_paid_appointments']->count() > 0)
+    <!-- Turnos Cobrados Hoy (Agrupados por Liquidación) -->
+    @if($liquidationData['liquidations_grouped']->count() > 0 || $liquidationData['pending_appointments']->count() > 0)
         <div class="section-title">💰 Turnos Cobrados Hoy ({{ $liquidationData['today_paid_appointments']->count() }})</div>
         <div class="today-paid-section">
-            {{-- <div class="section-header">
-                Total: ${{ number_format($liquidationData['totals']['today_paid_amount'], 0, ',', '.') }} | 
-                Su comisión: ${{ number_format($liquidationData['totals']['today_paid_professional'], 0, ',', '.') }}
-            </div> --}}
             <table class="appointments-table">
                 <thead>
                     <tr>
@@ -449,7 +449,26 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach($liquidationData['today_paid_appointments'] as $appointment)
+                    @foreach($liquidationData['liquidations_grouped'] as $liquidation)
+                        {{-- Fila separadora sutil para cada liquidación --}}
+                        <tr style="background-color: #e8f5e9; border-top: 2px solid #4caf50; border-bottom: 1px solid #4caf50;">
+                            <td colspan="7" style="padding: 4px 8px; font-size: 9px; font-weight: bold; color: #2e7d32;">
+                                ✅ Liquidación #{{ $liquidation['number'] }}
+                                <span style="font-weight: normal; color: #666; margin-left: 10px;">
+                                    ({{ $liquidation['appointments_count'] }} {{ $liquidation['appointments_count'] === 1 ? 'turno' : 'turnos' }})
+                                </span>
+                                <span style="float: right; color: {{ $liquidation['amount'] >= 0 ? '#2e7d32' : '#c62828' }};">
+                                    @if($liquidation['amount'] >= 0)
+                                        Entregado: ${{ number_format(abs($liquidation['amount']), 0, ',', '.') }}
+                                    @else
+                                        Prof. Entregó: ${{ number_format(abs($liquidation['amount']), 0, ',', '.') }}
+                                    @endif
+                                </span>
+                            </td>
+                        </tr>
+
+                        {{-- Turnos de esta liquidación --}}
+                        @foreach($liquidation['appointments'] as $appointment)
                         @php
                             // NUEVO v2.6.0: Manejar pagos múltiples correctamente
                             if ($appointment['is_multiple_payment'] && !empty($appointment['payment_methods_array'])) {
@@ -515,7 +534,82 @@
                                 @endif
                             </td>
                         </tr>
+                        @endforeach
                     @endforeach
+
+                    {{-- Turnos Pendientes de Liquidar --}}
+                    @if($liquidationData['pending_appointments']->count() > 0)
+                        <tr style="background-color: #fff3e0; border-top: 2px solid #ff9800; border-bottom: 1px solid #ff9800;">
+                            <td colspan="7" style="padding: 4px 8px; font-size: 9px; font-weight: bold; color: #e65100;">
+                                ⏳ Turnos Pendientes de Liquidar ({{ $liquidationData['pending_appointments']->count() }})
+                            </td>
+                        </tr>
+                        @foreach($liquidationData['pending_appointments'] as $appointment)
+                            @php
+                                // NUEVO v2.6.0: Manejar pagos múltiples correctamente
+                                if ($appointment['is_multiple_payment'] && !empty($appointment['payment_methods_array'])) {
+                                    $cashAmount = collect($appointment['payment_methods_array'])
+                                        ->where('method', 'cash')
+                                        ->sum('amount');
+                                    $otherAmount = collect($appointment['payment_methods_array'])
+                                        ->where('method', '!=', 'cash')
+                                        ->sum('amount');
+                                } else {
+                                    $isCash = $appointment['payment_method'] === 'cash';
+                                    $cashAmount = $isCash ? $appointment['final_amount'] : 0;
+                                    $otherAmount = !$isCash ? $appointment['final_amount'] : 0;
+                                }
+                            @endphp
+                            <tr style="background-color: #fff9e6;">
+                                <td style="text-align: center; font-size: 9px;">{{ $appointment['id'] }}</td>
+                                <td class="time-column" style="font-size: 9px;">{{ $appointment['time'] }}</td>
+                                <td class="patient-column">
+                                    <strong>{{ $appointment['patient_name'] }}</strong>
+                                    <br><small>DNI: {{ $appointment['patient_dni'] }}</small>
+                                </td>
+                                <td class="amount-column" style="font-size: 10px;">
+                                    @if($cashAmount > 0)
+                                        ${{ number_format($cashAmount, 0, ',', '.') }}
+                                    @else
+                                        -
+                                    @endif
+                                </td>
+                                <td class="amount-column" style="font-size: 10px;">
+                                    @if($otherAmount > 0)
+                                        ${{ number_format($otherAmount, 0, ',', '.') }}
+                                    @else
+                                        -
+                                    @endif
+                                </td>
+                                <td class="payment-column" style="font-size: 9px;">
+                                    <small>
+                                        {{ match($appointment['payment_method']) {
+                                            'cash' => 'Efectivo',
+                                            'transfer' => 'Transf',
+                                            'debit_card' => 'Débito',
+                                            'credit_card' => 'Crédito',
+                                            'qr' => 'QR',
+                                            default => $appointment['payment_method']
+                                        } }}
+                                        @if($appointment['receipt_number'])
+                                            <br>Rec: {{ $appointment['receipt_number'] }}
+                                        @endif
+                                    </small>
+                                </td>
+                                <td style="text-align: center; font-size: 10px;">
+                                    @if($appointment['received_by'] === 'profesional')
+                                        <strong style="color: #f57c00;">👤 Prof.</strong>
+                                    @elseif($appointment['received_by'] === 'centro')
+                                        <strong style="color: #1976d2;">🏥 Centro</strong>
+                                    @elseif($appointment['received_by'] === 'mixed')
+                                        <strong style="color: #7e22ce;">🔀 Mixto</strong>
+                                    @else
+                                        -
+                                    @endif
+                                </td>
+                            </tr>
+                        @endforeach
+                    @endif
                 </tbody>
                 <tfoot>
                     <tr style="border-top: 2px solid #333; font-weight: bold;">
