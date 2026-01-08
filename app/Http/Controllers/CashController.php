@@ -474,7 +474,7 @@ class CashController extends Controller
                 }
 
                 // Verificar si hay payment_details pendientes de liquidar
-                $hasPendingPayments = \App\Models\PaymentDetail::whereHas('paymentAppointment.appointment', function ($query) use ($professional, $closeDate) {
+                $hasPendingPayments = \App\Models\PaymentDetail::whereHas('payment.paymentAppointments.appointment', function ($query) use ($professional, $closeDate) {
                         $query->where('professional_id', $professional->id)
                               ->whereDate('appointment_date', $closeDate)
                               ->where('status', 'attended');

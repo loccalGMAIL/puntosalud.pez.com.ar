@@ -112,60 +112,16 @@
                     </div>
                 </div>
 
-                <!-- Modal para cerrar caja -->
-                <div x-show="closeCashModalVisible" 
-                     x-cloak 
-                     class="modal-overlay fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4"
-                     @click.self="closeCloseCashModal()">
-                    <div class="modal-content bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full">
-                        <div class="p-6">
-                            <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                                Cerrar Caja <span x-text="closeCashDate ? '- ' + closeCashDate : ''"></span>
-                            </h2>
-                            
-                            <form @submit.prevent="submitCloseCash()">
-                                <div class="space-y-4">
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                            Efectivo contado en caja *
-                                        </label>
-                                        <input type="number" 
-                                               x-model="closeCashForm.closing_amount"
-                                               step="0.01" 
-                                               min="0"
-                                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                                               placeholder="0.00"
-                                               required>
-                                    </div>
-                                    
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                            Notas (opcional)
-                                        </label>
-                                        <textarea x-model="closeCashForm.notes"
-                                                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                                                  rows="2"
-                                                  placeholder="Observaciones sobre el cierre..."></textarea>
-                                    </div>
-                                </div>
-                                
-                                <div class="flex gap-3 mt-6">
-                                    <button type="button" 
-                                            @click="closeCloseCashModal()"
-                                            class="flex-1 px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">
-                                        Cancelar
-                                    </button>
-                                    <button type="submit" 
-                                            :disabled="closeCashLoading"
-                                            class="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white rounded-lg transition-colors">
-                                        <span x-show="!closeCashLoading">Cerrar Caja</span>
-                                        <span x-show="closeCashLoading">Cerrando...</span>
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                </div>
+                <!-- Componente reutilizable para cerrar caja -->
+                @if($dashboardData['cashStatus']['unclosed_summary'])
+                    <x-cash-close-modal
+                        :theoretical-balance="$dashboardData['cashStatus']['unclosed_summary']['theoretical_balance']"
+                        :income-total="$dashboardData['cashStatus']['unclosed_summary']['income_total']"
+                        :expense-total="$dashboardData['cashStatus']['unclosed_summary']['expense_total']"
+                        :close-date="$dashboardData['cashStatus']['unclosed_summary']['date']->format('Y-m-d')"
+                        :is-unclosed-date="true"
+                    />
+                @endif
             </div>
         @endif
 
@@ -1032,52 +988,32 @@ function urgencyModalDashboard() {
     function cashAlerts() {
         return {
             openCashModalVisible: false,
-            closeCashModalVisible: false,
             openCashLoading: false,
-            closeCashLoading: false,
-            closeCashDate: null,
-            
+
             openCashForm: {
                 opening_amount: '',
                 notes: ''
             },
-            
-            closeCashForm: {
-                closing_amount: '',
-                notes: '',
-                close_date: null
-            },
-            
+
             init() {
                 // Component initialized
             },
-            
+
             openOpenCashModal() {
                 this.openCashForm = { opening_amount: '', notes: '' };
                 this.openCashModalVisible = true;
             },
-            
+
             closeOpenCashModal() {
                 this.openCashModalVisible = false;
                 this.openCashLoading = false;
             },
-            
+
+            // Dispara el evento para abrir el componente de cierre de caja
             openCloseCashModal(date = null) {
-                this.closeCashDate = date;
-                this.closeCashForm = { 
-                    closing_amount: '', 
-                    notes: '', 
-                    close_date: date 
-                };
-                this.closeCashModalVisible = true;
+                window.dispatchEvent(new CustomEvent('close-cash-modal'));
             },
-            
-            closeCloseCashModal() {
-                this.closeCashModalVisible = false;
-                this.closeCashLoading = false;
-                this.closeCashDate = null;
-            },
-            
+
             async submitOpenCash() {
                 if (this.openCashLoading) return;
 
@@ -1095,46 +1031,6 @@ function urgencyModalDashboard() {
                 } catch (error) {
                     await DashboardAPI.showNotification(error.message, 'error');
                     this.openCashLoading = false;
-                }
-            },
-
-            async submitCloseCash() {
-                if (this.closeCashLoading) return;
-
-                if (!this.closeCashForm.closing_amount) {
-                    await DashboardAPI.showNotification('Complete el monto contado', 'error');
-                    return;
-                }
-
-                this.closeCashLoading = true;
-
-                try {
-                    const result = await DashboardAPI.makeRequest('/cash/close', {
-                        method: 'POST',
-                        body: JSON.stringify(this.closeCashForm)
-                    });
-
-                    this.closeCloseCashModal();
-
-                    // Mostrar resumen del cierre
-                    const summary = result.summary;
-                    const theoreticalBalance = parseFloat(summary.theoretical_balance) || 0;
-                    const countedAmount = parseFloat(summary.counted_amount) || 0;
-                    const difference = parseFloat(summary.difference) || 0;
-
-                    let message = `Caja cerrada para el ${summary.date}.\n`;
-                    message += `Teórico: $${theoreticalBalance.toFixed(2)}\n`;
-                    message += `Contado: $${countedAmount.toFixed(2)}`;
-
-                    if (Math.abs(difference) > 0.01) {
-                        message += `\nDiferencia: $${difference.toFixed(2)}`;
-                    }
-
-                    await DashboardAPI.showNotification(message, 'success');
-                    DashboardAPI.reloadPage();
-                } catch (error) {
-                    await DashboardAPI.showNotification(error.message, 'error');
-                    this.closeCashLoading = false;
                 }
             }
         };

@@ -67,7 +67,7 @@
                                     :data-dni="patient.dni"
                                     :data-first-name="patient.first_name"
                                     :data-last-name="patient.last_name"
-                                    x-text="patient.last_name + ', ' + patient.first_name + ' - DNI: ' + patient.dni"></option>
+                                    x-text="patient.last_name + ' ' + patient.first_name + ' - DNI: ' + patient.dni"></option>
                         </template>
                     </select>
                     <button type="button"
