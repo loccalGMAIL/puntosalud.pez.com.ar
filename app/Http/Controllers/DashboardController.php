@@ -34,9 +34,43 @@ class DashboardController extends Controller
         //     ];
         // }
 
+        $unclosedDate = CashMovement::hasUnclosedCash();
+        $unclosedDaySummary = null;
+
+        // Si hay una fecha sin cerrar, calcular su resumen
+        if ($unclosedDate) {
+            $unclosedDateCarbon = Carbon::parse($unclosedDate);
+
+            // Obtener movimientos del día sin cerrar (excluyendo apertura y cierre)
+            $movements = CashMovement::whereDate('created_at', $unclosedDateCarbon)
+                ->with('movementType')
+                ->orderBy('created_at')
+                ->get();
+
+            // Calcular balance teórico (suma de todos los movimientos del día)
+            $theoreticalBalance = $movements->sum('amount');
+
+            // Separar ingresos y egresos (excluyendo apertura y cierre)
+            $incomeTotal = $movements
+                ->filter(fn($m) => $m->amount > 0 && !in_array($m->movementType?->code, ['cash_opening', 'cash_closing']))
+                ->sum('amount');
+
+            $expenseTotal = abs($movements
+                ->filter(fn($m) => $m->amount < 0 && !in_array($m->movementType?->code, ['cash_opening', 'cash_closing']))
+                ->sum('amount'));
+
+            $unclosedDaySummary = [
+                'date' => $unclosedDateCarbon,
+                'theoretical_balance' => $theoreticalBalance,
+                'income_total' => $incomeTotal,
+                'expense_total' => $expenseTotal,
+            ];
+        }
+
         $cashStatus = [
             'today' => CashMovement::getCashStatusForDate($today),
-            'unclosed_date' => CashMovement::hasUnclosedCash(),
+            'unclosed_date' => $unclosedDate,
+            'unclosed_summary' => $unclosedDaySummary,
         ];
 
         // Consultas del día - Optimizado: 1 query en lugar de 5

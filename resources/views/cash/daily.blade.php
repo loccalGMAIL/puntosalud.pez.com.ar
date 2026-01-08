@@ -341,92 +341,14 @@
         </div>
     </div>
 
-    <!-- Modal para cerrar caja -->
-    <div x-show="closeCashModalVisible"
-         x-cloak
-         class="modal-overlay fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
-         @click.self="closeCloseCashModal()">
-        <div class="modal-content bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full">
-            <div class="p-6">
-                <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                    Cerrar Caja del Día
-                </h2>
-
-                <form @submit.prevent="submitCloseCash()">
-                    <div class="space-y-4">
-                        <!-- Información de la caja -->
-                        <div class="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3">
-                            <h3 class="text-sm font-medium text-blue-900 dark:text-blue-200 mb-2">Resumen del Día</h3>
-                            <div class="text-sm text-blue-700 dark:text-blue-300 space-y-1">
-                                <div class="flex justify-between">
-                                    <span>Saldo teórico:</span>
-                                    <span class="font-medium">${{ number_format($cashSummary['final_balance'], 2) }}</span>
-                                </div>
-                                <div class="flex justify-between">
-                                    <span>Ingresos del día:</span>
-                                    <span class="font-medium text-green-600">+${{ number_format($cashSummary['total_inflows'], 2) }}</span>
-                                </div>
-                                <div class="flex justify-between">
-                                    <span>Egresos del día:</span>
-                                    <span class="font-medium text-red-600">-${{ number_format($cashSummary['total_outflows'], 2) }}</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                Efectivo contado en caja *
-                            </label>
-                            <input type="number"
-                                   x-model="closeCashForm.closing_amount"
-                                   step="0.01"
-                                   min="0"
-                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                                   placeholder="0.00"
-                                   required>
-                        </div>
-
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                Notas del cierre (opcional)
-                            </label>
-                            <textarea x-model="closeCashForm.notes"
-                                      class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                                      rows="2"
-                                      placeholder="Observaciones sobre el cierre..."></textarea>
-                        </div>
-
-                        <!-- Alerta de diferencia -->
-                        <div x-show="showDifference" x-cloak class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3">
-                            <div class="flex items-start">
-                                <svg class="w-5 h-5 text-amber-600 dark:text-amber-400 mt-0.5 mr-2" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
-                                </svg>
-                                <div>
-                                    <h4 class="text-sm font-medium text-amber-800 dark:text-amber-200">Diferencia detectada</h4>
-                                    <p class="text-sm text-amber-700 dark:text-amber-300" x-text="differenceMessage"></p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="flex gap-3 mt-6">
-                        <button type="button"
-                                @click="closeCloseCashModal()"
-                                class="flex-1 px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">
-                            Cancelar
-                        </button>
-                        <button type="submit"
-                                :disabled="closeCashLoading || !closeCashForm.closing_amount"
-                                class="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white rounded-lg transition-colors">
-                            <span x-show="!closeCashLoading">Cerrar Caja</span>
-                            <span x-show="closeCashLoading">Cerrando...</span>
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
+    <!-- Componente reutilizable para cerrar caja -->
+    <x-cash-close-modal
+        :theoretical-balance="$cashSummary['final_balance']"
+        :income-total="$cashSummary['total_inflows']"
+        :expense-total="$cashSummary['total_outflows']"
+        :close-date="$cashSummary['date']->format('Y-m-d')"
+        :is-unclosed-date="false"
+    />
 
     <!-- Modal para ver detalles del movimiento -->
     <div x-show="movementDetailsModalVisible"
@@ -580,15 +502,6 @@
 <script>
 function dailyCashForm() {
     return {
-        // Modal de cierre de caja
-        closeCashModalVisible: false,
-        closeCashLoading: false,
-        closeCashForm: {
-            closing_amount: '',
-            notes: '',
-            close_date: '{{ $cashSummary["date"]->format("Y-m-d") }}'
-        },
-
         // Modal de detalles de movimiento
         movementDetailsModalVisible: false,
         movementDetailsLoading: false,
@@ -596,32 +509,6 @@ function dailyCashForm() {
         paymentDetails: null,
         professionalDetails: null,
         refundProfessionalDetails: null,
-
-        // Computed properties para diferencias
-        get theoreticalBalance() {
-            return {{ $cashSummary['final_balance'] }};
-        },
-
-        get showDifference() {
-            if (!this.closeCashForm.closing_amount) return false;
-            const counted = parseFloat(this.closeCashForm.closing_amount);
-            const theoretical = this.theoreticalBalance;
-            return Math.abs(counted - theoretical) > 0.01;
-        },
-
-        get differenceMessage() {
-            if (!this.closeCashForm.closing_amount) return '';
-            const counted = parseFloat(this.closeCashForm.closing_amount);
-            const theoretical = this.theoreticalBalance;
-            const difference = counted - theoretical;
-
-            if (difference > 0) {
-                return `Sobrante de $${Math.abs(difference).toFixed(2)}`;
-            } else if (difference < 0) {
-                return `Faltante de $${Math.abs(difference).toFixed(2)}`;
-            }
-            return 'Sin diferencias';
-        },
 
         async viewMovementDetails(movementId) {
             this.movementDetailsLoading = true;
@@ -709,81 +596,9 @@ function dailyCashForm() {
             return methods[method] || method;
         },
 
-        // Métodos del modal de cierre
+        // Método para abrir el modal de cierre (dispara evento para el componente)
         openCloseCashModal() {
-            this.closeCashForm = {
-                closing_amount: this.theoreticalBalance.toFixed(2), // Pre-llenar con saldo teórico
-                notes: '',
-                close_date: '{{ now()->format("Y-m-d") }}'
-            };
-            this.closeCashModalVisible = true;
-        },
-
-        closeCloseCashModal() {
-            this.closeCashModalVisible = false;
-            this.closeCashLoading = false;
-        },
-
-        async submitCloseCash() {
-            if (this.closeCashLoading) return;
-
-            if (!this.closeCashForm.closing_amount) {
-                this.showNotification('Complete el monto contado', 'error');
-                return;
-            }
-
-            // Confirmar si hay diferencia significativa
-            const counted = parseFloat(this.closeCashForm.closing_amount);
-            const theoretical = this.theoreticalBalance;
-            const difference = Math.abs(counted - theoretical);
-
-            if (difference > 0.01) {
-                const confirmMessage = difference > theoretical * 0.1 ?
-                    `Se detectó una diferencia importante de $${difference.toFixed(2)}. ¿Está seguro de cerrar la caja?` :
-                    `¿Confirmar cierre con diferencia de $${difference.toFixed(2)}?`;
-
-                if (!confirm(confirmMessage)) return;
-            } else {
-                if (!confirm('¿Está seguro de cerrar la caja del día?')) return;
-            }
-
-            this.closeCashLoading = true;
-
-            try {
-                const response = await fetch('/cash/close', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content'),
-                        'X-Requested-With': 'XMLHttpRequest'
-                    },
-                    body: JSON.stringify(this.closeCashForm)
-                });
-
-                const result = await response.json();
-
-                if (result.success) {
-                    this.closeCloseCashModal();
-                    this.showNotification('Caja cerrada exitosamente', 'success');
-
-                    // Redirigir al reporte automáticamente
-                    setTimeout(() => {
-                        window.location.href = result.redirect_url;
-                    }, 500);
-                } else {
-                    this.showNotification(result.message, 'error');
-                }
-
-            } catch (error) {
-                this.showNotification('Error al cerrar la caja: ' + error.message, 'error');
-            } finally {
-                this.closeCashLoading = false;
-            }
-        },
-
-        showNotification(message, type = 'info') {
-            const icon = type === 'error' ? '❌' : type === 'success' ? '✅' : 'ℹ️';
-            alert(`${icon} ${message}`);
+            window.dispatchEvent(new CustomEvent('close-cash-modal'));
         }
     }
 }
