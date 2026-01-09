@@ -335,12 +335,14 @@ class ReportController extends Controller
                     'refunds' => $totalRefunds,
                     'professional_amount' => $netProfessionalAmount,
                     'clinic_amount' => $totalCollectedByCenter - $professionalCommission,
+                    'has_pending_payments' => $centroPaymentDetails->count() > 0 || $professionalPaymentDetails->count() > 0,
                 ];
             })
             ->filter(function ($professional) {
-                // Mostrar solo si tiene turnos atendidos Y si tiene monto pendiente diferente de $0
-                // Si el monto es $0, significa que ya fue liquidado completamente
-                return $professional['attended_count'] > 0 && $professional['professional_amount'] != 0;
+                // CORREGIDO v2.6.2: Mostrar si tiene turnos atendidos Y pagos pendientes de liquidar
+                // No filtrar por monto $0 porque puede ser comisión 0%, pagos directos, o reintegros
+                // Lo importante es que tenga payment_details sin liquidar (whereNull('liquidation_id'))
+                return $professional['attended_count'] > 0 && $professional['has_pending_payments'];
             });
 
         // Obtener todos los profesionales para el dropdown
