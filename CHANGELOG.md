@@ -7,6 +7,142 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [2.6.2-hotfix] - 2026-01-09
+
+### 🐛 Correcciones Críticas de Producción
+
+#### Fix 1: Error en Cierre de Caja - Relación paymentAppointment
+
+**Descripción del Problema:**
+- Al cerrar la caja se producía error: "Call to undefined method App\Models\PaymentDetail::paymentAppointment()"
+- El sistema impedía completar el cierre de caja
+- Error introducido en commit 5fb3d23 durante implementación de liquidaciones múltiples
+
+**Causa Raíz:**
+- En `CashController.php` línea 477 se usaba `paymentAppointment.appointment` (singular)
+- El modelo `PaymentDetail` no tiene relación `paymentAppointment()`
+- La relación correcta es `payment.paymentAppointments.appointment` (plural, a través de Payment)
+
+**Solución Implementada:**
+```php
+// Antes (incorrecto):
+$hasPendingPayments = PaymentDetail::whereHas('paymentAppointment.appointment', ...)
+
+// Después (correcto):
+$hasPendingPayments = PaymentDetail::whereHas('payment.paymentAppointments.appointment', ...)
+```
+
+**Archivos Modificados:**
+- `app/Http/Controllers/CashController.php` (línea 477)
+
+**Impacto:**
+- ✅ Cierre de caja funciona correctamente
+- ✅ Validación de liquidaciones pendientes operativa
+- ✅ Sistema permite flujo completo de cierre de día
+
+---
+
+#### Fix 2: Componente Reutilizable de Modal de Cierre de Caja
+
+**Descripción del Problema:**
+- Al cerrar caja de días anteriores desde Dashboard, se mostraba modal básico
+- Modal del Dashboard solo pedía monto y notas (sin información de contexto)
+- Modal de Cash/Daily era superior: mostraba resumen, alertas de diferencia, pre-llenaba datos
+- Inconsistencia UX entre ambas vistas
+
+**Solución Implementada:**
+
+1. **Nuevo Componente Blade Reutilizable:**
+   - Creado `resources/views/components/cash-close-modal.blade.php`
+   - Acepta props: `theoreticalBalance`, `incomeTotal`, `expenseTotal`, `closeDate`, `isUnclosedDate`
+   - Incluye toda la lógica Alpine.js y estilos
+   - Modal completo con:
+     - Resumen del día (saldo teórico, ingresos, egresos)
+     - Pre-llenado de monto con saldo teórico
+     - Alertas en tiempo real de diferencias (sobrante/faltante)
+     - Título dinámico según sea día actual o sin cerrar
+     - Validación y confirmación con diálogos informativos
+
+2. **DashboardController Mejorado:**
+   - Calcula resumen completo para días sin cerrar (`unclosed_summary`)
+   - Obtiene movimientos del día, balance teórico, ingresos/egresos
+   - Pasa datos estructurados a la vista
+
+3. **Vistas Actualizadas:**
+   - `dashboard.blade.php`: Reemplazado modal básico por componente
+   - `cash/daily.blade.php`: Reemplazado modal por componente
+   - JavaScript simplificado: solo dispara evento `close-cash-modal`
+
+**Archivos Modificados:**
+- `resources/views/components/cash-close-modal.blade.php` (nuevo)
+- `app/Http/Controllers/DashboardController.php` (líneas 37-74)
+- `resources/views/dashboard/dashboard.blade.php` (líneas 115-124)
+- `resources/views/cash/daily.blade.php` (líneas 344-351)
+
+**Impacto:**
+- ✅ Consistencia UI/UX entre Dashboard y Cash Daily
+- ✅ Mejor experiencia: información completa en ambas vistas
+- ✅ Código DRY: un solo componente para ambos casos
+- ✅ Mantenimiento simplificado
+
+---
+
+#### Fix 3: Profesionales con Liquidación $0 y Gastos en Lista de Pagos
+
+**Problema 1: Profesionales No Aparecían en Liquidaciones**
+- Profesionales con comisión 0% no aparecían en lista de liquidaciones pendientes
+- Profesionales con reintegros que igualaban comisión tampoco aparecían
+- Sistema no permitía cerrar caja pero no mostraba quién faltaba liquidar
+- **Caso específico**: Dra. Zalazar con tratamiento especial de comisión 0%
+
+**Causa Raíz:**
+- Filtro en `ReportController.php` línea 343 excluía profesionales con `professional_amount = $0`
+- Comentario incorrecto: "Si el monto es $0, significa que ya fue liquidado completamente"
+- En realidad, monto $0 puede deberse a:
+  - Comisión 0%
+  - Pagos directos que igualan comisión
+  - Reintegros que reducen monto neto a $0
+
+**Solución:**
+```php
+// Agregado campo has_pending_payments
+'has_pending_payments' => $centroPaymentDetails->count() > 0 || $professionalPaymentDetails->count() > 0
+
+// Filtro corregido
+return $professional['attended_count'] > 0 && $professional['has_pending_payments'];
+```
+
+**Problema 2: Gastos Aparecían en Lista de Pagos**
+- En sección de Payments (`/payments`) se mostraban movimientos tipo `expense` (gastos)
+- Los gastos no generan número de recibo
+- No deberían aparecer en lista de ingresos
+
+**Solución:**
+```php
+// Filtrar consulta principal
+$query = Payment::with([...])
+    ->where('payment_type', '!=', 'expense');
+
+// Actualizar estadísticas
+$stats = [
+    'total' => Payment::where('payment_type', '!=', 'expense')->count(),
+    // ... resto de stats
+];
+```
+
+**Archivos Modificados:**
+- `app/Http/Controllers/ReportController.php` (líneas 327-346)
+- `app/Http/Controllers/PaymentController.php` (líneas 29-30, 71-89)
+
+**Impacto:**
+- ✅ Profesionales con liquidación $0 aparecen correctamente
+- ✅ Sistema permite completar todas las liquidaciones antes de cerrar caja
+- ✅ Coherencia entre validación de cierre y lista de pendientes
+- ✅ Lista de pagos limpia, solo muestra ingresos válidos
+- ✅ Estadísticas precisas sin incluir gastos
+
+---
+
 ## [2.6.1] - 2026-01-05
 
 ### 🎂 Nuevo - Sistema de Cumpleaños de Profesionales
