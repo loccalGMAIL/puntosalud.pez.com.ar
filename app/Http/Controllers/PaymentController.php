@@ -24,8 +24,10 @@ class PaymentController extends Controller
     public function index(Request $request)
     {
         // Obtener todos los payments (ahora incluye pagos de pacientes e ingresos manuales)
+        // EXCLUIR gastos (expense) que no son ingresos y no tienen número de recibo
         // Cargar paymentDetails para mostrar los métodos de pago
-        $query = Payment::with(['patient', 'paymentAppointments.appointment.professional', 'createdBy', 'paymentDetails']);
+        $query = Payment::with(['patient', 'paymentAppointments.appointment.professional', 'createdBy', 'paymentDetails'])
+            ->where('payment_type', '!=', 'expense');
 
         // Filtros
         if ($request->filled('search')) {
@@ -65,22 +67,25 @@ class PaymentController extends Controller
         }
 
         // Estadísticas - Adaptadas a nueva estructura con payment_details
+        // EXCLUIR gastos (expense) de las estadísticas
         $stats = [
-            'total' => Payment::count(),
-            'total_amount' => Payment::sum('total_amount'),
+            'total' => Payment::where('payment_type', '!=', 'expense')->count(),
+            'total_amount' => Payment::where('payment_type', '!=', 'expense')->sum('total_amount'),
             // Para contar por método de pago, necesitamos verificar payment_details
             'total_transfers' => DB::table('payments')
                 ->join('payment_details', 'payments.id', '=', 'payment_details.payment_id')
+                ->where('payments.payment_type', '!=', 'expense')
                 ->where('payment_details.payment_method', 'transfer')
                 ->distinct()
                 ->count('payments.id'),
             'total_cash' => DB::table('payments')
                 ->join('payment_details', 'payments.id', '=', 'payment_details.payment_id')
+                ->where('payments.payment_type', '!=', 'expense')
                 ->where('payment_details.payment_method', 'cash')
                 ->distinct()
                 ->count('payments.id'),
-            'pending_liquidation' => Payment::where('liquidation_status', 'pending')->count(),
-            'liquidated' => Payment::where('liquidation_status', 'liquidated')->count(),
+            'pending_liquidation' => Payment::where('payment_type', '!=', 'expense')->where('liquidation_status', 'pending')->count(),
+            'liquidated' => Payment::where('payment_type', '!=', 'expense')->where('liquidation_status', 'liquidated')->count(),
         ];
 
         $payments = $query->orderBy('payment_date', 'desc')
