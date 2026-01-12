@@ -39,19 +39,11 @@ class LiquidationController extends Controller
                 throw new \Exception('La caja debe estar abierta para procesar liquidaciones.');
             }
 
-            // 2. Verificar turnos pendientes del profesional
-            $pendingAppointments = Appointment::where('professional_id', $professional->id)
-                ->whereDate('appointment_date', $date)
-                ->where('status', 'scheduled')
-                ->count();
+            // NOTA: Se permite liquidar aunque haya turnos pendientes (scheduled)
+            // Esto permite liquidaciones parciales durante el día
+            // La validación de cierre de caja seguirá bloqueando si hay payment_details sin liquidar
 
-            if ($pendingAppointments > 0) {
-                throw new \Exception("No se puede liquidar. El profesional tiene {$pendingAppointments} ".
-                                   ($pendingAppointments === 1 ? 'turno pendiente' : 'turnos pendientes').
-                                   " sin atender del día {$date->format('d/m/Y')}.");
-            }
-
-            // 3. Verificar turnos atendidos sin cobrar
+            // 2. Verificar turnos atendidos sin cobrar
             $unpaidAppointments = Appointment::where('professional_id', $professional->id)
                 ->whereDate('appointment_date', $date)
                 ->where('status', 'attended')
@@ -64,7 +56,7 @@ class LiquidationController extends Controller
                                    " sin cobrar del día {$date->format('d/m/Y')}.");
             }
 
-            // 4. Obtener todos los turnos atendidos del día con sus pagos
+            // 3. Obtener todos los turnos atendidos del día con sus pagos
             $attendedAppointments = Appointment::with(['paymentAppointments.payment'])
                 ->where('professional_id', $professional->id)
                 ->whereDate('appointment_date', $date)
@@ -75,7 +67,7 @@ class LiquidationController extends Controller
                 throw new \Exception("No hay turnos atendidos para liquidar en la fecha {$date->format('d/m/Y')}.");
             }
 
-            // 5. Calcular estadísticas y montos
+            // 4. Calcular estadísticas y montos
             $totalAppointments = Appointment::where('professional_id', $professional->id)
                 ->whereDate('appointment_date', $date)
                 ->count();
@@ -119,7 +111,7 @@ class LiquidationController extends Controller
             // Total de pagos directos al profesional (transferencias que recibió directamente)
             $directPaymentsTotal = $professionalPaymentDetails->sum('amount');
 
-            // 6. Validar que haya payment_details pendientes de liquidar
+            // 5. Validar que haya payment_details pendientes de liquidar
             if ($centroPaymentDetails->isEmpty() && $professionalPaymentDetails->isEmpty()) {
                 throw new \Exception("No hay turnos pendientes de liquidar para {$professional->full_name} en la fecha {$date->format('d/m/Y')}. ".
                                    "Todos los pagos del día ya han sido liquidados.");
