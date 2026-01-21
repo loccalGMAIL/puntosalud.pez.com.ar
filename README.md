@@ -147,6 +147,8 @@ php artisan config:clear
 
 ### 🔄 Últimas versiones
 
+* **v2.6.2-hotfix-4** (2026-01-21) – 🖨️ Impresión Individual de Liquidaciones: Icono de impresora en cada liquidación parcial para imprimir por separado, vista de impresión adaptada con resumen específico, y corrección de totales en pagos múltiples (efectivo + digital).
+* **v2.6.2-hotfix-3** (2026-01-21) – 🔄 Liquidaciones Parciales: Permite liquidar profesionales aunque tengan turnos pendientes, habilitando múltiples liquidaciones durante el día sin esperar al cierre.
 * **v2.6.2-hotfix** (2026-01-09) – 🐛 Correcciones Críticas: Fix error en cierre de caja (relación paymentAppointment), componente reutilizable de modal de cierre con resumen completo, corrección de lista de liquidaciones para profesionales con monto $0, y exclusión de gastos en lista de pagos.
 * **v2.6.1** (2026-01-05) – 🎂 Sistema de Cumpleaños de Profesionales + 🔧 Cierre Automático de Caja + 🔄 Orden de Nombres: Registro de fecha de nacimiento con visualización en agenda, ajuste automático del cierre de caja a las 23:59 del día de apertura, y cambio de visualización de pacientes a formato "Apellido, Nombre".
 * **v2.6.0** (2025-11-18) – 🚀 Reestructuración Sistema de Pagos: payment_details, pagos mixtos, comando de migración automático.
