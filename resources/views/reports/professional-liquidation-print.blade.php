@@ -220,9 +220,14 @@
     <!-- Header -->
     <div class="header">
         <div class="clinic-name">PUNTO SALUD</div>
-        <div class="report-title">LIQUIDACIÓN DIARIA DEL PROFESIONAL
-            @if(isset($liquidationData['liquidation_number']) && $liquidationData['liquidation_number'] > 1)
-                - #{{ $liquidationData['liquidation_number'] }}
+        <div class="report-title">
+            @if(isset($liquidationData['is_single_liquidation']) && $liquidationData['is_single_liquidation'])
+                LIQUIDACIÓN #{{ $liquidationData['single_liquidation_number'] }} DEL PROFESIONAL
+            @else
+                LIQUIDACIÓN DIARIA DEL PROFESIONAL
+                @if(isset($liquidationData['liquidation_number']) && $liquidationData['liquidation_number'] > 1)
+                    - #{{ $liquidationData['liquidation_number'] }}
+                @endif
             @endif
         </div>
     </div>
@@ -247,81 +252,116 @@
     </div>
     
     <!-- Liquidation Summary v2.6.0 -->
-    <div class="liquidation-summary">
-        <div class="summary-row" style="font-weight: bold; border-bottom: 1px solid #4caf50; padding-bottom: 3px; margin-bottom: 5px;">
-            <span>Total Facturado del Día:</span>
-            <span>${{ number_format($liquidationData['totals']['total_amount'], 0, ',', '.') }}</span>
-        </div>
+    @php
+        // Si es liquidación individual, usar los montos de esa liquidación específica
+        $isSingleLiq = isset($liquidationData['is_single_liquidation']) && $liquidationData['is_single_liquidation'];
+        $singleLiq = $isSingleLiq ? $liquidationData['liquidations_grouped']->first() : null;
+        $singleLiqAmount = $singleLiq ? $singleLiq['amount'] : 0;
+    @endphp
 
-        @if($liquidationData['totals']['total_collected_by_center'] > 0)
-        <div style="background: #e3f2fd; padding: 5px; margin-bottom: 5px; border-left: 3px solid #2196f3;">
-            <div class="summary-row" style="font-weight: bold;">
-                <span>💵 Pagos recibidos por el centro:</span>
-                <span>${{ number_format($liquidationData['totals']['total_collected_by_center'], 0, ',', '.') }}</span>
+    @if($isSingleLiq)
+        {{-- Resumen simplificado para liquidación individual --}}
+        <div class="liquidation-summary">
+            <div class="summary-row" style="font-weight: bold; border-bottom: 1px solid #4caf50; padding-bottom: 3px; margin-bottom: 5px;">
+                <span>Liquidación #{{ $liquidationData['single_liquidation_number'] }}</span>
+                <span>{{ $singleLiq['appointments_count'] }} {{ $singleLiq['appointments_count'] === 1 ? 'turno' : 'turnos' }}</span>
             </div>
-            <div class="summary-row" style="font-size: 10px; padding-left: 15px; color: #1976d2;">
-                <span>Comisión profesional ({{ $liquidationData['totals']['commission_percentage'] }}%):</span>
-                <span style="color: #2e7d32;">+${{ number_format($liquidationData['totals']['professional_commission'], 0, ',', '.') }}</span>
-            </div>
-        </div>
-        @endif
 
-        @if($liquidationData['totals']['total_collected_by_professional'] > 0)
-        <div style="background: #fff8e1; padding: 5px; margin-bottom: 5px; border-left: 3px solid #ffc107;">
-            <div class="summary-row" style="font-weight: bold;">
-                <span>🏦 Pagos directos al profesional:</span>
-                <span>${{ number_format($liquidationData['totals']['total_collected_by_professional'], 0, ',', '.') }}</span>
-            </div>
-            <div class="summary-row" style="font-size: 10px; padding-left: 15px; color: #f57c00;">
-                <span>Parte del centro a descontar ({{ $liquidationData['totals']['clinic_percentage'] }}%):</span>
-                <span style="color: #c62828;">-${{ number_format($liquidationData['totals']['clinic_amount_from_direct'], 0, ',', '.') }}</span>
-            </div>
-        </div>
-        @endif
-
-        @if($liquidationData['totals']['total_refunds'] > 0)
-        <div class="summary-row" style="color: #c62828;">
-            <span>🔄 Reintegros a Pacientes:</span>
-            <span>-${{ number_format($liquidationData['totals']['total_refunds'], 0, ',', '.') }}</span>
-        </div>
-        @endif
-
-        <div style="border-top: 2px solid #4caf50; padding-top: 5px; margin-top: 5px;">
-            <div style="font-size: 10px; color: #666; margin-bottom: 3px;">
-                <div class="summary-row">
-                    <span>Comisión sobre pagos al centro:</span>
-                    <span>+${{ number_format($liquidationData['totals']['professional_commission'], 0, ',', '.') }}</span>
-                </div>
-                @if($liquidationData['totals']['total_collected_by_professional'] > 0)
-                <div class="summary-row">
-                    <span>Comisión parte del centro sobre pagos directos:</span>
-                    <span>-${{ number_format($liquidationData['totals']['clinic_amount_from_direct'], 0, ',', '.') }}</span>
-                </div>
-                @endif
-                @if($liquidationData['totals']['total_refunds'] > 0)
-                <div class="summary-row">
-                    <span>Reintegros:</span>
-                    <span>-${{ number_format($liquidationData['totals']['total_refunds'], 0, ',', '.') }}</span>
-                </div>
-                @endif
-            </div>
-            <div class="summary-row total">
+            <div class="summary-row total" style="margin-top: 5px;">
                 <span>
-                    @if($liquidationData['totals']['net_professional_amount'] >= 0)
-                        MONTO A ENTREGAR AL PROFESIONAL:
+                    @if($singleLiqAmount >= 0)
+                        MONTO ENTREGADO AL PROFESIONAL:
                     @else
-                        MONTO QUE EL PROFESIONAL DEBE AL CENTRO:
+                        MONTO QUE EL PROFESIONAL ENTREGÓ AL CENTRO:
                     @endif
                 </span>
-                <span class="amount-to-pay" style="color: {{ $liquidationData['totals']['net_professional_amount'] >= 0 ? '#2e7d32' : '#c62828' }}">
-                    ${{ number_format(abs($liquidationData['totals']['net_professional_amount']), 0, ',', '.') }}
+                <span class="amount-to-pay" style="color: {{ $singleLiqAmount >= 0 ? '#2e7d32' : '#c62828' }}">
+                    ${{ number_format(abs($singleLiqAmount), 0, ',', '.') }}
                 </span>
             </div>
+
+            <div style="font-size: 10px; color: #666; margin-top: 5px; padding-top: 5px; border-top: 1px solid #ddd;">
+                Liquidada el {{ $singleLiq['created_at']->format('d/m/Y H:i') }}
+            </div>
         </div>
-    </div>
+    @else
+        {{-- Resumen completo del día --}}
+        <div class="liquidation-summary">
+            <div class="summary-row" style="font-weight: bold; border-bottom: 1px solid #4caf50; padding-bottom: 3px; margin-bottom: 5px;">
+                <span>Total Facturado del Día:</span>
+                <span>${{ number_format($liquidationData['totals']['total_amount'], 0, ',', '.') }}</span>
+            </div>
+
+            @if($liquidationData['totals']['total_collected_by_center'] > 0)
+            <div style="background: #e3f2fd; padding: 5px; margin-bottom: 5px; border-left: 3px solid #2196f3;">
+                <div class="summary-row" style="font-weight: bold;">
+                    <span>💵 Pagos recibidos por el centro:</span>
+                    <span>${{ number_format($liquidationData['totals']['total_collected_by_center'], 0, ',', '.') }}</span>
+                </div>
+                <div class="summary-row" style="font-size: 10px; padding-left: 15px; color: #1976d2;">
+                    <span>Comisión profesional ({{ $liquidationData['totals']['commission_percentage'] }}%):</span>
+                    <span style="color: #2e7d32;">+${{ number_format($liquidationData['totals']['professional_commission'], 0, ',', '.') }}</span>
+                </div>
+            </div>
+            @endif
+
+            @if($liquidationData['totals']['total_collected_by_professional'] > 0)
+            <div style="background: #fff8e1; padding: 5px; margin-bottom: 5px; border-left: 3px solid #ffc107;">
+                <div class="summary-row" style="font-weight: bold;">
+                    <span>🏦 Pagos directos al profesional:</span>
+                    <span>${{ number_format($liquidationData['totals']['total_collected_by_professional'], 0, ',', '.') }}</span>
+                </div>
+                <div class="summary-row" style="font-size: 10px; padding-left: 15px; color: #f57c00;">
+                    <span>Parte del centro a descontar ({{ $liquidationData['totals']['clinic_percentage'] }}%):</span>
+                    <span style="color: #c62828;">-${{ number_format($liquidationData['totals']['clinic_amount_from_direct'], 0, ',', '.') }}</span>
+                </div>
+            </div>
+            @endif
+
+            @if($liquidationData['totals']['total_refunds'] > 0)
+            <div class="summary-row" style="color: #c62828;">
+                <span>🔄 Reintegros a Pacientes:</span>
+                <span>-${{ number_format($liquidationData['totals']['total_refunds'], 0, ',', '.') }}</span>
+            </div>
+            @endif
+
+            <div style="border-top: 2px solid #4caf50; padding-top: 5px; margin-top: 5px;">
+                <div style="font-size: 10px; color: #666; margin-bottom: 3px;">
+                    <div class="summary-row">
+                        <span>Comisión sobre pagos al centro:</span>
+                        <span>+${{ number_format($liquidationData['totals']['professional_commission'], 0, ',', '.') }}</span>
+                    </div>
+                    @if($liquidationData['totals']['total_collected_by_professional'] > 0)
+                    <div class="summary-row">
+                        <span>Comisión parte del centro sobre pagos directos:</span>
+                        <span>-${{ number_format($liquidationData['totals']['clinic_amount_from_direct'], 0, ',', '.') }}</span>
+                    </div>
+                    @endif
+                    @if($liquidationData['totals']['total_refunds'] > 0)
+                    <div class="summary-row">
+                        <span>Reintegros:</span>
+                        <span>-${{ number_format($liquidationData['totals']['total_refunds'], 0, ',', '.') }}</span>
+                    </div>
+                    @endif
+                </div>
+                <div class="summary-row total">
+                    <span>
+                        @if($liquidationData['totals']['net_professional_amount'] >= 0)
+                            MONTO A ENTREGAR AL PROFESIONAL:
+                        @else
+                            MONTO QUE EL PROFESIONAL DEBE AL CENTRO:
+                        @endif
+                    </span>
+                    <span class="amount-to-pay" style="color: {{ $liquidationData['totals']['net_professional_amount'] >= 0 ? '#2e7d32' : '#c62828' }}">
+                        ${{ number_format(abs($liquidationData['totals']['net_professional_amount']), 0, ',', '.') }}
+                    </span>
+                </div>
+            </div>
+        </div>
+    @endif
     
-    <!-- Turnos Pagados Previamente -->
-    @if($liquidationData['prepaid_appointments']->count() > 0)
+    <!-- Turnos Pagados Previamente (solo en impresión completa del día) -->
+    @if(!$isSingleLiq && $liquidationData['prepaid_appointments']->count() > 0)
         <div class="section-title">💳 Turnos Pagados Previamente ({{ $liquidationData['prepaid_appointments']->count() }})</div>
         <div class="prepaid-section">
             <div class="section-header">
@@ -434,7 +474,11 @@
     
     <!-- Turnos Cobrados Hoy (Agrupados por Liquidación) -->
     @if($liquidationData['liquidations_grouped']->count() > 0 || $liquidationData['pending_appointments']->count() > 0)
-        <div class="section-title">💰 Turnos Cobrados Hoy ({{ $liquidationData['today_paid_appointments']->count() }})</div>
+        @if($isSingleLiq)
+            <div class="section-title">💰 Turnos de esta Liquidación ({{ $singleLiq['appointments_count'] }})</div>
+        @else
+            <div class="section-title">💰 Turnos Cobrados Hoy ({{ $liquidationData['today_paid_appointments']->count() }})</div>
+        @endif
         <div class="today-paid-section">
             <table class="appointments-table">
                 <thead>
@@ -614,16 +658,40 @@
                 <tfoot>
                     <tr style="border-top: 2px solid #333; font-weight: bold;">
                         <td colspan="3" style="text-align: right; padding: 5px; font-size: 11px;">TOTALES:</td>
+                        @php
+                            // Si es liquidación individual, usar solo los turnos de esa liquidación
+                            if ($isSingleLiq) {
+                                $appointmentsForTotal = $singleLiq['appointments'];
+                            } else {
+                                $appointmentsForTotal = $liquidationData['today_paid_appointments'];
+                            }
+
+                            // Calcular totales considerando pagos múltiples
+                            $totalCash = 0;
+                            $totalOther = 0;
+                            foreach ($appointmentsForTotal as $apt) {
+                                if ($apt['is_multiple_payment'] && !empty($apt['payment_methods_array'])) {
+                                    // Pago múltiple: sumar por método
+                                    $totalCash += collect($apt['payment_methods_array'])
+                                        ->where('method', 'cash')
+                                        ->sum('amount');
+                                    $totalOther += collect($apt['payment_methods_array'])
+                                        ->where('method', '!=', 'cash')
+                                        ->sum('amount');
+                                } else {
+                                    // Pago simple
+                                    if ($apt['payment_method'] === 'cash') {
+                                        $totalCash += $apt['final_amount'];
+                                    } else {
+                                        $totalOther += $apt['final_amount'];
+                                    }
+                                }
+                            }
+                        @endphp
                         <td class="amount-column" style="font-size: 11px;">
-                            @php
-                                $totalCash = $liquidationData['today_paid_appointments']->filter(fn($a) => $a['payment_method'] === 'cash')->sum('final_amount');
-                            @endphp
                             ${{ number_format($totalCash, 0, ',', '.') }}
                         </td>
                         <td class="amount-column" style="font-size: 11px;">
-                            @php
-                                $totalOther = $liquidationData['today_paid_appointments']->filter(fn($a) => $a['payment_method'] !== 'cash')->sum('final_amount');
-                            @endphp
                             ${{ number_format($totalOther, 0, ',', '.') }}
                         </td>
                         <td></td>
@@ -634,8 +702,8 @@
         </div>
     @endif
     
-    <!-- Turnos Sin Pagar -->
-    @if($liquidationData['unpaid_appointments']->count() > 0)
+    <!-- Turnos Sin Pagar (solo en impresión completa del día) -->
+    @if(!$isSingleLiq && $liquidationData['unpaid_appointments']->count() > 0)
         <div class="section-title">⚠️ Turnos Pendientes de Pago ({{ $liquidationData['unpaid_appointments']->count() }})</div>
         <div class="unpaid-section">
             <div class="section-header">
@@ -684,7 +752,7 @@
     
     <!-- Footer -->
     <div class="footer">
-        <div>Punto Salud - Liquidación generada el {{ $liquidationData['generated_at']->format('d/m/Y H:i:s') }}</div>
+        <div>Punto Salud - @if($isSingleLiq)Liquidación #{{ $liquidationData['single_liquidation_number'] }} @else Liquidación @endif generada el {{ $liquidationData['generated_at']->format('d/m/Y H:i:s') }}</div>
         <div>Dr. {{ $liquidationData['professional']->full_name }} - {{ $liquidationData['date']->format('d/m/Y') }}</div>
     </div>
     

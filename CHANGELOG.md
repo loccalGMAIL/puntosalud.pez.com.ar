@@ -7,6 +7,88 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [2.6.2-hotfix-4] - 2026-01-21
+
+### 🖨️ Impresión Individual de Liquidaciones Parciales
+
+**Descripción:**
+- Nueva funcionalidad para imprimir cada liquidación parcial por separado
+- Resuelve confusión cuando hay múltiples liquidaciones en el día
+
+**Características Implementadas:**
+
+1. **Icono de Impresión en Vista de Detalle:**
+   - Agregado icono de impresora en cada card de "Liquidación #1", "#2", etc.
+   - Ubicado junto al título sin romper el diseño
+   - Abre nueva pestaña con impresión de solo esa liquidación
+
+2. **Icono de Impresión en Vista de Selección:**
+   - Agregado icono de impresora en la lista de liquidaciones realizadas
+   - Permite imprimir directamente desde el panel general sin entrar al detalle
+
+3. **Vista de Impresión Adaptada:**
+   - Título específico: "LIQUIDACIÓN #X DEL PROFESIONAL"
+   - Resumen simplificado mostrando solo el monto de esa liquidación
+   - Muestra únicamente los turnos correspondientes a esa liquidación
+   - Oculta secciones no relevantes (turnos previos, pendientes, sin pagar)
+   - Footer actualizado con número de liquidación
+
+4. **Corrección de Totales con Pagos Múltiples:**
+   - Los totales de Efectivo/Digital ahora consideran correctamente pagos mixtos
+   - Antes: pagos múltiples se sumaban todo en "Digital"
+   - Ahora: separa correctamente efectivo de métodos digitales usando `payment_methods_array`
+
+**Archivos Modificados:**
+- `resources/views/reports/professional-liquidation.blade.php` (líneas 178-196)
+- `resources/views/reports/professional-liquidation-select.blade.php` (líneas 187-210)
+- `resources/views/reports/professional-liquidation-print.blade.php` (múltiples secciones)
+- `app/Http/Controllers/ReportController.php` (líneas 604-618)
+
+**Impacto:**
+- ✅ Entrega de liquidaciones parciales sin confusión
+- ✅ Documento limpio con solo la información de esa liquidación
+- ✅ Totales precisos en pagos mixtos (efectivo + digital)
+- ✅ Acceso rápido desde vista de selección y detalle
+
+---
+
+## [2.6.2-hotfix-3] - 2026-01-21
+
+### 🔄 Liquidaciones Parciales Durante el Día
+
+**Descripción:**
+- Permite liquidar profesionales aunque tengan turnos pendientes (scheduled)
+- Habilita múltiples liquidaciones durante el día de trabajo
+
+**Problema Anterior:**
+- No se podía liquidar si el profesional tenía turnos programados sin atender
+- Obligaba a esperar al final del día para liquidar
+- Poco flexible para profesionales que querían cobrar parcialmente
+
+**Solución Implementada:**
+- Removida validación que bloqueaba liquidación con turnos `scheduled`
+- Mantenida validación crítica: no liquidar con turnos `attended` sin cobrar
+- Mantenida validación de cierre: caja no cierra con `payment_details` sin liquidar
+
+```php
+// REMOVIDO - Ya no bloquea liquidaciones parciales:
+// if ($pendingAppointments > 0) { throw new \Exception(...) }
+
+// MANTENIDO - Sigue validando turnos atendidos sin cobrar:
+if ($unpaidAppointments > 0) { throw new \Exception(...) }
+```
+
+**Archivos Modificados:**
+- `app/Http/Controllers/LiquidationController.php` (líneas 42-51 removidas, comentario agregado)
+
+**Impacto:**
+- ✅ Mayor flexibilidad operativa
+- ✅ Liquidar varias veces al día según necesidad
+- ✅ Profesionales cobran más rápido
+- ✅ Control contable intacto (cierre sigue validando)
+
+---
+
 ## [2.6.2-hotfix] - 2026-01-09
 
 ### 🐛 Correcciones Críticas de Producción

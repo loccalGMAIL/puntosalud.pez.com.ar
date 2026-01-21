@@ -602,6 +602,21 @@ class ReportController extends Controller
 
         // Si es para imprimir, devolver vista de impresión
         if ($request->get('print') === '1') {
+            // Si se especifica liquidation_id, filtrar para mostrar solo esa liquidación
+            $specificLiquidationId = $request->get('liquidation_id');
+            if ($specificLiquidationId) {
+                // Filtrar solo la liquidación específica
+                $filteredLiquidation = $liquidationsGrouped->firstWhere('id', (int) $specificLiquidationId);
+
+                if ($filteredLiquidation) {
+                    // Crear un nuevo liquidationData con solo esa liquidación
+                    $liquidationData['liquidations_grouped'] = collect([$filteredLiquidation]);
+                    $liquidationData['pending_appointments'] = collect([]); // No mostrar pendientes en impresión individual
+                    $liquidationData['is_single_liquidation'] = true;
+                    $liquidationData['single_liquidation_number'] = $filteredLiquidation['number'];
+                }
+            }
+
             return view('reports.professional-liquidation-print', compact('liquidationData'));
         }
 
