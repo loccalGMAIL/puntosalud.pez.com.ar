@@ -7,6 +7,47 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [2.6.3] - 2026-01-30
+
+### 🖨️ Impresión de Movimientos de Caja
+
+**Descripción:**
+- Nueva funcionalidad para imprimir la tabla de movimientos de caja del día
+- Botón "Imprimir Movimientos" disponible en la vista de reportes de caja
+
+**Características Implementadas:**
+
+1. **Nueva Vista de Impresión:**
+   - Vista dedicada `reports/cash-movements-print.blade.php`
+   - Formato limpio y optimizado para impresión
+   - Incluye resumen rápido (saldo inicial, ingresos, egresos, saldo final)
+   - Tabla completa de movimientos con todos los datos
+   - Totales al pie de la tabla
+
+2. **Botón de Impresión:**
+   - Botón "Imprimir Movimientos" siempre visible en `/reports/cash`
+   - Color verde (emerald) para diferenciarlo del botón de cierre
+   - Abre vista de impresión en nueva pestaña
+
+3. **Cierre Automático:**
+   - La pestaña de impresión se cierra automáticamente después de imprimir
+   - Usa evento `afterprint` con fallback de 3 segundos
+
+**Archivos Creados:**
+- `resources/views/reports/cash-movements-print.blade.php`
+
+**Archivos Modificados:**
+- `app/Http/Controllers/ReportController.php` (nuevo método `cashMovementsPrint`)
+- `routes/web.php` (nueva ruta `reports.cash.print`)
+- `resources/views/reports/cash.blade.php` (botón agregado)
+
+**Impacto:**
+- ✅ Impresión rápida de movimientos del día
+- ✅ Disponible sin necesidad de cerrar la caja
+- ✅ Experiencia de usuario mejorada con cierre automático
+
+---
+
 ## [2.6.2-hotfix-4] - 2026-01-21
 
 ### 🖨️ Impresión Individual de Liquidaciones Parciales

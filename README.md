@@ -147,6 +147,7 @@ php artisan config:clear
 
 ### 🔄 Últimas versiones
 
+* **v2.6.3** (2026-01-30) – 🖨️ Impresión de Movimientos de Caja: Nuevo botón "Imprimir Movimientos" en reportes de caja para imprimir la tabla de movimientos del día con resumen y totales, cierre automático de pestaña después de imprimir.
 * **v2.6.2-hotfix-4** (2026-01-21) – 🖨️ Impresión Individual de Liquidaciones: Icono de impresora en cada liquidación parcial para imprimir por separado, vista de impresión adaptada con resumen específico, y corrección de totales en pagos múltiples (efectivo + digital).
 * **v2.6.2-hotfix-3** (2026-01-21) – 🔄 Liquidaciones Parciales: Permite liquidar profesionales aunque tengan turnos pendientes, habilitando múltiples liquidaciones durante el día sin esperar al cierre.
 * **v2.6.2-hotfix** (2026-01-09) – 🐛 Correcciones Críticas: Fix error en cierre de caja (relación paymentAppointment), componente reutilizable de modal de cierre con resumen completo, corrección de lista de liquidaciones para profesionales con monto $0, y exclusión de gastos en lista de pagos.
