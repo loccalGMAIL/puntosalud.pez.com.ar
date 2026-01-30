@@ -1376,6 +1376,160 @@ class CashController extends Controller
     }
 
     /**
+     * Exportar reporte de caja en formato CSV (compatible con Excel)
+     */
+    public function exportCashReportCsv(Request $request)
+    {
+        $dateFrom = $request->get('date_from', now()->startOfMonth()->format('Y-m-d'));
+        $dateTo = $request->get('date_to', now()->format('Y-m-d'));
+        $groupBy = $request->get('group_by', 'day');
+
+        $startDate = Carbon::parse($dateFrom);
+        $endDate = Carbon::parse($dateTo);
+
+        $movements = CashMovement::with(['user', 'movementType'])
+            ->whereDate('created_at', '>=', $startDate)
+            ->whereDate('created_at', '<=', $endDate)
+            ->orderBy('created_at')
+            ->get();
+
+        // Filtrar movimientos excluyendo apertura y cierre
+        $movementsForTotals = $movements->filter(function($movement) {
+            return !in_array($movement->movementType?->code, ['cash_opening', 'cash_closing']);
+        });
+
+        $reportData = $this->generateReportData($movementsForTotals, $groupBy, $startDate, $endDate);
+
+        $summary = [
+            'total_inflows' => $movementsForTotals->where('amount', '>', 0)->sum('amount'),
+            'total_outflows' => abs($movementsForTotals->where('amount', '<', 0)->sum('amount')),
+            'net_amount' => $movementsForTotals->sum('amount'),
+            'movements_count' => $movementsForTotals->count(),
+            'period_days' => $startDate->diffInDays($endDate) + 1,
+        ];
+
+        $movementsByType = $movementsForTotals->groupBy(function($movement) {
+            return $movement->movementType?->code ?? 'unknown';
+        })->map(function ($group, $typeCode) {
+            $firstMovement = $group->first();
+            return [
+                'type' => $typeCode,
+                'type_name' => $firstMovement->movementType?->name ?? ucfirst($typeCode),
+                'inflows' => $group->where('amount', '>', 0)->sum('amount'),
+                'outflows' => abs($group->where('amount', '<', 0)->sum('amount')),
+                'count' => $group->count(),
+            ];
+        });
+
+        $filename = 'reporte-caja-' . $dateFrom . '-a-' . $dateTo . '.csv';
+
+        $headers = [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => "attachment; filename=\"$filename\"",
+        ];
+
+        $callback = function() use ($summary, $reportData, $movementsByType, $dateFrom, $dateTo) {
+            $file = fopen('php://output', 'w');
+            // BOM para UTF-8 en Excel
+            fprintf($file, chr(0xEF).chr(0xBB).chr(0xBF));
+
+            // Encabezado
+            fputcsv($file, ['REPORTE DE CAJA'], ';');
+            fputcsv($file, ["Periodo: $dateFrom al $dateTo"], ';');
+            fputcsv($file, [], ';');
+
+            // Resumen
+            fputcsv($file, ['RESUMEN'], ';');
+            fputcsv($file, ['Total Ingresos', number_format($summary['total_inflows'], 2, ',', '.')], ';');
+            fputcsv($file, ['Total Egresos', number_format($summary['total_outflows'], 2, ',', '.')], ';');
+            fputcsv($file, ['Resultado Neto', number_format($summary['net_amount'], 2, ',', '.')], ';');
+            fputcsv($file, ['Cantidad de Movimientos', $summary['movements_count']], ';');
+            fputcsv($file, ['Dias del Periodo', $summary['period_days']], ';');
+            fputcsv($file, [], ';');
+
+            // Detalle por período
+            fputcsv($file, ['DETALLE POR PERIODO'], ';');
+            fputcsv($file, ['Periodo', 'Ingresos', 'Egresos', 'Neto', 'Movimientos'], ';');
+            foreach ($reportData as $period) {
+                fputcsv($file, [
+                    $period['period_label'],
+                    number_format($period['inflows'], 2, ',', '.'),
+                    number_format($period['outflows'], 2, ',', '.'),
+                    number_format($period['net'], 2, ',', '.'),
+                    $period['count']
+                ], ';');
+            }
+            fputcsv($file, [], ';');
+
+            // Por tipo
+            fputcsv($file, ['ANALISIS POR TIPO DE MOVIMIENTO'], ';');
+            fputcsv($file, ['Tipo', 'Ingresos', 'Egresos', 'Cantidad'], ';');
+            foreach ($movementsByType as $type) {
+                fputcsv($file, [
+                    $type['type_name'],
+                    number_format($type['inflows'], 2, ',', '.'),
+                    number_format($type['outflows'], 2, ',', '.'),
+                    $type['count']
+                ], ';');
+            }
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
+    /**
+     * Vista de impresión del reporte de caja (para exportar a PDF)
+     */
+    public function printCashReport(Request $request)
+    {
+        $dateFrom = $request->get('date_from', now()->startOfMonth()->format('Y-m-d'));
+        $dateTo = $request->get('date_to', now()->format('Y-m-d'));
+        $groupBy = $request->get('group_by', 'day');
+
+        $startDate = Carbon::parse($dateFrom);
+        $endDate = Carbon::parse($dateTo);
+
+        $movements = CashMovement::with(['user', 'movementType'])
+            ->whereDate('created_at', '>=', $startDate)
+            ->whereDate('created_at', '<=', $endDate)
+            ->orderBy('created_at')
+            ->get();
+
+        // Filtrar movimientos excluyendo apertura y cierre
+        $movementsForTotals = $movements->filter(function($movement) {
+            return !in_array($movement->movementType?->code, ['cash_opening', 'cash_closing']);
+        });
+
+        $reportData = $this->generateReportData($movementsForTotals, $groupBy, $startDate, $endDate);
+
+        $summary = [
+            'total_inflows' => $movementsForTotals->where('amount', '>', 0)->sum('amount'),
+            'total_outflows' => abs($movementsForTotals->where('amount', '<', 0)->sum('amount')),
+            'net_amount' => $movementsForTotals->sum('amount'),
+            'movements_count' => $movementsForTotals->count(),
+            'period_days' => $startDate->diffInDays($endDate) + 1,
+        ];
+
+        $movementsByType = $movementsForTotals->groupBy(function($movement) {
+            return $movement->movementType?->code ?? 'unknown';
+        })->map(function ($group, $typeCode) {
+            $firstMovement = $group->first();
+            return [
+                'type' => $typeCode,
+                'type_name' => $firstMovement->movementType?->name ?? ucfirst($typeCode),
+                'icon' => $firstMovement->movementType?->icon ?? '',
+                'inflows' => $group->where('amount', '>', 0)->sum('amount'),
+                'outflows' => abs($group->where('amount', '<', 0)->sum('amount')),
+                'count' => $group->count(),
+            ];
+        });
+
+        return view('cash.report-print', compact('reportData', 'summary', 'movementsByType', 'dateFrom', 'dateTo', 'groupBy'));
+    }
+
+    /**
      * Construir descripción del cierre de caja
      *
      * @param array $validated

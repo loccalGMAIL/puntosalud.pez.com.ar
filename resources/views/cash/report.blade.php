@@ -261,9 +261,12 @@ function cashReportForm() {
             Object.entries(this.filters).forEach(([key, value]) => {
                 if (value) params.set(key, value);
             });
-            params.set('export', format);
-            
-            window.open(`/cash/report?${params.toString()}`, '_blank');
+
+            if (format === 'excel') {
+                window.location.href = `/cash/report/export?${params.toString()}`;
+            } else if (format === 'pdf') {
+                window.open(`/cash/report/print?${params.toString()}`, '_blank');
+            }
         }
     }
 }
