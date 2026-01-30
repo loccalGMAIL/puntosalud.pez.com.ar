@@ -112,23 +112,28 @@ class CashController extends Controller
         $startDate = Carbon::parse($dateFrom);
         $endDate = Carbon::parse($dateTo);
 
-        $movements = CashMovement::with(['user'])
+        $movements = CashMovement::with(['user', 'movementType'])
             ->whereDate('created_at', '>=', $startDate)
             ->whereDate('created_at', '<=', $endDate)
             ->orderBy('created_at')
             ->get();
 
-        $reportData = $this->generateReportData($movements, $groupBy, $startDate, $endDate);
+        // Filtrar movimientos excluyendo apertura y cierre para cálculos (consistente con dailyCash y dailyReport)
+        $movementsForTotals = $movements->filter(function($movement) {
+            return !in_array($movement->movementType?->code, ['cash_opening', 'cash_closing']);
+        });
+
+        $reportData = $this->generateReportData($movementsForTotals, $groupBy, $startDate, $endDate);
 
         $summary = [
-            'total_inflows' => $movements->where('amount', '>', 0)->sum('amount'),
-            'total_outflows' => abs($movements->where('amount', '<', 0)->sum('amount')),
-            'net_amount' => $movements->sum('amount'),
-            'movements_count' => $movements->count(),
+            'total_inflows' => $movementsForTotals->where('amount', '>', 0)->sum('amount'),
+            'total_outflows' => abs($movementsForTotals->where('amount', '<', 0)->sum('amount')),
+            'net_amount' => $movementsForTotals->sum('amount'),
+            'movements_count' => $movementsForTotals->count(),
             'period_days' => $startDate->diffInDays($endDate) + 1,
         ];
 
-        $movementsByType = $movements->groupBy(function($movement) {
+        $movementsByType = $movementsForTotals->groupBy(function($movement) {
             return $movement->movementType?->code ?? 'unknown';
         })->map(function ($group, $typeCode) {
             $firstMovement = $group->first();
