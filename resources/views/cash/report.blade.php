@@ -132,7 +132,7 @@
                 <div class="ml-4">
                     <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Resultado Neto</p>
                     <p class="text-2xl font-bold {{ ($summary['net_amount'] ?? 0) >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">
-                        {{ ($summary['net_amount'] ?? 0) >= 0 ? '+' : '' }}${{ number_format($summary['net_amount'] ?? 0, 2) }}
+                       ${{ number_format($summary['net_amount'] ?? 0, 2) }}
                     </p>
                 </div>
             </div>
@@ -159,88 +159,29 @@
         </div>
     </div>
 
-    {{-- <!-- Gráfico de Tendencias -->
-    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-6">
-        <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Tendencia de Ingresos vs Egresos</h2>
-        <div class="h-64 flex items-center justify-center border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg">
-            <div class="text-center">
-                <svg class="w-12 h-12 text-gray-400 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 7.996 21 8.625 21h2.25c.621 0 1.125-.504 1.125-1.125v-6.75C12 12.504 12.504 12 13.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75c0 .621.504 1.125 1.125 1.125h2.25C20.496 21 21 20.496 21 19.875v-8.706c0-.621-.504-1.125-1.125-1.125h-2.25c-.621 0-1.125.504-1.125 1.125v8.706" />
-                </svg>
-                <p class="text-gray-500 dark:text-gray-400 text-sm">Gráfico se mostrará aquí</p>
-                <p class="text-gray-400 dark:text-gray-500 text-xs">Integrar con Chart.js o similar</p>
-            </div>
-        </div>
-    </div> --}}
-
     <!-- Análisis por Tipo de Movimiento -->
     @if(isset($movementsByType) && $movementsByType->count() > 0)
     <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-6">
         <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Análisis por Tipo de Movimiento</h2>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             @foreach($movementsByType as $type => $data)
-                @if(!in_array($type, ['cash_opening', 'cash_closing']))
             <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
                 <div class="flex justify-between items-center mb-3">
                     <h3 class="font-medium text-gray-900 dark:text-white">
-                        @switch($type)
-                            @case('patient_payment')
-                                💰 Pagos de Pacientes
-                                @break
-                            @case('expense')
-                                💸 Gastos
-                                @break
-                            @case('refund')
-                                🔄 Reembolsos
-                                @break
-                            @case('professional_payment')
-                                👩‍⚕️ Pagos a Profesionales
-                                @break
-                            @case('cash_opening')
-                                🔓 Apertura de Caja
-                                @break
-                            @case('cash_closing')
-                                🔒 Cierre de Caja
-                                @break
-                            @case('cash_control')
-                                🔍 Control de Caja
-                                @break
-                            @case('shift_handover')
-                                🔄 Entrega de Turno
-                                @break
-                            @case('shift_receive')
-                                📥 Recibo de Turno
-                                @break
-                            @case('cash_withdrawal')
-                                💸 Retiro de Efectivo
-                                @break
-                            @case('other')
-                                📋 Otro
-                                @break
-                            @default
-                                {{ ucfirst(str_replace('_', ' ', $type)) }}
-                        @endswitch
+                        {{ $data['icon'] }} {{ $data['type_name'] }}
                     </h3>
                     <span class="text-sm text-gray-500 dark:text-gray-400">{{ $data['count'] }}</span>
                 </div>
-                <div class="space-y-2">
-                    <div class="flex justify-between text-sm">
-                        <span class="text-green-600">Ingresos:</span>
-                        <span class="text-green-600 font-medium">+${{ number_format($data['inflows'], 2) }}</span>
-                    </div>
-                    <div class="flex justify-between text-sm">
-                        <span class="text-red-600">Egresos:</span>
-                        <span class="text-red-600 font-medium">-${{ number_format($data['outflows'], 2) }}</span>
-                    </div>
-                    <div class="flex justify-between text-sm border-t border-gray-200 dark:border-gray-600 pt-2">
-                        <span class="font-medium text-gray-900 dark:text-white">Neto:</span>
-                        <span class="font-medium {{ ($data['inflows'] - $data['outflows']) >= 0 ? 'text-green-600' : 'text-red-600' }}">
-                            ${{ number_format($data['inflows'] - $data['outflows'], 2) }}
-                        </span>
-                    </div>
+                <div class="flex justify-between text-sm">
+                    @if($data['inflows'] > 0)
+                    <span class="text-green-600">Ingresos:</span>
+                    <span class="text-green-600 font-medium">+${{ number_format($data['inflows'], 2) }}</span>
+                    @else
+                    <span class="text-red-600">Egresos:</span>
+                    <span class="text-red-600 font-medium">-${{ number_format($data['outflows'], 2) }}</span>
+                    @endif
                 </div>
             </div>
-                @endif
             @endforeach
         </div>
     </div>

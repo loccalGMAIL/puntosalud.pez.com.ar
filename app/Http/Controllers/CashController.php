@@ -140,6 +140,7 @@ class CashController extends Controller
             return [
                 'type' => $typeCode,
                 'type_name' => $firstMovement->movementType?->name ?? ucfirst($typeCode),
+                'icon' => $firstMovement->movementType?->icon ?? '📋',
                 'inflows' => $group->where('amount', '>', 0)->sum('amount'),
                 'outflows' => abs($group->where('amount', '<', 0)->sum('amount')),
                 'count' => $group->count(),

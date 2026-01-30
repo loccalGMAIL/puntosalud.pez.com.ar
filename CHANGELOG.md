@@ -15,6 +15,26 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 - Nueva funcionalidad para imprimir la tabla de movimientos de caja del día
 - Botón "Imprimir Movimientos" disponible en la vista de reportes de caja
 
+### 🐛 Corrección Reporte de Caja por Rango de Fechas
+
+**Problema Corregido:**
+- El reporte por rango (`/cash/report`) incluía incorrectamente los movimientos de apertura y cierre de caja en los totales
+- Esto causaba inconsistencias: la suma de reportes diarios no coincidía con el reporte por rango
+
+**Solución Implementada:**
+- Filtrado de movimientos `cash_opening` y `cash_closing` en el método `cashReport()`, consistente con `dailyCash()` y `dailyReport()`
+
+### ✨ Mejora en Cards de Análisis por Tipo de Movimiento
+
+**Descripción:**
+- Las cards de "Análisis por Tipo de Movimiento" ahora obtienen nombres e iconos desde la base de datos
+- Eliminado switch hardcodeado de ~40 líneas por código dinámico
+- Cada card muestra solo Ingresos o Egresos según corresponda (sin mostrar ambos ni Neto)
+
+**Archivos Modificados:**
+- `app/Http/Controllers/CashController.php` (método `cashReport()`)
+- `resources/views/cash/report.blade.php`
+
 **Características Implementadas:**
 
 1. **Nueva Vista de Impresión:**
