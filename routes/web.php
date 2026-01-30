@@ -79,12 +79,15 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/reports/daily-summary', [ReportController::class, 'dailySummary'])->name('reports.daily-summary');
     Route::get('/reports/professional-liquidation', [ReportController::class, 'professionalLiquidation'])->name('reports.professional-liquidation');
     Route::get('/reports/cash', [ReportController::class, 'cashReport'])->name('reports.cash');
+    Route::get('/reports/cash/print', [ReportController::class, 'cashMovementsPrint'])->name('reports.cash.print');
 
     // Cash management routes
     Route::get('/cash/daily', [App\Http\Controllers\CashController::class, 'dailyCash'])->name('cash.daily');
     Route::get('/cash/count', [App\Http\Controllers\CashController::class, 'cashCount'])->name('cash.count');
     Route::get('/cash/daily-report', [App\Http\Controllers\CashController::class, 'dailyReport'])->name('cash.daily-report');
     Route::get('/cash/report', [App\Http\Controllers\CashController::class, 'cashReport'])->name('cash.report');
+    Route::get('/cash/report/export', [App\Http\Controllers\CashController::class, 'exportCashReportCsv'])->name('cash.report.export');
+    Route::get('/cash/report/pdf', [App\Http\Controllers\CashController::class, 'downloadCashReportPdf'])->name('cash.report.pdf');
     Route::get('/cash/expense', [App\Http\Controllers\CashController::class, 'addExpense'])->name('cash.expense-form');
     Route::post('/cash/expense', [App\Http\Controllers\CashController::class, 'addExpense'])->name('cash.expense.store');
     Route::get('/cash/withdrawal', [App\Http\Controllers\CashController::class, 'withdrawalForm'])->name('cash.withdrawal-form');

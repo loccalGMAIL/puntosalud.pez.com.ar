@@ -92,6 +92,51 @@ class ReportController extends Controller
     }
 
     /**
+     * Imprimir movimientos de caja del día
+     */
+    public function cashMovementsPrint(Request $request)
+    {
+        $date = $request->get('date', now()->format('Y-m-d'));
+        $selectedDate = Carbon::parse($date);
+
+        $previousDay = $selectedDate->copy()->subDay();
+        $lastBalanceMovement = CashMovement::whereDate('created_at', '<=', $previousDay)
+            ->orderBy('created_at', 'desc')
+            ->first();
+
+        $initialBalance = $lastBalanceMovement ? $lastBalanceMovement->balance_after : 0;
+
+        // Obtener movimientos con referencias para método de pago
+        $movements = CashMovement::with(['user', 'movementType'])
+            ->with(['reference' => function($morphTo) {
+                $morphTo->morphWith([
+                    \App\Models\Payment::class => ['paymentDetails']
+                ]);
+            }])
+            ->whereDate('created_at', $selectedDate)
+            ->orderBy('created_at')
+            ->get();
+
+        // Calcular totales excluyendo apertura y cierre de caja
+        $movementsForTotals = $movements->filter(function($movement) {
+            return !in_array($movement->movementType?->code, ['cash_opening', 'cash_closing']);
+        });
+        $inflows = $movementsForTotals->where('amount', '>', 0)->sum('amount');
+        $outflows = $movementsForTotals->where('amount', '<', 0)->sum('amount');
+        $finalBalance = $initialBalance + $inflows + $outflows;
+
+        $cashSummary = [
+            'date' => $selectedDate,
+            'initial_balance' => $initialBalance,
+            'total_inflows' => $inflows,
+            'total_outflows' => abs($outflows),
+            'final_balance' => $finalBalance,
+        ];
+
+        return view('reports.cash-movements-print', compact('cashSummary', 'movements'));
+    }
+
+    /**
      * Listado diario de pacientes a atender por profesional
      */
     public function dailySchedule(Request $request)
