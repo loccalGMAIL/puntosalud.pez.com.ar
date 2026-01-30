@@ -55,7 +55,7 @@
                 'icon' => '<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H4.5m2.25 0v3m0 0v.75A.75.75 0 016 10.5h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H6.75m2.25 0h3m-3 7.5h3m-3-4.5h3M6.75 7.5H12m-3 3v6m-1.5-6h1.5m-1.5 0V9" /></svg>'
             ],
             [
-                'title' => 'Caja',
+                'title' => 'Caja del Día',
                 'href' => '/cash/daily',
                 'icon' => '<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0012 9.75c-2.551 0-5.056.2-7.5.582V21M3 21h18M12 6.75h.008v.008H12V6.75z" /></svg>'
             ]
@@ -67,22 +67,26 @@
                 'title' => 'Reportes',
                 'icon' => '<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" /></svg>',
                 'children' => [
+                    // [
+                    //     'title' => 'Agenda Diaria',
+                    //     'href' => '/reports/daily-schedule'
+                    // ],
                     [
-                        'title' => 'Liquidación Diaria',
-                        'href' => '/reports/daily-schedule'
-                    ],
-                    [
-                        'title' => 'Reporte de Caja',
+                        'title' => 'Movimientos de Caja',
                         'href' => '/reports/cash'
                     ],
                     [
-                        'title' => 'Reporte de Profesionales',
-                        'href' => '/reports/professionals'
+                        'title' => 'Análisis de Caja',
+                        'href' => '/cash/report'
                     ],
-                    [
-                        'title' => 'Reporte de Pacientes',
-                        'href' => '/reports/patients'
-                    ]
+                    // [
+                    //     'title' => 'Reporte de Profesionales',
+                    //     'href' => '/reports/professionals'
+                    // ],
+                    // [
+                    //     'title' => 'Reporte de Pacientes',
+                    //     'href' => '/reports/patients'
+                    // ]
                 ]
             ];
         }

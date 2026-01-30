@@ -87,7 +87,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/cash/daily-report', [App\Http\Controllers\CashController::class, 'dailyReport'])->name('cash.daily-report');
     Route::get('/cash/report', [App\Http\Controllers\CashController::class, 'cashReport'])->name('cash.report');
     Route::get('/cash/report/export', [App\Http\Controllers\CashController::class, 'exportCashReportCsv'])->name('cash.report.export');
-    Route::get('/cash/report/print', [App\Http\Controllers\CashController::class, 'printCashReport'])->name('cash.report.print');
+    Route::get('/cash/report/pdf', [App\Http\Controllers\CashController::class, 'downloadCashReportPdf'])->name('cash.report.pdf');
     Route::get('/cash/expense', [App\Http\Controllers\CashController::class, 'addExpense'])->name('cash.expense-form');
     Route::post('/cash/expense', [App\Http\Controllers\CashController::class, 'addExpense'])->name('cash.expense.store');
     Route::get('/cash/withdrawal', [App\Http\Controllers\CashController::class, 'withdrawalForm'])->name('cash.withdrawal-form');

@@ -78,6 +78,7 @@ Sistema integral de gestión médica para clínicas y consultorios, desarrollado
 * Vista en tiempo real del día actual
 * Liquidación diaria de profesionales
 * Reportes optimizados para impresión y control administrativo
+* **Exportación de reportes de caja** a Excel (CSV) y PDF
 
 ## 🛠 Tecnologías
 
@@ -147,7 +148,7 @@ php artisan config:clear
 
 ### 🔄 Últimas versiones
 
-* **v2.6.3** (2026-01-30) – 🖨️ Impresión de Movimientos de Caja + 🐛 Correcciones: Nuevo botón "Imprimir Movimientos" en reportes de caja, corrección de totales en reporte por rango (excluye apertura/cierre), y cards de análisis por tipo ahora con nombres e iconos dinámicos desde BD.
+* **v2.6.3** (2026-01-30) – 🗂️ Reorganización Menú de Caja + 📊 Exportación Excel/PDF: Nueva estructura de menú (Caja del Día, Movimientos de Caja, Análisis de Caja), exportación de reportes a Excel y PDF, impresión de movimientos, y correcciones en reportes por rango.
 * **v2.6.2-hotfix-4** (2026-01-21) – 🖨️ Impresión Individual de Liquidaciones: Icono de impresora en cada liquidación parcial para imprimir por separado, vista de impresión adaptada con resumen específico, y corrección de totales en pagos múltiples (efectivo + digital).
 * **v2.6.2-hotfix-3** (2026-01-21) – 🔄 Liquidaciones Parciales: Permite liquidar profesionales aunque tengan turnos pendientes, habilitando múltiples liquidaciones durante el día sin esperar al cierre.
 * **v2.6.2-hotfix** (2026-01-09) – 🐛 Correcciones Críticas: Fix error en cierre de caja (relación paymentAppointment), componente reutilizable de modal de cierre con resumen completo, corrección de lista de liquidaciones para profesionales con monto $0, y exclusión de gastos en lista de pagos.

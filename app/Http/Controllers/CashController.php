@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\CashMovement;
 use App\Models\MovementType;
 use App\Models\Payment;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -1480,9 +1481,9 @@ class CashController extends Controller
     }
 
     /**
-     * Vista de impresión del reporte de caja (para exportar a PDF)
+     * Descargar reporte de caja en formato PDF
      */
-    public function printCashReport(Request $request)
+    public function downloadCashReportPdf(Request $request)
     {
         $dateFrom = $request->get('date_from', now()->startOfMonth()->format('Y-m-d'));
         $dateTo = $request->get('date_to', now()->format('Y-m-d'));
@@ -1526,7 +1527,12 @@ class CashController extends Controller
             ];
         });
 
-        return view('cash.report-print', compact('reportData', 'summary', 'movementsByType', 'dateFrom', 'dateTo', 'groupBy'));
+        $filename = 'reporte-caja-' . $dateFrom . '-a-' . $dateTo . '.pdf';
+
+        $pdf = Pdf::loadView('cash.report-pdf', compact('reportData', 'summary', 'movementsByType', 'dateFrom', 'dateTo', 'groupBy'));
+        $pdf->setPaper('a4', 'portrait');
+
+        return $pdf->download($filename);
     }
 
     /**

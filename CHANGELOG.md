@@ -9,6 +9,76 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ## [2.6.3] - 2026-01-30
 
+### 🗂️ Reorganización del Menú de Caja
+
+**Descripción:**
+- Mejora en la navegación del sistema de caja para acceso más intuitivo
+- Acceso directo al Análisis de Caja desde el menú lateral
+
+**Cambios en el Menú Lateral:**
+
+| Ubicación | Anterior | Nuevo |
+|-----------|----------|-------|
+| Menú principal | Caja | **Caja del Día** |
+| Submenú Reportes | Reporte de Caja | **Movimientos de Caja** |
+| Submenú Reportes | (no existía) | **Análisis de Caja** (nuevo) |
+
+**Estructura Final del Menú:**
+```
+├── Caja del Día → /cash/daily (operativa diaria)
+└── Reportes
+    ├── Movimientos de Caja → /reports/cash (movimientos de un día)
+    └── Análisis de Caja → /cash/report (análisis por período con exportación)
+```
+
+**Archivos Modificados:**
+- `resources/views/layouts/app.blade.php` (menú lateral)
+- `resources/views/cash/daily.blade.php` (breadcrumb y título)
+- `resources/views/cash/report.blade.php` (breadcrumb y título)
+- `resources/views/reports/cash.blade.php` (breadcrumb, título y botón eliminado)
+
+**Impacto:**
+- ✅ Navegación más clara y directa
+- ✅ Acceso rápido al Análisis de Caja sin pasar por otra vista
+- ✅ Nombres más descriptivos para cada funcionalidad
+
+---
+
+### 📊 Exportación de Reportes de Caja (Excel y PDF)
+
+**Descripción:**
+- Nueva funcionalidad para exportar el reporte de caja en formatos Excel (CSV) y PDF
+- Descarga directa sin pasos intermedios
+
+**Características Implementadas:**
+
+1. **Exportación Excel (CSV):**
+   - Archivo CSV compatible con Excel (separador `;` y BOM UTF-8)
+   - Incluye resumen, detalle por período y análisis por tipo de movimiento
+   - Nombre de archivo descriptivo: `reporte-caja-FECHA-a-FECHA.csv`
+
+2. **Exportación PDF:**
+   - Generación directa de PDF usando `barryvdh/laravel-dompdf`
+   - Diseño profesional con tablas y colores
+   - Incluye encabezado, resumen, análisis por tipo y detalle por período
+   - Nombre de archivo descriptivo: `reporte-caja-FECHA-a-FECHA.pdf`
+
+**Archivos Creados:**
+- `resources/views/cash/report-pdf.blade.php` (vista optimizada para PDF)
+
+**Archivos Modificados:**
+- `app/Http/Controllers/CashController.php` (métodos `exportCashReportCsv` y `downloadCashReportPdf`)
+- `routes/web.php` (rutas `cash.report.export` y `cash.report.pdf`)
+- `resources/views/cash/report.blade.php` (botones Excel y PDF funcionales)
+- `composer.json` (nuevo paquete `barryvdh/laravel-dompdf`)
+
+**Impacto:**
+- ✅ Exportación rápida a Excel para análisis en hojas de cálculo
+- ✅ Generación de PDF profesional para archivo o impresión
+- ✅ Ambos formatos respetan los filtros seleccionados (fechas y agrupación)
+
+---
+
 ### 🖨️ Impresión de Movimientos de Caja
 
 **Descripción:**
