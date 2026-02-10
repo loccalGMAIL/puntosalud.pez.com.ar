@@ -156,8 +156,8 @@
         <!-- Calendar Grid -->
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden">
             <!-- Calendar Header -->
-            <div class="grid grid-cols-5 bg-gray-50 dark:bg-gray-700">
-                @foreach(['Lun', 'Mar', 'Mié', 'Jue', 'Vie'] as $dayName)
+            <div class="grid grid-cols-6 bg-gray-50 dark:bg-gray-700">
+                @foreach(['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'] as $dayName)
                     <div class="p-4 text-center font-semibold text-gray-700 dark:text-gray-300 border-r border-gray-200 dark:border-gray-600 last:border-r-0">
                         {{ $dayName }}
                     </div>
@@ -165,7 +165,7 @@
             </div>
 
             <!-- Calendar Days -->
-            <div class="grid grid-cols-5">
+            <div class="grid grid-cols-6">
                 @php
                     $currentDay = $startOfCalendar->copy();
                 @endphp
@@ -174,8 +174,8 @@
                     @php
                         $dayOfWeek = $currentDay->dayOfWeek === 0 ? 7 : $currentDay->dayOfWeek; // Convert Sunday from 0 to 7
 
-                        // Skip Saturday (6) and Sunday (7)
-                        if ($dayOfWeek === 6 || $dayOfWeek === 7) {
+                        // Skip Sunday (7)
+                        if ($dayOfWeek === 7) {
                             $currentDay->addDay();
                             continue;
                         }

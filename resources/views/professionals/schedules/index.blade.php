@@ -52,11 +52,15 @@
                 <p class="text-xs text-blue-700 dark:text-blue-300 mt-1">Configuraciones predeterminadas para agilizar la configuración inicial.</p>
             </div>
             <div class="flex flex-wrap gap-2">
-                <button @click="setWeekdaySchedule()" 
+                <button @click="setWeekdaySchedule()"
                         class="px-3 py-1.5 text-xs font-medium text-blue-700 bg-white border border-blue-300 rounded hover:bg-blue-50 dark:bg-gray-800 dark:text-blue-300 dark:border-blue-600 dark:hover:bg-gray-700 transition-colors">
                     <span class="hidden sm:inline">Horario de Oficina:</span> Lun-Vie 9:00-17:00
                 </button>
-                <button @click="setMorningSchedule()" 
+                <button @click="setFullWeekSchedule()"
+                        class="px-3 py-1.5 text-xs font-medium text-blue-700 bg-white border border-blue-300 rounded hover:bg-blue-50 dark:bg-gray-800 dark:text-blue-300 dark:border-blue-600 dark:hover:bg-gray-700 transition-colors">
+                    <span class="hidden sm:inline">Semana Completa:</span> Lun-Sáb 9:00-17:00
+                </button>
+                <button @click="setMorningSchedule()"
                         class="px-3 py-1.5 text-xs font-medium text-blue-700 bg-white border border-blue-300 rounded hover:bg-blue-50 dark:bg-gray-800 dark:text-blue-300 dark:border-blue-600 dark:hover:bg-gray-700 transition-colors">
                     <span class="hidden sm:inline">Solo Mañanas:</span> Lun-Vie 9:00-13:00
                 </button>
@@ -180,6 +184,21 @@ function professionalSchedules() {
             }
             // Deshabilitar fines de semana
             this.schedules[6].enabled = false;
+            this.schedules[7].enabled = false;
+        },
+
+        setFullWeekSchedule() {
+            // Lunes a Viernes 9:00-17:00
+            for (let day = 1; day <= 5; day++) {
+                this.schedules[day].enabled = true;
+                this.schedules[day].start_time = '09:00';
+                this.schedules[day].end_time = '17:00';
+            }
+            // Sábado 8:00-15:00
+            this.schedules[6].enabled = true;
+            this.schedules[6].start_time = '08:00';
+            this.schedules[6].end_time = '15:00';
+            // Deshabilitar Domingo
             this.schedules[7].enabled = false;
         },
 

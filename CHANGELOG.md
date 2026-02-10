@@ -7,6 +7,38 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [2.7.0] - 2026-02-09
+
+### 📅 Sábados en Agenda y Horarios de Profesionales
+
+**Descripción:**
+- Habilitación del día Sábado en la vista de Agenda para visualizar y gestionar turnos
+- Nuevo botón de acción rápida "Semana Completa" en la configuración de horarios de profesionales
+
+**Cambios Implementados:**
+
+1. **Agenda - Calendario con Sábados:**
+   - Grid del calendario ampliado de 5 a 6 columnas (Lun-Sáb)
+   - Los Sábados ahora se muestran en el calendario con la misma funcionalidad que los días de semana
+   - Si el profesional tiene horario configurado para Sábado, se pueden crear turnos normalmente
+   - Si no tiene horario, el día aparece en gris ("Día sin atención")
+
+2. **Horarios de Profesionales - Acción Rápida "Semana Completa":**
+   - Nuevo botón que configura Lun-Vie 9:00-17:00 + Sáb 8:00-15:00
+   - Horario de Sábado ajustado al horario del centro (8:00 a 15:00)
+   - Los botones existentes ("Horario de Oficina" y "Solo Mañanas") se mantienen sin cambios
+
+**Archivos Modificados:**
+- `resources/views/agenda/index.blade.php` (grid 6 columnas, inclusión de Sábado)
+- `resources/views/professionals/schedules/index.blade.php` (nuevo botón y función setFullWeekSchedule)
+
+**Impacto:**
+- ✅ Profesionales pueden atender los Sábados con gestión completa de turnos
+- ✅ Configuración rápida de horarios incluyendo Sábado
+- ✅ Sin impacto en profesionales que no atienden Sábados (día se muestra gris)
+
+---
+
 ## [2.6.3] - 2026-01-30
 
 ### 🗂️ Reorganización del Menú de Caja
