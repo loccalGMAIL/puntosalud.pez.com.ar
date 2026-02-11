@@ -576,11 +576,11 @@ function cashReportForm() {
                         this.refundProfessionalDetails = data.additional_data.refund_professional || null;
                     }
                 } else {
-                    alert('Error al cargar los detalles del movimiento');
+                    window.showToast('Error al cargar los detalles del movimiento', 'error');
                 }
             } catch (error) {
                 console.error('Error:', error);
-                alert('Error al cargar los detalles del movimiento');
+                window.showToast('Error al cargar los detalles del movimiento', 'error');
             } finally {
                 this.movementDetailsLoading = false;
             }

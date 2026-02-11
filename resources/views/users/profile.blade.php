@@ -148,7 +148,7 @@ document.getElementById('changePasswordForm').addEventListener('submit', async f
         const data = await response.json();
 
         if (data.success) {
-            alert('Contraseña actualizada exitosamente');
+            window.showToast('Contraseña actualizada exitosamente', 'success');
             this.reset();
         } else if (data.errors) {
             // Mostrar errores de validación
@@ -156,13 +156,13 @@ document.getElementById('changePasswordForm').addEventListener('submit', async f
             Object.keys(data.errors).forEach(field => {
                 errorMessages.push(...data.errors[field]);
             });
-            alert('Errores: ' + errorMessages.join('\n'));
+            window.showToast('Errores: ' + errorMessages.join(', '), 'error');
         } else {
-            alert('Error al cambiar la contraseña');
+            window.showToast('Error al cambiar la contraseña', 'error');
         }
     } catch (error) {
         console.error('Error:', error);
-        alert('Error al procesar la solicitud');
+        window.showToast('Error al procesar la solicitud', 'error');
     }
 });
 </script>

@@ -370,7 +370,7 @@ function recesosPage() {
         },
 
         showNotification(message, type = 'info') {
-            alert(message);
+            window.showToast(message, type);
         },
 
         formatDate(dateString) {

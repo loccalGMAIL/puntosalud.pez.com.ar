@@ -256,8 +256,7 @@ function withdrawalForm() {
         },
 
         showNotification(message, type = 'info') {
-            const icon = type === 'error' ? '❌' : type === 'success' ? '✅' : 'ℹ️';
-            alert(`${icon} ${message}`);
+            window.showToast(message, type);
         }
     }
 }

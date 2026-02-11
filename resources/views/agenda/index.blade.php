@@ -509,6 +509,7 @@ document.addEventListener('alpine:init', () => {
         dayModalOpen: false,
         editingAppointment: null,
         loading: false,
+        formErrors: {},
         professionals: @json($professionals),
         patients: @json($patients),
         offices: @json($offices),
@@ -553,6 +554,7 @@ document.addEventListener('alpine:init', () => {
         openCreateModal(date = null, professionalId = null) {
             this.editingAppointment = null;
             this.resetForm();
+            this.clearAllErrors();
             
             if (date) {
                 this.form.appointment_date = date;
@@ -663,8 +665,8 @@ document.addEventListener('alpine:init', () => {
                     setTimeout(() => window.location.reload(), 1000);
                 } else {
                     if (response.status === 422 && result.errors) {
-                        const errorMessages = Object.values(result.errors).flat().join('\n');
-                        this.showNotification('Errores de validación:\n' + errorMessages, 'error');
+                        this.setErrors(result.errors);
+                        this.showNotification('Por favor corregí los errores en el formulario', 'error');
                     } else {
                         this.showNotification(result.message || 'Error al guardar el turno', 'error');
                     }
@@ -709,6 +711,7 @@ document.addEventListener('alpine:init', () => {
 
         openEditModal(appointment) {
             this.editingAppointment = appointment;
+            this.clearAllErrors();
             const appointmentDate = new Date(appointment.appointment_date);
 
             this.form = {
@@ -780,8 +783,18 @@ document.addEventListener('alpine:init', () => {
             return appointmentDate < now;
         },
 
+        clearError(field) { delete this.formErrors[field]; },
+        clearAllErrors() { this.formErrors = {}; },
+        setErrors(errors) {
+            this.formErrors = {};
+            Object.keys(errors).forEach(key => {
+                this.formErrors[key] = errors[key][0];
+            });
+        },
+        hasError(field) { return !!this.formErrors[field]; },
+
         showNotification(message, type = 'info') {
-            alert(message);
+            window.showToast(message, type);
         }
     }))
 });
@@ -1118,7 +1131,7 @@ function patientModal() {
                     this.modalOpen = false;
 
                     // Mostrar notificación de éxito
-                    alert('✓ Paciente creado exitosamente. La página se recargará para actualizar la lista.');
+                    window.showToast('Paciente creado exitosamente. La página se recargará para actualizar la lista.', 'success');
 
                     // Guardar el ID del nuevo paciente para seleccionarlo después de recargar
                     if (result.patient && result.patient.id) {
@@ -1132,14 +1145,14 @@ function patientModal() {
                 } else {
                     if (response.status === 422 && result.errors) {
                         const errorMessages = Object.values(result.errors).flat().join('\n');
-                        alert('Errores de validación:\n' + errorMessages);
+                        window.showToast('Errores de validación: ' + errorMessages, 'error');
                     } else {
-                        alert('Error: ' + (result.message || 'Error al guardar el paciente'));
+                        window.showToast(result.message || 'Error al guardar el paciente', 'error');
                     }
                 }
             } catch (error) {
                 console.error('Error:', error);
-                alert('Error al guardar el paciente');
+                window.showToast('Error al guardar el paciente', 'error');
             } finally {
                 this.loading = false;
             }

@@ -7,6 +7,86 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [2.7.1] - 2026-02-10
+
+### 🎨 Mejoras UI/UX: Toast Notifications, Validación Inline, Tablas Responsivas y Sidebar Móvil
+
+**Descripción:**
+- Reemplazo completo de `alert()` del navegador por un sistema de toast notifications moderno
+- Validación inline en formularios modales con mensajes de error por campo
+- Tablas responsivas con vista de cards en dispositivos móviles
+- Corrección del sidebar/menú en modo móvil
+
+**Cambios Implementados:**
+
+1. **Toast Notifications (reemplazo de todos los `alert()`):**
+   - Nuevo componente global `toast-notifications.blade.php` con Alpine.js Store
+   - 4 tipos de notificación: success (4s), error (6s), warning (5s), info (4s)
+   - Auto-dismiss configurable + cierre manual con botón X
+   - Stack de toasts en esquina inferior derecha con animación slide-in
+   - Función global `window.showToast()` para contextos fuera de Alpine
+   - Soporte completo de dark mode
+   - Reemplazo de `showNotification()` en 10 vistas principales
+   - Reemplazo de `alert()` directos en 14 archivos adicionales
+
+2. **Validación Inline en Formularios:**
+   - Patrón `formErrors` + métodos `hasError()`, `clearError()`, `setErrors()`, `clearAllErrors()`
+   - Bordes rojos y mensajes de error debajo de cada campo con validación fallida
+   - Los errores se limpian al corregir el campo (`@input` / `@change`)
+   - Los errores se resetean al abrir/cerrar modales
+   - Implementado en: Pacientes, Profesionales, Turnos, Agenda
+
+3. **Tablas Responsivas (cards móviles):**
+   - Patrón dual: `hidden md:block` (tabla desktop) + `md:hidden` (cards móvil)
+   - Cards con datos clave, badges de estado y botones de acción touch-friendly
+   - Implementado en: Pacientes, Profesionales, Turnos, Cobros, Caja del Día
+
+4. **Fix Sidebar Móvil:**
+   - Corrección de `max-md:-translate-x-full` que impedía abrir el sidebar en móvil
+   - Unificación de breakpoints de `lg` (1024px) a `md` (768px) para consistencia
+   - Sidebar usa `:style` inline para evitar conflictos de especificidad CSS
+   - CSS `sidebar-init` / `content-init` para estado correcto pre-Alpine (sin flash)
+   - Nuevo botón X para cerrar el sidebar en móvil
+   - Transiciones suaves en sidebar y margen del contenido
+
+**Archivos Creados:**
+- `resources/views/components/toast-notifications.blade.php`
+
+**Archivos Modificados:**
+- `resources/views/layouts/app.blade.php` (toast, sidebar móvil)
+- `resources/views/patients/index.blade.php` (toast, validación, cards)
+- `resources/views/patients/modal.blade.php` (validación inline)
+- `resources/views/professionals/index.blade.php` (toast, validación, cards)
+- `resources/views/professionals/modal.blade.php` (validación inline)
+- `resources/views/appointments/index.blade.php` (toast, validación, cards)
+- `resources/views/appointments/modal.blade.php` (validación inline)
+- `resources/views/agenda/index.blade.php` (toast, validación)
+- `resources/views/payments/index.blade.php` (toast, cards)
+- `resources/views/payments/show.blade.php` (toast)
+- `resources/views/payments/create.blade.php` (toast)
+- `resources/views/payments/edit.blade.php` (toast)
+- `resources/views/cash/daily.blade.php` (toast, cards)
+- `resources/views/cash/manual-income-form.blade.php` (toast)
+- `resources/views/cash/expense-form.blade.php` (toast)
+- `resources/views/cash/withdrawal-form.blade.php` (toast)
+- `resources/views/components/cash-close-modal.blade.php` (toast)
+- `resources/views/reports/cash.blade.php` (toast)
+- `resources/views/users/index.blade.php` (toast)
+- `resources/views/users/profile.blade.php` (toast)
+- `resources/views/professionals/schedules/index.blade.php` (toast)
+- `resources/views/recesos/index.blade.php` (toast)
+- `resources/views/dashboard/dashboard.blade.php` (toast)
+- `resources/views/dashboard/dashboard-appointments.blade.php` (toast)
+
+**Impacto:**
+- ✅ Eliminados TODOS los `alert()` del navegador - notificaciones modernas no intrusivas
+- ✅ Errores de validación visibles por campo sin perder el contexto del formulario
+- ✅ Todas las tablas principales son usables en dispositivos móviles
+- ✅ Menú lateral funciona correctamente en móvil con animaciones suaves
+- ✅ Dark mode completo en todos los componentes nuevos
+
+---
+
 ## [2.7.0] - 2026-02-09
 
 ### 📅 Sábados en Agenda y Horarios de Profesionales

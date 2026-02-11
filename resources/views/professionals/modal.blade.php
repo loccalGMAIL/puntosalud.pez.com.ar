@@ -51,32 +51,41 @@
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nombre *</label>
                                 <input x-model="form.first_name"
-                                       @input="form.first_name = form.first_name.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '')"
+                                       @input="form.first_name = form.first_name.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, ''); clearError('first_name')"
                                        type="text" required placeholder="Juan"
-                                       class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500 dark:bg-gray-700 dark:text-white">
+                                       :class="hasError('first_name') ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 dark:border-gray-600 focus:ring-emerald-500 focus:border-emerald-500'"
+                                       class="w-full px-3 py-2 border rounded-md shadow-sm dark:bg-gray-700 dark:text-white">
+                                <p x-show="hasError('first_name')" x-text="formErrors.first_name" class="mt-1 text-xs text-red-600 dark:text-red-400"></p>
                             </div>
 
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Apellido *</label>
                                 <input x-model="form.last_name"
-                                       @input="form.last_name = form.last_name.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '')"
+                                       @input="form.last_name = form.last_name.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, ''); clearError('last_name')"
                                        type="text" required placeholder="Pérez"
-                                       class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500 dark:bg-gray-700 dark:text-white">
+                                       :class="hasError('last_name') ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 dark:border-gray-600 focus:ring-emerald-500 focus:border-emerald-500'"
+                                       class="w-full px-3 py-2 border rounded-md shadow-sm dark:bg-gray-700 dark:text-white">
+                                <p x-show="hasError('last_name')" x-text="formErrors.last_name" class="mt-1 text-xs text-red-600 dark:text-red-400"></p>
                             </div>
 
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">DNI *</label>
                                 <input x-model="form.dni"
-                                       @input="form.dni = form.dni.replace(/[^0-9.]/g, '')"
+                                       @input="form.dni = form.dni.replace(/[^0-9.]/g, ''); clearError('dni')"
                                        type="text" required placeholder="12.345.678"
-                                       class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500 dark:bg-gray-700 dark:text-white">
+                                       :class="hasError('dni') ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 dark:border-gray-600 focus:ring-emerald-500 focus:border-emerald-500'"
+                                       class="w-full px-3 py-2 border rounded-md shadow-sm dark:bg-gray-700 dark:text-white">
+                                <p x-show="hasError('dni')" x-text="formErrors.dni" class="mt-1 text-xs text-red-600 dark:text-red-400"></p>
                             </div>
 
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Matrícula</label>
                                 <input x-model="form.license_number"
+                                       @input="clearError('license_number')"
                                        type="text" placeholder="MP 12345"
-                                       class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500 dark:bg-gray-700 dark:text-white">
+                                       :class="hasError('license_number') ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 dark:border-gray-600 focus:ring-emerald-500 focus:border-emerald-500'"
+                                       class="w-full px-3 py-2 border rounded-md shadow-sm dark:bg-gray-700 dark:text-white">
+                                <p x-show="hasError('license_number')" x-text="formErrors.license_number" class="mt-1 text-xs text-red-600 dark:text-red-400"></p>
                             </div>
                         </div>
                     </div>
@@ -88,13 +97,19 @@
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email</label>
                                 <input x-model="form.email" type="email" placeholder="juan.perez@ejemplo.com"
-                                       class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500 dark:bg-gray-700 dark:text-white">
+                                       @input="clearError('email')"
+                                       :class="hasError('email') ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 dark:border-gray-600 focus:ring-emerald-500 focus:border-emerald-500'"
+                                       class="w-full px-3 py-2 border rounded-md shadow-sm dark:bg-gray-700 dark:text-white">
+                                <p x-show="hasError('email')" x-text="formErrors.email" class="mt-1 text-xs text-red-600 dark:text-red-400"></p>
                             </div>
 
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Teléfono</label>
                                 <input x-model="form.phone" type="tel" placeholder="+54 11 1234-5678"
-                                       class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500 dark:bg-gray-700 dark:text-white">
+                                       @input="clearError('phone')"
+                                       :class="hasError('phone') ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 dark:border-gray-600 focus:ring-emerald-500 focus:border-emerald-500'"
+                                       class="w-full px-3 py-2 border rounded-md shadow-sm dark:bg-gray-700 dark:text-white">
+                                <p x-show="hasError('phone')" x-text="formErrors.phone" class="mt-1 text-xs text-red-600 dark:text-red-400"></p>
                             </div>
 
                             <div>
@@ -115,7 +130,9 @@
                                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Especialidad *</label>
                                 <div class="flex gap-2">
                                     <select x-model="form.specialty_id" required
-                                            class="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500 dark:bg-gray-700 dark:text-white">
+                                            @change="clearError('specialty_id')"
+                                            :class="hasError('specialty_id') ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 dark:border-gray-600 focus:ring-emerald-500 focus:border-emerald-500'"
+                                            class="flex-1 px-3 py-2 border rounded-md shadow-sm dark:bg-gray-700 dark:text-white">
                                         <option value="">Seleccionar...</option>
                                         <template x-for="specialty in specialties" :key="specialty.id">
                                             <option :value="specialty.id" x-text="specialty.name"></option>
@@ -129,13 +146,17 @@
                                         </svg>
                                     </button>
                                 </div>
+                                <p x-show="hasError('specialty_id')" x-text="formErrors.specialty_id" class="mt-1 text-xs text-red-600 dark:text-red-400"></p>
                             </div>
 
                             <!-- Comisión (ocupa 3 columnas) -->
                             <div class="md:col-span-3">
                                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Comisión (%) *</label>
                                 <input x-model="form.commission_percentage" type="number" min="0" max="100" step="0.01" required placeholder="50.00"
-                                       class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500 dark:bg-gray-700 dark:text-white">
+                                       @input="clearError('commission_percentage')"
+                                       :class="hasError('commission_percentage') ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 dark:border-gray-600 focus:ring-emerald-500 focus:border-emerald-500'"
+                                       class="w-full px-3 py-2 border rounded-md shadow-sm dark:bg-gray-700 dark:text-white">
+                                <p x-show="hasError('commission_percentage')" x-text="formErrors.commission_percentage" class="mt-1 text-xs text-red-600 dark:text-red-400"></p>
                             </div>
 
                             <!-- Estado (ocupa 3 columnas) -->

@@ -275,14 +275,14 @@ function expenseForm() {
             if (file) {
                 // Validar tamaño (2MB max)
                 if (file.size > 2 * 1024 * 1024) {
-                    alert('El archivo es muy grande. Máximo 2MB permitido.');
+                    window.showToast('El archivo es muy grande. Máximo 2MB permitido.', 'warning');
                     return;
                 }
                 
                 // Validar tipo
                 const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'];
                 if (!allowedTypes.includes(file.type)) {
-                    alert('Tipo de archivo no válido. Solo JPG, PNG y PDF.');
+                    window.showToast('Tipo de archivo no válido. Solo JPG, PNG y PDF.', 'warning');
                     return;
                 }
                 
@@ -371,10 +371,10 @@ function expenseForm() {
                 if (response.ok && result.success) {
                     window.location.href = '/cash/daily';
                 } else {
-                    alert(result.message || 'Error al registrar el gasto');
+                    window.showToast(result.message || 'Error al registrar el gasto', 'error');
                 }
             } catch (error) {
-                alert('Error al registrar el gasto');
+                window.showToast('Error al registrar el gasto', 'error');
             } finally {
                 this.loading = false;
             }

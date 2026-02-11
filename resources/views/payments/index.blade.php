@@ -204,7 +204,61 @@
                 Todos los Ingresos
             </h3>
             
-            <div class="rounded-md border border-gray-200 dark:border-gray-600 overflow-hidden">
+            <!-- Mobile Cards -->
+            <div class="md:hidden space-y-3">
+                @forelse($payments as $payment)
+                    @php
+                        $methodLabels = ['cash' => 'Efectivo', 'transfer' => 'Transferencia', 'debit_card' => 'Débito', 'credit_card' => 'Crédito', 'card' => 'Tarjeta'];
+                        $displayDate = $payment->entry_type === 'payment' ? $payment->payment_date : $payment->created_at;
+                    @endphp
+                    <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 shadow-sm">
+                        <div class="flex items-center justify-between mb-2">
+                            <div>
+                                @if($payment->entry_type === 'payment' && $payment->patient)
+                                    <span class="font-semibold text-sm text-gray-900 dark:text-white">{{ $payment->patient->full_name }}</span>
+                                @elseif($payment->entry_type === 'income' && $payment->reference_type === 'App\\Models\\Professional' && $payment->reference)
+                                    <span class="font-semibold text-sm text-gray-900 dark:text-white">Dr. {{ $payment->reference->full_name }}</span>
+                                @else
+                                    <span class="font-semibold text-sm text-gray-500 dark:text-gray-400">Ingreso Manual</span>
+                                @endif
+                            </div>
+                            <span class="text-sm font-semibold {{ $payment->payment_type === 'refund' ? 'text-red-600' : 'text-green-600 dark:text-green-400' }}">
+                                {{ $payment->payment_type === 'refund' ? '-' : '' }}${{ number_format($payment->amount, 2) }}
+                            </span>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2 text-xs text-gray-600 dark:text-gray-400">
+                            <div><span class="font-medium">Recibo:</span> <span class="font-mono">{{ $payment->receipt_number }}</span></div>
+                            <div><span class="font-medium">Fecha:</span> {{ $displayDate->format('d/m/Y H:i') }}</div>
+                            @if($payment->entry_type === 'payment')
+                                <div><span class="font-medium">Método:</span> {{ $methodLabels[$payment->payment_method] ?? $payment->payment_method }}</div>
+                            @endif
+                        </div>
+                        <div class="flex justify-end gap-2 mt-3 pt-3 border-t border-gray-100 dark:border-gray-700">
+                            @if($payment->entry_type === 'payment')
+                                <a href="{{ route('payments.show', $payment) }}" class="p-2 text-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg" title="Ver detalle">
+                                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    </svg>
+                                </a>
+                            @else
+                                <a href="{{ route('cash.income-receipt', $payment->id) }}?print=1" target="_blank" class="p-2 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg" title="Imprimir Recibo">
+                                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M6.72 13.829c-.24.03-.48.062-.72.096m.72-.096a42.415 42.415 0 0110.56 0m-10.56 0L6.34 18m10.94-4.171c.24.03.48.062.72.096m-.72-.096L17.66 18m0 0l.229 2.523a1.125 1.125 0 01-1.12 1.227H7.231c-.662 0-1.18-.568-1.12-1.227L6.34 18m11.318 0h1.091A2.25 2.25 0 0021 15.75V9.456c0-1.081-.768-2.015-1.837-2.175a48.055 48.055 0 00-1.913-.247M6.34 18H5.25A2.25 2.25 0 013 15.75V9.456c0-1.081.768-2.015 1.837-2.175a48.041 48.041 0 011.913-.247m10.5 0a48.536 48.536 0 00-10.5 0m10.5 0V3.375c0-.621-.504-1.125-1.125-1.125h-8.25c-.621 0-1.125.504-1.125 1.125v3.659M18 10.5h.008v.008H18V10.5zm-3 0h.008v.008H15V10.5z" />
+                                    </svg>
+                                </a>
+                            @endif
+                        </div>
+                    </div>
+                @empty
+                    <div class="text-center py-8">
+                        <p class="text-gray-600 dark:text-gray-400">No se encontraron pagos</p>
+                    </div>
+                @endforelse
+            </div>
+
+            <!-- Desktop Table -->
+            <div class="hidden md:block rounded-md border border-gray-200 dark:border-gray-600 overflow-hidden">
                 <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-600">
                         <thead class="bg-gray-50 dark:bg-gray-700">
@@ -460,14 +514,14 @@ async function annulPayment(paymentId, receiptNumber) {
         const result = await response.json();
 
         if (result.success) {
-            alert(`✓ Pago anulado exitosamente.\n\nRecibo de anulación: ${result.refund_receipt}\n\n${result.message}`);
+            window.showToast(`Pago anulado exitosamente. Recibo: ${result.refund_receipt}`, 'success');
             window.location.reload();
         } else {
-            alert(`✗ Error: ${result.message}`);
+            window.showToast(result.message || 'Error al anular el pago', 'error');
         }
     } catch (error) {
         console.error('Error:', error);
-        alert('✗ Error al procesar la anulación. Por favor, intente nuevamente.');
+        window.showToast('Error al procesar la anulación. Por favor, intente nuevamente.', 'error');
     }
 }
 </script>

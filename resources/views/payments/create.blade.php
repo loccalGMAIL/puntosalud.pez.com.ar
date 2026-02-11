@@ -323,7 +323,7 @@ function paymentForm() {
 
         async submitForm() {
             if (!this.selectedPatient) {
-                alert('Debe seleccionar un paciente');
+                window.showToast('Debe seleccionar un paciente', 'warning');
                 return;
             }
 
@@ -364,10 +364,10 @@ function paymentForm() {
                 if (response.ok && result.success) {
                     window.location.href = `/payments/${result.payment.id}`;
                 } else {
-                    alert(result.message || 'Error al registrar el pago');
+                    window.showToast(result.message || 'Error al registrar el pago', 'error');
                 }
             } catch (error) {
-                alert('Error al registrar el pago');
+                window.showToast('Error al registrar el pago', 'error');
             } finally {
                 this.loading = false;
             }

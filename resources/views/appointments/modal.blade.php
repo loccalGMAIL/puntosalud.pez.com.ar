@@ -42,7 +42,9 @@
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Profesional *</label>
                 <select id="professional-select"
                         x-model="form.professional_id"
-                        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500 dark:bg-gray-700 dark:text-white"
+                        @change="clearError('professional_id')"
+                        :class="hasError('professional_id') ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 dark:border-gray-600 focus:ring-emerald-500 focus:border-emerald-500'"
+                        class="w-full px-3 py-2 border rounded-md shadow-sm dark:bg-gray-700 dark:text-white"
                         required>
                     <option value="">Seleccionar profesional...</option>
                     <template x-for="professional in professionals" :key="professional.id">
@@ -51,6 +53,7 @@
                                 x-text="'Dr. ' + professional.first_name + ' ' + professional.last_name + ' - ' + professional.specialty.name"></option>
                     </template>
                 </select>
+                <p x-show="hasError('professional_id')" x-text="formErrors.professional_id" class="mt-1 text-xs text-red-600 dark:text-red-400"></p>
             </div>
 
             <!-- Paciente -->
@@ -59,7 +62,9 @@
                 <div class="flex gap-2">
                     <select id="patient-select"
                             x-model="form.patient_id"
-                            class="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500 dark:bg-gray-700 dark:text-white"
+                            @change="clearError('patient_id')"
+                            :class="hasError('patient_id') ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 dark:border-gray-600 focus:ring-emerald-500 focus:border-emerald-500'"
+                            class="flex-1 px-3 py-2 border rounded-md shadow-sm dark:bg-gray-700 dark:text-white"
                             required>
                         <option value="">Seleccionar paciente...</option>
                         <template x-for="patient in patients" :key="patient.id">
@@ -79,18 +84,21 @@
                         </svg>
                     </button>
                 </div>
+                <p x-show="hasError('patient_id')" x-text="formErrors.patient_id" class="mt-1 text-xs text-red-600 dark:text-red-400"></p>
             </div>
 
             <!-- Fecha y Duración -->
             <div class="grid grid-cols-2 gap-4">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Fecha *</label>
-                    <input x-model="form.appointment_date" 
-                           type="date" 
+                    <input x-model="form.appointment_date"
+                           type="date"
                            :min="new Date().toISOString().split('T')[0]"
-                           @change="validateDateTime()"
-                           class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500 dark:bg-gray-700 dark:text-white"
+                           @change="validateDateTime(); clearError('appointment_date')"
+                           :class="hasError('appointment_date') ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 dark:border-gray-600 focus:ring-emerald-500 focus:border-emerald-500'"
+                           class="w-full px-3 py-2 border rounded-md shadow-sm dark:bg-gray-700 dark:text-white"
                            required>
+                    <p x-show="hasError('appointment_date')" x-text="formErrors.appointment_date" class="mt-1 text-xs text-red-600 dark:text-red-400"></p>
                 </div>
 
                 <div>
@@ -121,8 +129,9 @@
                            min="08:00"
                            max="21:00"
                            step="900"
-                           @change="validateDateTime()"
-                           class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500 dark:bg-gray-700 dark:text-white"
+                           @change="validateDateTime(); clearError('appointment_time')"
+                           :class="hasError('appointment_time') ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 dark:border-gray-600 focus:ring-emerald-500 focus:border-emerald-500'"
+                           class="w-full px-3 py-2 border rounded-md shadow-sm dark:bg-gray-700 dark:text-white"
                            required>
                     <div x-show="pastTimeError" class="mt-1 text-sm text-red-600 dark:text-red-400" x-text="pastTimeError"></div>
                 </div>
