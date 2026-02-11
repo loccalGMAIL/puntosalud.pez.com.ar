@@ -18,6 +18,11 @@
     <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
     <style>
         [x-cloak] { display: none !important; }
+        /* Estado inicial del sidebar antes de Alpine */
+        .sidebar-init { transform: translateX(-100%); width: 16rem; }
+        @media (min-width: 768px) { .sidebar-init { transform: translateX(0); } }
+        .content-init { margin-left: 0; }
+        @media (min-width: 768px) { .content-init { margin-left: 16rem; } }
     </style>
     @stack('styles')
 </head>
@@ -140,17 +145,15 @@
              x-transition:leave-start="opacity-100"
              x-transition:leave-end="opacity-0"
              @click="collapsed = true"
-             class="fixed inset-0 z-40 bg-black/50 lg:hidden">
+             class="fixed inset-0 z-40 bg-black/50">
         </div>
 
         <!-- Sidebar -->
-        <div :class="{
-            'translate-x-0': !collapsed,
-            '-translate-x-full': collapsed && isMobile,
-            'w-64': !collapsed,
-            'w-16': collapsed && !isMobile
+        <div :style="{
+            transform: (collapsed && isMobile) ? 'translateX(-100%)' : 'translateX(0)',
+            width: collapsed && !isMobile ? '4rem' : '16rem'
         }"
-        class="fixed left-0 top-0 z-50 h-full bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 flex flex-col w-64 max-md:-translate-x-full">
+        class="sidebar-init fixed left-0 top-0 z-50 h-full bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 flex flex-col transition-all duration-300 ease-in-out">
             
             <!-- Header -->
             <div class="flex items-center p-4 border-b border-gray-200 dark:border-gray-700">
@@ -159,8 +162,16 @@
                         @include('layouts.app-logo')
                     </a>
                     
+                    <!-- Cerrar sidebar en móvil -->
+                    <button @click="collapsed = true"
+                            class="ml-auto p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 md:hidden">
+                        <svg class="w-5 h-5 text-gray-500 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                    <!-- Colapsar sidebar en desktop -->
                     <button @click="toggle()"
-                            class="ml-auto p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 hidden lg:flex">
+                            class="ml-auto p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 hidden md:flex">
                         <svg :class="{ 'rotate-180': collapsed }"
                              class="w-4 h-4"
                              fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
@@ -184,13 +195,10 @@
         </div>
 
         <!-- Main content wrapper -->
-        <div :class="{
-            'lg:ml-64': !collapsed,
-            'lg:ml-16': collapsed
-        }"
-        class="min-h-screen bg-gray-50 dark:bg-gray-900 lg:ml-64">
+        <div :style="{ marginLeft: isMobile ? '0' : (collapsed ? '4rem' : '16rem') }"
+        class="content-init min-h-screen bg-gray-50 dark:bg-gray-900 transition-[margin] duration-300 ease-in-out">
             <!-- Mobile header -->
-            <div class="lg:hidden flex items-center justify-between p-4 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
+            <div class="md:hidden flex items-center justify-between p-4 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
                 <button @click="collapsed = false" 
                         class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800">
                     <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
@@ -209,6 +217,9 @@
 
     <!-- Modal del Sistema -->
     <x-system-modal />
+
+    <!-- Toast Notifications -->
+    <x-toast-notifications />
 
     @stack('scripts')
 </body>

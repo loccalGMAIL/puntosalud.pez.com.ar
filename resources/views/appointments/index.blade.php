@@ -218,7 +218,72 @@
                 Agenda de Turnos
             </h3>
             
-            <div class="overflow-x-auto">
+            <!-- Mobile Cards -->
+            <div class="md:hidden space-y-3">
+                <div x-show="filteredAppointments.length === 0" class="text-center py-8">
+                    <p class="text-gray-600 dark:text-gray-400">No se encontraron turnos</p>
+                </div>
+                <template x-for="appointment in filteredAppointments" :key="'mobile-'+appointment.id">
+                    <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 shadow-sm"
+                         :class="appointment.is_between_turn ? 'border-l-4 border-l-orange-500' : (appointment.duration === 0 ? 'border-l-4 border-l-red-500' : '')">
+                        <div class="flex items-center justify-between mb-2">
+                            <div>
+                                <span class="font-semibold text-sm text-gray-900 dark:text-white" x-text="appointment.patient.last_name + ', ' + appointment.patient.first_name"></span>
+                                <span class="text-xs text-gray-500 dark:text-gray-400 ml-1" x-text="'#' + appointment.id"></span>
+                            </div>
+                            <span :class="getStatusClass(appointment.status)"
+                                  class="text-xs font-medium rounded-full px-2 py-0.5"
+                                  x-text="getStatusText(appointment.status)"></span>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2 text-xs text-gray-600 dark:text-gray-400">
+                            <div><span class="font-medium">Fecha:</span> <span x-text="formatDate(appointment.appointment_date)"></span></div>
+                            <div><span class="font-medium">Hora:</span> <span x-text="formatTime(appointment.appointment_date)"></span></div>
+                            <div><span class="font-medium">Prof:</span> <span x-text="'Dr. ' + appointment.professional.last_name"></span></div>
+                            <div>
+                                <span x-show="appointment.final_amount || appointment.estimated_amount" class="font-medium text-gray-900 dark:text-white"
+                                      x-text="'$' + parseFloat(appointment.final_amount || appointment.estimated_amount || 0).toLocaleString('es-AR', {minimumFractionDigits: 2})"></span>
+                                <span x-show="!appointment.final_amount && !appointment.estimated_amount">-</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between mt-3 pt-3 border-t border-gray-100 dark:border-gray-700">
+                            <div class="flex items-center gap-1">
+                                <template x-if="appointment.duration === 0">
+                                    <span class="text-xs font-bold text-red-600">URGENCIA</span>
+                                </template>
+                                <template x-if="appointment.is_between_turn && appointment.duration > 0">
+                                    <span class="text-xs font-bold text-orange-600">ENTRETURNO</span>
+                                </template>
+                                <template x-if="!appointment.is_between_turn && appointment.duration > 0">
+                                    <span class="text-xs text-gray-500" x-text="appointment.duration + ' min'"></span>
+                                </template>
+                            </div>
+                            <div class="flex gap-2">
+                                <button @click="openEditModal(appointment)" class="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg" title="Editar">
+                                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
+                                    </svg>
+                                </button>
+                                <div class="relative" x-data="{ open: false }" @click.away="open = false">
+                                    <button @click="open = !open" class="p-2 text-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg" title="Cambiar estado">
+                                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+                                        </svg>
+                                    </button>
+                                    <div x-show="open" x-transition class="absolute right-0 z-50 mt-1 w-40 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg" style="display:none">
+                                        <button @click="changeStatus(appointment, 'scheduled'); open = false" class="block w-full text-left px-3 py-2 text-xs text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30">Programado</button>
+                                        <button @click="changeStatus(appointment, 'attended'); open = false" class="block w-full text-left px-3 py-2 text-xs text-green-600 hover:bg-green-50 dark:hover:bg-green-900/30">Atendido</button>
+                                        <button @click="changeStatus(appointment, 'absent'); open = false" class="block w-full text-left px-3 py-2 text-xs text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/30">Ausente</button>
+                                        <button @click="changeStatus(appointment, 'cancelled'); open = false" class="block w-full text-left px-3 py-2 text-xs text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-b-lg">Cancelado</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+            </div>
+
+            <!-- Desktop Table -->
+            <div class="hidden md:block overflow-x-auto">
                 <table class="min-w-full divide-y divide-emerald-200/50 dark:divide-emerald-800/30">
                     <thead class="bg-emerald-50/50 dark:bg-emerald-950/20">
                         <tr>
@@ -454,6 +519,7 @@ function appointmentsPage() {
         editingAppointment: null,
         loading: false,
         pastTimeError: '',
+        formErrors: {},
         
         init() {
             console.log('AppointmentsPage initialized');
@@ -529,12 +595,14 @@ function appointmentsPage() {
             console.log('Opening create modal');
             this.editingAppointment = null;
             this.resetForm();
+            this.clearAllErrors();
             this.modalOpen = true;
             console.log('Modal state:', this.modalOpen);
         },
-        
+
         openEditModal(appointment) {
             this.editingAppointment = appointment;
+            this.clearAllErrors();
             const appointmentDate = new Date(appointment.appointment_date);
 
             this.form = {
@@ -579,11 +647,11 @@ function appointmentsPage() {
             // Validar pago si está activado
             if (this.form.pay_now) {
                 if (this.form.payment_type === 'single' && (!this.form.payment_amount || !this.form.payment_method)) {
-                    alert('Por favor complete el monto y método de pago.');
+                    window.showToast('Por favor complete el monto y método de pago.', 'warning');
                     return;
                 }
                 if (this.form.payment_type === 'package' && (!this.form.package_sessions || !this.form.session_price || !this.form.payment_method)) {
-                    alert('Por favor complete las sesiones, precio por sesión y método de pago.');
+                    window.showToast('Por favor complete las sesiones, precio por sesión y método de pago.', 'warning');
                     return;
                 }
             }
@@ -637,8 +705,8 @@ function appointmentsPage() {
                     this.showNotification(result.message, 'success');
                 } else {
                     if (response.status === 422 && result.errors) {
-                        const errorMessages = Object.values(result.errors).flat().join('\n');
-                        this.showNotification('Errores de validación:\n' + errorMessages, 'error');
+                        this.setErrors(result.errors);
+                        this.showNotification('Por favor corregí los errores en el formulario', 'error');
                     } else {
                         this.showNotification(result.message || 'Error al guardar el turno', 'error');
                     }
@@ -814,8 +882,18 @@ function appointmentsPage() {
             return texts[status] || status;
         },
         
+        clearError(field) { delete this.formErrors[field]; },
+        clearAllErrors() { this.formErrors = {}; },
+        setErrors(errors) {
+            this.formErrors = {};
+            Object.keys(errors).forEach(key => {
+                this.formErrors[key] = errors[key][0];
+            });
+        },
+        hasError(field) { return !!this.formErrors[field]; },
+
         showNotification(message, type = 'info') {
-            alert(message);
+            window.showToast(message, type);
         }
     }
 }

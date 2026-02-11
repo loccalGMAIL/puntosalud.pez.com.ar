@@ -359,10 +359,10 @@ function paymentDetail() {
         
         async useSession() {
             if (!this.selectedAppointmentId) {
-                alert('Debe seleccionar un turno');
+                window.showToast('Debe seleccionar un turno', 'warning');
                 return;
             }
-            
+
             try {
                 const response = await fetch(`/payments/{{ $payment->id }}/use-session`, {
                     method: 'POST',
@@ -374,17 +374,17 @@ function paymentDetail() {
                         appointment_id: this.selectedAppointmentId
                     })
                 });
-                
+
                 const result = await response.json();
-                
+
                 if (result.success) {
-                    alert(result.message);
+                    window.showToast(result.message, 'success');
                     location.reload();
                 } else {
-                    alert(result.message);
+                    window.showToast(result.message, 'error');
                 }
             } catch (error) {
-                alert('Error al usar la sesión');
+                window.showToast('Error al usar la sesión', 'error');
             }
         }
     }

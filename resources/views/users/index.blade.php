@@ -282,11 +282,11 @@ async function toggleUserStatus(userId) {
         if (data.success) {
             location.reload();
         } else {
-            alert(data.error || 'Error al cambiar el estado del usuario');
+            window.showToast(data.error || 'Error al cambiar el estado del usuario', 'error');
         }
     } catch (error) {
         console.error('Error:', error);
-        alert('Error al cambiar el estado del usuario');
+        window.showToast('Error al cambiar el estado del usuario', 'error');
     }
 }
 
@@ -309,11 +309,11 @@ async function deleteUser(userId) {
         if (data.success) {
             location.reload();
         } else {
-            alert(data.error || 'Error al eliminar el usuario');
+            window.showToast(data.error || 'Error al eliminar el usuario', 'error');
         }
     } catch (error) {
         console.error('Error:', error);
-        alert('Error al eliminar el usuario');
+        window.showToast('Error al eliminar el usuario', 'error');
     }
 }
 
@@ -344,11 +344,11 @@ document.getElementById('userForm').addEventListener('submit', async function(e)
             Object.keys(data.errors).forEach(field => {
                 console.error(`${field}: ${data.errors[field].join(', ')}`);
             });
-            alert('Por favor, corrija los errores en el formulario');
+            window.showToast('Por favor, corrija los errores en el formulario', 'error');
         }
     } catch (error) {
         console.error('Error:', error);
-        alert('Error al procesar la solicitud');
+        window.showToast('Error al procesar la solicitud', 'error');
     }
 });
 </script>

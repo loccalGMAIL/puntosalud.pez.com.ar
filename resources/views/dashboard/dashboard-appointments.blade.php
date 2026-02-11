@@ -195,10 +195,8 @@ const DashboardAPI = {
         return result;
     },
 
-    async showNotification(message, type = 'info') {
-        const modalType = type === 'error' ? 'error' : type === 'success' ? 'success' : 'confirm';
-        const title = type === 'error' ? 'Error' : type === 'success' ? 'Éxito' : 'Información';
-        await SystemModal.show(modalType, title, message, 'Aceptar', false);
+    showNotification(message, type = 'info') {
+        window.showToast(message, type);
     },
 
     reloadPage(delay = 500) {

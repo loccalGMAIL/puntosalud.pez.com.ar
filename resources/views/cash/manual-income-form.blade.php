@@ -290,7 +290,7 @@ function incomeForm() {
                     if (typeof SystemModal !== 'undefined') {
                         SystemModal.show('info', 'Registrar Ingreso', message, 'Entendido');
                     } else {
-                        alert(message);
+                        window.showToast(message, 'info');
                     }
                 }, 500);
             }
@@ -308,14 +308,14 @@ function incomeForm() {
             if (file) {
                 // Validar tamaño (2MB max)
                 if (file.size > 2 * 1024 * 1024) {
-                    alert('El archivo es muy grande. Máximo 2MB permitido.');
+                    window.showToast('El archivo es muy grande. Máximo 2MB permitido.', 'warning');
                     return;
                 }
 
                 // Validar tipo
                 const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'];
                 if (!allowedTypes.includes(file.type)) {
-                    alert('Tipo de archivo no válido. Solo JPG, PNG y PDF.');
+                    window.showToast('Tipo de archivo no válido. Solo JPG, PNG y PDF.', 'warning');
                     return;
                 }
 
@@ -412,10 +412,10 @@ function incomeForm() {
                         window.location.href = '/cash/daily';
                     }, 500);
                 } else {
-                    alert(result.message || 'Error al registrar el ingreso');
+                    window.showToast(result.message || 'Error al registrar el ingreso', 'error');
                 }
             } catch (error) {
-                alert('Error al registrar el ingreso');
+                window.showToast('Error al registrar el ingreso', 'error');
             } finally {
                 this.loading = false;
             }

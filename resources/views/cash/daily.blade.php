@@ -193,7 +193,56 @@
             </h2>
             
             @if($movements->count() > 0)
-            <div class="overflow-x-auto">
+            <!-- Mobile Cards -->
+            <div class="md:hidden space-y-3">
+                @foreach($movements as $movement)
+                    @php
+                        $typeColor = match($movement->movementType?->color) {
+                            'green' => 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
+                            'red' => 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
+                            'blue' => 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
+                            'yellow' => 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
+                            'orange' => 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200',
+                            default => 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200',
+                        };
+                    @endphp
+                    <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 shadow-sm">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {{ $typeColor }}">
+                                {{ $movement->movementType?->icon }} {{ $movement->movementType?->name ?? 'Desconocido' }}
+                            </span>
+                            <span class="text-sm font-medium {{ $movement->amount > 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">
+                                {{ $movement->amount > 0 ? '+' : '' }}${{ number_format($movement->amount, 2) }}
+                            </span>
+                        </div>
+                        <div class="text-xs text-gray-600 dark:text-gray-400 space-y-1">
+                            <div class="text-gray-900 dark:text-white text-sm">{{ Str::limit($movement->description, 60) }}</div>
+                            <div class="flex justify-between">
+                                <span><span class="font-medium">Hora:</span> {{ $movement->created_at->format('H:i') }}</span>
+                                <span><span class="font-medium">Saldo:</span> <span class="font-mono">${{ number_format($movement->balance_after, 2) }}</span></span>
+                            </div>
+                        </div>
+                        <div class="flex justify-end gap-2 mt-3 pt-3 border-t border-gray-100 dark:border-gray-700">
+                            <button @click="viewMovementDetails({{ $movement->id }})" class="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg" title="Ver detalles">
+                                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                </svg>
+                            </button>
+                            @if($movement->movementType?->code === 'patient_payment' && $movement->reference_id)
+                                <a href="{{ route('payments.print-receipt', $movement->reference_id) }}?print=1" target="_blank" class="p-2 text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-lg" title="Imprimir recibo">
+                                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M6.72 13.829c-.24.03-.48.062-.72.096m.72-.096a42.415 42.415 0 0110.56 0m-10.56 0L6.34 18m10.94-4.171c.24.03.48.062.72.096m-.72-.096L17.66 18m0 0l.229 2.523a1.125 1.125 0 01-1.12 1.227H7.231c-.662 0-1.18-.568-1.12-1.227L6.34 18m11.318 0h1.091A2.25 2.25 0 0021 15.75V9.456c0-1.081-.768-2.015-1.837-2.175a48.055 48.055 0 00-1.913-.247M6.34 18H5.25A2.25 2.25 0 013 15.75V9.456c0-1.081.768-2.015 1.837-2.175a48.041 48.041 0 011.913-.247m10.5 0a48.536 48.536 0 00-10.5 0m10.5 0V3.375c0-.621-.504-1.125-1.125-1.125h-8.25c-.621 0-1.125.504-1.125 1.125v3.659M18 10.5h.008v.008H18V10.5zm-3 0h.008v.008H15V10.5z" />
+                                    </svg>
+                                </a>
+                            @endif
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+
+            <!-- Desktop Table -->
+            <div class="hidden md:block overflow-x-auto">
                 <table class="w-full">
                     <thead>
                         <tr class="border-b border-gray-200 dark:border-gray-600">
@@ -532,11 +581,11 @@ function dailyCashForm() {
                         this.refundProfessionalDetails = data.additional_data.refund_professional || null;
                     }
                 } else {
-                    alert('Error al cargar los detalles del movimiento');
+                    window.showToast('Error al cargar los detalles del movimiento', 'error');
                 }
             } catch (error) {
                 console.error('Error:', error);
-                alert('Error al cargar los detalles del movimiento');
+                window.showToast('Error al cargar los detalles del movimiento', 'error');
             } finally {
                 this.movementDetailsLoading = false;
             }

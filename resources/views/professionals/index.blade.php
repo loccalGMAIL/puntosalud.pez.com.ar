@@ -182,7 +182,55 @@
                 Lista de Profesionales
             </h3>
             
-            <div class="rounded-md border border-emerald-200/50 dark:border-emerald-800/30 overflow-hidden">
+            <!-- Mobile Cards -->
+            <div class="md:hidden space-y-3">
+                <div x-show="filteredProfessionals.length === 0" class="text-center py-8">
+                    <p class="text-gray-600 dark:text-gray-400">No se encontraron profesionales</p>
+                </div>
+                <template x-for="professional in filteredProfessionals" :key="'mobile-'+professional.id">
+                    <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 shadow-sm">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="font-semibold text-sm text-gray-900 dark:text-white" x-text="professional.first_name + ' ' + professional.last_name"></span>
+                            <span :class="professional.is_active ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'"
+                                  class="text-xs font-medium rounded-full px-2 py-0.5"
+                                  x-text="professional.is_active ? 'Activo' : 'Inactivo'"></span>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2 text-xs text-gray-600 dark:text-gray-400">
+                            <div><span class="inline-flex px-1.5 py-0.5 bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 rounded text-xs" x-text="professional.specialty.name"></span></div>
+                            <div><span class="font-medium">Com:</span> <span class="font-semibold text-emerald-600 dark:text-emerald-400" x-text="professional.commission_percentage + '%'"></span></div>
+                            <div><span class="font-medium">Mat:</span> <span x-text="professional.license_number || '-'" class="font-mono"></span></div>
+                            <div><span class="font-medium">Tel:</span> <span x-text="professional.phone || '-'"></span></div>
+                        </div>
+                        <div class="flex justify-end gap-2 mt-3 pt-3 border-t border-gray-100 dark:border-gray-700">
+                            <a :href="`/professionals/${professional.id}/schedules`"
+                               class="p-2 text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-lg" title="Horarios">
+                                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            </a>
+                            <button @click="openEditModal(professional)" class="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg" title="Editar">
+                                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
+                                </svg>
+                            </button>
+                            <button @click="toggleStatus(professional)"
+                                    :class="professional.is_active ? 'text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20' : 'text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20'"
+                                    class="p-2 rounded-lg"
+                                    :title="professional.is_active ? 'Desactivar' : 'Activar'">
+                                <svg x-show="professional.is_active" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M22 10.5h-6m-2.25-4.125a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zM4 19.5a8.25 8.25 0 0116.5 0v.5H4v-.5z" />
+                                </svg>
+                                <svg x-show="!professional.is_active" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </template>
+            </div>
+
+            <!-- Desktop Table -->
+            <div class="hidden md:block rounded-md border border-emerald-200/50 dark:border-emerald-800/30 overflow-hidden">
                 <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-emerald-200/50 dark:divide-emerald-800/30">
                         <thead class="bg-emerald-50/50 dark:bg-emerald-950/20">
@@ -314,6 +362,7 @@ function professionalsPage() {
         modalOpen: false,
         editingProfessional: null,
         loading: false,
+        formErrors: {},
         
         // Estados del modal de especialidades
         specialtyModalOpen: false,
@@ -416,11 +465,13 @@ function professionalsPage() {
         openCreateModal() {
             this.editingProfessional = null;
             this.resetForm();
+            this.clearAllErrors();
             this.modalOpen = true;
         },
-        
+
         openEditModal(professional) {
             this.editingProfessional = professional;
+            this.clearAllErrors();
             this.form = {
                 first_name: professional.first_name,
                 last_name: professional.last_name,
@@ -499,10 +550,9 @@ function professionalsPage() {
                     this.refreshData();
                     this.showNotification(result.message, 'success');
                 } else {
-                    // Mostrar errores de validación específicos
                     if (response.status === 422 && result.errors) {
-                        const errorMessages = Object.values(result.errors).flat().join('\n');
-                        this.showNotification('Errores de validación:\n' + errorMessages, 'error');
+                        this.setErrors(result.errors);
+                        this.showNotification('Por favor corregí los errores en el formulario', 'error');
                     } else {
                         this.showNotification(result.message || 'Error al guardar el profesional', 'error');
                     }
@@ -559,9 +609,18 @@ function professionalsPage() {
             // Los watchers se encargarán de aplicar los filtros automáticamente
         },
         
+        clearError(field) { delete this.formErrors[field]; },
+        clearAllErrors() { this.formErrors = {}; },
+        setErrors(errors) {
+            this.formErrors = {};
+            Object.keys(errors).forEach(key => {
+                this.formErrors[key] = errors[key][0];
+            });
+        },
+        hasError(field) { return !!this.formErrors[field]; },
+
         showNotification(message, type = 'info') {
-            // Aquí podrías implementar un sistema de notificaciones
-            alert(message);
+            window.showToast(message, type);
         },
 
         calculateAge(birthDate) {

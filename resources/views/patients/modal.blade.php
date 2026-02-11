@@ -8,10 +8,10 @@
      x-transition:leave-start="opacity-100"
      x-transition:leave-end="opacity-0"
      class="fixed inset-0 z-50 overflow-y-auto">
-    
+
     <!-- Overlay -->
     <div class="fixed inset-0 bg-black bg-opacity-50" @click="modalOpen = false"></div>
-    
+
     <!-- Modal content -->
     <div class="flex items-center justify-center min-h-screen p-4">
         <div x-transition:enter="transition ease-out duration-300"
@@ -21,7 +21,7 @@
              x-transition:leave-start="opacity-100 scale-100"
              x-transition:leave-end="opacity-0 scale-95"
              class="relative bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-4xl w-full max-h-[85vh] overflow-y-auto">
-            
+
             <!-- Header -->
             <div class="px-6 py-3 border-b border-gray-200 dark:border-gray-700">
                 <div class="flex items-center gap-2">
@@ -43,7 +43,7 @@
             <!-- Body -->
             <form @submit.prevent="submitForm()">
                 <div class="px-6 py-3 space-y-3">
-                    
+
                     <!-- Información Personal -->
                     <div>
                         <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Información Personal</h3>
@@ -51,40 +51,49 @@
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nombre *</label>
                                 <input x-model="form.first_name"
-                                       @input="form.first_name = form.first_name.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '')"
+                                       @input="form.first_name = form.first_name.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, ''); clearError('first_name')"
                                        type="text" required placeholder="Juan"
-                                       class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500 dark:bg-gray-700 dark:text-white">
+                                       :class="hasError('first_name') ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 dark:border-gray-600 focus:ring-emerald-500 focus:border-emerald-500'"
+                                       class="w-full px-3 py-2 border rounded-md shadow-sm dark:bg-gray-700 dark:text-white">
+                                <p x-show="hasError('first_name')" x-text="formErrors.first_name" class="mt-1 text-xs text-red-600 dark:text-red-400"></p>
                             </div>
 
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Apellido *</label>
                                 <input x-model="form.last_name"
-                                       @input="form.last_name = form.last_name.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '')"
+                                       @input="form.last_name = form.last_name.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, ''); clearError('last_name')"
                                        type="text" required placeholder="Pérez"
-                                       class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500 dark:bg-gray-700 dark:text-white">
+                                       :class="hasError('last_name') ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 dark:border-gray-600 focus:ring-emerald-500 focus:border-emerald-500'"
+                                       class="w-full px-3 py-2 border rounded-md shadow-sm dark:bg-gray-700 dark:text-white">
+                                <p x-show="hasError('last_name')" x-text="formErrors.last_name" class="mt-1 text-xs text-red-600 dark:text-red-400"></p>
                             </div>
 
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">DNI *</label>
                                 <input x-model="form.dni"
-                                       @input="form.dni = form.dni.replace(/[^0-9.]/g, '')"
+                                       @input="form.dni = form.dni.replace(/[^0-9.]/g, ''); clearError('dni')"
                                        type="text" required placeholder="12.345.678"
-                                       class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500 dark:bg-gray-700 dark:text-white">
+                                       :class="hasError('dni') ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 dark:border-gray-600 focus:ring-emerald-500 focus:border-emerald-500'"
+                                       class="w-full px-3 py-2 border rounded-md shadow-sm dark:bg-gray-700 dark:text-white">
+                                <p x-show="hasError('dni')" x-text="formErrors.dni" class="mt-1 text-xs text-red-600 dark:text-red-400"></p>
                             </div>
-                            
+
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Fecha de Nacimiento *</label>
                                 <div class="relative">
                                     <input x-model="form.birth_date" type="date" required :max="getMaxDate()"
-                                           class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500 dark:bg-gray-700 dark:text-white">
+                                           @input="clearError('birth_date')"
+                                           :class="hasError('birth_date') ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 dark:border-gray-600 focus:ring-emerald-500 focus:border-emerald-500'"
+                                           class="w-full px-3 py-2 border rounded-md shadow-sm dark:bg-gray-700 dark:text-white">
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5a2.25 2.25 0 002.25-2.25m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5a2.25 2.25 0 012.25 2.25v7.5" />
                                     </svg>
                                 </div>
-                                <p x-show="form.birth_date" class="text-xs text-gray-500 dark:text-gray-400 mt-1" x-text="calculateAge(form.birth_date) + ' años'"></p>
+                                <p x-show="hasError('birth_date')" x-text="formErrors.birth_date" class="mt-1 text-xs text-red-600 dark:text-red-400"></p>
+                                <p x-show="form.birth_date && !hasError('birth_date')" class="text-xs text-gray-500 dark:text-gray-400 mt-1" x-text="calculateAge(form.birth_date) + ' años'"></p>
                             </div>
                         </div>
                     </div>
-                    
+
                     <!-- Información de Contacto -->
                     <div>
                         <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Información de Contacto</h3>
@@ -92,23 +101,32 @@
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Teléfono *</label>
                                 <input x-model="form.phone" type="tel" required placeholder="+54 11 1234-5678"
-                                       class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500 dark:bg-gray-700 dark:text-white">
+                                       @input="clearError('phone')"
+                                       :class="hasError('phone') ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 dark:border-gray-600 focus:ring-emerald-500 focus:border-emerald-500'"
+                                       class="w-full px-3 py-2 border rounded-md shadow-sm dark:bg-gray-700 dark:text-white">
+                                <p x-show="hasError('phone')" x-text="formErrors.phone" class="mt-1 text-xs text-red-600 dark:text-red-400"></p>
                             </div>
-                            
+
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email</label>
                                 <input x-model="form.email" type="email" placeholder="juan.perez@ejemplo.com"
-                                       class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500 dark:bg-gray-700 dark:text-white">
+                                       @input="clearError('email')"
+                                       :class="hasError('email') ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 dark:border-gray-600 focus:ring-emerald-500 focus:border-emerald-500'"
+                                       class="w-full px-3 py-2 border rounded-md shadow-sm dark:bg-gray-700 dark:text-white">
+                                <p x-show="hasError('email')" x-text="formErrors.email" class="mt-1 text-xs text-red-600 dark:text-red-400"></p>
                             </div>
-                            
+
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Dirección</label>
                                 <input x-model="form.address" type="text" placeholder="Av. Corrientes 1234"
-                                       class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500 dark:bg-gray-700 dark:text-white">
+                                       @input="clearError('address')"
+                                       :class="hasError('address') ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 dark:border-gray-600 focus:ring-emerald-500 focus:border-emerald-500'"
+                                       class="w-full px-3 py-2 border rounded-md shadow-sm dark:bg-gray-700 dark:text-white">
+                                <p x-show="hasError('address')" x-text="formErrors.address" class="mt-1 text-xs text-red-600 dark:text-red-400"></p>
                             </div>
                         </div>
                     </div>
-                    
+
                     <!-- Información de Obra Social -->
                     <div>
                         <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Información de Obra Social</h3>
@@ -116,31 +134,43 @@
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Obra Social</label>
                                 <input x-model="form.health_insurance" type="text" placeholder="Ej: OSDE, Swiss Medical, PAMI"
-                                       class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500 dark:bg-gray-700 dark:text-white">
+                                       @input="clearError('health_insurance')"
+                                       :class="hasError('health_insurance') ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 dark:border-gray-600 focus:ring-emerald-500 focus:border-emerald-500'"
+                                       class="w-full px-3 py-2 border rounded-md shadow-sm dark:bg-gray-700 dark:text-white">
+                                <p x-show="hasError('health_insurance')" x-text="formErrors.health_insurance" class="mt-1 text-xs text-red-600 dark:text-red-400"></p>
                             </div>
 
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Número de Afiliado</label>
                                 <input x-model="form.health_insurance_number" type="text" placeholder="123456789"
-                                       class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500 dark:bg-gray-700 dark:text-white">
+                                       @input="clearError('health_insurance_number')"
+                                       :class="hasError('health_insurance_number') ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 dark:border-gray-600 focus:ring-emerald-500 focus:border-emerald-500'"
+                                       class="w-full px-3 py-2 border rounded-md shadow-sm dark:bg-gray-700 dark:text-white">
+                                <p x-show="hasError('health_insurance_number')" x-text="formErrors.health_insurance_number" class="mt-1 text-xs text-red-600 dark:text-red-400"></p>
                             </div>
 
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Titular Obra Social</label>
                                 <input x-model="form.titular_obra_social" type="text" placeholder="Nombre del titular"
-                                       class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500 dark:bg-gray-700 dark:text-white">
+                                       @input="clearError('titular_obra_social')"
+                                       :class="hasError('titular_obra_social') ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 dark:border-gray-600 focus:ring-emerald-500 focus:border-emerald-500'"
+                                       class="w-full px-3 py-2 border rounded-md shadow-sm dark:bg-gray-700 dark:text-white">
+                                <p x-show="hasError('titular_obra_social')" x-text="formErrors.titular_obra_social" class="mt-1 text-xs text-red-600 dark:text-red-400"></p>
                             </div>
 
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Plan Obra Social</label>
                                 <input x-model="form.plan_obra_social" type="text" placeholder="Ej: Plan 210, PMO"
-                                       class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500 dark:bg-gray-700 dark:text-white">
+                                       @input="clearError('plan_obra_social')"
+                                       :class="hasError('plan_obra_social') ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 dark:border-gray-600 focus:ring-emerald-500 focus:border-emerald-500'"
+                                       class="w-full px-3 py-2 border rounded-md shadow-sm dark:bg-gray-700 dark:text-white">
+                                <p x-show="hasError('plan_obra_social')" x-text="formErrors.plan_obra_social" class="mt-1 text-xs text-red-600 dark:text-red-400"></p>
                             </div>
                         </div>
                     </div>
-                    
+
                 </div>
-                
+
                 <!-- Footer -->
                 <div class="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-3">
                     <button @click="modalOpen = false" type="button" class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-600">

@@ -270,7 +270,7 @@ function professionalSchedules() {
         },
 
         showNotification(message, type = 'info') {
-            alert(message);
+            window.showToast(message, type);
         }
     }
 }
