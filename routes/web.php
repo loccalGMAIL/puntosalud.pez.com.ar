@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ActivityLogController;
 use App\Http\Controllers\AgendaController;
 use App\Http\Controllers\AppointmentController;
 use App\Http\Controllers\AuthController;
@@ -117,6 +118,9 @@ Route::middleware(['auth'])->group(function () {
         // Movement Types management (Admin only)
         Route::resource('movement-types', MovementTypeController::class)->except(['show']);
         Route::patch('/movement-types/{movementType}/toggle-active', [MovementTypeController::class, 'toggleActive'])->name('movement-types.toggle-active');
+
+        // Activity Log (Admin only)
+        Route::get('/activity-log', [ActivityLogController::class, 'index'])->name('activity-log.index');
     });
 
     // User profile routes

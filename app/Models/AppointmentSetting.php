@@ -2,12 +2,18 @@
 
 namespace App\Models;
 
+use App\Traits\LogsActivity;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class AppointmentSetting extends Model
 {
-    use HasFactory;
+    use HasFactory, LogsActivity;
+
+    public function activityDescription(): string
+    {
+        return 'Config turno #' . $this->id;
+    }
 
     protected $fillable = [
         'professional_id',

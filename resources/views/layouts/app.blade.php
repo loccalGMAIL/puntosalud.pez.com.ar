@@ -117,6 +117,10 @@
                     [
                         'title' => 'Permisos',
                         'href' => '/settings/permissions/menu'
+                    ],
+                    [
+                        'title' => 'Actividad',
+                        'href' => '/activity-log'
                     ]
                 ]
             ];

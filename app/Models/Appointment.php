@@ -2,12 +2,18 @@
 
 namespace App\Models;
 
+use App\Traits\LogsActivity;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Appointment extends Model
 {
-    use HasFactory;
+    use HasFactory, LogsActivity;
+
+    public function activityDescription(): string
+    {
+        return 'Turno #' . $this->id . ' - ' . ($this->patient->full_name ?? 'Sin paciente');
+    }
 
     protected $fillable = [
         'professional_id',

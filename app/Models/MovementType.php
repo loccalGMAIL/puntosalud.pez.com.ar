@@ -2,12 +2,18 @@
 
 namespace App\Models;
 
+use App\Traits\LogsActivity;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class MovementType extends Model
 {
-    use HasFactory;
+    use HasFactory, LogsActivity;
+
+    public function activityDescription(): string
+    {
+        return $this->name;
+    }
 
     protected $fillable = [
         'code',
