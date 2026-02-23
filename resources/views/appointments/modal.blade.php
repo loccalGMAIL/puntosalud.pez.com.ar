@@ -1,11 +1,11 @@
 <!-- Modal de Turno -->
-<div x-show="modalOpen" 
+<div x-show="modalOpen"
      x-cloak
-     class="fixed inset-0 z-50 overflow-y-auto bg-black bg-opacity-50 flex items-center justify-center p-4">
-    
+     class="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center p-4">
+
     <!-- Modal Content -->
     <div @click.away="modalOpen = false"
-         class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+         class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] flex flex-col"
          :class="form.is_between_turn ? 'ring-4 ring-orange-400 dark:ring-orange-500' : ''">
 
         <!-- Header -->
@@ -36,7 +36,7 @@
         </div>
 
         <!-- Body -->
-        <form @submit.prevent="submitForm()" class="p-6 space-y-4">
+        <form @submit.prevent="submitForm()" class="p-6 space-y-4 overflow-y-auto flex-1">
             <!-- Profesional -->
             <div>
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Profesional *</label>
