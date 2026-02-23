@@ -123,6 +123,6 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
-    'version' => trim(file_get_contents(base_path('version'))),
+    'version' => trim(file_get_contents(base_path('VERSION'))),
 
 ];
