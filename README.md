@@ -2,7 +2,7 @@
 
 [![Laravel](https://img.shields.io/badge/Laravel-12.x-red?style=flat\&logo=laravel)](https://laravel.com)
 [![PHP](https://img.shields.io/badge/PHP-8.2-blue?style=flat\&logo=php)](https://php.net)
-[![Version](https://img.shields.io/badge/Version-2.7.0-green?style=flat)](#changelog)
+[![Version](https://img.shields.io/badge/Version-2.8.0-green?style=flat)](#changelog)
 [![License](https://img.shields.io/badge/License-MIT-yellow?style=flat)](#license)
 
 Sistema integral de gestión médica para clínicas y consultorios, desarrollado con Laravel 12 y tecnologías modernas.
@@ -24,7 +24,8 @@ Sistema integral de gestión médica para clínicas y consultorios, desarrollado
 * Sistema de entreturnos/urgencias con registro inmediato
 * Control de estados: programado → atendido → cobrado
 * Asignación automática de pagos a turnos
-* **Vista Agenda mejorada** con acceso rápido a profesionales favoritos
+* **Vista Agenda mejorada** con acceso rápido a profesionales favoritos y celdas clickeables para abrir el Day Modal
+* **Timeline de día preciso** con posicionamiento absoluto por tiempo, turnos pasados en solo lectura y prevención de solapamiento de turnos
 * **Gestión de feriados** integrada con bloqueo automático de turnos
 * **Creación rápida de pacientes** desde modal de turnos con botón "+"
 * **Búsqueda inteligente** de pacientes sin importar acentos (Jose encuentra José)
@@ -148,6 +149,7 @@ php artisan config:clear
 
 ### 🔄 Últimas versiones
 
+* **v2.8.0** (2026-02-23) – 🔍 Registro de Actividades: Auditoría completa CRUD, login/logout, historial filtrable para admins. 📅 Mejoras Agenda: timeline preciso con posicionamiento absoluto por tiempo, celdas clickeables, turnos pasados en solo lectura, prevención de solapamiento de duraciones.
 * **v2.7.0** (2026-02-09) – 📅 Sábados en Agenda y Horarios: Habilitación del día Sábado en la vista de Agenda (grid de 6 columnas), nuevo botón de acción rápida "Semana Completa" (Lun-Sáb) en configuración de horarios con Sábado 8:00-15:00.
 * **v2.6.3** (2026-01-30) – 🗂️ Reorganización Menú de Caja + 📊 Exportación Excel/PDF: Nueva estructura de menú (Caja del Día, Movimientos de Caja, Análisis de Caja), exportación de reportes a Excel y PDF, impresión de movimientos, y correcciones en reportes por rango.
 * **v2.6.2-hotfix-4** (2026-01-21) – 🖨️ Impresión Individual de Liquidaciones: Icono de impresora en cada liquidación parcial para imprimir por separado, vista de impresión adaptada con resumen específico, y corrección de totales en pagos múltiples (efectivo + digital).

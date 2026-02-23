@@ -2,12 +2,18 @@
 
 namespace App\Models;
 
+use App\Traits\LogsActivity;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class ScheduleException extends Model
 {
-    use HasFactory;
+    use HasFactory, LogsActivity;
+
+    public function activityDescription(): string
+    {
+        return 'Excepción ' . ($this->exception_date?->format('Y-m-d') ?? '#' . $this->id);
+    }
 
     protected $fillable = [
         'exception_date',

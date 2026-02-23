@@ -200,37 +200,28 @@
                     <div class="min-h-[120px] p-2 border-r border-b border-gray-200 dark:border-gray-600 last:border-r-0
                                 {{ !$isCurrentMonth ? 'bg-gray-50 dark:bg-gray-900' :
                                    ($isHoliday ? 'bg-red-50/70 dark:bg-red-900/20 border-2 border-red-200 dark:border-red-800' :
-                                   (!$hasSchedule ? 'bg-gray-300 dark:bg-gray-600' : 'bg-white dark:bg-gray-800')) }}">
+                                   (!$hasSchedule ? 'bg-gray-300 dark:bg-gray-600' : 'bg-white dark:bg-gray-800')) }}
+                                {{ ($hasSchedule && $isCurrentMonth && !$isHoliday) ? 'cursor-pointer hover:brightness-95' : '' }}"
+                         @if($hasSchedule && $isCurrentMonth && !$isHoliday)
+                             onclick="openDayModal('{{ $currentDay->format('Y-m-d') }}', {{ $selectedProfessional }})"
+                         @endif>
 
-                        <!-- Day Number and Add Button -->
-                        <div class="flex items-center justify-between mb-2">
-                            <div class="flex items-center gap-1">
-                                <span class="text-sm font-medium
-                                            {{ !$isCurrentMonth ? 'text-gray-400 dark:text-gray-600' :
-                                               ($isHoliday ? 'text-red-700 dark:text-red-400' :
-                                               (!$hasSchedule ? 'text-gray-500 dark:text-gray-400' : 'text-gray-900 dark:text-white')) }}
-                                            {{ $isToday ? 'bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs' : '' }}">
-                                    {{ $currentDay->day }}
-                                </span>
-                                @if($isHoliday)
-                                    <svg class="w-3.5 h-3.5 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" title="{{ $holidayData->reason }}">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-                                    </svg>
-                                @endif
-                                @if($hasBirthdays)
-                                    <span class="text-base cursor-help" title="🎉 Cumpleaños: {{ $birthdaysText }}" style="filter: drop-shadow(0 1px 2px rgba(0,0,0,0.2));">🎂</span>
-                                @endif
-                            </div>
-
-                            <!-- Add Button (only for enabled days and not past days and not holidays) -->
-                            @if($hasSchedule && $isCurrentMonth && !$isPast && !$isHoliday)
-                                <button onclick="openAppointmentModal('{{ $currentDay->format('Y-m-d') }}', {{ $selectedProfessional }})"
-                                        class="flex items-center justify-center w-5 h-5 text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors"
-                                        title="Agregar turno">
-                                    <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                                    </svg>
-                                </button>
+                        <!-- Day Number -->
+                        <div class="flex items-center gap-1 mb-2">
+                            <span class="text-sm font-medium
+                                        {{ !$isCurrentMonth ? 'text-gray-400 dark:text-gray-600' :
+                                           ($isHoliday ? 'text-red-700 dark:text-red-400' :
+                                           (!$hasSchedule ? 'text-gray-500 dark:text-gray-400' : 'text-gray-900 dark:text-white')) }}
+                                        {{ $isToday ? 'bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs' : '' }}">
+                                {{ $currentDay->day }}
+                            </span>
+                            @if($isHoliday)
+                                <svg class="w-3.5 h-3.5 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" title="{{ $holidayData->reason }}">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            @endif
+                            @if($hasBirthdays)
+                                <span class="text-base cursor-help" title="🎉 Cumpleaños: {{ $birthdaysText }}" style="filter: drop-shadow(0 1px 2px rgba(0,0,0,0.2));">🎂</span>
                             @endif
                         </div>
 
@@ -245,53 +236,30 @@
                         @if($hasSchedule && $dayAppointments->count() > 0)
                             <div class="space-y-1 overflow-hidden">
                                 @php
-                                    $maxVisible = 2; // Reducido para dejar espacio al botón
+                                    $maxVisible = 3;
                                     $visibleAppointments = $dayAppointments->take($maxVisible);
-                                    $remainingCount = $dayAppointments->count() - $maxVisible;
                                 @endphp
-                                
+
                                 @foreach($visibleAppointments as $appointment)
                                     @php
-                                        // Check if appointment is urgency (duration = 0)
                                         $isUrgency = $appointment->is_urgency;
-
                                         if ($isUrgency) {
-                                            $statusColor = 'bg-red-100 text-red-800 border-2 border-red-400 dark:bg-red-900/40 dark:text-red-300 dark:border-red-600 hover:bg-red-200 dark:hover:bg-red-900/60 font-bold';
+                                            $statusColor = 'bg-red-100 text-red-800 border-2 border-red-400 dark:bg-red-900/40 dark:text-red-300 dark:border-red-600 font-bold';
                                         } else {
                                             $statusColors = [
-                                                'scheduled' => 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 hover:bg-blue-200 dark:hover:bg-blue-900/50',
-                                                'attended' => 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/50',
-                                                'absent' => 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/50',
+                                                'scheduled' => 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
+                                                'attended' => 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
+                                                'absent' => 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
                                             ];
-                                            $statusColor = $statusColors[$appointment->status] ?? 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600';
+                                            $statusColor = $statusColors[$appointment->status] ?? 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
                                         }
-
                                         $appointmentIsPast = $appointment->appointment_date->isPast();
                                     @endphp
-                                    
-                                    @if($appointmentIsPast)
-                                        <div class="w-full text-left text-xs rounded px-2 py-1 {{ $statusColor }} truncate opacity-75"
-                                             title="Turno pasado - No editable">
-                                            <div class="font-medium">{{ $appointment->appointment_date->format('H:i') }}</div>
-                                            <div class="truncate">{{ $appointment->patient->full_name }}</div>
-                                        </div>
-                                    @else
-                                        <button onclick="openEditAppointmentModal({{ $appointment->id }})" 
-                                                class="w-full text-left text-xs rounded px-2 py-1 {{ $statusColor }} truncate cursor-pointer transition-colors"
-                                                title="Editar turno">
-                                            <div class="font-medium">{{ $appointment->appointment_date->format('H:i') }}</div>
-                                            <div class="truncate">{{ $appointment->patient->full_name }}</div>
-                                        </button>
-                                    @endif
+                                    <div class="w-full text-xs rounded px-2 py-1 {{ $statusColor }} truncate {{ $appointmentIsPast ? 'opacity-75' : '' }}">
+                                        <div class="font-medium">{{ $appointment->appointment_date->format('H:i') }}</div>
+                                        <div class="truncate">{{ $appointment->patient->full_name }}</div>
+                                    </div>
                                 @endforeach
-                                
-                                @if($remainingCount > 0)
-                                    <button onclick="openDayModal('{{ $currentDay->format('Y-m-d') }}', {{ $selectedProfessional }})"
-                                            class="w-full text-xs text-gray-500 dark:text-gray-400 text-center py-1 bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 rounded cursor-pointer transition-colors"
-                                            title="Ver todos los turnos del día">
-                                        +{{ $remainingCount }} más
-                                    </button>
-                                @endif
                             </div>
                         @endif
                     </div>
@@ -343,7 +311,7 @@
         
         <!-- Modal Content -->
         <div @click.away="dayModalOpen = false" 
-             class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+             class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
             
             <!-- Header -->
             <div class="bg-white dark:bg-gray-800 px-6 py-4 border-b border-gray-200 dark:border-gray-700">
@@ -365,99 +333,116 @@
 
             <!-- Body -->
             <div class="p-6">
-                <!-- Add New Appointment Button -->
-                <div class="mb-4" x-show="!isDayInPast()">
-                    <button @click="openCreateModal(selectedDayDate, selectedProfessionalId); dayModalOpen = false;"
-                            class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg shadow-sm transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
-                        <svg class="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                <!-- Barra superior: acción + info de horario -->
+                <div class="flex items-center justify-between mb-4 flex-wrap gap-3">
+                    <div class="flex items-center gap-3">
+                        <button x-show="!isDayInPast()"
+                                @click="openCreateModal(selectedDayDate, selectedProfessionalId); dayModalOpen = false;"
+                                class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg shadow-sm transition-colors">
+                            <svg class="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                            </svg>
+                            Nuevo Turno
+                        </button>
+                        <div x-show="isDayInPast()" class="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />
+                            </svg>
+                            Solo visualización
+                        </div>
+                    </div>
+                    <div x-show="daySchedule" class="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
+                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
-                        Nuevo Turno
-                    </button>
-                </div>
-
-                <!-- Past Day Notice -->
-                <div class="mb-4 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg p-3" x-show="isDayInPast()">
-                    <div class="flex items-center text-sm text-gray-600 dark:text-gray-400">
-                        <svg class="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />
-                        </svg>
-                        <span>Día pasado - Solo visualización. Los turnos atendidos no se pueden editar.</span>
+                        Jornada: <span class="font-medium" x-text="daySchedule ? daySchedule.startTime + ' – ' + daySchedule.endTime : ''"></span>
                     </div>
                 </div>
 
-                <!-- Appointments List -->
-                <div class="space-y-3" x-show="dayAppointments.length > 0">
-                    <template x-for="appointment in dayAppointments" :key="appointment.id">
-                        <div class="rounded-lg p-4 transition-colors"
-                             :class="appointment.duration === 0 ?
-                                'border-2 border-red-400 dark:border-red-600 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30' :
-                                appointment.is_between_turn ?
-                                'border-2 border-orange-400 dark:border-orange-600 bg-orange-50 dark:bg-orange-900/20 hover:bg-orange-100 dark:hover:bg-orange-900/30' :
-                                'border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700/50'">
-                            <div class="flex items-center justify-between">
-                                <div class="flex-1">
-                                    <div class="flex items-center gap-3 flex-wrap">
-                                        <span class="font-medium text-gray-900 dark:text-white" x-text="formatTime(appointment.appointment_date)"></span>
-                                        <template x-if="appointment.duration === 0">
-                                            <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-bold bg-red-100 text-red-800 border border-red-300 dark:bg-red-900/40 dark:text-red-300 dark:border-red-700">
-                                                🚨 URGENCIA
-                                            </span>
-                                        </template>
-                                        <template x-if="appointment.duration > 0 && appointment.is_between_turn">
-                                            <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-bold bg-orange-100 text-orange-800 border border-orange-300 dark:bg-orange-900/40 dark:text-orange-300 dark:border-orange-700">
-                                                ⏱️ ENTRETURNO
-                                            </span>
-                                        </template>
-                                        <span :class="getStatusBadgeClass(appointment.status)"
-                                              class="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full"
-                                              x-text="getStatusText(appointment.status)">
-                                        </span>
-                                    </div>
-                                    <div class="mt-1">
-                                        <p class="text-sm font-medium text-gray-900 dark:text-white" x-text="appointment.patient.first_name + ' ' + appointment.patient.last_name"></p>
-                                        <p class="text-sm text-gray-500 dark:text-gray-400" x-text="'DNI: ' + appointment.patient.dni"></p>
-                                    </div>
-                                    <div class="mt-2 text-xs text-gray-500 dark:text-gray-400">
-                                        <span x-text="'Duración: ' + appointment.duration + ' min'"></span>
-                                        <span x-show="appointment.estimated_amount" x-text="' • Monto: $' + appointment.estimated_amount"></span>
-                                        <span x-show="appointment.office" x-text="' • Consultorio: ' + appointment.office.name"></span>
-                                    </div>
-                                    <div x-show="appointment.notes" class="mt-2 text-xs text-gray-600 dark:text-gray-300" x-text="'Notas: ' + appointment.notes"></div>
-                                </div>
-                                
-                                <div class="flex items-center gap-2">
-                                    <!-- Edit button - disabled for attended appointments or past dates -->
-                                    <button @click="openEditModal(appointment); dayModalOpen = false;"
-                                            :disabled="appointment.status === 'attended' || isAppointmentInPast(appointment)"
-                                            :class="appointment.status === 'attended' || isAppointmentInPast(appointment) ?
-                                                'p-2 text-gray-400 dark:text-gray-600 rounded-lg cursor-not-allowed opacity-50' :
-                                                'p-2 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors'"
-                                            :title="appointment.status === 'attended' ? 'Turno atendido - No editable' : 'Editar turno'">
-                                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
-                                        </svg>
-                                    </button>
+                <!-- Leyenda -->
+                <div x-show="daySchedule" class="flex flex-wrap gap-x-4 gap-y-1 mb-4 text-xs text-gray-500 dark:text-gray-400">
+                    <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-blue-500 inline-block"></span> Programado</span>
+                    <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-green-500 inline-block"></span> Atendido</span>
+                    <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-orange-500 inline-block"></span> Ausente</span>
+                    <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-red-500 inline-block"></span> Urgencia</span>
+                    <span x-show="!isDayInPast()" class="flex items-center gap-1"><span class="w-3 h-2 rounded border border-dashed border-emerald-500 inline-block bg-emerald-50 dark:bg-emerald-900/20"></span> Disponible</span>
+                </div>
+
+                <!-- Timeline a ancho completo -->
+                <div x-show="daySchedule" class="overflow-y-auto rounded-lg border border-gray-200 dark:border-gray-700"
+                     style="max-height: 65vh">
+                    <div class="relative bg-white dark:bg-gray-900" :style="`height: ${timelineHeightPx}px; min-height: 80px`">
+
+                        <!-- Fondo de filas alternadas por hora (visual guide) -->
+                        <template x-for="hour in timelineHours" :key="'bg-' + hour.label">
+                            <div class="absolute left-0 right-0 pointer-events-none"
+                                 :style="`top: ${hour.topPx}px; height: ${60 * pxPerMin}px`"
+                                 :class="timelineHours.indexOf(hour) % 2 === 0
+                                     ? 'bg-white dark:bg-gray-900'
+                                     : 'bg-gray-50/60 dark:bg-gray-800/40'">
+                            </div>
+                        </template>
+
+                        <!-- Marcas de hora completa — z-20 -->
+                        <template x-for="hour in timelineHours" :key="hour.label">
+                            <div class="absolute left-0 right-0 flex items-center pointer-events-none z-20"
+                                 :style="`top: ${hour.topPx}px`">
+                                <div class="w-14 flex-shrink-0 pr-2 text-right text-[11px] font-medium text-gray-400 dark:text-gray-500 leading-none select-none -translate-y-1/2"
+                                     x-text="hour.label"></div>
+                                <div class="flex-1 border-t border-gray-200 dark:border-gray-700"></div>
+                            </div>
+                        </template>
+
+                        <!-- Marcas de media hora — z-10 -->
+                        <template x-for="(half, idx) in timelineHalfHours" :key="idx">
+                            <div class="absolute left-14 right-0 border-t border-dashed border-gray-100 dark:border-gray-800 pointer-events-none z-10"
+                                 :style="`top: ${half.topPx}px`"></div>
+                        </template>
+
+                        <!-- Slots libres — z-0 -->
+                        <template x-for="item in timelineLayout.items.filter(i => i.type === 'free')" :key="item.startMins">
+                            <button class="absolute left-[58px] right-2 rounded-sm
+                                           border border-dashed border-emerald-300 dark:border-emerald-700
+                                           bg-emerald-50/50 dark:bg-emerald-900/10
+                                           hover:bg-emerald-100/80 dark:hover:bg-emerald-800/30
+                                           hover:border-emerald-400 dark:hover:border-emerald-600
+                                           flex items-center justify-center gap-1
+                                           text-[11px] text-emerald-600 dark:text-emerald-500
+                                           transition-colors group z-0"
+                                    :style="`top: ${item.topPx + 1}px; height: ${item.heightPx}px`"
+                                    @click="openCreateModalWithTime(selectedDayDate, selectedProfessionalId, item.label); dayModalOpen = false;">
+                                <svg class="w-3 h-3 opacity-50 group-hover:opacity-100 transition-opacity" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                                </svg>
+                                <span class="opacity-70 group-hover:opacity-100 transition-opacity" x-text="item.label"></span>
+                            </button>
+                        </template>
+
+                        <!-- Bloques de turnos — z-10 -->
+                        <template x-for="item in timelineLayout.items.filter(i => i.type === 'appointment')" :key="item.apt.id">
+                            <div class="absolute left-[58px] right-2 rounded-sm overflow-hidden transition-all z-10 select-none"
+                                 :class="[appointmentBlockClass(item.apt), isAppointmentInPast(item.apt) ? 'opacity-55 cursor-default' : 'cursor-pointer hover:brightness-110 hover:shadow-md']"
+                                 :style="`top: ${item.topPx + 1}px; height: ${item.heightPx - 2}px`"
+                                 @click="!isAppointmentInPast(item.apt) && (openEditModal(item.apt), dayModalOpen = false)"
+                                 :title="isAppointmentInPast(item.apt) ? '(Solo lectura) ' + formatTime(item.apt.appointment_date) + ' – ' + item.apt.patient.last_name + ', ' + item.apt.patient.first_name : formatTime(item.apt.appointment_date) + ' – ' + item.apt.patient.last_name + ', ' + item.apt.patient.first_name">
+                                <div class="px-2 h-full flex items-center gap-2 overflow-hidden">
+                                    <span class="text-[11px] font-bold whitespace-nowrap tabular-nums" x-text="formatTime(item.apt.appointment_date)"></span>
+                                    <span class="opacity-40 select-none text-[10px]">|</span>
+                                    <span class="flex-1 truncate text-[11px]" x-text="item.apt.patient.last_name + ', ' + item.apt.patient.first_name"></span>
+                                    <span class="whitespace-nowrap opacity-70 text-[10px] tabular-nums" x-text="item.apt.duration > 0 ? item.apt.duration + ' min' : '🚨'"></span>
                                 </div>
                             </div>
-                        </div>
-                    </template>
+                        </template>
+
+                    </div>
                 </div>
-                
-                <!-- Empty State -->
-                <div x-show="dayAppointments.length === 0" class="text-center py-8">
-                    <svg class="w-12 h-12 mx-auto mb-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5a2.25 2.25 0 002.25-2.25m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5a2.25 2.25 0 012.25 2.25v7.5" />
+
+                <!-- Fallback: sin horario configurado -->
+                <div x-show="!daySchedule" class="text-center py-10">
+                    <svg class="w-12 h-12 mx-auto mb-3 text-gray-300 dark:text-gray-600" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
-                    <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">No hay turnos</h3>
-                    <p class="text-gray-500 dark:text-gray-400 mb-4">No hay turnos programados para este día.</p>
-                    <button @click="openCreateModal(selectedDayDate, selectedProfessionalId); dayModalOpen = false;" 
-                            class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg">
-                        <svg class="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                        </svg>
-                        Agregar Primer Turno
-                    </button>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">No hay horario configurado para este día.</p>
                 </div>
             </div>
 
@@ -472,6 +457,17 @@
     </div>
 </div>
 
+@php
+$schedulesForJs = [];
+if (isset($professionalSchedules)) {
+    foreach ($professionalSchedules as $dayOfWeek => $schedule) {
+        $schedulesForJs[$dayOfWeek] = [
+            'start_time' => \Carbon\Carbon::parse($schedule->getRawOriginal('start_time'))->format('H:i'),
+            'end_time'   => \Carbon\Carbon::parse($schedule->getRawOriginal('end_time'))->format('H:i'),
+        ];
+    }
+}
+@endphp
 <script>
 function openAppointmentModal(date, professionalId) {
     // Dispatch event to Alpine.js component
@@ -514,7 +510,22 @@ document.addEventListener('alpine:init', () => {
         patients: @json($patients),
         offices: @json($offices),
         allAppointments: @json($appointments),
-        
+        schedules: @json($schedulesForJs ?? []),
+        daySchedule: null,
+        pxPerMin: 3,
+        durationOptions: [
+            { value: 5,   label: '5 minutos' },
+            { value: 10,  label: '10 minutos' },
+            { value: 15,  label: '15 minutos' },
+            { value: 20,  label: '20 minutos' },
+            { value: 30,  label: '30 minutos' },
+            { value: 40,  label: '40 minutos' },
+            { value: 45,  label: '45 minutos' },
+            { value: 60,  label: '1 hora' },
+            { value: 90,  label: '1 hora 30 minutos' },
+            { value: 120, label: '2 horas' },
+        ],
+
         // Error state for past datetime validation
         pastTimeError: '',
         
@@ -566,6 +577,16 @@ document.addEventListener('alpine:init', () => {
             this.modalOpen = true;
         },
 
+        openCreateModalWithTime(date, professionalId, time) {
+            this.editingAppointment = null;
+            this.resetForm();
+            this.clearAllErrors();
+            if (date) this.form.appointment_date = date;
+            if (professionalId) this.form.professional_id = professionalId.toString();
+            if (time) this.form.appointment_time = time;
+            this.modalOpen = true;
+        },
+
         resetForm() {
             this.form = {
                 professional_id: '',
@@ -598,18 +619,50 @@ document.addEventListener('alpine:init', () => {
             return `${year}-${month}-${day}`;
         },
 
+        // Retorna { maxMins, time } con el límite para no superponer al siguiente turno
+        // del mismo profesional ese día, o null si no hay restricción.
+        get nextAppointmentConstraint() {
+            if (!this.form.appointment_date || !this.form.appointment_time || !this.form.professional_id) return null;
+            const dayApps = this.allAppointments[this.form.appointment_date] || [];
+            const [fh, fm] = this.form.appointment_time.split(':').map(Number);
+            const currentMins = fh * 60 + fm;
+            let nextApt = null;
+            let nextMins = Infinity;
+            for (const apt of dayApps) {
+                if (this.editingAppointment && apt.id === this.editingAppointment.id) continue;
+                if (String(apt.professional.id) !== String(this.form.professional_id)) continue;
+                const d = new Date(apt.appointment_date);
+                const aptMins = d.getHours() * 60 + d.getMinutes();
+                if (aptMins > currentMins && aptMins < nextMins) {
+                    nextMins = aptMins;
+                    nextApt = apt;
+                }
+            }
+            if (!nextApt) return null;
+            return { maxMins: nextMins - currentMins, time: this.formatTime(nextApt.appointment_date) };
+        },
+
         validateDateTime() {
             this.pastTimeError = '';
-            
+
             if (this.form.appointment_date && this.form.appointment_time) {
                 const appointmentDateTime = new Date(this.form.appointment_date + 'T' + this.form.appointment_time);
                 const now = new Date();
-                
+
                 if (appointmentDateTime <= now) {
                     this.pastTimeError = 'No se pueden programar turnos en fechas y horarios pasados.';
                     return false;
                 }
             }
+
+            // Si la duración actual supera el tiempo disponible hasta el próximo turno,
+            // reducirla automáticamente a la mayor opción permitida.
+            const constraint = this.nextAppointmentConstraint;
+            if (constraint && parseInt(this.form.duration) > constraint.maxMins) {
+                const best = [...this.durationOptions].reverse().find(o => o.value <= constraint.maxMins);
+                this.form.duration = best ? best.value : 5;
+            }
+
             return true;
         },
 
@@ -618,7 +671,17 @@ document.addEventListener('alpine:init', () => {
             if (!this.validateDateTime()) {
                 return;
             }
-            
+
+            // Validar que la duración no superponga con el siguiente turno
+            const constraint = this.nextAppointmentConstraint;
+            if (constraint && parseInt(this.form.duration) > constraint.maxMins) {
+                this.showNotification(
+                    `La duración elegida (${this.form.duration} min) superaría el siguiente turno de las ${constraint.time}. Máximo disponible: ${constraint.maxMins} min.`,
+                    'error'
+                );
+                return;
+            }
+
             this.loading = true;
             
             try {
@@ -688,7 +751,28 @@ document.addEventListener('alpine:init', () => {
             
             // Get appointments for this day
             this.dayAppointments = this.allAppointments[date] || [];
-            
+
+            // Calcular horario del día para el timeline
+            const [y, m, d] = date.split('-');
+            const dateObj = new Date(+y, +m - 1, +d);
+            const jsDay = dateObj.getDay();          // 0=Dom, 1=Lun…6=Sab
+            const dayKey = jsDay === 0 ? 7 : jsDay; // → 1=Lun…7=Dom (igual a Laravel)
+            const sched = this.schedules[dayKey];
+
+            if (sched) {
+                const [sh, sm] = sched.start_time.split(':').map(Number);
+                const [eh, em] = sched.end_time.split(':').map(Number);
+                this.daySchedule = {
+                    startMins: sh * 60 + sm,
+                    endMins:   eh * 60 + em,
+                    totalMins: (eh * 60 + em) - (sh * 60 + sm),
+                    startTime: sched.start_time,
+                    endTime:   sched.end_time,
+                };
+            } else {
+                this.daySchedule = null;
+            }
+
             this.dayModalOpen = true;
         },
 
@@ -727,6 +811,136 @@ document.addEventListener('alpine:init', () => {
                 is_between_turn: appointment.is_between_turn || false
             };
             this.modalOpen = true;
+        },
+
+        // Horas del timeline (marcas cada 60 min)
+        get timelineHours() {
+            if (!this.daySchedule) return [];
+            const hours = [];
+            const startH = Math.floor(this.daySchedule.startMins / 60);
+            const endH   = Math.ceil(this.daySchedule.endMins / 60);
+            for (let h = startH; h <= endH; h++) {
+                hours.push({
+                    label: String(h).padStart(2, '0') + ':00',
+                    topPx: (h * 60 - this.daySchedule.startMins) * this.pxPerMin,
+                });
+            }
+            return hours;
+        },
+
+        // Marcas de media hora (solo líneas, sin label)
+        get timelineHalfHours() {
+            if (!this.daySchedule) return [];
+            const halves = [];
+            const startH = Math.floor(this.daySchedule.startMins / 60);
+            const endH   = Math.ceil(this.daySchedule.endMins / 60);
+            for (let h = startH; h < endH; h++) {
+                const topPx = (h * 60 + 30 - this.daySchedule.startMins) * this.pxPerMin;
+                if (topPx > 0 && topPx < this.daySchedule.totalMins * this.pxPerMin) {
+                    halves.push({ topPx });
+                }
+            }
+            return halves;
+        },
+
+        // Layout unificado con posicionamiento TEMPORAL PURO.
+        // Appointments y slots libres usan el mismo sistema de coordenadas que
+        // las marcas de hora → el grid siempre está alineado con el contenido.
+        get timelineLayout() {
+            if (!this.daySchedule) return { items: [] };
+            const { startMins, endMins } = this.daySchedule;
+            const px = (mins) => mins * this.pxPerMin;
+            const isPast = this.isDayInPast();
+            const SLOT = 30;
+            const MIN_FREE = 5;
+
+            // Ordenar turnos y calcular posiciones basadas en tiempo
+            const sortedApts = [...this.dayAppointments]
+                .map(apt => {
+                    const d = new Date(apt.appointment_date);
+                    const s = d.getHours() * 60 + d.getMinutes();
+                    const dur = apt.duration > 0 ? apt.duration : 0;
+                    return { apt, sMins: s, dur };
+                })
+                .sort((a, b) => a.sMins - b.sMins);
+
+            const items = [];
+
+            // Bloques de turnos: topPx y heightPx derivados del tiempo real
+            for (const { apt, sMins, dur } of sortedApts) {
+                items.push({
+                    type: 'appointment',
+                    topPx: px(sMins - startMins),
+                    heightPx: Math.max(px(dur), 24), // 24px mínimo solo para urgencias/turnos <8min
+                    apt,
+                });
+            }
+
+            // Slots libres: tiempo real → mismas coordenadas que el grid
+            if (!isPast) {
+                // Fusionar intervalos ocupados
+                const busy = sortedApts
+                    .map(({ sMins, dur }) => [sMins, sMins + dur])
+                    .reduce((acc, [s, e]) => {
+                        if (acc.length && s <= acc[acc.length - 1][1]) {
+                            acc[acc.length - 1][1] = Math.max(acc[acc.length - 1][1], e);
+                        } else {
+                            acc.push([s, e]);
+                        }
+                        return acc;
+                    }, []);
+
+                // Encontrar segmentos libres y dividirlos en chunks de 30 min
+                const freeSegs = [];
+                let prev = startMins;
+                for (const [s, e] of busy) {
+                    if (s > prev) freeSegs.push([prev, s]);
+                    prev = Math.max(prev, e);
+                }
+                if (prev < endMins) freeSegs.push([prev, endMins]);
+
+                for (const [segStart, segEnd] of freeSegs) {
+                    let cur = segStart;
+                    while (cur < segEnd) {
+                        const nextB    = (Math.floor(cur / SLOT) + 1) * SLOT;
+                        const chunkEnd = Math.min(nextB, segEnd);
+                        const chunkMins = chunkEnd - cur;
+                        if (chunkMins >= MIN_FREE) {
+                            const h = Math.floor(cur / 60);
+                            const m = cur % 60;
+                            items.push({
+                                type: 'free',
+                                topPx: px(cur - startMins),
+                                heightPx: Math.max(px(chunkMins) - 2, 20),
+                                startMins: cur,
+                                label: String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0'),
+                            });
+                        }
+                        cur = chunkEnd;
+                    }
+                }
+            }
+
+            return { items };
+        },
+
+        get timelineHeightPx() {
+            return this.daySchedule ? this.daySchedule.totalMins * this.pxPerMin : 0;
+        },
+
+        appointmentBlockClass(apt) {
+            if (apt.duration === 0) {
+                return 'bg-red-500 border-l-4 border-red-700 text-white ring-1 ring-red-300';
+            }
+            if (apt.is_between_turn) {
+                return 'bg-orange-400 border-l-4 border-orange-600 text-white';
+            }
+            const map = {
+                scheduled: 'bg-blue-500 border-l-4 border-blue-700 text-white',
+                attended:  'bg-green-500 border-l-4 border-green-700 text-white',
+                absent:    'bg-orange-500 border-l-4 border-orange-700 text-white',
+            };
+            return map[apt.status] || 'bg-gray-400 border-l-4 border-gray-600 text-white';
         },
 
         formatDateSpanish(dateString) {

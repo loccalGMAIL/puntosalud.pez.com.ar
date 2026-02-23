@@ -7,6 +7,92 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [2.8.0] - 2026-02-20
+
+### 🔍 Sistema de Registro de Actividades de Usuarios
+
+**Descripción:**
+Sistema de auditoría completo que registra todas las operaciones CRUD realizadas sobre las entidades del sistema, así como los eventos de login y logout. Accesible únicamente por administradores.
+
+**Cambios Implementados:**
+
+1. **Modelo `ActivityLog` + Tabla `activity_logs`:**
+   - Campos: `user_id`, `action`, `subject_type`, `subject_id`, `subject_description`, `ip_address`, `created_at`
+   - Log inmutable (`UPDATED_AT = null`)
+   - Método estático `record()` como helper central con captura silenciosa de errores
+   - Scope `filter()` para filtros por fecha, usuario, acción y módulo
+   - Índices en `(user_id, created_at)` y `(subject_type, subject_id)`
+
+2. **Trait `LogsActivity`:**
+   - Escucha eventos Eloquent `created`, `updated`, `deleted` mediante `bootLogsActivity()`
+   - Método `activityDescription()` sobreescribible por cada modelo
+   - Aplicado a 15 modelos: Patient, Professional, Appointment, Payment, CashMovement, User, ProfessionalLiquidation, Package, PatientPackage, ProfessionalSchedule, ScheduleException, AppointmentSetting, Office, Specialty, MovementType
+
+3. **Registro de Login/Logout:**
+   - `AuthController::login()` registra acción `login` tras autenticación exitosa
+   - `AuthController::logout()` registra acción `logout` antes de cerrar sesión
+
+4. **Vista de Historial (`/activity-log`):**
+   - Acceso exclusivo para administradores (middleware `can:viewAny,User`)
+   - 4 tarjetas estadísticas: acciones hoy / esta semana / este mes / usuarios activos hoy
+   - Filtros: rango de fechas, usuario, acción y módulo
+   - Tabla responsiva: mobile (cards con `md:hidden`) + desktop (tabla con `hidden md:block`)
+   - Columnas: Fecha/Hora | Usuario | Acción (badge de color) | Módulo | Descripción | IP
+   - Paginación de 50 registros
+   - Badges de color por acción: creó (verde), modificó (azul), eliminó (rojo), inició sesión (violeta), cerró sesión (gris)
+   - Nombres de módulos en español
+
+5. **Navegación:**
+   - Nuevo ítem "Actividad" en el submenú de Configuración (visible solo para admins)
+
+**Archivos Creados:**
+- `database/migrations/2026_02_20_000000_create_activity_logs_table.php`
+- `app/Models/ActivityLog.php`
+- `app/Traits/LogsActivity.php`
+- `app/Http/Controllers/ActivityLogController.php`
+- `resources/views/activity-log/index.blade.php`
+- `resources/views/activity-log/_action-badge.blade.php`
+
+**Archivos Modificados:**
+- `app/Models/Patient.php`, `Professional.php`, `Appointment.php`, `Payment.php`, `CashMovement.php`, `User.php`, `ProfessionalLiquidation.php`, `Package.php`, `PatientPackage.php`, `ProfessionalSchedule.php`, `ScheduleException.php`, `AppointmentSetting.php`, `Office.php`, `Specialty.php`, `MovementType.php` (trait + activityDescription)
+- `app/Http/Controllers/AuthController.php` (login/logout logging)
+- `routes/web.php` (nueva ruta admin)
+- `resources/views/layouts/app.blade.php` (ítem de navegación)
+- `composer.json` (versión 2.8.0)
+
+### 📅 Mejoras en Agenda y Timeline de Día
+
+**Descripción:**
+Rediseño visual y funcional del timeline del Day Modal y de las celdas del calendario mensual.
+
+**Cambios Implementados:**
+
+1. **Timeline con posicionamiento absoluto preciso (`pxPerMin: 3`):**
+   - Todos los elementos (turnos, slots libres, líneas de hora) usan coordenadas de tiempo puras, sin cursor secuencial
+   - Grilla horaria y bloques de turno perfectamente alineados
+   - Líneas de media hora en guiones sutiles; hora en negrita a la izquierda
+
+2. **Turnos pasados: solo lectura:**
+   - Los turnos anteriores a la hora/fecha actual se muestran con opacidad reducida y sin acción de edición
+
+3. **Slots libres con bloques parciales:**
+   - Se mantiene la grilla de 30 minutos pero si un turno ocupa menos de 30 min, aparece un bloque libre con el tiempo restante del slot
+   - Los slots no se superponen con turnos existentes
+
+4. **Prevención de solapamiento de turnos:**
+   - Al crear/editar un turno, las duraciones que superarían el siguiente turno del mismo profesional quedan deshabilitadas en el selector
+   - La duración se ajusta automáticamente al cambiar la hora si excede el límite disponible
+
+5. **Celdas del calendario mensuales clickeables:**
+   - Click en cualquier parte de la celda abre el Day Modal (solo días del mes actual con horario, no feriados)
+   - Se eliminó el botón "+" de las celdas; el "Nuevo Turno" está dentro del Day Modal
+
+**Archivos Modificados:**
+- `resources/views/agenda/index.blade.php` (timeline, celdas del calendario, lógica Alpine)
+- `resources/views/appointments/modal.blade.php` (selector de duración dinámico con `durationOptions`)
+
+---
+
 ## [2.7.1] - 2026-02-10
 
 ### 🎨 Mejoras UI/UX: Toast Notifications, Validación Inline, Tablas Responsivas y Sidebar Móvil

@@ -106,16 +106,12 @@
                     <select x-model="form.duration"
                             class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500 dark:bg-gray-700 dark:text-white"
                             required>
-                        <option value="5">5 minutos</option>
-                        <option value="10">10 minutos</option>
-                        <option value="15">15 minutos</option>
-                        <option value="20">20 minutos</option>
-                        <option value="30">30 minutos</option>
-                        <option value="40">40 minutos</option>
-                        <option value="45">45 minutos</option>
-                        <option value="60">1 hora</option>
-                        <option value="90">1 hora 30 minutos</option>
-                        <option value="120">2 horas</option>
+                        <template x-for="opt in durationOptions" :key="opt.value">
+                            <option :value="opt.value"
+                                    :disabled="nextAppointmentConstraint && opt.value > nextAppointmentConstraint.maxMins"
+                                    x-text="opt.label">
+                            </option>
+                        </template>
                     </select>
                 </div>
             </div>
