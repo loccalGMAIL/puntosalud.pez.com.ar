@@ -60,6 +60,37 @@ Sistema de auditoría completo que registra todas las operaciones CRUD realizada
 - `resources/views/layouts/app.blade.php` (ítem de navegación)
 - `composer.json` (versión 2.8.0)
 
+### 📅 Mejoras en Agenda y Timeline de Día
+
+**Descripción:**
+Rediseño visual y funcional del timeline del Day Modal y de las celdas del calendario mensual.
+
+**Cambios Implementados:**
+
+1. **Timeline con posicionamiento absoluto preciso (`pxPerMin: 3`):**
+   - Todos los elementos (turnos, slots libres, líneas de hora) usan coordenadas de tiempo puras, sin cursor secuencial
+   - Grilla horaria y bloques de turno perfectamente alineados
+   - Líneas de media hora en guiones sutiles; hora en negrita a la izquierda
+
+2. **Turnos pasados: solo lectura:**
+   - Los turnos anteriores a la hora/fecha actual se muestran con opacidad reducida y sin acción de edición
+
+3. **Slots libres con bloques parciales:**
+   - Se mantiene la grilla de 30 minutos pero si un turno ocupa menos de 30 min, aparece un bloque libre con el tiempo restante del slot
+   - Los slots no se superponen con turnos existentes
+
+4. **Prevención de solapamiento de turnos:**
+   - Al crear/editar un turno, las duraciones que superarían el siguiente turno del mismo profesional quedan deshabilitadas en el selector
+   - La duración se ajusta automáticamente al cambiar la hora si excede el límite disponible
+
+5. **Celdas del calendario mensuales clickeables:**
+   - Click en cualquier parte de la celda abre el Day Modal (solo días del mes actual con horario, no feriados)
+   - Se eliminó el botón "+" de las celdas; el "Nuevo Turno" está dentro del Day Modal
+
+**Archivos Modificados:**
+- `resources/views/agenda/index.blade.php` (timeline, celdas del calendario, lógica Alpine)
+- `resources/views/appointments/modal.blade.php` (selector de duración dinámico con `durationOptions`)
+
 ---
 
 ## [2.7.1] - 2026-02-10
