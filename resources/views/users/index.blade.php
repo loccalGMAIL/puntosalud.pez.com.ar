@@ -88,7 +88,7 @@
                             </span>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {{ $user->updated_at->diffForHumans() }}
+                            {{ $user->lastLogin ? $user->lastLogin->created_at->diffForHumans() : 'Nunca' }}
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
                             @can('update', $user)

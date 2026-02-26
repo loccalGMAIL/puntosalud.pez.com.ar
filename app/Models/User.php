@@ -56,6 +56,17 @@ class User extends Authenticatable
     }
 
     /**
+     * Último login registrado en ActivityLog
+     */
+    public function lastLogin()
+    {
+        return $this->hasOne(ActivityLog::class)->ofMany(
+            ['created_at' => 'max'],
+            fn ($query) => $query->where('action', 'login')
+        );
+    }
+
+    /**
      * Verificar si el usuario es administrador
      */
     public function isAdmin(): bool
