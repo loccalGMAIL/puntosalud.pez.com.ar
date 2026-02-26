@@ -13,7 +13,19 @@ class PatientPackage extends Model
 
     public function activityDescription(): string
     {
-        return 'Paquete #' . $this->id;
+        $parts = ['Paquete #' . $this->id];
+
+        $patient = $this->patient()->first();
+        if ($patient) {
+            $parts[] = $patient->last_name . ', ' . $patient->first_name;
+        }
+
+        $package = $this->package()->first();
+        if ($package) {
+            $parts[] = '(' . $package->name . ')';
+        }
+
+        return implode(' - ', array_slice($parts, 0, 2)) . (isset($parts[2]) ? ' ' . $parts[2] : '');
     }
     protected $fillable = [
         'patient_id',

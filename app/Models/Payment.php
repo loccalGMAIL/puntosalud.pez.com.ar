@@ -12,7 +12,19 @@ class Payment extends Model
 
     public function activityDescription(): string
     {
-        return 'Pago #' . $this->id;
+        $base = $this->receipt_number ? 'Recibo #' . $this->receipt_number : 'Pago #' . $this->id;
+
+        if ($this->patient_id) {
+            $patient = $this->patient()->first();
+            $patientName = $patient ? $patient->last_name . ', ' . $patient->first_name : '';
+            return $patientName ? $base . ' - ' . $patientName : $base;
+        }
+
+        if ($this->concept) {
+            return $base . ' - ' . \Illuminate\Support\Str::limit($this->concept, 40);
+        }
+
+        return $base;
     }
 
     protected $fillable = [

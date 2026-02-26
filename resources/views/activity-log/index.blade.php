@@ -253,8 +253,14 @@
                             <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
                                 {{ $moduleNames[$log->subject_type] ?? $log->subject_type ?? '—' }}
                             </td>
-                            <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-300 max-w-xs truncate">
-                                {{ $log->subject_description ?? '—' }}
+                            <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-300 max-w-xs">
+                                <div class="truncate cursor-default"
+                                     x-data="cellTooltip()"
+                                     @mouseenter="show($el, $event)"
+                                     @mousemove="move($event)"
+                                     @mouseleave="hide()">
+                                    {{ $log->subject_description ?? '—' }}
+                                </div>
                             </td>
                             <td class="px-4 py-3 whitespace-nowrap text-xs font-mono text-gray-400 dark:text-gray-500">
                                 {{ $log->ip_address ?? '—' }}
@@ -275,12 +281,50 @@
     </div>
 </div>
 
+<!-- Tooltip portal: fuera del overflow-x-auto para no ser recortado -->
+<div id="cell-tooltip"
+     class="fixed z-50 pointer-events-none px-2.5 py-1.5 rounded-md text-xs text-white bg-gray-900 dark:bg-gray-950 shadow-lg max-w-sm whitespace-normal leading-snug hidden"
+     style="transform: translateY(-100%) translateY(-6px)">
+</div>
+
 <script>
 function activityLogPage() {
     return {
-        init() {
-            // Componente simple, sin estado adicional necesario
-        }
+        init() {}
+    };
+}
+
+function cellTooltip() {
+    return {
+        _el: null,
+        show(el, event) {
+            // Solo mostrar si el texto está realmente truncado
+            if (el.scrollWidth <= el.clientWidth) return;
+            this._el = el;
+            const tooltip = document.getElementById('cell-tooltip');
+            tooltip.textContent = el.textContent.trim();
+            tooltip.classList.remove('hidden');
+            this._position(event);
+        },
+        move(event) {
+            if (!this._el) return;
+            this._position(event);
+        },
+        hide() {
+            this._el = null;
+            document.getElementById('cell-tooltip').classList.add('hidden');
+        },
+        _position(event) {
+            const tooltip = document.getElementById('cell-tooltip');
+            const margin = 12;
+            let x = event.clientX;
+            let y = event.clientY;
+            // Ajustar para que no salga de la pantalla por la derecha
+            const maxX = window.innerWidth - tooltip.offsetWidth - margin;
+            if (x > maxX) x = maxX;
+            tooltip.style.left = x + 'px';
+            tooltip.style.top  = y + 'px';
+        },
     };
 }
 </script>

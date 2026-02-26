@@ -12,7 +12,14 @@ class ProfessionalLiquidation extends Model
 
     public function activityDescription(): string
     {
-        return 'Liquidación #' . $this->id;
+        $professional = $this->professional()->first();
+        $profName = $professional
+            ? $professional->last_name . ', ' . $professional->first_name
+            : 'Prof. #' . $this->professional_id;
+        $date = $this->liquidation_date
+            ? $this->liquidation_date->format('d/m/Y')
+            : '';
+        return 'Liquidación #' . $this->id . ' - ' . $profName . ($date ? ' (' . $date . ')' : '');
     }
 
     protected $fillable = [

@@ -12,7 +12,22 @@ class CashMovement extends Model
 
     public function activityDescription(): string
     {
-        return 'Movimiento #' . $this->id;
+        $type = $this->movementType()->first();
+        $typeName = $type ? $type->name : 'Movimiento';
+        $base = $typeName . ' #' . $this->id;
+
+        if ($this->reference_type && str_ends_with($this->reference_type, 'Payment') && $this->reference_id) {
+            $payment = \App\Models\Payment::find($this->reference_id);
+            if ($payment?->receipt_number) {
+                return $base . ' - Recibo #' . $payment->receipt_number;
+            }
+        }
+
+        if ($this->description) {
+            return $base . ': ' . \Illuminate\Support\Str::limit($this->description, 50);
+        }
+
+        return $base;
     }
 
     protected $fillable = [
