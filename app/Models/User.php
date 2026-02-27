@@ -5,6 +5,7 @@ namespace App\Models;
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Traits\LogsActivity;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
@@ -27,7 +28,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
-        'role',
+        'profile_id',
         'is_active',
     ];
 
@@ -56,19 +57,42 @@ class User extends Authenticatable
     }
 
     /**
-     * Verificar si el usuario es administrador
+     * Relaciones
      */
-    public function isAdmin(): bool
+    public function profile(): BelongsTo
     {
-        return $this->role === 'admin';
+        return $this->belongsTo(Profile::class);
     }
 
     /**
-     * Verificar si el usuario es recepcionista
+     * Último login registrado en ActivityLog
      */
-    public function isReceptionist(): bool
+    public function lastLogin()
     {
-        return $this->role === 'receptionist';
+        return $this->hasOne(ActivityLog::class)->ofMany(
+            ['created_at' => 'max'],
+            fn ($query) => $query->where('action', 'login')
+        );
+    }
+
+    /**
+     * Verificar si el usuario tiene acceso a un módulo
+     */
+    public function canAccessModule(string $module): bool
+    {
+        if (! $this->profile) {
+            return false;
+        }
+
+        return $this->profile->allowsModule($module);
+    }
+
+    /**
+     * Alias semántico: administrador = acceso a configuración
+     */
+    public function isAdmin(): bool
+    {
+        return $this->canAccessModule('configuration');
     }
 
     /**
@@ -85,25 +109,5 @@ class User extends Authenticatable
     public function scopeActive($query)
     {
         return $query->where('is_active', true);
-    }
-
-    /**
-     * Scope para usuarios por rol
-     */
-    public function scopeByRole($query, $role)
-    {
-        return $query->where('role', $role);
-    }
-
-    /**
-     * Accessor para mostrar el rol en español
-     */
-    public function getRoleNameAttribute(): string
-    {
-        return match ($this->role) {
-            'admin' => 'Administrador',
-            'receptionist' => 'Recepcionista',
-            default => 'Desconocido'
-        };
     }
 }

@@ -8,6 +8,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\MovementTypeController;
 use App\Http\Controllers\PatientController;
 use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProfessionalController;
 use App\Http\Controllers\ProfessionalScheduleController;
 use App\Http\Controllers\ReportController;
@@ -106,24 +107,31 @@ Route::middleware(['auth'])->group(function () {
     // Professional liquidation processing
     Route::post('/liquidation/process', [App\Http\Controllers\LiquidationController::class, 'processLiquidation'])->name('liquidation.process');
 
-    // Recesos (Holidays) management
-    Route::resource('recesos', App\Http\Controllers\RecessController::class)->except(['show', 'create', 'edit']);
-    Route::patch('/recesos/{receso}/toggle-status', [App\Http\Controllers\RecessController::class, 'toggleStatus'])->name('recesos.toggle-status');
-
-    // User management routes (Admin only)
-    Route::middleware(['can:viewAny,App\Models\User'])->group(function () {
-        Route::resource('users', UserController::class);
+    // Rutas de Configuración (módulo: configuration)
+    Route::middleware(['module:configuration'])->group(function () {
+        // Gestión de usuarios
+        Route::resource('users', UserController::class)->except(['create', 'show']);
         Route::patch('/users/{user}/toggle-status', [UserController::class, 'toggleStatus'])->name('users.toggle-status');
 
-        // Movement Types management (Admin only)
+        // Recesos (Holidays) management
+        Route::resource('recesos', App\Http\Controllers\RecessController::class)->except(['show', 'create', 'edit']);
+        Route::patch('/recesos/{receso}/toggle-status', [App\Http\Controllers\RecessController::class, 'toggleStatus'])->name('recesos.toggle-status');
+    });
+
+    // Rutas de Sistema (módulo: system)
+    Route::middleware(['module:system'])->group(function () {
+        // Gestión de perfiles
+        Route::resource('profiles', ProfileController::class)->except(['create', 'edit', 'show']);
+
+        // Movement Types management
         Route::resource('movement-types', MovementTypeController::class)->except(['show']);
         Route::patch('/movement-types/{movementType}/toggle-active', [MovementTypeController::class, 'toggleActive'])->name('movement-types.toggle-active');
 
-        // Activity Log (Admin only)
+        // Activity Log
         Route::get('/activity-log', [ActivityLogController::class, 'index'])->name('activity-log.index');
     });
 
-    // User profile routes
+    // User profile routes (accesibles para todos los usuarios autenticados)
     Route::get('/profile', [UserController::class, 'profile'])->name('profile');
     Route::post('/change-password', [UserController::class, 'changePassword'])->name('change-password');
 

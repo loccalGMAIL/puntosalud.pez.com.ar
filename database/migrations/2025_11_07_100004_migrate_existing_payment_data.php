@@ -3,6 +3,7 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
@@ -36,6 +37,10 @@ return new class extends Migration
 
         // PASO 5: Validar integridad de datos
         $this->validateMigration();
+
+        // Limpiar tablas temporales luego de migración exitosa
+        Schema::dropIfExists('payments_old');
+        Schema::dropIfExists('payment_id_mapping');
 
         Log::info('=== MIGRACIÓN COMPLETADA EXITOSAMENTE ===');
     }

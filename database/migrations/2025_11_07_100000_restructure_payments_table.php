@@ -12,8 +12,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // Verificar si la tabla payments ya existe (indica que hay datos pre-v2.6.0)
-        $hasOldPaymentsTable = Schema::hasTable('payments');
+        // Verificar si la tabla payments ya existe Y tiene datos (indica que hay datos pre-v2.6.0).
+        // Con solo Schema::hasTable() → siempre true en migrate:fresh porque la migración anterior
+        // ya creó la tabla vacía. La comprobación con exists() evita crear tablas temporales innecesarias.
+        $hasOldPaymentsTable = Schema::hasTable('payments') && DB::table('payments')->exists();
 
         if ($hasOldPaymentsTable) {
             // PASO 0: Eliminar foreign keys de la tabla payments original para evitar conflictos
@@ -29,7 +31,14 @@ return new class extends Migration
             Schema::rename('payments', 'payments_old');
         }
 
-        // PASO 2: Crear nueva tabla payments con estructura actualizada
+        // PASO 2: Si la tabla existe vacía (ej: migrate:fresh), eliminarla para recrearla
+        if (!$hasOldPaymentsTable && Schema::hasTable('payments')) {
+            DB::statement('SET FOREIGN_KEY_CHECKS=0');
+            Schema::drop('payments');
+            DB::statement('SET FOREIGN_KEY_CHECKS=1');
+        }
+
+        // Crear nueva tabla payments con estructura actualizada
         Schema::create('payments', function (Blueprint $table) {
             $table->id();
 

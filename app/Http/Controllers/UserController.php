@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Profile;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -14,9 +15,10 @@ class UserController extends Controller
      */
     public function index()
     {
-        $users = User::orderBy('name')->get();
+        $users = User::with(['lastLogin', 'profile.modules'])->orderBy('name')->get();
+        $profiles = Profile::orderBy('name')->get();
 
-        return view('users.index', compact('users'));
+        return view('users.index', compact('users', 'profiles'));
     }
 
     /**
@@ -36,7 +38,7 @@ class UserController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
-            'role' => ['required', 'in:admin,receptionist'],
+            'profile_id' => ['nullable', 'exists:profiles,id'],
         ]);
 
         if ($validator->fails()) {
@@ -47,7 +49,7 @@ class UserController extends Controller
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
-            'role' => $request->role,
+            'profile_id' => $request->profile_id ?: null,
             'is_active' => true,
         ]);
 
@@ -67,7 +69,12 @@ class UserController extends Controller
      */
     public function edit(User $user)
     {
-        return view('users.edit', compact('user'));
+        return response()->json([
+            'id' => $user->id,
+            'name' => $user->name,
+            'email' => $user->email,
+            'profile_id' => $user->profile_id,
+        ]);
     }
 
     /**
@@ -77,8 +84,8 @@ class UserController extends Controller
     {
         $rules = [
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email,'.$user->id],
-            'role' => ['required', 'in:admin,receptionist'],
+            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email,' . $user->id],
+            'profile_id' => ['nullable', 'exists:profiles,id'],
         ];
 
         // Solo validar password si se proporciona
@@ -95,7 +102,7 @@ class UserController extends Controller
         $data = [
             'name' => $request->name,
             'email' => $request->email,
-            'role' => $request->role,
+            'profile_id' => $request->profile_id ?: null,
         ];
 
         // Solo actualizar password si se proporciona
@@ -176,6 +183,7 @@ class UserController extends Controller
     public function profile()
     {
         $user = auth()->user();
+        $user->load('profile.modules');
 
         return view('users.profile', compact('user'));
     }

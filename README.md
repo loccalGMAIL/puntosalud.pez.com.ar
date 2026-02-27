@@ -2,7 +2,7 @@
 
 [![Laravel](https://img.shields.io/badge/Laravel-12.x-red?style=flat\&logo=laravel)](https://laravel.com)
 [![PHP](https://img.shields.io/badge/PHP-8.2-blue?style=flat\&logo=php)](https://php.net)
-[![Version](https://img.shields.io/badge/Version-2.8.0-green?style=flat)](#changelog)
+[![Version](https://img.shields.io/badge/Version-2.8.1-green?style=flat)](#changelog)
 [![License](https://img.shields.io/badge/License-MIT-yellow?style=flat)](#license)
 
 Sistema integral de gestión médica para clínicas y consultorios, desarrollado con Laravel 12 y tecnologías modernas.
@@ -149,6 +149,7 @@ php artisan config:clear
 
 ### 🔄 Últimas versiones
 
+* **v2.8.1** (2026-02-27) – 🔐 Perfiles de Acceso Modular: reemplaza roles fijos por perfiles configurables desde la BD; 9 módulos, CRUD de perfiles, menús Configuración/Sistema independientes.
 * **v2.8.0** (2026-02-23) – 🔍 Registro de Actividades: Auditoría completa CRUD, login/logout, historial filtrable para admins. 📅 Mejoras Agenda: timeline preciso con posicionamiento absoluto por tiempo, celdas clickeables, turnos pasados en solo lectura, prevención de solapamiento de duraciones.
 * **v2.7.0** (2026-02-09) – 📅 Sábados en Agenda y Horarios: Habilitación del día Sábado en la vista de Agenda (grid de 6 columnas), nuevo botón de acción rápida "Semana Completa" (Lun-Sáb) en configuración de horarios con Sábado 8:00-15:00.
 * **v2.6.3** (2026-01-30) – 🗂️ Reorganización Menú de Caja + 📊 Exportación Excel/PDF: Nueva estructura de menú (Caja del Día, Movimientos de Caja, Análisis de Caja), exportación de reportes a Excel y PDF, impresión de movimientos, y correcciones en reportes por rango.

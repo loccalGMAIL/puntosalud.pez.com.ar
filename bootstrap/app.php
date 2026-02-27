@@ -14,6 +14,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'auth' => \Illuminate\Auth\Middleware\Authenticate::class,
             'check.user.active' => \App\Http\Middleware\CheckUserActive::class,
+            'module' => \App\Http\Middleware\EnsureModuleAccess::class,
         ]);
 
         $middleware->web([

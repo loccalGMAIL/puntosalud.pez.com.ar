@@ -11,6 +11,7 @@ class DatabaseSeeder extends Seeder
         // Orden importante: los seeders deben ejecutarse respetando las dependencias
         $this->call([
             // 1. Datos básicos sin dependencias
+            ProfileSeeder::class,
             UserSeeder::class,
             SpecialtySeeder::class,
             OfficeSeeder::class,
