@@ -5,7 +5,12 @@
       "Read(/C:\\xampp\\htdocs\\PuntoSalud\\main - copia\\PuntoSalud\\app\\Http\\Controllers/**)",
       "Read(/C:\\xampp\\htdocs\\PuntoSalud\\main - copia\\PuntoSalud\\app\\Http\\Controllers/**)",
       "Bash(git add:*)",
-      "Bash(git checkout:*)"
+      "Bash(git checkout:*)",
+      "Bash(xargs grep:*)",
+      "Bash(ls:*)",
+      "Bash(grep:*)",
+      "Bash(do echo:*)",
+      "Bash(php artisan:*)"
     ],
     "deny": [],
     "ask": []
