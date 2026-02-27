@@ -7,6 +7,25 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [2.8.1] - 2026-02-27
+
+### 🔐 Sistema de Perfiles de Acceso Modular
+
+Reemplaza el sistema de roles fijos (admin/receptionist) por perfiles configurables, donde cada perfil define qué módulos tiene habilitados. El acceso se controla 100% desde la base de datos sin tocar código.
+
+**Cambios principales:**
+
+- **BD:** tablas `profiles` y `profile_modules` (pivot); columna `profile_id` en `users`; eliminada columna `role`
+- **Modelo `Profile`:** constante `MODULES` con los 9 módulos del sistema; método `allowsModule()`
+- **Modelo `User`:** nuevo método `canAccessModule(string)`; `isAdmin()` como alias de `canAccessModule('configuration')`
+- **Middleware `module`:** restringe rutas por módulo (`middleware('module:cash')`)
+- **Perfiles base:** "Administrador" (9 módulos) y "Acceso General" (7, sin configuración ni sistema)
+- **CRUD de perfiles** en `/profiles` con checkboxes por módulo (Alpine.js)
+- **Navegación:** menús "Configuración" y "Sistema" separados e independientes
+- **Fix:** bug en migración `restructure_payments_table` al correr `migrate:fresh`
+
+---
+
 ## [2.8.0] - 2026-02-20
 
 ### 🔍 Sistema de Registro de Actividades de Usuarios
