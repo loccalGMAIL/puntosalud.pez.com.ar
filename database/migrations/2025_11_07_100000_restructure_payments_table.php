@@ -31,7 +31,14 @@ return new class extends Migration
             Schema::rename('payments', 'payments_old');
         }
 
-        // PASO 2: Crear nueva tabla payments con estructura actualizada
+        // PASO 2: Si la tabla existe vacía (ej: migrate:fresh), eliminarla para recrearla
+        if (!$hasOldPaymentsTable && Schema::hasTable('payments')) {
+            DB::statement('SET FOREIGN_KEY_CHECKS=0');
+            Schema::drop('payments');
+            DB::statement('SET FOREIGN_KEY_CHECKS=1');
+        }
+
+        // Crear nueva tabla payments con estructura actualizada
         Schema::create('payments', function (Blueprint $table) {
             $table->id();
 

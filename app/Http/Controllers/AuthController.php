@@ -73,11 +73,11 @@ class AuthController extends Controller
     }
 
     /**
-     * Mostrar formulario de registro (solo para admin)
+     * Mostrar formulario de registro (solo para usuarios con módulo configuration)
      */
     public function showRegister()
     {
-        if (! Auth::check() || ! Auth::user()->isAdmin()) {
+        if (! Auth::check() || ! Auth::user()->canAccessModule('configuration')) {
             abort(403, 'No tiene permisos para acceder a esta página.');
         }
 
@@ -89,7 +89,7 @@ class AuthController extends Controller
      */
     public function register(Request $request)
     {
-        if (! Auth::check() || ! Auth::user()->isAdmin()) {
+        if (! Auth::check() || ! Auth::user()->canAccessModule('configuration')) {
             abort(403, 'No tiene permisos para realizar esta acción.');
         }
 
@@ -97,7 +97,7 @@ class AuthController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
-            'role' => ['required', 'in:admin,receptionist'],
+            'profile_id' => ['nullable', 'exists:profiles,id'],
         ]);
 
         if ($validator->fails()) {
@@ -108,7 +108,7 @@ class AuthController extends Controller
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
-            'role' => $request->role,
+            'profile_id' => $request->profile_id ?: null,
             'is_active' => true,
         ]);
 

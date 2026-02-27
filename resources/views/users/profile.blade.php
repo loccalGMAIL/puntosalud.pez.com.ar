@@ -50,11 +50,17 @@
                     </div>
 
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Rol</label>
-                        <div class="inline-flex px-3 py-2 text-sm font-semibold rounded-full 
-                            {{ $user->role === 'admin' ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800' }}">
-                            {{ $user->role_name }}
-                        </div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Perfil</label>
+                        @if($user->profile)
+                            <div class="inline-flex px-3 py-2 text-sm font-semibold rounded-full
+                                {{ $user->profile->modules->contains('module', 'configuration') ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800' }}">
+                                {{ $user->profile->name }}
+                            </div>
+                        @else
+                            <div class="inline-flex px-3 py-2 text-sm font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                                Sin perfil asignado
+                            </div>
+                        @endif
                     </div>
 
                     <div>

@@ -4,7 +4,7 @@
 
 @section('content')
 <div class="flex h-full flex-1 flex-col gap-4 rounded-xl p-4">
-    
+
     <!-- Breadcrumb -->
     <nav class="flex mb-4" aria-label="Breadcrumb">
         <ol class="inline-flex items-center space-x-1 md:space-x-3">
@@ -26,7 +26,7 @@
     <div class="flex items-center justify-between mb-6">
         <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Gestión de Usuarios</h1>
         @can('create', App\Models\User::class)
-        <button onclick="openUserModal('create')" 
+        <button onclick="openUserModal('create')"
                 class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
             <svg class="w-5 h-5 inline-block mr-2" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
@@ -37,31 +37,31 @@
     </div>
 
     <!-- Tabla de usuarios -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200/50">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200/50 dark:border-gray-700">
         <div class="overflow-x-auto">
             <table class="w-full">
-                <thead class="bg-gray-50 border-b border-gray-200">
+                <thead class="bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
                     <tr>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                             Usuario
                         </th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Rol
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                            Perfil
                         </th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                             Estado
                         </th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                             Último acceso
                         </th>
-                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                             Acciones
                         </th>
                     </tr>
                 </thead>
-                <tbody class="bg-white divide-y divide-gray-200">
+                <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                     @forelse($users as $user)
-                    <tr class="hover:bg-gray-50">
+                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
                         <td class="px-6 py-4 whitespace-nowrap">
                             <div class="flex items-center">
                                 <div class="h-10 w-10 flex-shrink-0">
@@ -70,34 +70,40 @@
                                     </div>
                                 </div>
                                 <div class="ml-4">
-                                    <div class="text-sm font-medium text-gray-900">{{ $user->name }}</div>
-                                    <div class="text-sm text-gray-500">{{ $user->email }}</div>
+                                    <div class="text-sm font-medium text-gray-900 dark:text-white">{{ $user->name }}</div>
+                                    <div class="text-sm text-gray-500 dark:text-gray-400">{{ $user->email }}</div>
                                 </div>
                             </div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
-                            <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full 
-                                {{ $user->role === 'admin' ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800' }}">
-                                {{ $user->role_name }}
-                            </span>
+                            @if($user->profile)
+                                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full
+                                    {{ $user->profile->modules->contains('module', 'configuration') ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400' : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300' }}">
+                                    {{ $user->profile->name }}
+                                </span>
+                            @else
+                                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400">
+                                    Sin perfil
+                                </span>
+                            @endif
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
-                            <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full 
-                                {{ $user->is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800' }}">
+                            <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full
+                                {{ $user->is_active ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300' }}">
                                 {{ $user->is_active ? 'Activo' : 'Inactivo' }}
                             </span>
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                             {{ $user->lastLogin ? $user->lastLogin->created_at->diffForHumans() : 'Nunca' }}
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
                             @can('update', $user)
                             <button onclick="openUserModal('edit', {{ $user->id }})"
-                                    class="text-indigo-600 hover:text-indigo-900">
+                                    class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300">
                                 Editar
                             </button>
                             @endcan
-                            
+
                             @can('update', $user)
                             <button onclick="toggleUserStatus({{ $user->id }})"
                                     class="text-{{ $user->is_active ? 'orange' : 'green' }}-600 hover:text-{{ $user->is_active ? 'orange' : 'green' }}-900">
@@ -107,7 +113,7 @@
 
                             @can('delete', $user)
                             <button onclick="deleteUser({{ $user->id }})"
-                                    class="text-red-600 hover:text-red-900">
+                                    class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300">
                                 Eliminar
                             </button>
                             @endcan
@@ -115,7 +121,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="5" class="px-6 py-4 text-center text-gray-500">
+                        <td colspan="5" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
                             No hay usuarios registrados
                         </td>
                     </tr>
@@ -128,11 +134,11 @@
 
 <!-- Modal para crear/editar usuario -->
 <div id="userModal" class="fixed inset-0 z-50 hidden bg-black bg-opacity-50 flex items-center justify-center">
-    <div class="bg-white rounded-xl max-w-md w-full mx-4">
+    <div class="bg-white dark:bg-gray-800 rounded-xl max-w-md w-full mx-4">
         <div class="p-6">
             <div class="flex justify-between items-center mb-4">
-                <h3 id="modalTitle" class="text-lg font-semibold text-gray-900">Nuevo Usuario</h3>
-                <button onclick="closeUserModal()" class="text-gray-400 hover:text-gray-600">
+                <h3 id="modalTitle" class="text-lg font-semibold text-gray-900 dark:text-white">Nuevo Usuario</h3>
+                <button onclick="closeUserModal()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
                     <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
                     </svg>
@@ -146,50 +152,51 @@
 
                 <div class="space-y-4">
                     <div>
-                        <label for="userName" class="block text-sm font-medium text-gray-700 mb-2">Nombre</label>
+                        <label for="userName" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Nombre</label>
                         <input type="text" id="userName" name="name" required
-                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                               class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-blue-500 focus:border-blue-500">
                     </div>
 
                     <div>
-                        <label for="userEmail" class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                        <label for="userEmail" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Email</label>
                         <input type="email" id="userEmail" name="email" required
-                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                               class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-blue-500 focus:border-blue-500">
                     </div>
 
                     <div>
-                        <label for="userRole" class="block text-sm font-medium text-gray-700 mb-2">Rol</label>
-                        <select id="userRole" name="role" required
-                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
-                            <option value="">Seleccionar rol...</option>
-                            <option value="admin">Administrador</option>
-                            <option value="receptionist">Recepcionista</option>
+                        <label for="userProfile" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Perfil</label>
+                        <select id="userProfile" name="profile_id"
+                                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                            <option value="">Sin perfil asignado</option>
+                            @foreach($profiles as $profile)
+                            <option value="{{ $profile->id }}">{{ $profile->name }}</option>
+                            @endforeach
                         </select>
                     </div>
 
                     <div>
-                        <label for="userPassword" class="block text-sm font-medium text-gray-700 mb-2">
+                        <label for="userPassword" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                             <span id="passwordLabel">Contraseña</span>
                         </label>
                         <input type="password" id="userPassword" name="password"
-                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
-                        <p class="text-xs text-gray-500 mt-1" id="passwordHelp">Mínimo 8 caracteres</p>
+                               class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1" id="passwordHelp">Mínimo 8 caracteres</p>
                     </div>
 
                     <div>
-                        <label for="userPasswordConfirmation" class="block text-sm font-medium text-gray-700 mb-2">Confirmar Contraseña</label>
+                        <label for="userPasswordConfirmation" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Confirmar Contraseña</label>
                         <input type="password" id="userPasswordConfirmation" name="password_confirmation"
-                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                               class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-blue-500 focus:border-blue-500">
                     </div>
                 </div>
 
                 <div class="flex gap-3 mt-6">
-                    <button type="submit" 
+                    <button type="submit"
                             class="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
                         <span id="submitText">Crear Usuario</span>
                     </button>
                     <button type="button" onclick="closeUserModal()"
-                            class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
+                            class="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                         Cancelar
                     </button>
                 </div>
@@ -234,7 +241,7 @@ function openUserModal(action, userId = null) {
         passwordLabel.textContent = 'Nueva Contraseña (opcional)';
         passwordHelp.textContent = 'Dejar vacío para mantener la actual';
         passwordInput.required = false;
-        
+
         // Cargar datos del usuario
         loadUserData(userId);
     }
@@ -256,7 +263,7 @@ async function loadUserData(userId) {
             const data = await response.json();
             document.getElementById('userName').value = data.name;
             document.getElementById('userEmail').value = data.email;
-            document.getElementById('userRole').value = data.role;
+            document.getElementById('userProfile').value = data.profile_id ?? '';
         }
     } catch (error) {
         console.error('Error loading user data:', error);
@@ -278,7 +285,7 @@ async function toggleUserStatus(userId) {
         });
 
         const data = await response.json();
-        
+
         if (data.success) {
             location.reload();
         } else {
@@ -305,7 +312,7 @@ async function deleteUser(userId) {
         });
 
         const data = await response.json();
-        
+
         if (data.success) {
             location.reload();
         } else {
@@ -340,7 +347,6 @@ document.getElementById('userForm').addEventListener('submit', async function(e)
             closeUserModal();
             location.reload();
         } else if (data.errors) {
-            // Mostrar errores de validación
             Object.keys(data.errors).forEach(field => {
                 console.error(`${field}: ${data.errors[field].join(', ')}`);
             });

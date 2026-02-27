@@ -5,6 +5,7 @@ namespace App\Models;
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Traits\LogsActivity;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
@@ -27,7 +28,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
-        'role',
+        'profile_id',
         'is_active',
     ];
 
@@ -56,6 +57,14 @@ class User extends Authenticatable
     }
 
     /**
+     * Relaciones
+     */
+    public function profile(): BelongsTo
+    {
+        return $this->belongsTo(Profile::class);
+    }
+
+    /**
      * Último login registrado en ActivityLog
      */
     public function lastLogin()
@@ -67,19 +76,23 @@ class User extends Authenticatable
     }
 
     /**
-     * Verificar si el usuario es administrador
+     * Verificar si el usuario tiene acceso a un módulo
      */
-    public function isAdmin(): bool
+    public function canAccessModule(string $module): bool
     {
-        return $this->role === 'admin';
+        if (! $this->profile) {
+            return false;
+        }
+
+        return $this->profile->allowsModule($module);
     }
 
     /**
-     * Verificar si el usuario es recepcionista
+     * Alias semántico: administrador = acceso a configuración
      */
-    public function isReceptionist(): bool
+    public function isAdmin(): bool
     {
-        return $this->role === 'receptionist';
+        return $this->canAccessModule('configuration');
     }
 
     /**
@@ -96,25 +109,5 @@ class User extends Authenticatable
     public function scopeActive($query)
     {
         return $query->where('is_active', true);
-    }
-
-    /**
-     * Scope para usuarios por rol
-     */
-    public function scopeByRole($query, $role)
-    {
-        return $query->where('role', $role);
-    }
-
-    /**
-     * Accessor para mostrar el rol en español
-     */
-    public function getRoleNameAttribute(): string
-    {
-        return match ($this->role) {
-            'admin' => 'Administrador',
-            'receptionist' => 'Recepcionista',
-            default => 'Desconocido'
-        };
     }
 }
