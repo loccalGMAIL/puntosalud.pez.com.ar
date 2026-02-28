@@ -7,6 +7,24 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [2.9.0] - 2026-02-27
+
+### ✨ Mejoras en Agenda y Dashboard
+
+#### Agenda — Timeline del día
+- **Refactoring de vista:** `agenda/index.blade.php` (1395 líneas) descompuesto en 5 partials organizados por responsabilidad (`cash-alerts`, `calendar`, `day-modal`, `styles`, `scripts`). El archivo principal queda en 82 líneas como orquestador limpio.
+- **Fix doble barra de scroll:** modal convertido a `flex column`; solo el timeline scrollea, header/action bar/legend/footer siempre visibles.
+- **Tipografía de bloques:** aumentada de 11px a 14px para mejor legibilidad.
+- **Colores de bloques:** fondos claros (bg-100) con tipografía oscura (text-900) en lugar de bg-500/text-white.
+- **Estado "Ausente":** cambiado de naranja a gris para diferenciarlo visualmente de urgencia (rojo).
+- **Icono de nota:** cuando un turno tiene nota, aparece un icono de chat ámbar con el texto completo como tooltip.
+- **Opción 25 minutos** agregada al selector de duración de turnos.
+
+#### Dashboard
+- **Icono de nota:** mismo icono ámbar con tooltip en las listas de turnos del dashboard principal y la vista de turnos del día.
+
+---
+
 ## [2.8.1] - 2026-02-27
 
 ### 🔐 Sistema de Perfiles de Acceso Modular

@@ -164,6 +164,7 @@ class DashboardController extends Controller
                     'isPaid' => $hasPaidAppointments,
                     'isUrgency' => $appointment->is_urgency,
                     'isBetweenTurn' => $appointment->is_between_turn,
+                    'notes' => $appointment->notes,
                     'canMarkAttended' => $appointment->status === 'scheduled',
                     'canMarkCompleted' => $appointment->status === 'attended' && !$hasPaidAppointments,
                 ];
@@ -240,6 +241,7 @@ class DashboardController extends Controller
                     'paymentId' => $paymentId,
                     'isUrgency' => $appointment->is_urgency,
                     'isBetweenTurn' => $appointment->is_between_turn,
+                    'notes' => $appointment->notes,
                     'canMarkAttended' => $appointment->status === 'scheduled',
                     'canMarkCompleted' => $appointment->status === 'attended' && ! $isPaid,
                 ];
