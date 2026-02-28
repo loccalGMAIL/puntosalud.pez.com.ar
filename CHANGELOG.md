@@ -7,6 +7,17 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [2.9.1] - 2026-02-28
+
+### 📝 Notas internas por profesional en Agenda
+
+- **Panel lateral colapsable** en la vista de agenda: pestaña fija en el borde derecho que se expande como drawer al hacer click, visible solo cuando hay un profesional seleccionado.
+- **CRUD completo de notas:** crear (con Ctrl+Enter), ver lista con autor y tiempo relativo, eliminar con confirmación.
+- **Trazabilidad:** creación y eliminación de notas registradas en el log de actividad (`ProfessionalNote` usa trait `LogsActivity`).
+- **BD:** nueva tabla `professional_notes` (professional_id, user_id, content).
+
+---
+
 ## [2.9.0] - 2026-02-27
 
 ### ✨ Mejoras en Agenda y Dashboard

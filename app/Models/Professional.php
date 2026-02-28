@@ -65,6 +65,11 @@ class Professional extends Model
         return $this->hasMany(ProfessionalLiquidation::class);
     }
 
+    public function internalNotes()
+    {
+        return $this->hasMany(ProfessionalNote::class)->latest();
+    }
+
     /**
      * Scopes
      */
