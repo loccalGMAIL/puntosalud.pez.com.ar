@@ -1,14 +1,14 @@
 {{-- Modal de detalles del día con timeline --}}
 <div x-show="dayModalOpen"
      x-cloak
-     class="fixed inset-0 z-50 overflow-y-auto bg-black bg-opacity-50 flex items-center justify-center p-4">
+     class="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center p-4">
 
     <!-- Modal Content -->
     <div @click.away="dayModalOpen = false"
-         class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+         class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden">
 
         <!-- Header -->
-        <div class="bg-white dark:bg-gray-800 px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+        <div class="flex-shrink-0 bg-white dark:bg-gray-800 px-6 py-4 border-b border-gray-200 dark:border-gray-700">
             <div class="flex items-center justify-between">
                 <h3 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
                     <svg class="w-5 h-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
@@ -26,9 +26,9 @@
         </div>
 
         <!-- Body -->
-        <div class="p-6">
+        <div class="p-6 flex-1 min-h-0 flex flex-col">
             <!-- Barra superior: acción + info de horario -->
-            <div class="flex items-center justify-between mb-4 flex-wrap gap-3">
+            <div class="flex-shrink-0 flex items-center justify-between mb-4 flex-wrap gap-3">
                 <div class="flex items-center gap-3">
                     <button x-show="!isDayInPast()"
                             @click="openCreateModal(selectedDayDate, selectedProfessionalId); dayModalOpen = false;"
@@ -54,7 +54,7 @@
             </div>
 
             <!-- Leyenda -->
-            <div x-show="daySchedule" class="flex flex-wrap gap-x-4 gap-y-1 mb-4 text-xs text-gray-500 dark:text-gray-400">
+            <div x-show="daySchedule" class="flex-shrink-0 flex flex-wrap gap-x-4 gap-y-1 mb-4 text-xs text-gray-500 dark:text-gray-400">
                 <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-blue-500 inline-block"></span> Programado</span>
                 <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-green-500 inline-block"></span> Atendido</span>
                 <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-orange-500 inline-block"></span> Ausente</span>
@@ -63,8 +63,7 @@
             </div>
 
             <!-- Timeline a ancho completo -->
-            <div x-show="daySchedule" class="overflow-y-auto rounded-lg border border-gray-200 dark:border-gray-700"
-                 style="max-height: 65vh">
+            <div x-show="daySchedule" class="flex-1 min-h-0 overflow-y-auto rounded-lg border border-gray-200 dark:border-gray-700">
                 <div class="relative bg-white dark:bg-gray-900" :style="`height: ${timelineHeightPx}px; min-height: 80px`">
 
                     <!-- Fondo de filas alternadas por hora (visual guide) -->
@@ -120,10 +119,12 @@
                              @click="!isAppointmentInPast(item.apt) && (openEditModal(item.apt), dayModalOpen = false)"
                              :title="isAppointmentInPast(item.apt) ? '(Solo lectura) ' + formatTime(item.apt.appointment_date) + ' – ' + item.apt.patient.last_name + ', ' + item.apt.patient.first_name : formatTime(item.apt.appointment_date) + ' – ' + item.apt.patient.last_name + ', ' + item.apt.patient.first_name">
                             <div class="px-2 h-full flex items-center gap-2 overflow-hidden">
-                                <span class="text-[11px] font-bold whitespace-nowrap tabular-nums" x-text="formatTime(item.apt.appointment_date)"></span>
-                                <span class="opacity-40 select-none text-[10px]">|</span>
-                                <span class="flex-1 truncate text-[11px]" x-text="item.apt.patient.last_name + ', ' + item.apt.patient.first_name"></span>
-                                <span class="whitespace-nowrap opacity-70 text-[10px] tabular-nums" x-text="item.apt.duration > 0 ? item.apt.duration + ' min' : '🚨'"></span>
+                                <span class="text-[14px] font-bold whitespace-nowrap tabular-nums" x-text="formatTime(item.apt.appointment_date)"></span>
+                                <span class="opacity-40 select-none text-[13px]">|</span>
+                                <span class="flex-1 truncate text-[14px]"
+                                      x-text="item.apt.patient.last_name + ', ' + item.apt.patient.first_name"
+                                      :title="item.apt.patient.last_name + ', ' + item.apt.patient.first_name"></span>
+                                <span class="whitespace-nowrap opacity-70 text-[13px] tabular-nums" x-text="item.apt.duration > 0 ? item.apt.duration + ' min' : '🚨'"></span>
                             </div>
                         </div>
                     </template>
@@ -141,7 +142,7 @@
         </div>
 
         <!-- Footer -->
-        <div class="bg-gray-50 dark:bg-gray-700 px-6 py-4 flex justify-end border-t border-gray-200 dark:border-gray-600">
+        <div class="flex-shrink-0 bg-gray-50 dark:bg-gray-700 px-6 py-4 flex justify-end border-t border-gray-200 dark:border-gray-600">
             <button @click="dayModalOpen = false"
                     class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
                 Cerrar

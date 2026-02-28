@@ -476,17 +476,17 @@ document.addEventListener('alpine:init', () => {
 
         appointmentBlockClass(apt) {
             if (apt.duration === 0) {
-                return 'bg-red-500 border-l-4 border-red-700 text-white ring-1 ring-red-300';
+                return 'bg-red-100 border-l-4 border-red-500 text-red-900 ring-1 ring-red-300';
             }
             if (apt.is_between_turn) {
-                return 'bg-orange-400 border-l-4 border-orange-600 text-white';
+                return 'bg-amber-100 border-l-4 border-amber-500 text-amber-900';
             }
             const map = {
-                scheduled: 'bg-blue-500 border-l-4 border-blue-700 text-white',
-                attended:  'bg-green-500 border-l-4 border-green-700 text-white',
-                absent:    'bg-orange-500 border-l-4 border-orange-700 text-white',
+                scheduled: 'bg-blue-100 border-l-4 border-blue-500 text-blue-900',
+                attended:  'bg-green-100 border-l-4 border-green-500 text-green-900',
+                absent:    'bg-gray-100 border-l-4 border-gray-500 text-gray-800',
             };
-            return map[apt.status] || 'bg-gray-400 border-l-4 border-gray-600 text-white';
+            return map[apt.status] || 'bg-gray-100 border-l-4 border-gray-500 text-gray-900';
         },
 
         formatDateSpanish(dateString) {
