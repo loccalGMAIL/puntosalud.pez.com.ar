@@ -10,6 +10,7 @@ use App\Http\Controllers\PatientController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProfessionalController;
+use App\Http\Controllers\ProfessionalNoteController;
 use App\Http\Controllers\ProfessionalScheduleController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SpecialtyController;
@@ -60,6 +61,11 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('appointments', AppointmentController::class);
 
     Route::get('/agenda', [AgendaController::class, 'index'])->name('agenda.index');
+
+    // Notas internas de profesionales (accesible a todos los usuarios autenticados)
+    Route::get('/professionals/{professional}/notes', [ProfessionalNoteController::class, 'index'])->name('professionals.notes.index');
+    Route::post('/professionals/{professional}/notes', [ProfessionalNoteController::class, 'store'])->name('professionals.notes.store');
+    Route::delete('/professional-notes/{note}', [ProfessionalNoteController::class, 'destroy'])->name('professionals.notes.destroy');
 
     // Payment custom routes - DEBEN IR ANTES del resource
     Route::get('/payments/{payment}/print-receipt', [PaymentController::class, 'printReceipt'])->name('payments.print-receipt');

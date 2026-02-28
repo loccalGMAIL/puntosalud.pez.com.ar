@@ -729,6 +729,120 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
+// Componente Alpine.js para el panel lateral de notas internas
+document.addEventListener('alpine:init', () => {
+    Alpine.data('notesPanel', () => ({
+        open: false,
+        notes: [],
+        newNote: '',
+        loading: false,
+        professionalId: @json($selectedProfessional),
+        notesUrl: '{{ $selectedProfessional ? route('professionals.notes.index', $selectedProfessional) : '' }}',
+        storeUrl: '{{ $selectedProfessional ? route('professionals.notes.store', $selectedProfessional) : '' }}',
+
+        get professionalName() {
+            @if($selectedProfessional)
+            const profId = {{ (int) $selectedProfessional }};
+            const list = @json($professionals->map(fn($p) => ['id' => $p->id, 'name' => 'Dr. ' . $p->full_name]));
+            const found = list.find(p => p.id === profId);
+            return found ? found.name : 'Profesional';
+            @else
+            return 'Profesional';
+            @endif
+        },
+
+        toggleOpen() {
+            this.open = !this.open;
+            if (this.open && this.notes.length === 0) {
+                this.loadNotes();
+            }
+        },
+
+        async loadNotes() {
+            if (!this.notesUrl) return;
+            this.loading = true;
+            try {
+                const response = await fetch(this.notesUrl, {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+                const data = await response.json();
+                this.notes = data.notes;
+            } catch (e) {
+                window.showToast('Error al cargar las notas', 'error');
+            } finally {
+                this.loading = false;
+            }
+        },
+
+        async createNote() {
+            if (this.loading || this.newNote.trim().length === 0) return;
+            this.loading = true;
+            try {
+                const response = await fetch(this.storeUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                    body: JSON.stringify({ content: this.newNote.trim() }),
+                });
+                const data = await response.json();
+                if (response.ok && data.success) {
+                    this.notes.unshift(data.note);
+                    this.newNote = '';
+                } else {
+                    const msg = data.errors?.content?.[0] ?? data.message ?? 'Error al guardar la nota';
+                    window.showToast(msg, 'error');
+                }
+            } catch (e) {
+                window.showToast('Error al guardar la nota', 'error');
+            } finally {
+                this.loading = false;
+            }
+        },
+
+        async deleteNote(id) {
+            if (!confirm('¿Eliminar esta nota?')) return;
+            try {
+                const url = `/professional-notes/${id}`;
+                const response = await fetch(url, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                });
+                const data = await response.json();
+                if (response.ok && data.success) {
+                    this.notes = this.notes.filter(n => n.id !== id);
+                } else {
+                    window.showToast('Error al eliminar la nota', 'error');
+                }
+            } catch (e) {
+                window.showToast('Error al eliminar la nota', 'error');
+            }
+        },
+
+        formatDate(isoString) {
+            const date = new Date(isoString);
+            const now = new Date();
+            const diffMs = now - date;
+            const diffMin = Math.floor(diffMs / 60000);
+            const diffH = Math.floor(diffMs / 3600000);
+            const diffD = Math.floor(diffMs / 86400000);
+
+            if (diffMin < 2)  return 'ahora';
+            if (diffMin < 60) return `hace ${diffMin} min`;
+            if (diffH < 24)   return `hace ${diffH} h`;
+            if (diffD === 1)   return 'ayer';
+            if (diffD < 7)    return `hace ${diffD} días`;
+
+            return date.toLocaleDateString('es-AR', { day: 'numeric', month: 'short', year: 'numeric' });
+        },
+    }));
+});
+
 // Componente Alpine.js para el modal de pacientes
 function patientModal() {
     return {

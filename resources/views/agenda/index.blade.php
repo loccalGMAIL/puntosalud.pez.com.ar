@@ -75,6 +75,12 @@
 
     @include('agenda.partials.day-modal')
 
+    @if($selectedProfessional)
+        <div x-data="notesPanel()">
+            @include('agenda.partials.notes-panel')
+        </div>
+    @endif
+
 </div>
 @endsection
 
