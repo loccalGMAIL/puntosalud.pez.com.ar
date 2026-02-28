@@ -591,26 +591,6 @@ class PaymentController extends Controller
     }
 
     // Métodos privados
-    private function generateReceiptNumber()
-    {
-        $year = date('Y');
-        $month = date('m');
-
-        $lastPayment = Payment::whereYear('payment_date', $year)
-            ->whereMonth('payment_date', $month)
-            ->orderBy('receipt_number', 'desc')
-            ->first();
-
-        if ($lastPayment && $lastPayment->receipt_number) {
-            $lastNumber = intval(substr($lastPayment->receipt_number, -4));
-            $newNumber = $lastNumber + 1;
-        } else {
-            $newNumber = 1;
-        }
-
-        return $year.$month.str_pad($newNumber, 4, '0', STR_PAD_LEFT);
-    }
-
     private function createCashMovement(Payment $payment)
     {
         // Verificar que la caja esté abierta
