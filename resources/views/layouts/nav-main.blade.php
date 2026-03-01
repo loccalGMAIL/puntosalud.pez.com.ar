@@ -1,12 +1,6 @@
 @props(['items' => []])
 
 <div class="px-2 py-4">
-    <!-- Group Label -->
-    <div class="px-3 py-2" x-show="!collapsed" x-cloak>
-        {{-- <h2 class="mb-2 px-2 text-xs font-semibold tracking-tight text-gray-500 dark:text-gray-400 uppercase">
-            Menú
-        </h2> --}}
-    </div>
 
     <!-- Menu Items -->
     <nav class="space-y-1">
