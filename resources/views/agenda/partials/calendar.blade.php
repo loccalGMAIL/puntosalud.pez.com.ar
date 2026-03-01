@@ -95,6 +95,9 @@
                     $isHoliday = $holidays->has($dayKey);
                     $holidayData = $isHoliday ? $holidays->get($dayKey) : null;
 
+                    // Verificar si el profesional está ausente ese día
+                    $isAbsent = $professionalAbsences->has($dayKey);
+
                     // Verificar si hay cumpleaños
                     $hasBirthdays = $birthdays->has($dayKey);
                     $birthdayProfessionals = $hasBirthdays ? $birthdays->get($dayKey) : collect();
@@ -104,9 +107,9 @@
                 <div class="min-h-[120px] p-2 border-r border-b border-gray-200 dark:border-gray-600 last:border-r-0
                             {{ !$isCurrentMonth ? 'bg-gray-50 dark:bg-gray-900' :
                                ($isHoliday ? 'bg-red-50/70 dark:bg-red-900/20 border-2 border-red-200 dark:border-red-800' :
-                               (!$hasSchedule ? 'bg-gray-300 dark:bg-gray-600' : 'bg-white dark:bg-gray-800')) }}
-                            {{ ($hasSchedule && $isCurrentMonth && !$isHoliday) ? 'cursor-pointer hover:brightness-95' : '' }}"
-                     @if($hasSchedule && $isCurrentMonth && !$isHoliday)
+                               (!$hasSchedule || $isAbsent ? 'bg-gray-300 dark:bg-gray-600' : 'bg-white dark:bg-gray-800')) }}
+                            {{ ($hasSchedule && $isCurrentMonth && !$isHoliday && !$isAbsent) ? 'cursor-pointer hover:brightness-95' : '' }}"
+                     @if($hasSchedule && $isCurrentMonth && !$isHoliday && !$isAbsent)
                          onclick="openDayModal('{{ $currentDay->format('Y-m-d') }}', {{ $selectedProfessional }})"
                      @endif>
 
@@ -133,6 +136,13 @@
                     @if($isHoliday)
                         <div class="mb-2 px-2 py-1 bg-red-100 dark:bg-red-900/40 rounded text-xs text-red-800 dark:text-red-300 font-medium truncate" title="{{ $holidayData->reason }}">
                             {{ $holidayData->reason }}
+                        </div>
+                    @endif
+
+                    <!-- Absent Label -->
+                    @if($isAbsent && $isCurrentMonth)
+                        <div class="mb-2 px-2 py-1 bg-gray-400 dark:bg-gray-500 rounded text-xs text-gray-800 dark:text-gray-200 font-medium">
+                            Profesional ausente
                         </div>
                     @endif
 
@@ -195,7 +205,7 @@
         </div>
         <div class="flex items-center gap-2">
             <div class="w-3 h-3 bg-gray-300 dark:bg-gray-600 rounded"></div>
-            <span class="text-gray-700 dark:text-gray-300">Día sin atención</span>
+            <span class="text-gray-700 dark:text-gray-300">Ausente / Sin atención</span>
         </div>
     </div>
 @endif

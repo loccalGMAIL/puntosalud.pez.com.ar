@@ -7,6 +7,7 @@ use App\Models\CashMovement;
 use App\Models\Office;
 use App\Models\Patient;
 use App\Models\Professional;
+use App\Models\ProfessionalAbsence;
 use App\Models\ProfessionalSchedule;
 use App\Models\ScheduleException;
 use Carbon\Carbon;
@@ -42,6 +43,7 @@ class AgendaController extends Controller
 
         $appointments = [];
         $professionalSchedules = [];
+        $professionalAbsences = collect();
 
         if ($selectedProfessional) {
             $appointments = Appointment::with(['patient', 'professional'])
@@ -56,6 +58,11 @@ class AgendaController extends Controller
                 ->active()
                 ->get()
                 ->keyBy('day_of_week');
+
+            $professionalAbsences = ProfessionalAbsence::forProfessional($selectedProfessional)
+                ->betweenDates($startOfCalendar, $endOfCalendar)
+                ->get()
+                ->keyBy(fn ($a) => $a->absence_date->format('Y-m-d'));
         }
 
         // Obtener feriados activos del rango de fechas del calendario
@@ -120,6 +127,7 @@ class AgendaController extends Controller
             'date',
             'appointments',
             'professionalSchedules',
+            'professionalAbsences',
             'startOfCalendar',
             'endOfCalendar',
             'holidays',

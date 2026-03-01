@@ -70,6 +70,11 @@ class Professional extends Model
         return $this->hasMany(ProfessionalNote::class)->latest();
     }
 
+    public function absences()
+    {
+        return $this->hasMany(ProfessionalAbsence::class);
+    }
+
     /**
      * Scopes
      */
