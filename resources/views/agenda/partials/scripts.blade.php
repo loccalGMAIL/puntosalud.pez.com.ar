@@ -106,6 +106,11 @@ document.addEventListener('alpine:init', () => {
             document.addEventListener('open-day-modal', (event) => {
                 this.openDayModal(event.detail.date, event.detail.professionalId);
             });
+
+            // AUTO: abrir el día actual si hay profesional seleccionado
+            @if($selectedProfessional)
+            this.openDayModal('{{ today()->format('Y-m-d') }}', {{ $selectedProfessional }});
+            @endif
         },
 
         openCreateModal(date = null, professionalId = null) {

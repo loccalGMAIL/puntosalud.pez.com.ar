@@ -2,7 +2,7 @@
 
 [![Laravel](https://img.shields.io/badge/Laravel-12.x-red?style=flat\&logo=laravel)](https://laravel.com)
 [![PHP](https://img.shields.io/badge/PHP-8.2-blue?style=flat\&logo=php)](https://php.net)
-[![Version](https://img.shields.io/badge/Version-2.9.2-green?style=flat)](#changelog)
+[![Version](https://img.shields.io/badge/Version-2.9.3-green?style=flat)](#changelog)
 [![License](https://img.shields.io/badge/License-MIT-yellow?style=flat)](#license)
 
 Sistema integral de gestión médica para clínicas y consultorios, desarrollado con Laravel 12 y tecnologías modernas.
@@ -24,7 +24,9 @@ Sistema integral de gestión médica para clínicas y consultorios, desarrollado
 * Sistema de entreturnos/urgencias con registro inmediato
 * Control de estados: programado → atendido → cobrado
 * Asignación automática de pagos a turnos
-* **Vista Agenda mejorada** con acceso rápido a profesionales favoritos y celdas clickeables para abrir el Day Modal
+* **Vista Agenda en dos columnas** (v2.9.3): calendario compacto a la izquierda, panel de día inline a la derecha; sin modal overlay, sin doble dismiss
+* **Panel de día**: auto-apertura del día actual, botón "Nuevo Turno" en el header, timeline expandido
+* **Mini-calendario**: celdas cuadradas, indicadores con punto + conteo por estado, tooltip con leyenda al hover
 * **Timeline de día preciso** con posicionamiento absoluto por tiempo, turnos pasados en solo lectura y prevención de solapamiento de turnos
 * **Gestión de feriados** integrada con bloqueo automático de turnos
 * **Creación rápida de pacientes** desde modal de turnos con botón "+"
@@ -149,6 +151,7 @@ php artisan config:clear
 
 ### 🔄 Últimas versiones
 
+* **v2.9.3** (2026-03-01) – 🗓️ Agenda en dos columnas: panel de día inline (reemplaza modal overlay), mini-calendario con celdas cuadradas y tooltip de leyenda, auto-apertura del día actual, header del panel rediseñado.
 * **v2.9.2** (2026-03-01) – 🖨️ Reportes de impresión rediseñados: nuevo componente `x-report-print-header`, layout unificado `layouts/print`, vistas migradas (Análisis de Caja, Gastos, Movimientos de Caja), botón imprimir movimientos restaurado.
 * **v2.9.1** (2026-02-28) – 📝 Notas internas por profesional en Agenda: panel lateral colapsable con CRUD de notas, trazabilidad en log de actividad.
 * **v2.9.0** (2026-02-27) – ✨ Refactoring de Agenda (5 partials), fix scroll, mejoras visuales de bloques y dashboard.
