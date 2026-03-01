@@ -62,7 +62,7 @@
         <!-- Calendar Header -->
         <div class="grid grid-cols-6 bg-gray-50 dark:bg-gray-700">
             @foreach(['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'] as $dayName)
-                <div class="p-4 text-center font-semibold text-gray-700 dark:text-gray-300 border-r border-gray-200 dark:border-gray-600 last:border-r-0">
+                <div class="py-2 px-1 text-center font-semibold text-xs text-gray-700 dark:text-gray-300 border-r border-gray-200 dark:border-gray-600 last:border-r-0">
                     {{ $dayName }}
                 </div>
             @endforeach
@@ -104,7 +104,7 @@
                     $birthdaysText = $birthdayProfessionals->map(fn($p) => "Dr. {$p['name']} ({$p['age']} años)")->join(', ');
                 @endphp
 
-                <div class="min-h-[120px] p-2 border-r border-b border-gray-200 dark:border-gray-600 last:border-r-0
+                <div class="h-[68px] p-1.5 overflow-hidden border-r border-b border-gray-200 dark:border-gray-600 last:border-r-0
                             {{ !$isCurrentMonth ? 'bg-gray-50 dark:bg-gray-900' :
                                ($isHoliday ? 'bg-red-50/70 dark:bg-red-900/20 border-2 border-red-200 dark:border-red-800' :
                                (!$hasSchedule || $isAbsent ? 'bg-gray-300 dark:bg-gray-600' : 'bg-white dark:bg-gray-800')) }}
@@ -114,66 +114,64 @@
                      @endif>
 
                     <!-- Day Number -->
-                    <div class="flex items-center gap-1 mb-2">
-                        <span class="text-sm font-medium
+                    <div class="flex items-center gap-0.5 mb-0.5">
+                        <span class="text-xs font-medium
                                     {{ !$isCurrentMonth ? 'text-gray-400 dark:text-gray-600' :
                                        ($isHoliday ? 'text-red-700 dark:text-red-400' :
                                        (!$hasSchedule ? 'text-gray-500 dark:text-gray-400' : 'text-gray-900 dark:text-white')) }}
-                                    {{ $isToday ? 'bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs' : '' }}">
+                                    {{ $isToday ? 'bg-blue-600 !text-white rounded-full w-5 h-5 flex items-center justify-center text-[11px]' : '' }}">
                             {{ $currentDay->day }}
                         </span>
                         @if($isHoliday)
-                            <svg class="w-3.5 h-3.5 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" title="{{ $holidayData->reason }}">
+                            <svg class="w-3 h-3 text-red-600 dark:text-red-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" title="{{ $holidayData->reason }}">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
                             </svg>
                         @endif
                         @if($hasBirthdays)
-                            <span class="text-base cursor-help" title="🎉 Cumpleaños: {{ $birthdaysText }}" style="filter: drop-shadow(0 1px 2px rgba(0,0,0,0.2));">🎂</span>
+                            <span class="text-xs cursor-help shrink-0" title="🎉 Cumpleaños: {{ $birthdaysText }}">🎂</span>
                         @endif
                     </div>
 
                     <!-- Holiday Label -->
                     @if($isHoliday)
-                        <div class="mb-2 px-2 py-1 bg-red-100 dark:bg-red-900/40 rounded text-xs text-red-800 dark:text-red-300 font-medium truncate" title="{{ $holidayData->reason }}">
-                            {{ $holidayData->reason }}
+                        <div class="text-[10px] leading-tight text-red-700 dark:text-red-400 truncate" title="{{ $holidayData->reason }}">
+                            {{ Str::limit($holidayData->reason, 12) }}
                         </div>
                     @endif
 
                     <!-- Absent Label -->
                     @if($isAbsent && $isCurrentMonth)
-                        <div class="mb-2 px-2 py-1 bg-gray-400 dark:bg-gray-500 rounded text-xs text-gray-800 dark:text-gray-200 font-medium">
-                            Profesional ausente
+                        <div class="text-[10px] leading-tight text-gray-600 dark:text-gray-400">
+                            Ausente
                         </div>
                     @endif
 
-                    <!-- Appointments -->
+                    <!-- Appointments — puntos de colores -->
                     @if($hasSchedule && $dayAppointments->count() > 0)
-                        <div class="space-y-1 overflow-hidden">
-                            @php
-                                $maxVisible = 3;
-                                $visibleAppointments = $dayAppointments->take($maxVisible);
-                            @endphp
-
-                            @foreach($visibleAppointments as $appointment)
+                        @php
+                            $maxDots = 5;
+                            $total = $dayAppointments->count();
+                            $overflow = max(0, $total - $maxDots);
+                        @endphp
+                        <div class="flex items-center gap-0.5 flex-wrap mt-1">
+                            @foreach($dayAppointments->take($maxDots) as $apt)
                                 @php
-                                    $isUrgency = $appointment->is_urgency;
-                                    if ($isUrgency) {
-                                        $statusColor = 'bg-red-100 text-red-800 border-2 border-red-400 dark:bg-red-900/40 dark:text-red-300 dark:border-red-600 font-bold';
+                                    if ($apt->is_urgency) {
+                                        $dotClass = 'ring-1 ring-red-500 bg-red-300 dark:bg-red-700';
                                     } else {
-                                        $statusColors = [
-                                            'scheduled' => 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
-                                            'attended' => 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
-                                            'absent' => 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
-                                        ];
-                                        $statusColor = $statusColors[$appointment->status] ?? 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
+                                        $dotClass = match($apt->status) {
+                                            'scheduled' => 'bg-blue-500 dark:bg-blue-400',
+                                            'attended'  => 'bg-green-500 dark:bg-green-400',
+                                            'absent'    => 'bg-orange-400 dark:bg-orange-500',
+                                            default     => 'bg-gray-400',
+                                        };
                                     }
-                                    $appointmentIsPast = $appointment->appointment_date->isPast();
                                 @endphp
-                                <div class="w-full text-xs rounded px-2 py-1 {{ $statusColor }} truncate {{ $appointmentIsPast ? 'opacity-75' : '' }}">
-                                    <div class="font-medium">{{ $appointment->appointment_date->format('H:i') }}</div>
-                                    <div class="truncate">{{ $appointment->patient->full_name }}</div>
-                                </div>
+                                <span class="w-2 h-2 rounded-full {{ $dotClass }} shrink-0"></span>
                             @endforeach
+                            @if($overflow > 0)
+                                <span class="text-[10px] text-gray-500 dark:text-gray-400 leading-none">+{{ $overflow }}</span>
+                            @endif
                         </div>
                     @endif
                 </div>
@@ -188,15 +186,15 @@
     <!-- Legend -->
     <div class="mt-6 flex flex-wrap gap-4 text-sm">
         <div class="flex items-center gap-2">
-            <div class="w-3 h-3 bg-blue-100 dark:bg-blue-900/30 rounded"></div>
+            <div class="w-3 h-3 bg-blue-500 dark:bg-blue-400 rounded-full"></div>
             <span class="text-gray-700 dark:text-gray-300">Programado</span>
         </div>
         <div class="flex items-center gap-2">
-            <div class="w-3 h-3 bg-green-100 dark:bg-green-900/30 rounded"></div>
+            <div class="w-3 h-3 bg-green-500 dark:bg-green-400 rounded-full"></div>
             <span class="text-gray-700 dark:text-gray-300">Atendido</span>
         </div>
         <div class="flex items-center gap-2">
-            <div class="w-3 h-3 bg-red-100 dark:bg-red-900/30 rounded"></div>
+            <div class="w-3 h-3 bg-orange-400 dark:bg-orange-500 rounded-full"></div>
             <span class="text-gray-700 dark:text-gray-300">Ausente</span>
         </div>
         <div class="flex items-center gap-2">
