@@ -160,6 +160,54 @@ class CashController extends Controller
         return view('cash.report', compact('reportData', 'summary', 'movementsByType'));
     }
 
+    public function printCashReport(Request $request)
+    {
+        $dateFrom = $request->get('date_from', now()->startOfMonth()->format('Y-m-d'));
+        $dateTo = $request->get('date_to', now()->format('Y-m-d'));
+        $groupBy = $request->get('group_by', 'day');
+
+        $startDate = Carbon::parse($dateFrom);
+        $endDate = Carbon::parse($dateTo);
+
+        $movements = CashMovement::with(['user', 'movementType'])
+            ->whereDate('created_at', '>=', $startDate)
+            ->whereDate('created_at', '<=', $endDate)
+            ->orderBy('created_at')
+            ->get();
+
+        $movementsForTotals = $movements->filter(function($movement) {
+            return !in_array($movement->movementType?->code, ['cash_opening', 'cash_closing']);
+        });
+
+        $reportData = $this->generateReportData($movementsForTotals, $groupBy, $startDate, $endDate);
+
+        $summary = [
+            'total_inflows'   => $movementsForTotals->where('amount', '>', 0)->sum('amount'),
+            'total_outflows'  => abs($movementsForTotals->where('amount', '<', 0)->sum('amount')),
+            'net_amount'      => $movementsForTotals->sum('amount'),
+            'movements_count' => $movementsForTotals->count(),
+            'period_days'     => $startDate->diffInDays($endDate) + 1,
+        ];
+
+        $movementsByType = $movementsForTotals->groupBy(function($movement) {
+            return $movement->movementType?->code ?? 'unknown';
+        })->map(function ($group, $typeCode) {
+            $firstMovement = $group->first();
+            return [
+                'type'      => $typeCode,
+                'type_name' => $firstMovement->movementType?->name ?? ucfirst($typeCode),
+                'icon'      => $firstMovement->movementType?->icon ?? '📋',
+                'inflows'   => $group->where('amount', '>', 0)->sum('amount'),
+                'outflows'  => abs($group->where('amount', '<', 0)->sum('amount')),
+                'count'     => $group->count(),
+            ];
+        });
+
+        return view('cash.report-print', compact(
+            'reportData', 'summary', 'movementsByType', 'dateFrom', 'dateTo', 'groupBy'
+        ));
+    }
+
     public function addExpense(Request $request)
     {
         if ($request->isMethod('get')) {

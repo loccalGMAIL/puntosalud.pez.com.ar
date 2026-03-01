@@ -84,6 +84,10 @@
                         'title' => 'Análisis de Caja',
                         'href' => '/cash/report'
                     ],
+                    [
+                        'title' => 'Informe de Gastos',
+                        'href' => '/reports/expenses'
+                    ],
                     // [
                     //     'title' => 'Reporte de Profesionales',
                     //     'href' => '/reports/professionals'

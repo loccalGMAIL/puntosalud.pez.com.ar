@@ -322,7 +322,11 @@
         window.onload = function() {
             setTimeout(function() {
                 window.print();
-            }, 300);
+                window.addEventListener('afterprint', function() {
+                    window.close();
+                });
+                setTimeout(function() { window.close(); }, 3000);
+            }, 500);
         }
     </script>
 </body>
