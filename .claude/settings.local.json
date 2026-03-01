@@ -10,7 +10,8 @@
       "Bash(ls:*)",
       "Bash(grep:*)",
       "Bash(do echo:*)",
-      "Bash(php artisan:*)"
+      "Bash(php artisan:*)",
+      "mcp__context7__query-docs"
     ],
     "deny": [],
     "ask": []
