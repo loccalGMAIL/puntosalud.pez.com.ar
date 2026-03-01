@@ -24,7 +24,7 @@
         </div>
 
         <div class="flex gap-3">
-            <!-- Botón Imprimir Movimientos -->
+            <!-- Botón Imprimir -->
             <a href="{{ route('reports.cash.print', ['date' => $cashSummary['date']->format('Y-m-d'), 'print' => '1']) }}"
                target="_blank"
                class="inline-flex items-center px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-lg shadow-sm transition-colors duration-200">
