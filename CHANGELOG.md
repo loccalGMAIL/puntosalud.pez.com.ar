@@ -7,6 +7,18 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [2.9.2] - 2026-03-01
+
+### 🖨️ Reportes de impresión rediseñados
+
+- **Nuevo componente** `x-report-print-header` con logo, título y fecha de generación, compartido por todos los reportes.
+- **Layout unificado** `layouts/print` con header de pantalla (botones Imprimir/Volver) y estilos de impresión A4.
+- **Vistas migradas** al nuevo sistema: Análisis de Caja, Informe de Gastos y Movimientos de Caja.
+- **Botón "Imprimir Movimientos"** restaurado en la vista Movimientos de Caja (color corregido a verde esmeralda).
+- **Limpieza menor** en la barra de navegación lateral.
+
+---
+
 ## [2.9.1] - 2026-02-28
 
 ### 📝 Notas internas por profesional en Agenda
