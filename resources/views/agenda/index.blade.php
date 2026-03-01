@@ -63,7 +63,20 @@
 
     @include('agenda.partials.cash-alerts')
 
-    @include('agenda.partials.calendar')
+    @if($selectedProfessional)
+        <div class="flex gap-6 items-start">
+            {{-- Columna izquierda: calendario (25%) --}}
+            <div class="flex-[1] min-w-0">
+                @include('agenda.partials.calendar')
+            </div>
+            {{-- Columna derecha: panel de día (75%) --}}
+            <div class="flex-[3] min-w-0 sticky top-6">
+                @include('agenda.partials.day-modal')
+            </div>
+        </div>
+    @else
+        @include('agenda.partials.calendar')
+    @endif
 
     {{-- Modal compartido con vista Turnos --}}
     @include('appointments.modal')
@@ -72,8 +85,6 @@
     <div x-data="patientModal()">
         @include('patients.modal')
     </div>
-
-    @include('agenda.partials.day-modal')
 
     @if($selectedProfessional)
         <div x-data="notesPanel()">

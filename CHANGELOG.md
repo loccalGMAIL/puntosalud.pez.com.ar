@@ -7,6 +7,25 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [2.9.3] - 2026-03-01
+
+### 🗓️ Agenda — Layout de dos columnas y panel de día inline
+
+#### Layout
+- **Dos columnas** cuando hay profesional seleccionado: calendario fijo a la izquierda (25%), panel de día a la derecha (75%). Sin profesional, el calendario ocupa el ancho completo.
+- **Panel de día inline** que reemplaza al modal overlay (`fixed inset-0 z-50`): sin bloqueo de pantalla, el panel permanece visible mientras se trabaja con el modal de turno.
+- **Placeholder** en la columna derecha cuando no hay día seleccionado ("Seleccioná un día del calendario").
+- **Auto-apertura del día actual** al cargar la página con un profesional ya seleccionado.
+- **Header del panel rediseñado**: botón "Nuevo Turno" y botón de cierre en la misma línea que la fecha; horario de jornada en línea secundaria; nombre del profesional eliminado (redundante).
+- **Timeline expandido** a `h-[calc(100vh-120px)]` para aprovechar la altura disponible.
+
+#### Mini-calendario
+- **Celdas cuadradas** (`aspect-square`) en lugar de altura fija; se adaptan al ancho de columna.
+- **Indicadores de turnos simplificados**: un punto de color + número por estado (programado, atendido, ausente, urgencia) en lugar de múltiples puntos repetidos.
+- **Tooltip al hover** con leyenda etiquetada ("Programados: N / Atendidos: N / ..."); posicionamiento inteligente según columna: lunes alineado a la izquierda, sábado a la derecha, resto centrado.
+
+---
+
 ## [2.9.2] - 2026-03-01
 
 ### 🖨️ Reportes de impresión rediseñados

@@ -62,7 +62,7 @@
         <!-- Calendar Header -->
         <div class="grid grid-cols-6 bg-gray-50 dark:bg-gray-700">
             @foreach(['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'] as $dayName)
-                <div class="p-4 text-center font-semibold text-gray-700 dark:text-gray-300 border-r border-gray-200 dark:border-gray-600 last:border-r-0">
+                <div class="py-2 px-1 text-center font-semibold text-xs text-gray-700 dark:text-gray-300 border-r border-gray-200 dark:border-gray-600 last:border-r-0">
                     {{ $dayName }}
                 </div>
             @endforeach
@@ -95,77 +95,148 @@
                     $isHoliday = $holidays->has($dayKey);
                     $holidayData = $isHoliday ? $holidays->get($dayKey) : null;
 
+                    // Verificar si el profesional está ausente ese día
+                    $isAbsent = $professionalAbsences->has($dayKey);
+
                     // Verificar si hay cumpleaños
                     $hasBirthdays = $birthdays->has($dayKey);
                     $birthdayProfessionals = $hasBirthdays ? $birthdays->get($dayKey) : collect();
                     $birthdaysText = $birthdayProfessionals->map(fn($p) => "Dr. {$p['name']} ({$p['age']} años)")->join(', ');
+
+                    // Conteos por estado (para inline + tooltip)
+                    $cntScheduled = $dayAppointments->where('is_urgency', false)->where('status', 'scheduled')->count();
+                    $cntAttended  = $dayAppointments->where('is_urgency', false)->where('status', 'attended')->count();
+                    $cntAbsent    = $dayAppointments->where('is_urgency', false)->where('status', 'absent')->count();
+                    $cntUrgency   = $dayAppointments->where('is_urgency', true)->count();
+                    $hasApts      = $hasSchedule && $dayAppointments->count() > 0;
+
+                    // Posición horizontal del tooltip según columna
+                    $tooltipAlign = match($dayOfWeek) {
+                        1       => 'left-0',              // Lunes: alineado a la izquierda
+                        6       => 'right-0',             // Sábado: alineado a la derecha
+                        default => 'left-1/2 -translate-x-1/2', // resto: centrado
+                    };
+                    $tooltipArrow = match($dayOfWeek) {
+                        1       => 'left-4',
+                        6       => 'right-4',
+                        default => 'left-1/2 -translate-x-1/2',
+                    };
                 @endphp
 
-                <div class="min-h-[120px] p-2 border-r border-b border-gray-200 dark:border-gray-600 last:border-r-0
+                <div class="aspect-square p-1.5 relative group border-r border-b border-gray-200 dark:border-gray-600 last:border-r-0
                             {{ !$isCurrentMonth ? 'bg-gray-50 dark:bg-gray-900' :
                                ($isHoliday ? 'bg-red-50/70 dark:bg-red-900/20 border-2 border-red-200 dark:border-red-800' :
-                               (!$hasSchedule ? 'bg-gray-300 dark:bg-gray-600' : 'bg-white dark:bg-gray-800')) }}
-                            {{ ($hasSchedule && $isCurrentMonth && !$isHoliday) ? 'cursor-pointer hover:brightness-95' : '' }}"
-                     @if($hasSchedule && $isCurrentMonth && !$isHoliday)
+                               (!$hasSchedule || $isAbsent ? 'bg-gray-300 dark:bg-gray-600' : 'bg-white dark:bg-gray-800')) }}
+                            {{ ($hasSchedule && $isCurrentMonth && !$isHoliday && !$isAbsent) ? 'cursor-pointer hover:brightness-95' : '' }}"
+                     @if($hasSchedule && $isCurrentMonth && !$isHoliday && !$isAbsent)
                          onclick="openDayModal('{{ $currentDay->format('Y-m-d') }}', {{ $selectedProfessional }})"
                      @endif>
 
-                    <!-- Day Number -->
-                    <div class="flex items-center gap-1 mb-2">
-                        <span class="text-sm font-medium
-                                    {{ !$isCurrentMonth ? 'text-gray-400 dark:text-gray-600' :
-                                       ($isHoliday ? 'text-red-700 dark:text-red-400' :
-                                       (!$hasSchedule ? 'text-gray-500 dark:text-gray-400' : 'text-gray-900 dark:text-white')) }}
-                                    {{ $isToday ? 'bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs' : '' }}">
-                            {{ $currentDay->day }}
-                        </span>
+                    {{-- Contenido de la celda (recortado) --}}
+                    <div class="overflow-hidden h-full">
+
+                        <!-- Day Number -->
+                        <div class="flex items-center gap-0.5 mb-0.5">
+                            <span class="text-xs font-medium
+                                        {{ !$isCurrentMonth ? 'text-gray-400 dark:text-gray-600' :
+                                           ($isHoliday ? 'text-red-700 dark:text-red-400' :
+                                           (!$hasSchedule ? 'text-gray-500 dark:text-gray-400' : 'text-gray-900 dark:text-white')) }}
+                                        {{ $isToday ? 'bg-blue-600 !text-white rounded-full w-5 h-5 flex items-center justify-center text-[11px]' : '' }}">
+                                {{ $currentDay->day }}
+                            </span>
+                            @if($isHoliday)
+                                <svg class="w-3 h-3 text-red-600 dark:text-red-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            @endif
+                            @if($hasBirthdays)
+                                <span class="text-xs cursor-help shrink-0" title="🎉 Cumpleaños: {{ $birthdaysText }}">🎂</span>
+                            @endif
+                        </div>
+
+                        <!-- Holiday Label -->
                         @if($isHoliday)
-                            <svg class="w-3.5 h-3.5 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" title="{{ $holidayData->reason }}">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-                            </svg>
+                            <div class="text-[10px] leading-tight text-red-700 dark:text-red-400 truncate">
+                                {{ Str::limit($holidayData->reason, 12) }}
+                            </div>
                         @endif
-                        @if($hasBirthdays)
-                            <span class="text-base cursor-help" title="🎉 Cumpleaños: {{ $birthdaysText }}" style="filter: drop-shadow(0 1px 2px rgba(0,0,0,0.2));">🎂</span>
+
+                        <!-- Absent Label -->
+                        @if($isAbsent && $isCurrentMonth)
+                            <div class="text-[10px] leading-tight text-gray-600 dark:text-gray-400">
+                                Ausente
+                            </div>
                         @endif
-                    </div>
 
-                    <!-- Holiday Label -->
-                    @if($isHoliday)
-                        <div class="mb-2 px-2 py-1 bg-red-100 dark:bg-red-900/40 rounded text-xs text-red-800 dark:text-red-300 font-medium truncate" title="{{ $holidayData->reason }}">
-                            {{ $holidayData->reason }}
-                        </div>
-                    @endif
+                        <!-- Puntos con cantidad por estado -->
+                        @if($hasApts)
+                            <div class="flex flex-col gap-0.5 mt-1">
+                                @if($cntScheduled > 0)
+                                    <div class="flex items-center gap-1">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-blue-500 dark:bg-blue-400 shrink-0"></span>
+                                        <span class="text-[10px] leading-none text-gray-600 dark:text-gray-400">{{ $cntScheduled }}</span>
+                                    </div>
+                                @endif
+                                @if($cntAttended > 0)
+                                    <div class="flex items-center gap-1">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-green-500 dark:bg-green-400 shrink-0"></span>
+                                        <span class="text-[10px] leading-none text-gray-600 dark:text-gray-400">{{ $cntAttended }}</span>
+                                    </div>
+                                @endif
+                                @if($cntAbsent > 0)
+                                    <div class="flex items-center gap-1">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-orange-400 dark:bg-orange-500 shrink-0"></span>
+                                        <span class="text-[10px] leading-none text-gray-600 dark:text-gray-400">{{ $cntAbsent }}</span>
+                                    </div>
+                                @endif
+                                @if($cntUrgency > 0)
+                                    <div class="flex items-center gap-1">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-red-500 dark:bg-red-400 shrink-0"></span>
+                                        <span class="text-[10px] leading-none text-gray-600 dark:text-gray-400">{{ $cntUrgency }}</span>
+                                    </div>
+                                @endif
+                            </div>
+                        @endif
 
-                    <!-- Appointments -->
-                    @if($hasSchedule && $dayAppointments->count() > 0)
-                        <div class="space-y-1 overflow-hidden">
-                            @php
-                                $maxVisible = 3;
-                                $visibleAppointments = $dayAppointments->take($maxVisible);
-                            @endphp
+                    </div>{{-- /contenido --}}
 
-                            @foreach($visibleAppointments as $appointment)
-                                @php
-                                    $isUrgency = $appointment->is_urgency;
-                                    if ($isUrgency) {
-                                        $statusColor = 'bg-red-100 text-red-800 border-2 border-red-400 dark:bg-red-900/40 dark:text-red-300 dark:border-red-600 font-bold';
-                                    } else {
-                                        $statusColors = [
-                                            'scheduled' => 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
-                                            'attended' => 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
-                                            'absent' => 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
-                                        ];
-                                        $statusColor = $statusColors[$appointment->status] ?? 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
-                                    }
-                                    $appointmentIsPast = $appointment->appointment_date->isPast();
-                                @endphp
-                                <div class="w-full text-xs rounded px-2 py-1 {{ $statusColor }} truncate {{ $appointmentIsPast ? 'opacity-75' : '' }}">
-                                    <div class="font-medium">{{ $appointment->appointment_date->format('H:i') }}</div>
-                                    <div class="truncate">{{ $appointment->patient->full_name }}</div>
+                    {{-- Tooltip al hover (solo si hay turnos) --}}
+                    @if($hasApts)
+                        <div class="absolute bottom-full {{ $tooltipAlign }} mb-2 z-50
+                                    invisible group-hover:visible opacity-0 group-hover:opacity-100
+                                    transition-opacity duration-150
+                                    bg-gray-900 dark:bg-gray-700 text-white rounded-lg shadow-xl
+                                    px-3 py-2 text-xs whitespace-nowrap pointer-events-none">
+                            @if($cntScheduled > 0)
+                                <div class="flex items-center gap-1.5 py-0.5">
+                                    <span class="w-2 h-2 rounded-full bg-blue-400 shrink-0"></span>
+                                    Programados: {{ $cntScheduled }}
                                 </div>
-                            @endforeach
+                            @endif
+                            @if($cntAttended > 0)
+                                <div class="flex items-center gap-1.5 py-0.5">
+                                    <span class="w-2 h-2 rounded-full bg-green-400 shrink-0"></span>
+                                    Atendidos: {{ $cntAttended }}
+                                </div>
+                            @endif
+                            @if($cntAbsent > 0)
+                                <div class="flex items-center gap-1.5 py-0.5">
+                                    <span class="w-2 h-2 rounded-full bg-orange-400 shrink-0"></span>
+                                    Ausentes: {{ $cntAbsent }}
+                                </div>
+                            @endif
+                            @if($cntUrgency > 0)
+                                <div class="flex items-center gap-1.5 py-0.5">
+                                    <span class="w-2 h-2 rounded-full bg-red-400 shrink-0"></span>
+                                    Urgencias: {{ $cntUrgency }}
+                                </div>
+                            @endif
+                            {{-- Flecha del tooltip --}}
+                            <div class="absolute top-full {{ $tooltipArrow }}
+                                        border-[5px] border-transparent border-t-gray-900 dark:border-t-gray-700"></div>
                         </div>
                     @endif
+
                 </div>
 
                 @php
@@ -178,15 +249,15 @@
     <!-- Legend -->
     <div class="mt-6 flex flex-wrap gap-4 text-sm">
         <div class="flex items-center gap-2">
-            <div class="w-3 h-3 bg-blue-100 dark:bg-blue-900/30 rounded"></div>
+            <div class="w-3 h-3 bg-blue-500 dark:bg-blue-400 rounded-full"></div>
             <span class="text-gray-700 dark:text-gray-300">Programado</span>
         </div>
         <div class="flex items-center gap-2">
-            <div class="w-3 h-3 bg-green-100 dark:bg-green-900/30 rounded"></div>
+            <div class="w-3 h-3 bg-green-500 dark:bg-green-400 rounded-full"></div>
             <span class="text-gray-700 dark:text-gray-300">Atendido</span>
         </div>
         <div class="flex items-center gap-2">
-            <div class="w-3 h-3 bg-red-100 dark:bg-red-900/30 rounded"></div>
+            <div class="w-3 h-3 bg-orange-400 dark:bg-orange-500 rounded-full"></div>
             <span class="text-gray-700 dark:text-gray-300">Ausente</span>
         </div>
         <div class="flex items-center gap-2">
@@ -195,7 +266,7 @@
         </div>
         <div class="flex items-center gap-2">
             <div class="w-3 h-3 bg-gray-300 dark:bg-gray-600 rounded"></div>
-            <span class="text-gray-700 dark:text-gray-300">Día sin atención</span>
+            <span class="text-gray-700 dark:text-gray-300">Ausente / Sin atención</span>
         </div>
     </div>
 @endif

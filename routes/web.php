@@ -10,6 +10,7 @@ use App\Http\Controllers\PatientController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProfessionalController;
+use App\Http\Controllers\ProfessionalAbsenceController;
 use App\Http\Controllers\ProfessionalNoteController;
 use App\Http\Controllers\ProfessionalScheduleController;
 use App\Http\Controllers\ReportController;
@@ -45,6 +46,9 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/professionals/{professional}/schedules', [ProfessionalScheduleController::class, 'store'])->name('professionals.schedules.store');
     Route::put('/professionals/{professional}/schedules/{schedule}', [ProfessionalScheduleController::class, 'update'])->name('professionals.schedules.update');
     Route::delete('/professionals/{professional}/schedules/{schedule}', [ProfessionalScheduleController::class, 'destroy'])->name('professionals.schedules.destroy');
+
+    Route::get('/professionals/{professional}/absences/month', [ProfessionalAbsenceController::class, 'monthData'])->name('professionals.absences.month');
+    Route::post('/professionals/{professional}/absences/toggle', [ProfessionalAbsenceController::class, 'toggle'])->name('professionals.absences.toggle');
 
     Route::resource('specialties', SpecialtyController::class)->only(['index', 'store', 'update', 'destroy']);
 
