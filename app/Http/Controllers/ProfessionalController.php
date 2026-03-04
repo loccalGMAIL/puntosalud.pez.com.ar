@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AppointmentSetting;
 use App\Models\Professional;
 use App\Models\Specialty;
 use Illuminate\Http\Request;
@@ -13,7 +14,7 @@ class ProfessionalController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Professional::with('specialty')
+        $query = Professional::with(['specialty', 'appointmentSettings'])
             ->orderBy('last_name')
             ->orderBy('first_name');
 
@@ -99,6 +100,7 @@ class ProfessionalController extends Controller
                 'commission_percentage' => 'required|numeric|min:0|max:100',
                 'receives_transfers_directly' => 'boolean',
                 'notes' => 'nullable|string|max:1000',
+                'default_duration_minutes' => 'nullable|integer|in:5,10,15,20,25,30,40,45,60,90,120',
             ], [
                 'first_name.regex' => 'El nombre solo puede contener letras y espacios.',
                 'last_name.regex' => 'El apellido solo puede contener letras y espacios.',
@@ -115,7 +117,15 @@ class ProfessionalController extends Controller
             // Convertir receives_transfers_directly a booleano (por defecto false si no se envía)
             $validated['receives_transfers_directly'] = $request->boolean('receives_transfers_directly');
 
-            Professional::create($validated);
+            $defaultDuration = (int) ($validated['default_duration_minutes'] ?? 30);
+            unset($validated['default_duration_minutes']);
+
+            $professional = Professional::create($validated);
+
+            AppointmentSetting::create([
+                'professional_id' => $professional->id,
+                'default_duration_minutes' => $defaultDuration,
+            ]);
 
             if ($request->ajax()) {
                 return response()->json(['success' => true, 'message' => 'Profesional creado exitosamente.']);
@@ -206,6 +216,7 @@ class ProfessionalController extends Controller
                 'receives_transfers_directly' => 'boolean',
                 'notes' => 'nullable|string|max:1000',
                 'is_active' => 'required|in:0,1',
+                'default_duration_minutes' => 'nullable|integer|in:5,10,15,20,25,30,40,45,60,90,120',
             ], [
                 'first_name.regex' => 'El nombre solo puede contener letras y espacios.',
                 'last_name.regex' => 'El apellido solo puede contener letras y espacios.',
@@ -224,7 +235,15 @@ class ProfessionalController extends Controller
             // Convertir receives_transfers_directly a booleano
             $validated['receives_transfers_directly'] = $request->boolean('receives_transfers_directly');
 
+            $defaultDuration = (int) ($validated['default_duration_minutes'] ?? 30);
+            unset($validated['default_duration_minutes']);
+
             $professional->update($validated);
+
+            AppointmentSetting::updateOrCreate(
+                ['professional_id' => $professional->id],
+                ['default_duration_minutes' => $defaultDuration]
+            );
 
             if ($request->ajax()) {
                 return response()->json(['success' => true, 'message' => 'Profesional actualizado exitosamente.']);

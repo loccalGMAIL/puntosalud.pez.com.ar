@@ -4,8 +4,9 @@ $schedulesForJs = [];
 if (isset($professionalSchedules)) {
     foreach ($professionalSchedules as $dayOfWeek => $schedule) {
         $schedulesForJs[$dayOfWeek] = [
-            'start_time' => \Carbon\Carbon::parse($schedule->getRawOriginal('start_time'))->format('H:i'),
-            'end_time'   => \Carbon\Carbon::parse($schedule->getRawOriginal('end_time'))->format('H:i'),
+            'start_time'   => \Carbon\Carbon::parse($schedule->getRawOriginal('start_time'))->format('H:i'),
+            'end_time'     => \Carbon\Carbon::parse($schedule->getRawOriginal('end_time'))->format('H:i'),
+            'slot_minutes' => $professionalDefaultDuration ?? 30,
         ];
     }
 }
@@ -128,13 +129,14 @@ document.addEventListener('alpine:init', () => {
             this.modalOpen = true;
         },
 
-        openCreateModalWithTime(date, professionalId, time) {
+        openCreateModalWithTime(date, professionalId, time, duration = null) {
             this.editingAppointment = null;
             this.resetForm();
             this.clearAllErrors();
             if (date) this.form.appointment_date = date;
             if (professionalId) this.form.professional_id = professionalId.toString();
             if (time) this.form.appointment_time = time;
+            if (duration) this.form.duration = duration;
             this.modalOpen = true;
         },
 
@@ -319,6 +321,7 @@ document.addEventListener('alpine:init', () => {
                     totalMins: (eh * 60 + em) - (sh * 60 + sm),
                     startTime: sched.start_time,
                     endTime:   sched.end_time,
+                    slotMins:  sched.slot_minutes ?? 30,
                 };
             } else {
                 this.daySchedule = null;
@@ -402,7 +405,7 @@ document.addEventListener('alpine:init', () => {
             const { startMins, endMins } = this.daySchedule;
             const px = (mins) => mins * this.pxPerMin;
             const isPast = this.isDayInPast();
-            const SLOT = 30;
+            const SLOT = this.daySchedule?.slotMins ?? 30;
             const MIN_FREE = 5;
 
             // Ordenar turnos y calcular posiciones basadas en tiempo

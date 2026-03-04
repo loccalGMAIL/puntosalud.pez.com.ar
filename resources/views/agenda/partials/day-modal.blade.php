@@ -108,7 +108,7 @@
                                    text-[11px] text-emerald-600 dark:text-emerald-500
                                    transition-colors group z-0"
                             :style="`top: ${item.topPx + 1}px; height: ${item.heightPx}px`"
-                            @click="openCreateModalWithTime(selectedDayDate, selectedProfessionalId, item.label)">
+                            @click="openCreateModalWithTime(selectedDayDate, selectedProfessionalId, item.label, daySchedule?.slotMins ?? 30)">
                         <svg class="w-3 h-3 opacity-50 group-hover:opacity-100 transition-opacity" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
                         </svg>

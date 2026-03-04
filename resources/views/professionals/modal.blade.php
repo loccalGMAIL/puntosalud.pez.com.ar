@@ -171,29 +171,53 @@
                         </div>
                     </div>
 
-                    <!-- Configuración de Pagos -->
+                    <!-- Configuración -->
                     <div>
-                        <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Configuración de Pagos</h3>
-                        <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-                            <label class="flex items-start gap-3 cursor-pointer">
-                                <input type="checkbox"
-                                       x-model="form.receives_transfers_directly"
-                                       class="mt-1 h-4 w-4 text-emerald-600 focus:ring-emerald-500 border-gray-300 rounded">
-                                <div class="flex-1">
-                                    <div class="text-sm font-medium text-gray-900 dark:text-white">
-                                        Recibe transferencias directamente
-                                    </div>
-                                    <div class="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                                        Si está marcado, cuando un paciente paga con transferencia, el dinero se considera recibido por el profesional directamente (no entra a caja del centro). Solo se liquidará la comisión sobre efectivo y tarjetas.
-                                    </div>
+                        <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Configuración</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
+                            <!-- Duración por defecto -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Duración de turno por defecto</label>
+                                <select x-model="form.default_duration_minutes" name="default_duration_minutes"
+                                        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500 dark:bg-gray-700 dark:text-white">
+                                    <option value="10">10 min</option>
+                                    <option value="15">15 min</option>
+                                    <option value="20">20 min</option>
+                                    <option value="25">25 min</option>
+                                    <option value="30">30 min</option>
+                                    <option value="40">40 min</option>
+                                    <option value="45">45 min</option>
+                                    <option value="60">60 min</option>
+                                    <option value="90">90 min</option>
+                                    <option value="120">120 min</option>
+                                </select>
+                                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Tamaño de los bloques en la agenda</p>
+                            </div>
+
+                            <!-- Recibe transferencias directamente -->
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Pagos</label>
+                                <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+                                    <label class="flex items-start gap-3 cursor-pointer">
+                                        <input type="checkbox"
+                                               x-model="form.receives_transfers_directly"
+                                               class="mt-0.5 h-4 w-4 text-emerald-600 focus:ring-emerald-500 border-gray-300 rounded">
+                                        <div class="flex-1">
+                                            <div class="text-sm font-medium text-gray-900 dark:text-white">
+                                                Recibe transferencias directamente
+                                            </div>
+                                            <div class="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                                                Las transferencias se consideran recibidas por el profesional (no entran a caja). Solo se liquida comisión sobre efectivo y tarjetas.
+                                            </div>
+                                        </div>
+                                    </label>
                                 </div>
-                            </label>
+                            </div>
                         </div>
                     </div>
 
                     <!-- Notas -->
                     <div>
-                        <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Notas Adicionales</h3>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Notas</label>
                             <textarea x-model="form.notes" rows="3" placeholder="Información adicional sobre el profesional..."

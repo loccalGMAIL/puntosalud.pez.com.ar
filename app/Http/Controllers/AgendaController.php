@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Appointment;
+use App\Models\AppointmentSetting;
 use App\Models\CashMovement;
 use App\Models\Office;
 use App\Models\Patient;
@@ -44,8 +45,11 @@ class AgendaController extends Controller
         $appointments = [];
         $professionalSchedules = [];
         $professionalAbsences = collect();
+        $professionalDefaultDuration = 30;
 
         if ($selectedProfessional) {
+            $professionalDefaultDuration = AppointmentSetting::where('professional_id', $selectedProfessional)
+                ->value('default_duration_minutes') ?? 30;
             $appointments = Appointment::with(['patient', 'professional'])
                 ->forProfessional($selectedProfessional)
                 ->whereBetween('appointment_date', [$startOfCalendar, $endOfCalendar])
@@ -132,7 +136,8 @@ class AgendaController extends Controller
             'endOfCalendar',
             'holidays',
             'birthdays',
-            'cashStatus'
+            'cashStatus',
+            'professionalDefaultDuration'
         ));
     }
 }
