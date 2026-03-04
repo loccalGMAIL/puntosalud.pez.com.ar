@@ -747,14 +747,6 @@ class AppointmentController extends Controller
             ];
         }
 
-        // 2. Verificar que no sea fin de semana
-        if ($appointmentDateTime->isWeekend()) {
-            return [
-                'available' => false,
-                'reason' => 'No se pueden crear turnos los fines de semana.',
-            ];
-        }
-
         // 3. Verificar feriados activos
         $holiday = ScheduleException::holidays()
             ->active()

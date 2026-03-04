@@ -7,6 +7,15 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [2.9.3-1] - 2026-03-04
+
+### 🐛 Fix: Turnos en sábados
+
+- **Eliminado bloqueo hardcodeado de fin de semana** en la validación de disponibilidad de profesionales (`AppointmentController::checkProfessionalAvailability`). El sistema rechazaba cualquier turno en sábado o domingo sin considerar si el profesional tenía horario configurado para ese día.
+- Ahora la validación delega correctamente en la configuración de horarios del profesional: si tiene `ProfessionalSchedule` activo para el día, el turno se permite; si no, se rechaza con el mensaje "El profesional no trabaja este día de la semana."
+
+---
+
 ## [2.9.3] - 2026-03-01
 
 ### 🗓️ Agenda — Layout de dos columnas y panel de día inline
