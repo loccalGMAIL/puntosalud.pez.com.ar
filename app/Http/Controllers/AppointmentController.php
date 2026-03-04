@@ -546,10 +546,25 @@ class AppointmentController extends Controller
             ->where('status', 'scheduled')
             ->get();
 
-        // Generar slots de 8:00 a 21:00 cada 30 minutos
-        $currentTime = $date->copy()->setTime(8, 0);
-        $endTime = $date->copy()->setTime(21, 0);
         $duration = (int) $validated['duration'];
+
+        // Usar horario del profesional para ese día; si no tiene, usar 8:00-21:00 por defecto
+        $jsDay = $date->dayOfWeek; // 0=Dom, 1=Lun..6=Sab
+        $dayKey = $jsDay === 0 ? 7 : $jsDay; // 1=Lun..7=Dom (igual a Laravel)
+        $schedule = ProfessionalSchedule::where('professional_id', $validated['professional_id'])
+            ->where('day_of_week', $dayKey)
+            ->where('is_active', true)
+            ->first();
+
+        if ($schedule) {
+            [$startH, $startM] = explode(':', Carbon::parse($schedule->getRawOriginal('start_time'))->format('H:i'));
+            [$endH, $endM] = explode(':', Carbon::parse($schedule->getRawOriginal('end_time'))->format('H:i'));
+            $currentTime = $date->copy()->setTime((int) $startH, (int) $startM);
+            $endTime = $date->copy()->setTime((int) $endH, (int) $endM);
+        } else {
+            $currentTime = $date->copy()->setTime(8, 0);
+            $endTime = $date->copy()->setTime(21, 0);
+        }
 
         while ($currentTime->copy()->addMinutes($duration)->lte($endTime)) {
             $slotEnd = $currentTime->copy()->addMinutes($duration);
@@ -570,7 +585,7 @@ class AppointmentController extends Controller
                 $slots[] = $currentTime->format('H:i');
             }
 
-            $currentTime->addMinutes(30);
+            $currentTime->addMinutes($duration);
         }
 
         return response()->json($slots);

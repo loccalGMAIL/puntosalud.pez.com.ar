@@ -22,7 +22,7 @@ class DatabaseSeeder extends Seeder
 
             // 3. Configuraciones que dependen de profesionales
             // ProfessionalScheduleSeeder::class,
-            // AppointmentSettingSeeder::class,
+            AppointmentSettingSeeder::class,
 
             // // 4. Excepciones de horario
             // ScheduleExceptionSeeder::class,

@@ -391,7 +391,8 @@ function professionalsPage() {
             commission_percentage: '',
             receives_transfers_directly: false,
             notes: '',
-            is_active: true
+            is_active: true,
+            default_duration_minutes: 30
         },
         
         // Formulario de especialidad
@@ -484,7 +485,8 @@ function professionalsPage() {
                 commission_percentage: professional.commission_percentage,
                 receives_transfers_directly: professional.receives_transfers_directly || false,
                 notes: professional.notes || '',
-                is_active: professional.is_active.toString()
+                is_active: professional.is_active.toString(),
+                default_duration_minutes: professional.appointment_settings?.default_duration_minutes ?? 30
             };
             this.modalOpen = true;
         },
@@ -502,7 +504,8 @@ function professionalsPage() {
                 commission_percentage: '',
                 receives_transfers_directly: false,
                 notes: '',
-                is_active: 'true'
+                is_active: 'true',
+                default_duration_minutes: 30
             };
         },
         
