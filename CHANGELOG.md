@@ -7,6 +7,17 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [2.9.4] - 2026-03-05
+
+### 🖨️ Listado Diario — Sistema de impresión estándar
+
+- **Refactoring completo** de `daily-schedule-print.blade.php`: reemplaza HTML standalone con CSS inline por `@extends('layouts.print')` + `<x-report-print-header>` (logo del centro, título, timestamp), alineado con el resto de los reportes de impresión del sistema.
+- **Auto-impresión y auto-cierre**: al abrir la vista print con `?print=1`, se lanza automáticamente el diálogo de impresión del navegador; al confirmar/cancelar, la pestaña se cierra sola (`afterprint` + fallback de 3 s).
+- **Botón "Imprimir" en cards de selección** (`daily-schedule-select`): ahora abre directamente la vista print en nueva pestaña (`target="_blank"` con `?print=1`), en lugar de navegar a la vista normal. Eliminada la función `navigateAndPrint()` basada en `sessionStorage`.
+- **Fix conteo de pacientes en cards**: el número de pacientes mostrado en cada card de profesional ya excluye los turnos cancelados (tanto en el conteo como en el rango horario y en el `whereHas`).
+
+---
+
 ## [2.9.3-1] - 2026-03-04
 
 ### 🐛 Fix: Turnos en sábados
