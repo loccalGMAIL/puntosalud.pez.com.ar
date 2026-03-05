@@ -150,10 +150,10 @@ class ReportController extends Controller
         // Obtener profesionales activos que tienen turnos en la fecha seleccionada
         $professionalsWithAppointments = Professional::active()
             ->with(['specialty', 'appointments' => function ($query) use ($selectedDate) {
-                $query->forDate($selectedDate);
+                $query->forDate($selectedDate)->where('status', '!=', 'cancelled');
             }])
             ->whereHas('appointments', function ($query) use ($selectedDate) {
-                $query->forDate($selectedDate);
+                $query->forDate($selectedDate)->where('status', '!=', 'cancelled');
             })
             ->orderBy('last_name')
             ->get()
@@ -188,6 +188,7 @@ class ReportController extends Controller
         $appointments = Appointment::with(['patient', 'paymentAppointments.payment'])
             ->where('professional_id', $professionalId)
             ->forDate($selectedDate)
+            ->where('status', '!=', 'cancelled')
             ->orderBy('appointment_date')
             ->get()
             ->map(function ($appointment) {

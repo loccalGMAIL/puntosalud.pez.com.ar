@@ -1,312 +1,138 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Listado de Pacientes - Dr. {{ $reportData['professional']->full_name }}</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: Arial, sans-serif;
-            font-size: 10px;
-            line-height: 1.2;
-            color: #333;
-            background: white;
-        }
+@extends('layouts.print')
 
-        .header {
-            text-align: center;
-            margin-bottom: 8px;
-            padding-bottom: 6px;
-            border-bottom: 2px solid #333;
-        }
+@section('title', 'Listado Diario - ' . $reportData['professional']->full_name . ' - ' . $reportData['date']->format('d/m/Y'))
+@section('back-url', route('reports.daily-schedule'))
 
-        .clinic-name {
-            font-size: 14px;
-            font-weight: bold;
-            margin-bottom: 2px;
-        }
+@section('content')
+<div class="p-6 print:p-1">
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 print:shadow-none print:border-none">
 
-        .report-title {
-            font-size: 12px;
-            font-weight: bold;
-            margin-bottom: 4px;
-        }
+        <!-- Encabezado del Reporte -->
+        <div class="p-2 border-b border-gray-200 dark:border-gray-700 print:border-gray-400 print:p-0.5">
+            <x-report-print-header
+                title="Listado de Pacientes a Atender"
+                :subtitle="$reportData['date']->translatedFormat('l, d \d\e F \d\e Y')"
+            />
+        </div>
 
-        .report-info {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 8px;
-            background-color: #f8f9fa;
-            padding: 4px 6px;
-            border: 1px solid #dee2e6;
-        }
-        
-        .info-section {
-            flex: 1;
-        }
-        
-        .info-label {
-            font-weight: bold;
-            margin-bottom: 1px;
-            font-size: 8px;
-        }
+        <div class="p-6 print:p-2">
 
-        .stats-grid {
-            display: flex;
-            gap: 6px;
-            margin-bottom: 8px;
-        }
+            <!-- Info del Profesional -->
+            <div class="flex gap-4 mb-6 print:mb-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 print:border-gray-400 rounded-lg p-3 print:p-1.5">
+                <div class="flex-1">
+                    <p class="text-[10px] font-bold text-gray-500 dark:text-gray-400 print:text-gray-600 uppercase">Profesional</p>
+                    <p class="text-sm font-semibold text-gray-900 dark:text-white print:text-black">Dr. {{ $reportData['professional']->full_name }}</p>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 print:text-gray-600">{{ $reportData['professional']->specialty->name }}</p>
+                </div>
+                <div class="flex-1">
+                    <p class="text-[10px] font-bold text-gray-500 dark:text-gray-400 print:text-gray-600 uppercase">Fecha</p>
+                    <p class="text-sm font-semibold text-gray-900 dark:text-white print:text-black">{{ $reportData['date']->format('d/m/Y') }}</p>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 print:text-gray-600">{{ $reportData['date']->translatedFormat('l') }}</p>
+                </div>
+                <div class="flex-1">
+                    <p class="text-[10px] font-bold text-gray-500 dark:text-gray-400 print:text-gray-600 uppercase">Generado</p>
+                    <p class="text-sm font-semibold text-gray-900 dark:text-white print:text-black">{{ $reportData['generated_at']->format('d/m/Y H:i') }}</p>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 print:text-gray-600">Por: {{ $reportData['generated_by'] }}</p>
+                </div>
+            </div>
 
-        .stat-card {
-            text-align: center;
-            padding: 3px 6px;
-            border: 1px solid #dee2e6;
-            background-color: #f8f9fa;
-            flex: 1;
-        }
+            <!-- Stats -->
+            <div class="grid grid-cols-2 gap-4 mb-6 print:gap-1 print:mb-2">
+                <div class="bg-gray-50 dark:bg-gray-700 p-3 rounded-lg print:bg-gray-100 print:border print:border-gray-300 print:p-1">
+                    <p class="flex items-baseline justify-between gap-2">
+                        <span class="text-[10px] font-medium text-gray-700 dark:text-gray-200 print:text-gray-800">Total Pacientes</span>
+                        <span class="text-base font-bold text-gray-900 dark:text-white print:text-black print:text-sm">{{ $reportData['stats']['total_appointments'] }}</span>
+                    </p>
+                </div>
+                <div class="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg print:bg-gray-100 print:border print:border-gray-300 print:p-1">
+                    <p class="flex items-baseline justify-between gap-2">
+                        <span class="text-[10px] font-medium text-blue-900 dark:text-blue-200 print:text-gray-800">Programados</span>
+                        <span class="text-base font-bold text-blue-700 dark:text-blue-300 print:text-black print:text-sm">{{ $reportData['stats']['scheduled'] }}</span>
+                    </p>
+                </div>
+            </div>
 
-        .stat-number {
-            font-size: 12px;
-            font-weight: bold;
-            color: #2563eb;
-        }
+            <!-- Tabla de Turnos -->
+            @if($reportData['appointments']->count() > 0)
+            <div class="mb-2 print:mb-0.5">
+                <h5 class="report-section-title">Turnos del Día ({{ $reportData['appointments']->count() }})</h5>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-[11px] print:text-[9px] border-collapse">
+                        <thead>
+                            <tr class="border-b border-gray-300 dark:border-gray-600 print:border-gray-400">
+                                <th class="text-center py-[2px] px-1 font-semibold text-gray-900 dark:text-white print:text-black" style="width:8%">Hora</th>
+                                <th class="text-left py-[2px] px-1 font-semibold text-gray-900 dark:text-white print:text-black" style="width:35%">Paciente</th>
+                                <th class="text-center py-[2px] px-1 font-semibold text-gray-900 dark:text-white print:text-black" style="width:12%">Estado</th>
+                                <th class="text-left py-[2px] px-1 font-semibold text-gray-900 dark:text-white print:text-black" style="width:45%">Observaciones</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200 dark:divide-gray-700 print:divide-gray-400">
+                            @foreach($reportData['appointments'] as $appointment)
+                            <tr>
+                                <td class="py-[1px] px-1 text-center font-bold text-gray-900 dark:text-white print:text-black">{{ $appointment['time'] }}</td>
+                                <td class="py-[1px] px-1">
+                                    <span class="font-semibold text-gray-900 dark:text-white print:text-black">{{ $appointment['patient_name'] }}</span>
+                                    <br>
+                                    <span class="text-[9px] text-gray-500 dark:text-gray-400 print:text-gray-600">
+                                        DNI: {{ $appointment['patient_dni'] }}
+                                        @if($appointment['patient_insurance'])
+                                            | {{ $appointment['patient_insurance'] }}
+                                        @endif
+                                    </span>
+                                </td>
+                                <td class="py-[1px] px-1 text-center">
+                                    @php
+                                        $statusClasses = [
+                                            'scheduled' => 'bg-yellow-100 text-yellow-800 print:bg-yellow-50 print:text-yellow-900',
+                                            'attended'  => 'bg-green-100 text-green-800 print:bg-green-50 print:text-green-900',
+                                            'cancelled' => 'bg-red-100 text-red-800 print:bg-red-50 print:text-red-900',
+                                            'absent'    => 'bg-gray-100 text-gray-700 print:bg-gray-50 print:text-gray-800',
+                                        ];
+                                        $cls = $statusClasses[$appointment['status']] ?? 'bg-gray-100 text-gray-700';
+                                    @endphp
+                                    <span class="inline-block px-1 py-0.5 rounded text-[8px] font-bold uppercase {{ $cls }}">
+                                        {{ $appointment['status_label'] }}
+                                    </span>
+                                </td>
+                                <td class="py-[1px] px-1 text-[9px] text-gray-700 dark:text-gray-300 print:text-gray-700">
+                                    {{ $appointment['notes'] ?: '-' }}
+                                </td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            @else
+            <p class="text-sm text-center text-gray-500 dark:text-gray-400 print:text-gray-600 italic py-6 print:py-2">
+                No hay pacientes para atender este día.
+            </p>
+            @endif
 
-        .stat-label {
-            font-size: 7px;
-            text-transform: uppercase;
-            margin-top: 1px;
-        }
+        </div>
 
-        .appointments-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 8px;
-        }
+        <!-- Pie del Reporte -->
+        <div class="p-6 border-t border-gray-200 dark:border-gray-700 print:border-gray-400 print:p-1">
+            <div class="flex justify-between text-sm text-gray-500 dark:text-gray-400 print:text-gray-700 print:text-xs">
+                <p>Generado por: {{ $reportData['generated_by'] }}</p>
+                <p>Total de turnos: {{ $reportData['appointments']->count() }}</p>
+            </div>
+        </div>
 
-        .appointments-table th,
-        .appointments-table td {
-            border: 1px solid #dee2e6;
-            padding: 2px 4px;
-            text-align: left;
-            font-size: 9px;
-        }
-
-        .appointments-table th {
-            background-color: #e9ecef;
-            font-weight: bold;
-            font-size: 8px;
-            text-transform: uppercase;
-        }
-        
-        .time-column {
-            width: 45px;
-            text-align: center;
-            font-weight: bold;
-        }
-
-        .patient-column {
-            width: 35%;
-        }
-
-        .status-column {
-            width: 70px;
-            text-align: center;
-        }
-
-        .notes-column {
-            width: 35%;
-            font-size: 8px;
-        }
-
-        .status-badge {
-            padding: 1px 4px;
-            border-radius: 2px;
-            font-size: 7px;
-            font-weight: bold;
-            text-transform: uppercase;
-        }
-        
-        .status-scheduled {
-            background-color: #fff3cd;
-            color: #856404;
-        }
-        
-        .status-attended {
-            background-color: #d4edda;
-            color: #155724;
-        }
-        
-        .status-cancelled {
-            background-color: #f8d7da;
-            color: #721c24;
-        }
-        
-        .status-absent {
-            background-color: #e2e3e5;
-            color: #41464b;
-        }
-
-        .footer {
-            margin-top: 10px;
-            padding-top: 6px;
-            border-top: 1px solid #dee2e6;
-            display: flex;
-            justify-content: space-between;
-            font-size: 7px;
-            color: #6c757d;
-        }
-
-        .no-appointments {
-            text-align: center;
-            padding: 20px;
-            color: #6c757d;
-            font-style: italic;
-        }
-
-        @media print {
-            @page {
-                margin: 1cm;
-                size: A4;
-            }
-
-            body {
-                -webkit-print-color-adjust: exact;
-                print-color-adjust: exact;
-            }
-
-            .no-print {
-                display: none !important;
-            }
-
-            .page-break {
-                page-break-after: always;
-            }
-        }
-        
-        .print-button {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: #007bff;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 14px;
-            z-index: 1000;
-        }
-        
-        .print-button:hover {
-            background: #0056b3;
-        }
-    </style>
-</head>
-<body>
-    <button class="print-button no-print" onclick="window.print()">🖨️ Imprimir</button>
-    
-    <!-- Header -->
-    <div class="header">
-        <div class="clinic-name">PUNTO SALUD</div>
-        <div class="report-title">LISTADO DE PACIENTES A ATENDER</div>
     </div>
-    
-    <!-- Report Info -->
-    <div class="report-info">
-        <div class="info-section">
-            <div class="info-label">Profesional:</div>
-            <div style="font-size: 9px;">Dr. {{ $reportData['professional']->full_name }}</div>
-            <div style="font-size: 7px; color: #666;">{{ $reportData['professional']->specialty->name }}</div>
-        </div>
-        <div class="info-section">
-            <div class="info-label">Fecha:</div>
-            <div style="font-size: 9px;">{{ $reportData['date']->format('d/m/Y') }}</div>
-            <div style="font-size: 7px; color: #666;">{{ $reportData['date']->translatedFormat('l') }}</div>
-        </div>
-        <div class="info-section">
-            <div class="info-label">Generado:</div>
-            <div style="font-size: 9px;">{{ $reportData['generated_at']->format('d/m/Y H:i') }}</div>
-            <div style="font-size: 7px; color: #666;">Por: {{ $reportData['generated_by'] }}</div>
-        </div>
-    </div>
-    
-    <!-- Stats -->
-    <div class="stats-grid">
-        <div class="stat-card">
-            <div class="stat-number">{{ $reportData['stats']['total_appointments'] }}</div>
-            <div class="stat-label">Total Pacientes</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-number">{{ $reportData['stats']['scheduled'] }}</div>
-            <div class="stat-label">Programados</div>
-        </div>
-    </div>
-    
-    <!-- Appointments Table -->
-    @if($reportData['appointments']->count() > 0)
-        <table class="appointments-table">
-            <thead>
-                <tr>
-                    <th class="time-column">Hora</th>
-                    <th class="patient-column">Paciente</th>
-                    <th class="status-column">Estado</th>
-                    <th class="notes-column">Observaciones</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach($reportData['appointments'] as $appointment)
-                    <tr>
-                        <td class="time-column">{{ $appointment['time'] }}</td>
-                        <td class="patient-column">
-                            <div style="font-size: 9px;"><strong>{{ $appointment['patient_name'] }}</strong></div>
-                            <div style="font-size: 7px; color: #666;">
-                                DNI: {{ $appointment['patient_dni'] }}
-                                @if($appointment['patient_insurance'])
-                                    | {{ $appointment['patient_insurance'] }}
-                                @endif
-                            </div>
-                        </td>
-                        <td class="status-column">
-                            <span class="status-badge status-{{ $appointment['status'] }}">
-                                {{ $appointment['status_label'] }}
-                            </span>
-                        </td>
-                        <td class="notes-column">
-                            {{ $appointment['notes'] ?: '-' }}
-                        </td>
-                    </tr>
-                @endforeach
-            </tbody>
-        </table>
-    @else
-        <div class="no-appointments">
-            <strong>No hay pacientes para atender este día</strong>
-            <br>
-            <small>El profesional no tiene pacientes asignados para {{ $reportData['date']->format('d/m/Y') }}</small>
-        </div>
-    @endif
-    
-    <!-- Footer -->
-    <div class="footer">
-        <div>Punto Salud - Sistema de Gestión Médica</div>
-        <div>Página generada el {{ now()->format('d/m/Y H:i:s') }}</div>
-    </div>
-    
-    <script>
-        // Auto-imprimir si viene con parámetro print
-        if (window.location.search.includes('print=1')) {
-            window.onload = function() {
-                setTimeout(function() {
-                    window.print();
-                }, 500);
-            }
+</div>
+@endsection
+
+@push('scripts')
+<script>
+    if (window.location.search.includes('print=1')) {
+        window.onload = function() {
+            setTimeout(function() {
+                window.print();
+                window.addEventListener('afterprint', function() { window.close(); });
+                setTimeout(function() { window.close(); }, 3000);
+            }, 500);
         }
-    </script>
-</body>
-</html>
+    }
+</script>
+@endpush
