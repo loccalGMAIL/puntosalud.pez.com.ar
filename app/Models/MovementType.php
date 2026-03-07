@@ -24,7 +24,6 @@ class MovementType extends Model
         'icon',
         'color',
         'is_active',
-        'parent_type_id',
         'order',
     ];
 
@@ -38,22 +37,6 @@ class MovementType extends Model
     }
 
     // Relaciones
-
-    /**
-     * Tipo padre (para jerarquía)
-     */
-    public function parent()
-    {
-        return $this->belongsTo(MovementType::class, 'parent_type_id');
-    }
-
-    /**
-     * Tipos hijos (subcategorías)
-     */
-    public function children()
-    {
-        return $this->hasMany(MovementType::class, 'parent_type_id')->orderBy('order');
-    }
 
     /**
      * Movimientos de caja que usan este tipo
@@ -82,22 +65,6 @@ class MovementType extends Model
     }
 
     /**
-     * Solo tipos principales (sin padre)
-     */
-    public function scopeMainTypes($query)
-    {
-        return $query->whereNull('parent_type_id')->orderBy('order');
-    }
-
-    /**
-     * Solo subcategorías (con padre)
-     */
-    public function scopeSubTypes($query)
-    {
-        return $query->whereNotNull('parent_type_id')->orderBy('order');
-    }
-
-    /**
      * Tipos que afectan positivamente el balance (ingresos)
      */
     public function scopeIncome($query)
@@ -116,30 +83,6 @@ class MovementType extends Model
     // Métodos helper
 
     /**
-     * Verifica si es un tipo principal
-     */
-    public function isMainType(): bool
-    {
-        return is_null($this->parent_type_id);
-    }
-
-    /**
-     * Verifica si es una subcategoría
-     */
-    public function isSubType(): bool
-    {
-        return !is_null($this->parent_type_id);
-    }
-
-    /**
-     * Verifica si tiene subcategorías
-     */
-    public function hasChildren(): bool
-    {
-        return $this->children()->exists();
-    }
-
-    /**
      * Verifica si es un ingreso
      */
     public function isIncome(): bool
@@ -153,18 +96,6 @@ class MovementType extends Model
     public function isExpense(): bool
     {
         return $this->affects_balance === -1;
-    }
-
-    /**
-     * Obtiene el nombre completo con jerarquía
-     */
-    public function getFullNameAttribute(): string
-    {
-        if ($this->parent) {
-            return "{$this->parent->name} > {$this->name}";
-        }
-
-        return $this->name;
     }
 
     /**

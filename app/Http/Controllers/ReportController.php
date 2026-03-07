@@ -6,7 +6,6 @@ use App\Models\Appointment;
 use App\Models\CashMovement;
 use App\Models\MovementType;
 use App\Models\Professional;
-use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 
@@ -685,7 +684,7 @@ class ReportController extends Controller
         $endDate   = Carbon::parse($dateTo)->endOfDay();
 
         $query = CashMovement::with(['movementType', 'user'])
-            ->whereHas('movementType', fn($q) => $q->where('category', 'expense_detail'))
+            ->whereHas('movementType', fn($q) => $q->whereIn('category', ['expense_detail', 'withdrawal_detail']))
             ->whereBetween('created_at', [$startDate, $endDate]);
 
         if ($movementTypeId) {
@@ -706,7 +705,9 @@ class ReportController extends Controller
 
         $topType = $byType->first();
 
-        $expenseTypes = MovementType::active()->where('category', 'expense_detail')->orderBy('order')->get();
+        $expenseTypes = MovementType::active()
+            ->whereIn('category', ['expense_detail', 'withdrawal_detail'])
+            ->orderBy('category')->orderBy('order')->get();
 
         return view('reports.expenses', compact(
             'movements', 'totalAmount', 'totalCount', 'byType', 'topType',
@@ -715,7 +716,7 @@ class ReportController extends Controller
     }
 
     /**
-     * Exportar informe de gastos como CSV
+     * Exportar informe de gastos como CSV (formato amigable para Excel)
      */
     public function exportExpensesReportCsv(Request $request)
     {
@@ -727,53 +728,7 @@ class ReportController extends Controller
         $endDate   = Carbon::parse($dateTo)->endOfDay();
 
         $query = CashMovement::with(['movementType', 'user'])
-            ->whereHas('movementType', fn($q) => $q->where('category', 'expense_detail'))
-            ->whereBetween('created_at', [$startDate, $endDate]);
-
-        if ($movementTypeId) {
-            $query->where('movement_type_id', $movementTypeId);
-        }
-
-        $movements = $query->orderBy('created_at', 'desc')->get();
-
-        $filename = 'gastos_' . $dateFrom . '_' . $dateTo . '.csv';
-
-        return response()->stream(function () use ($movements) {
-            $handle = fopen('php://output', 'w');
-            // UTF-8 BOM
-            fputs($handle, "\xEF\xBB\xBF");
-            fputcsv($handle, ['Fecha', 'Hora', 'Tipo de Gasto', 'Descripción', 'Monto', 'Registrado por']);
-            foreach ($movements as $m) {
-                fputcsv($handle, [
-                    $m->created_at->format('d/m/Y'),
-                    $m->created_at->format('H:i'),
-                    $m->movementType?->name ?? '-',
-                    $m->description ?? '',
-                    number_format(abs($m->amount), 2, '.', ''),
-                    $m->user?->name ?? 'Sistema',
-                ]);
-            }
-            fclose($handle);
-        }, 200, [
-            'Content-Type'        => 'text/csv; charset=UTF-8',
-            'Content-Disposition' => "attachment; filename=\"{$filename}\"",
-        ]);
-    }
-
-    /**
-     * Exportar informe de gastos como PDF
-     */
-    public function exportExpensesReportPdf(Request $request)
-    {
-        $dateFrom = $request->get('date_from', now()->startOfMonth()->format('Y-m-d'));
-        $dateTo   = $request->get('date_to', now()->format('Y-m-d'));
-        $movementTypeId = $request->get('movement_type_id');
-
-        $startDate = Carbon::parse($dateFrom)->startOfDay();
-        $endDate   = Carbon::parse($dateTo)->endOfDay();
-
-        $query = CashMovement::with(['movementType', 'user'])
-            ->whereHas('movementType', fn($q) => $q->where('category', 'expense_detail'))
+            ->whereHas('movementType', fn($q) => $q->whereIn('category', ['expense_detail', 'withdrawal_detail']))
             ->whereBetween('created_at', [$startDate, $endDate]);
 
         if ($movementTypeId) {
@@ -786,19 +741,62 @@ class ReportController extends Controller
         $totalCount  = $movements->count();
 
         $byType = $movements->groupBy('movement_type_id')->map(fn($items) => [
-            'name'  => $items->first()->movementType->name,
+            'name'  => $items->first()->movementType?->name ?? '-',
             'count' => $items->count(),
             'total' => $items->sum(fn($m) => abs($m->amount)),
         ])->sortByDesc('total');
 
-        $filename = 'gastos_' . $dateFrom . '_' . $dateTo . '.pdf';
+        $filename = 'gastos_' . $dateFrom . '_' . $dateTo . '.csv';
 
-        $pdf = Pdf::loadView('reports.expenses-pdf', compact(
-            'movements', 'totalAmount', 'totalCount', 'byType', 'dateFrom', 'dateTo'
-        ));
-        $pdf->setPaper('a4', 'portrait');
+        $callback = function () use ($movements, $byType, $totalAmount, $totalCount, $dateFrom, $dateTo) {
+            $f = fopen('php://output', 'w');
+            // BOM UTF-8 para que Excel detecte el encoding
+            fprintf($f, chr(0xEF).chr(0xBB).chr(0xBF));
 
-        return $pdf->download($filename);
+            // Encabezado
+            fputcsv($f, ['INFORME DE GASTOS'], ';');
+            fputcsv($f, ["Período: $dateFrom al $dateTo"], ';');
+            fputcsv($f, [], ';');
+
+            // Resumen
+            fputcsv($f, ['RESUMEN'], ';');
+            fputcsv($f, ['Total Gastos',    number_format($totalAmount, 2, ',', '.')], ';');
+            fputcsv($f, ['Cantidad de Registros', $totalCount], ';');
+            fputcsv($f, [], ';');
+
+            // Por tipo
+            fputcsv($f, ['ANÁLISIS POR TIPO'], ';');
+            fputcsv($f, ['Tipo de Gasto', 'Cantidad', 'Total'], ';');
+            foreach ($byType as $item) {
+                fputcsv($f, [
+                    $item['name'],
+                    $item['count'],
+                    number_format($item['total'], 2, ',', '.'),
+                ], ';');
+            }
+            fputcsv($f, [], ';');
+
+            // Detalle
+            fputcsv($f, ['DETALLE DE GASTOS'], ';');
+            fputcsv($f, ['Fecha', 'Hora', 'Tipo de Gasto', 'Descripción', 'Monto', 'Registrado por'], ';');
+            foreach ($movements as $m) {
+                fputcsv($f, [
+                    $m->created_at->format('d/m/Y'),
+                    $m->created_at->format('H:i'),
+                    $m->movementType?->name ?? '-',
+                    $m->description ?? '',
+                    number_format(abs($m->amount), 2, ',', '.'),
+                    $m->user?->name ?? 'Sistema',
+                ], ';');
+            }
+
+            fclose($f);
+        };
+
+        return response()->stream($callback, 200, [
+            'Content-Type'        => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => "attachment; filename=\"{$filename}\"",
+        ]);
     }
 
     /**
@@ -814,7 +812,7 @@ class ReportController extends Controller
         $endDate   = Carbon::parse($dateTo)->endOfDay();
 
         $query = CashMovement::with(['movementType', 'user'])
-            ->whereHas('movementType', fn($q) => $q->where('category', 'expense_detail'))
+            ->whereHas('movementType', fn($q) => $q->whereIn('category', ['expense_detail', 'withdrawal_detail']))
             ->whereBetween('created_at', [$startDate, $endDate]);
 
         if ($movementTypeId) {

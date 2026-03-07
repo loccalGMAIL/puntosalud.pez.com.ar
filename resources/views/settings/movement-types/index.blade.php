@@ -69,139 +69,80 @@
     </div>
     @endif
 
-    <!-- Tabla de Tipos Principales -->
+    @php
+        $categoryLabels = [
+            'main_type'        => 'Sistema',
+            'expense_detail'   => 'Gastos',
+            'income_detail'    => 'Ingresos',
+            'withdrawal_detail'=> 'Retiros',
+        ];
+    @endphp
+
+    <!-- Tabla unificada agrupada por categoría -->
     <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
-        <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Tipos Principales</h2>
-        </div>
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                 <thead class="bg-gray-50 dark:bg-gray-900">
                     <tr>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Nombre</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Código</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Categoría</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Afecta Balance</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Estado</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Subcategorías</th>
                         <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Acciones</th>
                     </tr>
                 </thead>
                 <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                    @forelse($mainTypes as $type)
-                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="flex items-center">
-                                <span class="text-2xl mr-2">{{ $type->icon }}</span>
-                                <span class="text-sm font-medium text-gray-900 dark:text-white">{{ $type->name }}</span>
-                            </div>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <code class="text-xs bg-gray-100 dark:bg-gray-900 px-2 py-1 rounded">{{ $type->code }}</code>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                            {{ str_replace('_', ' ', ucfirst($type->category)) }}
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full
-                                {{ $type->affects_balance == 1 ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : '' }}
-                                {{ $type->affects_balance == -1 ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' : '' }}
-                                {{ $type->affects_balance == 0 ? 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200' : '' }}">
-                                {{ $type->affects_balance == 1 ? '+1 Ingreso' : ($type->affects_balance == -1 ? '-1 Egreso' : '0 Neutral') }}
-                            </span>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <form action="{{ route('movement-types.toggle-active', $type) }}" method="POST" class="inline">
-                                @csrf
-                                @method('PATCH')
-                                <button type="submit" class="inline-flex px-2 py-1 text-xs font-semibold rounded-full
-                                    {{ $type->is_active ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200' }}">
-                                    {{ $type->is_active ? 'Activo' : 'Inactivo' }}
-                                </button>
-                            </form>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                            {{ $type->children->count() }}
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <a href="{{ route('movement-types.edit', $type) }}" class="text-emerald-600 hover:text-emerald-900 dark:text-emerald-400 dark:hover:text-emerald-300 mr-3">Editar</a>
-                            <form action="{{ route('movement-types.destroy', $type) }}" method="POST" class="inline" onsubmit="return confirm('¿Estás seguro de eliminar este tipo?')">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300">Eliminar</button>
-                            </form>
-                        </td>
-                    </tr>
+                    @forelse($typesByCategory as $category => $types)
+                        <tr class="bg-gray-50 dark:bg-gray-900/50">
+                            <td colspan="5" class="px-6 py-2">
+                                <span class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                    {{ $categoryLabels[$category] ?? ucfirst($category) }}
+                                </span>
+                            </td>
+                        </tr>
+                        @foreach($types as $type)
+                        <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="flex items-center">
+                                    <span class="text-2xl mr-2">{{ $type->icon }}</span>
+                                    <span class="text-sm font-medium text-gray-900 dark:text-white">{{ $type->name }}</span>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <code class="text-xs bg-gray-100 dark:bg-gray-900 px-2 py-1 rounded">{{ $type->code }}</code>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full
+                                    {{ $type->affects_balance == 1 ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : '' }}
+                                    {{ $type->affects_balance == -1 ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' : '' }}
+                                    {{ $type->affects_balance == 0 ? 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200' : '' }}">
+                                    {{ $type->affects_balance == 1 ? '+1 Ingreso' : ($type->affects_balance == -1 ? '-1 Egreso' : '0 Neutral') }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <form action="{{ route('movement-types.toggle-active', $type) }}" method="POST" class="inline">
+                                    @csrf
+                                    @method('PATCH')
+                                    <button type="submit" class="inline-flex px-2 py-1 text-xs font-semibold rounded-full
+                                        {{ $type->is_active ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200' }}">
+                                        {{ $type->is_active ? 'Activo' : 'Inactivo' }}
+                                    </button>
+                                </form>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                <a href="{{ route('movement-types.edit', $type) }}" class="text-emerald-600 hover:text-emerald-900 dark:text-emerald-400 dark:hover:text-emerald-300 mr-3">Editar</a>
+                                <form action="{{ route('movement-types.destroy', $type) }}" method="POST" class="inline" onsubmit="return confirm('¿Estás seguro de eliminar este tipo?')">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300">Eliminar</button>
+                                </form>
+                            </td>
+                        </tr>
+                        @endforeach
                     @empty
                     <tr>
-                        <td colspan="7" class="px-6 py-12 text-center text-sm text-gray-500 dark:text-gray-400">
-                            No hay tipos principales registrados
-                        </td>
-                    </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-    </div>
-
-    <!-- Tabla de Subcategorías -->
-    <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
-        <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Subcategorías</h2>
-        </div>
-        <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                <thead class="bg-gray-50 dark:bg-gray-900">
-                    <tr>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Nombre</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Código</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Tipo Padre</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Categoría</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Estado</th>
-                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Acciones</th>
-                    </tr>
-                </thead>
-                <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                    @forelse($subTypes as $type)
-                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="flex items-center">
-                                <span class="text-2xl mr-2">{{ $type->icon }}</span>
-                                <span class="text-sm font-medium text-gray-900 dark:text-white">{{ $type->name }}</span>
-                            </div>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <code class="text-xs bg-gray-100 dark:bg-gray-900 px-2 py-1 rounded">{{ $type->code }}</code>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                            {{ $type->parent?->name ?? '-' }}
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                            {{ str_replace('_', ' ', ucfirst($type->category)) }}
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <form action="{{ route('movement-types.toggle-active', $type) }}" method="POST" class="inline">
-                                @csrf
-                                @method('PATCH')
-                                <button type="submit" class="inline-flex px-2 py-1 text-xs font-semibold rounded-full
-                                    {{ $type->is_active ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200' }}">
-                                    {{ $type->is_active ? 'Activo' : 'Inactivo' }}
-                                </button>
-                            </form>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <a href="{{ route('movement-types.edit', $type) }}" class="text-emerald-600 hover:text-emerald-900 dark:text-emerald-400 dark:hover:text-emerald-300 mr-3">Editar</a>
-                            <form action="{{ route('movement-types.destroy', $type) }}" method="POST" class="inline" onsubmit="return confirm('¿Estás seguro de eliminar esta subcategoría?')">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300">Eliminar</button>
-                            </form>
-                        </td>
-                    </tr>
-                    @empty
-                    <tr>
-                        <td colspan="6" class="px-6 py-12 text-center text-sm text-gray-500 dark:text-gray-400">
-                            No hay subcategorías registradas
+                        <td colspan="5" class="px-6 py-12 text-center text-sm text-gray-500 dark:text-gray-400">
+                            No hay tipos de movimiento registrados
                         </td>
                     </tr>
                     @endforelse

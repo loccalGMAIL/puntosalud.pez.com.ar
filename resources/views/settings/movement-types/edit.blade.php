@@ -124,27 +124,6 @@
                         @enderror
                     </div>
 
-                    <!-- Tipo Padre -->
-                    <div>
-                        <label for="parent_type_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                            Tipo Padre
-                        </label>
-                        <select name="parent_type_id"
-                                id="parent_type_id"
-                                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 dark:bg-gray-700 dark:text-white @error('parent_type_id') border-red-500 @enderror">
-                            <option value="">Sin padre (tipo principal)</option>
-                            @foreach($parentTypes as $parentType)
-                                <option value="{{ $parentType->id }}" {{ old('parent_type_id', $movementType->parent_type_id) == $parentType->id ? 'selected' : '' }}>
-                                    {{ $parentType->icon }} {{ $parentType->name }}
-                                </option>
-                            @endforeach
-                        </select>
-                        @error('parent_type_id')
-                            <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
-                        @enderror
-                        <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Dejar vacío si es un tipo principal</p>
-                    </div>
-
                     <!-- Afecta Balance -->
                     <div>
                         <label for="affects_balance" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">

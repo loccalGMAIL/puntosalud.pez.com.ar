@@ -2,7 +2,7 @@
 
 [![Laravel](https://img.shields.io/badge/Laravel-12.x-red?style=flat\&logo=laravel)](https://laravel.com)
 [![PHP](https://img.shields.io/badge/PHP-8.2-blue?style=flat\&logo=php)](https://php.net)
-[![Version](https://img.shields.io/badge/Version-2.9.4-green?style=flat)](#changelog)
+[![Version](https://img.shields.io/badge/Version-2.9.4--1-green?style=flat)](#changelog)
 [![License](https://img.shields.io/badge/License-MIT-yellow?style=flat)](#license)
 
 Sistema integral de gestión médica para clínicas y consultorios, desarrollado con Laravel 12 y tecnologías modernas.
@@ -81,7 +81,7 @@ Sistema integral de gestión médica para clínicas y consultorios, desarrollado
 * Vista en tiempo real del día actual
 * Liquidación diaria de profesionales
 * Reportes optimizados para impresión y control administrativo
-* **Exportación de reportes de caja** a Excel (CSV) y PDF
+* **Exportación de reportes de caja** a Excel (CSV estructurado) e impresión via navegador
 
 ## 🛠 Tecnologías
 
@@ -151,6 +151,7 @@ php artisan config:clear
 
 ### 🔄 Últimas versiones
 
+* **v2.9.4-1** (2026-03-07) – 🔧 Refactoring MovementType: eliminación de jerarquía padre/hijo, reclasificación de `refund` a gastos, retiros incluidos en Informe de Gastos, Excel mejorado con secciones y formato argentino, eliminación de botón PDF y DomPDF.
 * **v2.9.4** (2026-03-05) – 🖨️ Listado Diario: sistema de impresión estándar (layout/print + header con logo), auto-impresión y auto-cierre de pestaña, fix botón imprimir en cards de selección, fix conteo de pacientes sin cancelados.
 * **v2.9.3-1** (2026-03-04) – 🐛 Fix: permitir creación de turnos en sábados cuando el profesional tiene horario configurado para ese día.
 * **v2.9.3** (2026-03-01) – 🗓️ Agenda en dos columnas: panel de día inline (reemplaza modal overlay), mini-calendario con celdas cuadradas y tooltip de leyenda, auto-apertura del día actual, header del panel rediseñado.

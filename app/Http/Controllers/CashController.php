@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\CashMovement;
 use App\Models\MovementType;
 use App\Models\Payment;
-use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -213,7 +212,7 @@ class CashController extends Controller
         if ($request->isMethod('get')) {
             // Obtener tipos de movimiento de GASTOS activos desde BD (categoría expense_detail)
             // Excluir tipos de sistema y retiros (withdrawal_detail)
-            $excludedCodes = ['professional_payment', 'cash_opening', 'cash_closing'];
+            $excludedCodes = ['professional_payment', 'cash_opening', 'cash_closing', 'patient_refund'];
 
             $expenseTypes = \App\Models\MovementType::active()
                 ->where('category', 'expense_detail') // Solo gastos, NO retiros
@@ -224,28 +223,13 @@ class CashController extends Controller
             // Convertir a array [code => name] para el select
             $expenseCategories = $expenseTypes->pluck('name', 'code')->toArray();
 
-            // Obtener profesionales activos que tengan turnos hoy y no estén liquidados
-            $today = now()->format('Y-m-d');
-
-            $professionals = \App\Models\Professional::active()
-                ->whereHas('appointments', function ($query) use ($today) {
-                    $query->whereDate('appointment_date', $today);
-                })
-                ->whereDoesntHave('liquidations', function ($query) use ($today) {
-                    $query->where('liquidation_date', $today)
-                          ->where('payment_status', 'paid');
-                })
-                ->orderBy('last_name')
-                ->orderBy('first_name')
-                ->get();
-
-            return view('cash.expense-form', compact('expenseCategories', 'professionals'));
+            return view('cash.expense-form', compact('expenseCategories'));
         }
 
         // Validación dinámica: obtener códigos válidos desde BD (solo categoría expense_detail)
         $validCodes = \App\Models\MovementType::active()
             ->where('category', 'expense_detail') // Solo gastos, NO retiros
-            ->whereNotIn('code', ['professional_payment', 'cash_opening', 'cash_closing'])
+            ->whereNotIn('code', ['professional_payment', 'cash_opening', 'cash_closing', 'patient_refund'])
             ->pluck('code')
             ->toArray();
 
@@ -254,7 +238,6 @@ class CashController extends Controller
             'payment_method' => 'required|string|in:cash,transfer,debit_card,credit_card,qr',
             'description' => 'required|string|max:500',
             'category' => 'required|string|in:' . implode(',', $validCodes),
-            'professional_id' => 'nullable|exists:professionals,id|required_if:category,patient_refund',
             'receipt_file' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
             'notes' => 'nullable|string|max:500',
         ]);
@@ -280,14 +263,6 @@ class CashController extends Controller
             $newBalance = $currentBalance - $validated['amount'];
 
             $description = $validated['description'];
-
-            // Si es devolución a paciente, agregar nombre del profesional a la descripción
-            if ($validated['category'] === 'patient_refund' && isset($validated['professional_id'])) {
-                $professional = \App\Models\Professional::find($validated['professional_id']);
-                if ($professional) {
-                    $description = "Reintegro a Paciente - Dr. {$professional->first_name} {$professional->last_name} - " . $description;
-                }
-            }
 
             if ($validated['notes']) {
                 $description .= ' - '.$validated['notes'];
@@ -1526,61 +1501,6 @@ class CashController extends Controller
         };
 
         return response()->stream($callback, 200, $headers);
-    }
-
-    /**
-     * Descargar reporte de caja en formato PDF
-     */
-    public function downloadCashReportPdf(Request $request)
-    {
-        $dateFrom = $request->get('date_from', now()->startOfMonth()->format('Y-m-d'));
-        $dateTo = $request->get('date_to', now()->format('Y-m-d'));
-        $groupBy = $request->get('group_by', 'day');
-
-        $startDate = Carbon::parse($dateFrom);
-        $endDate = Carbon::parse($dateTo);
-
-        $movements = CashMovement::with(['user', 'movementType'])
-            ->whereDate('created_at', '>=', $startDate)
-            ->whereDate('created_at', '<=', $endDate)
-            ->orderBy('created_at')
-            ->get();
-
-        // Filtrar movimientos excluyendo apertura y cierre
-        $movementsForTotals = $movements->filter(function($movement) {
-            return !in_array($movement->movementType?->code, ['cash_opening', 'cash_closing']);
-        });
-
-        $reportData = $this->generateReportData($movementsForTotals, $groupBy, $startDate, $endDate);
-
-        $summary = [
-            'total_inflows' => $movementsForTotals->where('amount', '>', 0)->sum('amount'),
-            'total_outflows' => abs($movementsForTotals->where('amount', '<', 0)->sum('amount')),
-            'net_amount' => $movementsForTotals->sum('amount'),
-            'movements_count' => $movementsForTotals->count(),
-            'period_days' => $startDate->diffInDays($endDate) + 1,
-        ];
-
-        $movementsByType = $movementsForTotals->groupBy(function($movement) {
-            return $movement->movementType?->code ?? 'unknown';
-        })->map(function ($group, $typeCode) {
-            $firstMovement = $group->first();
-            return [
-                'type' => $typeCode,
-                'type_name' => $firstMovement->movementType?->name ?? ucfirst($typeCode),
-                'icon' => $firstMovement->movementType?->icon ?? '',
-                'inflows' => $group->where('amount', '>', 0)->sum('amount'),
-                'outflows' => abs($group->where('amount', '<', 0)->sum('amount')),
-                'count' => $group->count(),
-            ];
-        });
-
-        $filename = 'reporte-caja-' . $dateFrom . '-a-' . $dateTo . '.pdf';
-
-        $pdf = Pdf::loadView('cash.report-pdf', compact('reportData', 'summary', 'movementsByType', 'dateFrom', 'dateTo', 'groupBy'));
-        $pdf->setPaper('a4', 'portrait');
-
-        return $pdf->download($filename);
     }
 
     /**

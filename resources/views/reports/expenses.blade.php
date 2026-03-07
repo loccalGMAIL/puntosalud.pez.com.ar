@@ -32,13 +32,6 @@
                 </svg>
                 Excel
             </button>
-            <button @click="exportReport('pdf')"
-                    class="inline-flex items-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg shadow-sm transition-colors duration-200">
-                <svg class="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
-                </svg>
-                PDF
-            </button>
             <button @click="exportReport('print')"
                     class="inline-flex items-center px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white text-sm font-medium rounded-lg shadow-sm transition-colors duration-200">
                 <svg class="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
@@ -281,8 +274,6 @@ function expensesReportForm() {
             });
             if (format === 'excel') {
                 window.location.href = '/reports/expenses/export?' + params.toString();
-            } else if (format === 'pdf') {
-                window.location.href = '/reports/expenses/pdf?' + params.toString();
             } else if (format === 'print') {
                 params.set('print', '1');
                 window.open('/reports/expenses/print?' + params.toString(), '_blank');
