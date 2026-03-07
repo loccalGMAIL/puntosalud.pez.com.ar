@@ -685,7 +685,7 @@ class ReportController extends Controller
         $endDate   = Carbon::parse($dateTo)->endOfDay();
 
         $query = CashMovement::with(['movementType', 'user'])
-            ->whereHas('movementType', fn($q) => $q->where('category', 'expense_detail'))
+            ->whereHas('movementType', fn($q) => $q->whereIn('category', ['expense_detail', 'withdrawal_detail']))
             ->whereBetween('created_at', [$startDate, $endDate]);
 
         if ($movementTypeId) {
@@ -706,7 +706,9 @@ class ReportController extends Controller
 
         $topType = $byType->first();
 
-        $expenseTypes = MovementType::active()->where('category', 'expense_detail')->orderBy('order')->get();
+        $expenseTypes = MovementType::active()
+            ->whereIn('category', ['expense_detail', 'withdrawal_detail'])
+            ->orderBy('category')->orderBy('order')->get();
 
         return view('reports.expenses', compact(
             'movements', 'totalAmount', 'totalCount', 'byType', 'topType',
@@ -727,7 +729,7 @@ class ReportController extends Controller
         $endDate   = Carbon::parse($dateTo)->endOfDay();
 
         $query = CashMovement::with(['movementType', 'user'])
-            ->whereHas('movementType', fn($q) => $q->where('category', 'expense_detail'))
+            ->whereHas('movementType', fn($q) => $q->whereIn('category', ['expense_detail', 'withdrawal_detail']))
             ->whereBetween('created_at', [$startDate, $endDate]);
 
         if ($movementTypeId) {
@@ -773,7 +775,7 @@ class ReportController extends Controller
         $endDate   = Carbon::parse($dateTo)->endOfDay();
 
         $query = CashMovement::with(['movementType', 'user'])
-            ->whereHas('movementType', fn($q) => $q->where('category', 'expense_detail'))
+            ->whereHas('movementType', fn($q) => $q->whereIn('category', ['expense_detail', 'withdrawal_detail']))
             ->whereBetween('created_at', [$startDate, $endDate]);
 
         if ($movementTypeId) {
@@ -814,7 +816,7 @@ class ReportController extends Controller
         $endDate   = Carbon::parse($dateTo)->endOfDay();
 
         $query = CashMovement::with(['movementType', 'user'])
-            ->whereHas('movementType', fn($q) => $q->where('category', 'expense_detail'))
+            ->whereHas('movementType', fn($q) => $q->whereIn('category', ['expense_detail', 'withdrawal_detail']))
             ->whereBetween('created_at', [$startDate, $endDate]);
 
         if ($movementTypeId) {

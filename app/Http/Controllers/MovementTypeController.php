@@ -13,18 +13,10 @@ class MovementTypeController extends Controller
      */
     public function index()
     {
-        $types = MovementType::with('parent', 'children')
-            ->orderBy('parent_type_id')
-            ->orderBy('order')
-            ->get()
-            ->groupBy(function ($type) {
-                return $type->parent_type_id ? 'subcategories' : 'main';
-            });
+        $typesByCategory = MovementType::orderBy('category')->orderBy('order')->get()
+            ->groupBy('category');
 
-        return view('settings.movement-types.index', [
-            'mainTypes' => $types['main'] ?? collect(),
-            'subTypes' => $types['subcategories'] ?? collect(),
-        ]);
+        return view('settings.movement-types.index', compact('typesByCategory'));
     }
 
     /**
@@ -32,9 +24,7 @@ class MovementTypeController extends Controller
      */
     public function create()
     {
-        $parentTypes = MovementType::mainTypes()->active()->get();
-
-        return view('settings.movement-types.create', compact('parentTypes'));
+        return view('settings.movement-types.create');
     }
 
     /**
@@ -50,7 +40,6 @@ class MovementTypeController extends Controller
             'affects_balance' => 'required|in:-1,0,1',
             'icon' => 'nullable|string|max:10',
             'color' => 'nullable|string|max:20',
-            'parent_type_id' => 'nullable|exists:movement_types,id',
             'is_active' => 'boolean',
             'order' => 'nullable|integer|min:0',
         ]);
@@ -69,12 +58,7 @@ class MovementTypeController extends Controller
      */
     public function edit(MovementType $movementType)
     {
-        $parentTypes = MovementType::mainTypes()
-            ->active()
-            ->where('id', '!=', $movementType->id)
-            ->get();
-
-        return view('settings.movement-types.edit', compact('movementType', 'parentTypes'));
+        return view('settings.movement-types.edit', compact('movementType'));
     }
 
     /**
@@ -90,7 +74,6 @@ class MovementTypeController extends Controller
             'affects_balance' => 'required|in:-1,0,1',
             'icon' => 'nullable|string|max:10',
             'color' => 'nullable|string|max:20',
-            'parent_type_id' => 'nullable|exists:movement_types,id',
             'is_active' => 'boolean',
             'order' => 'nullable|integer|min:0',
         ]);
@@ -113,12 +96,6 @@ class MovementTypeController extends Controller
         if ($movementType->cashMovements()->exists()) {
             return redirect()->route('movement-types.index')
                 ->with('error', 'No se puede eliminar este tipo porque tiene movimientos asociados');
-        }
-
-        // Verificar que no tenga hijos
-        if ($movementType->children()->exists()) {
-            return redirect()->route('movement-types.index')
-                ->with('error', 'No se puede eliminar este tipo porque tiene subcategorías asociadas');
         }
 
         $movementType->delete();

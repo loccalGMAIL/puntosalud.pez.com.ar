@@ -13,11 +13,10 @@ class MovementTypeSeeder extends Seeder
     public function run(): void
     {
         // ========================================
-        // TIPOS PRINCIPALES (main_type)
+        // TIPOS DE SISTEMA (main_type)
         // ========================================
 
-        // 1. Pago de Paciente
-        $patientPayment = MovementType::create([
+        MovementType::create([
             'code' => 'patient_payment',
             'name' => 'Pago de Paciente',
             'description' => 'Pago recibido de un paciente por consultas o tratamientos',
@@ -29,7 +28,6 @@ class MovementTypeSeeder extends Seeder
             'order' => 1,
         ]);
 
-        // 2. Pago a Profesional
         MovementType::create([
             'code' => 'professional_payment',
             'name' => 'Pago a Profesional',
@@ -42,33 +40,6 @@ class MovementTypeSeeder extends Seeder
             'order' => 2,
         ]);
 
-        // 3. Gastos (con subcategorías)
-        $expense = MovementType::create([
-            'code' => 'expense',
-            'name' => 'Gastos',
-            'description' => 'Gastos operativos de la clínica',
-            'category' => 'main_type',
-            'affects_balance' => -1, // Egreso
-            'icon' => '💸',
-            'color' => 'red',
-            'is_active' => true,
-            'order' => 3,
-        ]);
-
-        // 4. Reembolso
-        MovementType::create([
-            'code' => 'refund',
-            'name' => 'Reembolso',
-            'description' => 'Devolución de dinero a pacientes',
-            'category' => 'main_type',
-            'affects_balance' => -1, // Egreso
-            'icon' => '🔄',
-            'color' => 'yellow',
-            'is_active' => true,
-            'order' => 4,
-        ]);
-
-        // 5. Apertura de Caja
         MovementType::create([
             'code' => 'cash_opening',
             'name' => 'Apertura de Caja',
@@ -78,10 +49,9 @@ class MovementTypeSeeder extends Seeder
             'icon' => '🔓',
             'color' => 'orange',
             'is_active' => true,
-            'order' => 5,
+            'order' => 3,
         ]);
 
-        // 6. Cierre de Caja
         MovementType::create([
             'code' => 'cash_closing',
             'name' => 'Cierre de Caja',
@@ -91,10 +61,9 @@ class MovementTypeSeeder extends Seeder
             'icon' => '🔒',
             'color' => 'orange',
             'is_active' => true,
-            'order' => 6,
+            'order' => 4,
         ]);
 
-        // 7. Control de Caja
         MovementType::create([
             'code' => 'cash_control',
             'name' => 'Control de Caja',
@@ -104,10 +73,9 @@ class MovementTypeSeeder extends Seeder
             'icon' => '🔍',
             'color' => 'purple',
             'is_active' => true,
-            'order' => 7,
+            'order' => 5,
         ]);
 
-        // 8. Entrega de Turno
         MovementType::create([
             'code' => 'shift_handover',
             'name' => 'Entrega de Turno',
@@ -117,10 +85,9 @@ class MovementTypeSeeder extends Seeder
             'icon' => '🔄',
             'color' => 'indigo',
             'is_active' => true,
-            'order' => 8,
+            'order' => 6,
         ]);
 
-        // 9. Recibo de Turno
         MovementType::create([
             'code' => 'shift_receive',
             'name' => 'Recibo de Turno',
@@ -130,38 +97,24 @@ class MovementTypeSeeder extends Seeder
             'icon' => '📥',
             'color' => 'teal',
             'is_active' => true,
-            'order' => 9,
+            'order' => 7,
         ]);
 
-        // 10. Retiro de Caja (con subcategorías)
-        $cashWithdrawal = MovementType::create([
-            'code' => 'cash_withdrawal',
-            'name' => 'Retiro de Caja',
-            'description' => 'Retiro de efectivo de la caja',
-            'category' => 'main_type',
+        // ========================================
+        // GASTOS (expense_detail)
+        // ========================================
+
+        MovementType::create([
+            'code' => 'refund',
+            'name' => 'Reembolso',
+            'description' => 'Devolución de dinero a pacientes',
+            'category' => 'expense_detail',
             'affects_balance' => -1, // Egreso
-            'icon' => '💸',
-            'color' => 'orange',
+            'icon' => '🔄',
+            'color' => 'yellow',
             'is_active' => true,
-            'order' => 10,
+            'order' => 1,
         ]);
-
-        // 11. Otros Ingresos (con subcategorías)
-        $other = MovementType::create([
-            'code' => 'other',
-            'name' => 'Otros',
-            'description' => 'Otros movimientos diversos',
-            'category' => 'main_type',
-            'affects_balance' => 1, // Por defecto ingreso, pero puede variar
-            'icon' => '📋',
-            'color' => 'gray',
-            'is_active' => true,
-            'order' => 11,
-        ]);
-
-        // ========================================
-        // SUBCATEGORÍAS DE GASTOS (expense_detail)
-        // ========================================
 
         MovementType::create([
             'code' => 'office_supplies',
@@ -171,9 +124,8 @@ class MovementTypeSeeder extends Seeder
             'affects_balance' => -1,
             'icon' => '📎',
             'color' => 'red',
-            'parent_type_id' => $expense->id,
             'is_active' => true,
-            'order' => 1,
+            'order' => 2,
         ]);
 
         MovementType::create([
@@ -184,9 +136,8 @@ class MovementTypeSeeder extends Seeder
             'affects_balance' => -1,
             'icon' => '💉',
             'color' => 'red',
-            'parent_type_id' => $expense->id,
             'is_active' => true,
-            'order' => 2,
+            'order' => 3,
         ]);
 
         MovementType::create([
@@ -197,9 +148,8 @@ class MovementTypeSeeder extends Seeder
             'affects_balance' => -1,
             'icon' => '🔌',
             'color' => 'red',
-            'parent_type_id' => $expense->id,
             'is_active' => true,
-            'order' => 3,
+            'order' => 4,
         ]);
 
         MovementType::create([
@@ -210,9 +160,8 @@ class MovementTypeSeeder extends Seeder
             'affects_balance' => -1,
             'icon' => '🔧',
             'color' => 'red',
-            'parent_type_id' => $expense->id,
             'is_active' => true,
-            'order' => 4,
+            'order' => 5,
         ]);
 
         MovementType::create([
@@ -223,9 +172,8 @@ class MovementTypeSeeder extends Seeder
             'affects_balance' => -1,
             'icon' => '🏛️',
             'color' => 'red',
-            'parent_type_id' => $expense->id,
             'is_active' => true,
-            'order' => 5,
+            'order' => 6,
         ]);
 
         MovementType::create([
@@ -236,20 +184,6 @@ class MovementTypeSeeder extends Seeder
             'affects_balance' => -1,
             'icon' => '👨‍⚕️',
             'color' => 'red',
-            'parent_type_id' => $expense->id,
-            'is_active' => true,
-            'order' => 6,
-        ]);
-
-        MovementType::create([
-            'code' => 'patient_refund',
-            'name' => 'Reintegro/Devolución a Paciente',
-            'description' => 'Devolución de dinero a pacientes',
-            'category' => 'expense_detail',
-            'affects_balance' => -1,
-            'icon' => '🔄',
-            'color' => 'yellow',
-            'parent_type_id' => $expense->id,
             'is_active' => true,
             'order' => 7,
         ]);
@@ -262,13 +196,12 @@ class MovementTypeSeeder extends Seeder
             'affects_balance' => -1,
             'icon' => '📋',
             'color' => 'red',
-            'parent_type_id' => $expense->id,
             'is_active' => true,
-            'order' => 8,
+            'order' => 9,
         ]);
 
         // ========================================
-        // SUBCATEGORÍAS DE OTROS INGRESOS (income_detail)
+        // INGRESOS (income_detail)
         // ========================================
 
         MovementType::create([
@@ -279,7 +212,6 @@ class MovementTypeSeeder extends Seeder
             'affects_balance' => 1,
             'icon' => '💳',
             'color' => 'green',
-            'parent_type_id' => $other->id,
             'is_active' => true,
             'order' => 1,
         ]);
@@ -292,7 +224,6 @@ class MovementTypeSeeder extends Seeder
             'affects_balance' => 1,
             'icon' => '💰',
             'color' => 'green',
-            'parent_type_id' => $other->id,
             'is_active' => true,
             'order' => 2,
         ]);
@@ -305,7 +236,6 @@ class MovementTypeSeeder extends Seeder
             'affects_balance' => 1,
             'icon' => '✏️',
             'color' => 'blue',
-            'parent_type_id' => $other->id,
             'is_active' => true,
             'order' => 3,
         ]);
@@ -318,13 +248,12 @@ class MovementTypeSeeder extends Seeder
             'affects_balance' => 1,
             'icon' => '📋',
             'color' => 'green',
-            'parent_type_id' => $other->id,
             'is_active' => true,
             'order' => 4,
         ]);
 
         // ========================================
-        // SUBCATEGORÍAS DE RETIROS (withdrawal_detail)
+        // RETIROS (withdrawal_detail)
         // ========================================
 
         MovementType::create([
@@ -335,7 +264,6 @@ class MovementTypeSeeder extends Seeder
             'affects_balance' => -1,
             'icon' => '🏦',
             'color' => 'orange',
-            'parent_type_id' => $cashWithdrawal->id,
             'is_active' => true,
             'order' => 1,
         ]);
@@ -348,7 +276,6 @@ class MovementTypeSeeder extends Seeder
             'affects_balance' => -1,
             'icon' => '💸',
             'color' => 'orange',
-            'parent_type_id' => $cashWithdrawal->id,
             'is_active' => true,
             'order' => 2,
         ]);
@@ -361,7 +288,6 @@ class MovementTypeSeeder extends Seeder
             'affects_balance' => -1,
             'icon' => '👨‍⚕️',
             'color' => 'orange',
-            'parent_type_id' => $cashWithdrawal->id,
             'is_active' => true,
             'order' => 3,
         ]);
@@ -374,7 +300,6 @@ class MovementTypeSeeder extends Seeder
             'affects_balance' => -1,
             'icon' => '🔐',
             'color' => 'orange',
-            'parent_type_id' => $cashWithdrawal->id,
             'is_active' => true,
             'order' => 4,
         ]);
@@ -387,7 +312,6 @@ class MovementTypeSeeder extends Seeder
             'affects_balance' => -1,
             'icon' => '📋',
             'color' => 'orange',
-            'parent_type_id' => $cashWithdrawal->id,
             'is_active' => true,
             'order' => 5,
         ]);
