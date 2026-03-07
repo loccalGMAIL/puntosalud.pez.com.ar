@@ -6,7 +6,6 @@ use App\Models\Appointment;
 use App\Models\CashMovement;
 use App\Models\MovementType;
 use App\Models\Professional;
-use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 
@@ -798,47 +797,6 @@ class ReportController extends Controller
             'Content-Type'        => 'text/csv; charset=UTF-8',
             'Content-Disposition' => "attachment; filename=\"{$filename}\"",
         ]);
-    }
-
-    /**
-     * Exportar informe de gastos como PDF
-     */
-    public function exportExpensesReportPdf(Request $request)
-    {
-        $dateFrom = $request->get('date_from', now()->startOfMonth()->format('Y-m-d'));
-        $dateTo   = $request->get('date_to', now()->format('Y-m-d'));
-        $movementTypeId = $request->get('movement_type_id');
-
-        $startDate = Carbon::parse($dateFrom)->startOfDay();
-        $endDate   = Carbon::parse($dateTo)->endOfDay();
-
-        $query = CashMovement::with(['movementType', 'user'])
-            ->whereHas('movementType', fn($q) => $q->whereIn('category', ['expense_detail', 'withdrawal_detail']))
-            ->whereBetween('created_at', [$startDate, $endDate]);
-
-        if ($movementTypeId) {
-            $query->where('movement_type_id', $movementTypeId);
-        }
-
-        $movements = $query->orderBy('created_at', 'desc')->get();
-
-        $totalAmount = $movements->sum(fn($m) => abs($m->amount));
-        $totalCount  = $movements->count();
-
-        $byType = $movements->groupBy('movement_type_id')->map(fn($items) => [
-            'name'  => $items->first()->movementType->name,
-            'count' => $items->count(),
-            'total' => $items->sum(fn($m) => abs($m->amount)),
-        ])->sortByDesc('total');
-
-        $filename = 'gastos_' . $dateFrom . '_' . $dateTo . '.pdf';
-
-        $pdf = Pdf::loadView('reports.expenses-pdf', compact(
-            'movements', 'totalAmount', 'totalCount', 'byType', 'dateFrom', 'dateTo'
-        ));
-        $pdf->setPaper('a4', 'portrait');
-
-        return $pdf->download($filename);
     }
 
     /**
