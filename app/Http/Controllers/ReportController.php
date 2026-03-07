@@ -717,7 +717,7 @@ class ReportController extends Controller
     }
 
     /**
-     * Exportar informe de gastos como CSV
+     * Exportar informe de gastos como CSV (formato amigable para Excel)
      */
     public function exportExpensesReportCsv(Request $request)
     {
@@ -738,25 +738,63 @@ class ReportController extends Controller
 
         $movements = $query->orderBy('created_at', 'desc')->get();
 
+        $totalAmount = $movements->sum(fn($m) => abs($m->amount));
+        $totalCount  = $movements->count();
+
+        $byType = $movements->groupBy('movement_type_id')->map(fn($items) => [
+            'name'  => $items->first()->movementType?->name ?? '-',
+            'count' => $items->count(),
+            'total' => $items->sum(fn($m) => abs($m->amount)),
+        ])->sortByDesc('total');
+
         $filename = 'gastos_' . $dateFrom . '_' . $dateTo . '.csv';
 
-        return response()->stream(function () use ($movements) {
-            $handle = fopen('php://output', 'w');
-            // UTF-8 BOM
-            fputs($handle, "\xEF\xBB\xBF");
-            fputcsv($handle, ['Fecha', 'Hora', 'Tipo de Gasto', 'Descripción', 'Monto', 'Registrado por']);
+        $callback = function () use ($movements, $byType, $totalAmount, $totalCount, $dateFrom, $dateTo) {
+            $f = fopen('php://output', 'w');
+            // BOM UTF-8 para que Excel detecte el encoding
+            fprintf($f, chr(0xEF).chr(0xBB).chr(0xBF));
+
+            // Encabezado
+            fputcsv($f, ['INFORME DE GASTOS'], ';');
+            fputcsv($f, ["Período: $dateFrom al $dateTo"], ';');
+            fputcsv($f, [], ';');
+
+            // Resumen
+            fputcsv($f, ['RESUMEN'], ';');
+            fputcsv($f, ['Total Gastos',    number_format($totalAmount, 2, ',', '.')], ';');
+            fputcsv($f, ['Cantidad de Registros', $totalCount], ';');
+            fputcsv($f, [], ';');
+
+            // Por tipo
+            fputcsv($f, ['ANÁLISIS POR TIPO'], ';');
+            fputcsv($f, ['Tipo de Gasto', 'Cantidad', 'Total'], ';');
+            foreach ($byType as $item) {
+                fputcsv($f, [
+                    $item['name'],
+                    $item['count'],
+                    number_format($item['total'], 2, ',', '.'),
+                ], ';');
+            }
+            fputcsv($f, [], ';');
+
+            // Detalle
+            fputcsv($f, ['DETALLE DE GASTOS'], ';');
+            fputcsv($f, ['Fecha', 'Hora', 'Tipo de Gasto', 'Descripción', 'Monto', 'Registrado por'], ';');
             foreach ($movements as $m) {
-                fputcsv($handle, [
+                fputcsv($f, [
                     $m->created_at->format('d/m/Y'),
                     $m->created_at->format('H:i'),
                     $m->movementType?->name ?? '-',
                     $m->description ?? '',
-                    number_format(abs($m->amount), 2, '.', ''),
+                    number_format(abs($m->amount), 2, ',', '.'),
                     $m->user?->name ?? 'Sistema',
-                ]);
+                ], ';');
             }
-            fclose($handle);
-        }, 200, [
+
+            fclose($f);
+        };
+
+        return response()->stream($callback, 200, [
             'Content-Type'        => 'text/csv; charset=UTF-8',
             'Content-Disposition' => "attachment; filename=\"{$filename}\"",
         ]);
