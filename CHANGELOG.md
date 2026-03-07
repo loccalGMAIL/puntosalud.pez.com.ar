@@ -7,6 +7,31 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [2.9.4-1] - 2026-03-07
+
+### 🔧 Refactoring Tipos de Movimiento + Mejoras en Reportes de Gastos y Caja
+
+#### Tipos de Movimiento — Eliminación de jerarquía padre/hijo
+- **Migración**: elimina la columna `parent_type_id` (FK y constraint) de `movement_types`. Se suprimen los 3 tipos contenedores organizacionales (`expense`, `other`, `cash_withdrawal`) que nunca se usaban en la creación de movimientos reales.
+- **Modelo `MovementType`**: eliminadas relaciones `parent()`/`children()`, scopes `mainTypes()`/`subTypes()` y métodos `isMainType()`, `isSubType()`, `hasChildren()`, `getFullNameAttribute()`.
+- **Vista de configuración** (Tipos de Movimiento): reemplaza dos tablas separadas (principales + subcategorías) por **una sola tabla** agrupada por categoría con filas de encabezado (Sistema / Gastos / Ingresos / Retiros). Se eliminan las columnas "Subcategorías" y "Tipo Padre".
+- **Formularios crear/editar**: eliminado el campo "Tipo Padre".
+
+#### Tipo `refund` — Reclasificación
+- `refund` pasa de `category = 'main_type'` a `category = 'expense_detail'`, quedando incluido naturalmente en el Informe de Gastos sin hacks adicionales.
+- Eliminado el tipo `patient_refund` (sin uso activo; movimiento existente reclasificado a `other_expense`).
+
+#### Informe de Gastos — Correcciones y mejoras
+- **Retiros incluidos**: el informe ahora incluye los movimientos de categoría `withdrawal_detail` (Depósito Bancario, Pago de Gastos, Liquidación de Profesional, Custodia en Caja Fuerte, Otro Retiro) además de `expense_detail`.
+- **Revertido hack `orWhere('code', 'refund')`** en `ReportController`: ya no necesario tras la reclasificación de `refund`.
+- **Exportación Excel mejorada**: CSV con BOM UTF-8, separador `;` (compatible con Excel en configuración regional argentina), estructura por secciones (Resumen / Análisis por Tipo / Detalle de Gastos) y decimales con coma.
+
+#### Eliminación del botón PDF y DomPDF
+- Eliminados los botones **PDF** de "Informe de Gastos" y "Análisis de Caja"; se mantiene el botón **Imprimir** (vista de impresión del navegador, con opción de guardar como PDF desde el diálogo del browser).
+- Eliminados: métodos `exportExpensesReportPdf()` y `downloadCashReportPdf()` en los controladores, rutas asociadas, vistas blade `expenses-pdf.blade.php` y `report-pdf.blade.php`, y los imports de `Barryvdh\DomPDF`.
+
+---
+
 ## [2.9.4] - 2026-03-05
 
 ### 🖨️ Listado Diario — Sistema de impresión estándar
