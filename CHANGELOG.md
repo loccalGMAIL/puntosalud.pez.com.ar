@@ -7,6 +7,73 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [2.9.4-2] - 2026-03-10
+
+### 🎨 UX — Formularios de Caja compactados y acordeón
+
+#### Vistas afectadas
+- `resources/views/cash/manual-income-form.blade.php`
+- `resources/views/cash/expense-form.blade.php`
+- `resources/views/cash/withdrawal-form.blade.php`
+
+#### Compactación general
+- Padding del contenedor: `p-6` → `p-4 sm:p-6` (responsivo).
+- Cards de campos: `p-6` → `p-4`, grillas `gap-6` → `gap-4`, inputs `py-2.5` → `py-2`.
+- Header reducido a `text-xl`; breadcrumb con íconos `w-3.5`; botón "Volver" `px-3 py-1.5`.
+- Espacio entre secciones: `space-y-6` → `space-y-3`.
+
+#### Acordeón "Notas y comprobante" (Alpine.js)
+- **"Notas adicionales"** y **"Comprobante"** unificados en una sección colapsable, cerrada por defecto (`extrasOpen: false`).
+- En el formulario de Retiro, el acordeón contiene solo "Notas" (sin comprobante, igual que el original).
+- Cabecera clickeable con chevron que rota 180° al abrir/cerrar (`transition-transform duration-200`).
+- Badge `con datos` (verde en Ingreso, rojo en Gasto/Retiro) que aparece automáticamente cuando el acordeón tiene contenido.
+- Transición suave `ease-out 150ms` al expandir y `ease-in 100ms` al colapsar.
+- Si la URL precarga `notes`, el acordeón de Ingreso Manual se abre automáticamente.
+
+#### Mejoras adicionales
+- Drop zone del comprobante más compacta (ícono `w-8` en lugar de `w-12`, menos padding).
+- Archivo adjunto muestra fondo verde con nombre y tamaño formateado.
+- Botones `submit` con spinner de loading en los tres formularios (Gasto y Retiro no lo tenían).
+- `showNotification()` de Retiro reemplazado por `window.showToast()` para consistencia.
+- Alerta ámbar de Retiro con transición de aparición al ingresar monto.
+
+---
+
+### 🌙 Toggle de tema claro / oscuro
+
+#### Problema corregido
+- El dark mode estaba deshabilitado con doble bloqueo en `app.css`: el `@variant dark` usaba `.mode\:dark` (clase inexistente) y un `@media prefers-color-scheme: dark` forzaba `color-scheme: light`. Algunos usuarios veían inconsistencias dependiendo de la configuración de su OS.
+
+#### Solución implementada
+
+**`resources/css/app.css`**
+- `@variant dark` corregido a sintaxis inline de Tailwind CSS 4: `@variant dark (&:is(.dark, .dark *));`
+- Eliminado el bloque `@media (prefers-color-scheme: dark)` que forzaba modo claro.
+- Las clases `dark:` ahora compilan con selector `:is(.dark, .dark *)` en lugar de `@media`.
+
+**`resources/views/layouts/app.blade.php`**
+- Script anti-flash en `<head>` (antes de Alpine): aplica la clase `dark` en `<html>` antes de que el browser pinte, eliminando el flash blanco al recargar en modo oscuro.
+- **Barra superior** añadida encima de `@yield('content')` en todas las vistas, con:
+  - Fecha actual en español (`toLocaleDateString('es-AR')`, formato largo).
+  - Versión del sistema leída desde `composer.json` (`font-mono`, prefijo `v`).
+  - Botón sol/luna (`w-7 h-7`) que alterna tema y persiste en `localStorage`.
+- Script al pie del body: `applyTheme()` sincroniza íconos al cargar y responde al click.
+
+**`resources/views/dashboard/dashboard.blade.php`**
+- Eliminada la fecha del header del Dashboard (ahora proviene de la barra del layout).
+
+**`composer.json`**
+- Versión actualizada a `2.9.4-2`.
+
+#### Comportamiento
+| Situación | Resultado |
+|---|---|
+| Usuario nuevo (sin preferencia guardada) | Light (default, OS ignorado) |
+| Click en el botón | Alterna y guarda en `localStorage` |
+| Recarga / nueva sesión | Recuerda la última elección sin flash |
+
+---
+
 ## [2.9.4-1] - 2026-03-07
 
 ### 🔧 Refactoring Tipos de Movimiento + Mejoras en Reportes de Gastos y Caja
