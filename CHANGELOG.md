@@ -7,6 +7,38 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [2.9.4-2] - 2026-03-10
+
+### 🎨 UX — Formularios de Caja compactados y acordeón
+
+#### Vistas afectadas
+- `resources/views/cash/manual-income-form.blade.php`
+- `resources/views/cash/expense-form.blade.php`
+- `resources/views/cash/withdrawal-form.blade.php`
+
+#### Compactación general
+- Padding del contenedor: `p-6` → `p-4 sm:p-6` (responsivo).
+- Cards de campos: `p-6` → `p-4`, grillas `gap-6` → `gap-4`, inputs `py-2.5` → `py-2`.
+- Header reducido a `text-xl`; breadcrumb con íconos `w-3.5`; botón "Volver" `px-3 py-1.5`.
+- Espacio entre secciones: `space-y-6` → `space-y-3`.
+
+#### Acordeón "Notas y comprobante" (Alpine.js)
+- **"Notas adicionales"** y **"Comprobante"** unificados en una sección colapsable, cerrada por defecto (`extrasOpen: false`).
+- En el formulario de Retiro, el acordeón contiene solo "Notas" (sin comprobante, igual que el original).
+- Cabecera clickeable con chevron que rota 180° al abrir/cerrar (`transition-transform duration-200`).
+- Badge `con datos` (verde en Ingreso, rojo en Gasto/Retiro) que aparece automáticamente cuando el acordeón tiene contenido.
+- Transición suave `ease-out 150ms` al expandir y `ease-in 100ms` al colapsar.
+- Si la URL precarga `notes`, el acordeón de Ingreso Manual se abre automáticamente.
+
+#### Mejoras adicionales
+- Drop zone del comprobante más compacta (ícono `w-8` en lugar de `w-12`, menos padding).
+- Archivo adjunto muestra fondo verde con nombre y tamaño formateado.
+- Botones `submit` con spinner de loading en los tres formularios (Gasto y Retiro no lo tenían).
+- `showNotification()` de Retiro reemplazado por `window.showToast()` para consistencia.
+- Alerta ámbar de Retiro con transición de aparición al ingresar monto.
+
+---
+
 ## [2.9.4-1] - 2026-03-07
 
 ### 🔧 Refactoring Tipos de Movimiento + Mejoras en Reportes de Gastos y Caja
