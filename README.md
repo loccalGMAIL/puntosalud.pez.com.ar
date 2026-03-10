@@ -151,7 +151,7 @@ php artisan config:clear
 
 ### 🔄 Últimas versiones
 
-* **v2.9.4-2** (2026-03-10) – 🎨 UX Caja: formularios de Ingreso Manual, Gasto y Retiro compactados para evitar scroll; "Notas adicionales" y "Comprobante" movidos a un acordeón colapsable con badge de estado y transición animada.
+* **v2.9.4-2** (2026-03-10) – 🎨 UX Caja: formularios compactados con acordeón para notas/comprobante. 🌙 Toggle de tema claro/oscuro: barra persistente con fecha, versión del sistema y botón sol/luna; preferencia guardada en `localStorage`, light por defecto.
 * **v2.9.4-1** (2026-03-07) – 🔧 Refactoring MovementType: eliminación de jerarquía padre/hijo, reclasificación de `refund` a gastos, retiros incluidos en Informe de Gastos, Excel mejorado con secciones y formato argentino, eliminación de botón PDF y DomPDF.
 * **v2.9.4** (2026-03-05) – 🖨️ Listado Diario: sistema de impresión estándar (layout/print + header con logo), auto-impresión y auto-cierre de pestaña, fix botón imprimir en cards de selección, fix conteo de pacientes sin cancelados.
 * **v2.9.3-1** (2026-03-04) – 🐛 Fix: permitir creación de turnos en sábados cuando el profesional tiene horario configurado para ese día.

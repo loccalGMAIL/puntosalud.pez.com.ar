@@ -39,6 +39,41 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### 🌙 Toggle de tema claro / oscuro
+
+#### Problema corregido
+- El dark mode estaba deshabilitado con doble bloqueo en `app.css`: el `@variant dark` usaba `.mode\:dark` (clase inexistente) y un `@media prefers-color-scheme: dark` forzaba `color-scheme: light`. Algunos usuarios veían inconsistencias dependiendo de la configuración de su OS.
+
+#### Solución implementada
+
+**`resources/css/app.css`**
+- `@variant dark` corregido a sintaxis inline de Tailwind CSS 4: `@variant dark (&:is(.dark, .dark *));`
+- Eliminado el bloque `@media (prefers-color-scheme: dark)` que forzaba modo claro.
+- Las clases `dark:` ahora compilan con selector `:is(.dark, .dark *)` en lugar de `@media`.
+
+**`resources/views/layouts/app.blade.php`**
+- Script anti-flash en `<head>` (antes de Alpine): aplica la clase `dark` en `<html>` antes de que el browser pinte, eliminando el flash blanco al recargar en modo oscuro.
+- **Barra superior** añadida encima de `@yield('content')` en todas las vistas, con:
+  - Fecha actual en español (`toLocaleDateString('es-AR')`, formato largo).
+  - Versión del sistema leída desde `composer.json` (`font-mono`, prefijo `v`).
+  - Botón sol/luna (`w-7 h-7`) que alterna tema y persiste en `localStorage`.
+- Script al pie del body: `applyTheme()` sincroniza íconos al cargar y responde al click.
+
+**`resources/views/dashboard/dashboard.blade.php`**
+- Eliminada la fecha del header del Dashboard (ahora proviene de la barra del layout).
+
+**`composer.json`**
+- Versión actualizada a `2.9.4-2`.
+
+#### Comportamiento
+| Situación | Resultado |
+|---|---|
+| Usuario nuevo (sin preferencia guardada) | Light (default, OS ignorado) |
+| Click en el botón | Alterna y guarda en `localStorage` |
+| Recarga / nueva sesión | Recuerda la última elección sin flash |
+
+---
+
 ## [2.9.4-1] - 2026-03-07
 
 ### 🔧 Refactoring Tipos de Movimiento + Mejoras en Reportes de Gastos y Caja
