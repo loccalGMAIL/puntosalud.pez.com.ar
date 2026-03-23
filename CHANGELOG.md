@@ -7,6 +7,27 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [2.9.5] - 2026-03-23
+
+### 💰 Mejoras en vistas de Liquidación Profesional
+
+#### `reports/professional-liquidation.blade.php`
+- Se agregan dos nuevas filas al resumen: **"Total de comisión al Profesional (X%)"** y **"Total de comisión a la Clínica (X%)"**, calculadas como porcentaje directo sobre el total facturado, para que la distribución sea inmediatamente legible.
+- Las cajas de colores (azul/amarillo) de "Pagos recibidos por el centro" y "Cobros directos del profesional" se reemplazan por ítems minimalistas `text-xs` en gris, alineados con el estilo del resto del detalle.
+- Label final cambiado de "MONTO A ENTREGAR AL PROFESIONAL" a **"A LIQUIDAR AL PROFESIONAL"**.
+
+#### `reports/professional-liquidation-select.blade.php`
+- Cards de profesionales pendientes: se agrega la fila **"Para la clínica: $X"** entre "Reintegros" y "A liquidar", calculada como `total_collected_by_center - professional_amount`.
+
+#### `reports/professional-liquidation-print.blade.php`
+- Encabezado rediseñado: logo (`logo.png`) alineado a la izquierda junto al nombre del sistema y título del reporte (layout flex, ya no centrado).
+- Resumen del día completo actualizado para coincidir con la vista web: totales de comisión explícitos por porcentaje, detalle minimalista de cobros, y sección de settlement separada.
+
+#### `composer.json`
+- Eliminado el campo `version` (valor `"2.9.4-2"` inválido para Composer). La versión del proyecto se gestiona exclusivamente desde el archivo `VERSION`.
+
+---
+
 ## [2.9.4-2] - 2026-03-10
 
 ### 🎨 UX — Formularios de Caja compactados y acordeón

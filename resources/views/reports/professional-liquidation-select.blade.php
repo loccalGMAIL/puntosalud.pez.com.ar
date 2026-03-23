@@ -103,6 +103,10 @@
                                         <span class="font-medium text-red-700 dark:text-red-400">-${{ number_format($professional['refunds'], 0, ',', '.') }}</span>
                                     </div>
                                     @endif
+                                    <div class="flex justify-between text-sm">
+                                        <span class="text-slate-500 dark:text-slate-400">Para la clínica:</span>
+                                        <span class="font-medium text-slate-600 dark:text-slate-300">${{ number_format($professional['total_collected_by_center'] - $professional['professional_amount'], 0, ',', '.') }}</span>
+                                    </div>
                                     <div class="flex justify-between text-sm border-t border-gray-200 dark:border-gray-600 pt-1">
                                         <span class="text-emerald-700 dark:text-emerald-400 font-medium">A liquidar:</span>
                                         <span class="font-bold text-emerald-700 dark:text-emerald-400">${{ number_format($professional['professional_amount'], 0, ',', '.') }}</span>
