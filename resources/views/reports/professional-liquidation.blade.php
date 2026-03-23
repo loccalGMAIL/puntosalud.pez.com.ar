@@ -81,55 +81,45 @@
             <div class="space-y-2">
                 <!-- Total Facturado -->
                 <div
-                    class="flex justify-between text-sm font-semibold pb-1.5 border-b border-emerald-200 dark:border-emerald-800">
+                    class="flex justify-between text-sm font-semibold pb-1.5">
                     <span class="text-emerald-900 dark:text-emerald-100">Total Facturado del Día:</span>
                     <span
                         class="text-emerald-900 dark:text-emerald-100">${{ number_format($liquidationData['totals']['total_amount'], 0, ',', '.') }}</span>
                 </div>
+                <div
+                    class="flex justify-between text-sm font-semibold pb-1.5">
+                    <span class="text-emerald-900 dark:text-emerald-100">Total de comisión a la Clínica ({{ $liquidationData['totals']['clinic_percentage'] }}%):</span>
+                    <span
+                        class="text-emerald-900 dark:text-emerald-100">${{ number_format($liquidationData['totals']['total_amount'] * $liquidationData['totals']['clinic_percentage'] / 100, 0, ',', '.') }}</span>
+                </div>
+                <div
+                    class="flex justify-between text-sm font-semibold pb-1.5 border-b border-emerald-200 dark:border-emerald-800">
+                    <span class="text-emerald-900 dark:text-emerald-100">Total de comisión al Profesional ({{ $liquidationData['totals']['commission_percentage'] }}%):</span>
+                    <span
+                        class="text-emerald-900 dark:text-emerald-100">${{ number_format($liquidationData['totals']['total_amount'] * $liquidationData['totals']['commission_percentage'] / 100, 0, ',', '.') }}</span>
+                </div>
 
-                <!-- Pagos recibidos por el centro -->
-                @if ($liquidationData['totals']['total_collected_by_center'] > 0)
-                    <div class="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-2 space-y-1">
-                        <div class="flex justify-between text-sm">
-                            <span class="text-blue-900 dark:text-blue-100 font-medium">💵 Pagos recibidos por el
-                                centro:</span>
-                            <span
-                                class="font-semibold text-blue-900 dark:text-blue-100">${{ number_format($liquidationData['totals']['total_collected_by_center'], 0, ',', '.') }}</span>
+                <!-- Detalle de cobros y reintegros -->
+                <div class="text-xs text-gray-500 dark:text-gray-400 space-y-0.5">
+                    @if ($liquidationData['totals']['total_collected_by_center'] > 0)
+                        <div class="flex justify-between">
+                            <span>Pagos recibidos por el centro:</span>
+                            <span>${{ number_format($liquidationData['totals']['total_collected_by_center'], 0, ',', '.') }}</span>
                         </div>
-
-                        <div class="flex justify-between text-xs ml-4">
-                        <span class="text-blue-700 dark:text-blue-300">Comisión profesional ({{ $liquidationData['totals']['commission_percentage'] }}%):</span>
-                        <span class="font-medium text-gray-700 dark:text-gray-400">${{ number_format($liquidationData['totals']['professional_commission'], 0, ',', '.') }}</span>
-                    </div>
-                    </div>
-                @endif
-
-                <!-- Pagos recibidos directamente por el profesional -->
-                @if ($liquidationData['totals']['total_collected_by_professional'] > 0)
-                    <div class="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg p-2 space-y-1">
-                        <div class="flex justify-between text-sm">
-                            <span class="text-yellow-900 dark:text-yellow-100 font-medium">🏦 Cobros directos del
-                                profesional:</span>
-                            <span
-                                class="font-semibold text-yellow-900 dark:text-yellow-100">${{ number_format($liquidationData['totals']['total_collected_by_professional'], 0, ',', '.') }}</span>
+                    @endif
+                    @if ($liquidationData['totals']['total_collected_by_professional'] > 0)
+                        <div class="flex justify-between">
+                            <span>Cobros directos del profesional:</span>
+                            <span>${{ number_format($liquidationData['totals']['total_collected_by_professional'], 0, ',', '.') }}</span>
                         </div>
-                        <div class="flex justify-between text-xs ml-4">
-                            <span class="text-yellow-700 dark:text-yellow-300">Comisión del centro
-                                ({{ $liquidationData['totals']['clinic_percentage'] }}%):</span>
-                            <span
-                                class="font-medium text-red-700 dark:text-red-400">-${{ number_format($liquidationData['totals']['clinic_amount_from_direct'], 0, ',', '.') }}</span>
+                    @endif
+                    @if ($liquidationData['totals']['total_refunds'] > 0)
+                        <div class="flex justify-between">
+                            <span>Reintegros a Pacientes:</span>
+                            <span>-${{ number_format($liquidationData['totals']['total_refunds'], 0, ',', '.') }}</span>
                         </div>
-                    </div>
-                @endif
-
-                <!-- Reintegros -->
-                @if ($liquidationData['totals']['total_refunds'] > 0)
-                    <div class="flex justify-between text-sm">
-                        <span class="text-red-700 dark:text-red-300">🔄 Reintegros a Pacientes:</span>
-                        <span
-                            class="font-medium text-red-700 dark:text-red-400">-${{ number_format($liquidationData['totals']['total_refunds'], 0, ',', '.') }}</span>
-                    </div>
-                @endif
+                    @endif
+                </div>
 
                 <!-- Cálculo Final -->
                 <div class="border-t-2 border-emerald-300 dark:border-emerald-700 pt-2 mt-2">
@@ -155,7 +145,7 @@
                     <div class="flex justify-between items-center">
                         <span class="font-bold text-emerald-900 dark:text-emerald-100">
                             @if ($liquidationData['totals']['net_professional_amount'] >= 0)
-                                💰 MONTO A ENTREGAR AL PROFESIONAL:
+                                💰 A LIQUIDAR AL PROFESIONAL:
                             @else
                                 ⚠️ MONTO QUE EL PROFESIONAL DEBE AL CENTRO:
                             @endif

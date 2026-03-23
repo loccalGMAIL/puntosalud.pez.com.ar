@@ -20,12 +20,25 @@
         }
         
         .header {
-            text-align: center;
+            display: flex;
+            align-items: center;
+            gap: 15px;
             margin-bottom: 20px;
             padding-bottom: 15px;
             border-bottom: 2px solid #333;
         }
-        
+
+        .clinic-logo {
+            height: 60px;
+            max-width: 100px;
+            object-fit: contain;
+            flex-shrink: 0;
+        }
+
+        .header-text {
+            text-align: left;
+        }
+
         .clinic-name {
             font-size: 20px;
             font-weight: bold;
@@ -219,16 +232,19 @@
     
     <!-- Header -->
     <div class="header">
-        <div class="clinic-name">PUNTO SALUD</div>
-        <div class="report-title">
-            @if(isset($liquidationData['is_single_liquidation']) && $liquidationData['is_single_liquidation'])
-                LIQUIDACIÓN #{{ $liquidationData['single_liquidation_number'] }} DEL PROFESIONAL
-            @else
-                LIQUIDACIÓN DIARIA DEL PROFESIONAL
-                @if(isset($liquidationData['liquidation_number']) && $liquidationData['liquidation_number'] > 1)
-                    - #{{ $liquidationData['liquidation_number'] }}
+        <img src="{{ asset('logo.png') }}" alt="{{ config('app.name') }}" class="clinic-logo">
+        <div class="header-text">
+            <div class="clinic-name">{{ config('app.name') }}</div>
+            <div class="report-title">
+                @if(isset($liquidationData['is_single_liquidation']) && $liquidationData['is_single_liquidation'])
+                    LIQUIDACIÓN #{{ $liquidationData['single_liquidation_number'] }} DEL PROFESIONAL
+                @else
+                    LIQUIDACIÓN DIARIA DEL PROFESIONAL
+                    @if(isset($liquidationData['liquidation_number']) && $liquidationData['liquidation_number'] > 1)
+                        - #{{ $liquidationData['liquidation_number'] }}
+                    @endif
                 @endif
-            @endif
+            </div>
         </div>
     </div>
     
@@ -287,45 +303,46 @@
     @else
         {{-- Resumen completo del día --}}
         <div class="liquidation-summary">
-            <div class="summary-row" style="font-weight: bold; border-bottom: 1px solid #4caf50; padding-bottom: 3px; margin-bottom: 5px;">
+            {{-- Totales principales --}}
+            <div class="summary-row" style="font-weight: bold; padding-bottom: 3px;">
                 <span>Total Facturado del Día:</span>
                 <span>${{ number_format($liquidationData['totals']['total_amount'], 0, ',', '.') }}</span>
             </div>
+            <div class="summary-row" style="font-weight: bold; margin-bottom: 6px;">
+                <span>Comisión a la Clínica ({{ $liquidationData['totals']['clinic_percentage'] }}%):</span>
+                <span>${{ number_format($liquidationData['totals']['total_amount'] * $liquidationData['totals']['clinic_percentage'] / 100, 0, ',', '.') }}</span>
+            </div>
+            <div class="summary-row" style="font-weight: bold; border-bottom: 1px solid #4caf50; padding-bottom: 3px; margin-bottom: 3px;">
+                <span>Comisión al Profesional ({{ $liquidationData['totals']['commission_percentage'] }}%):</span>
+                <span>${{ number_format($liquidationData['totals']['total_amount'] * $liquidationData['totals']['commission_percentage'] / 100, 0, ',', '.') }}</span>
+            </div>
 
-            @if($liquidationData['totals']['total_collected_by_center'] > 0)
-            <div style="background: #e3f2fd; padding: 5px; margin-bottom: 5px; border-left: 3px solid #2196f3;">
-                <div class="summary-row" style="font-weight: bold;">
-                    <span>💵 Pagos recibidos por el centro:</span>
+            {{-- Detalle de cobros (minimalista) --}}
+            @if($liquidationData['totals']['total_collected_by_center'] > 0 || $liquidationData['totals']['total_collected_by_professional'] > 0 || $liquidationData['totals']['total_refunds'] > 0)
+            <div style="font-size: 10px; color: #666; margin-bottom: 6px;">
+                @if($liquidationData['totals']['total_collected_by_center'] > 0)
+                <div class="summary-row">
+                    <span>Pagos recibidos por el centro:</span>
                     <span>${{ number_format($liquidationData['totals']['total_collected_by_center'], 0, ',', '.') }}</span>
                 </div>
-                <div class="summary-row" style="font-size: 10px; padding-left: 15px; color: #1976d2;">
-                    <span>Comisión profesional ({{ $liquidationData['totals']['commission_percentage'] }}%):</span>
-                    <span style="color: #2e7d32;">+${{ number_format($liquidationData['totals']['professional_commission'], 0, ',', '.') }}</span>
-                </div>
-            </div>
-            @endif
-
-            @if($liquidationData['totals']['total_collected_by_professional'] > 0)
-            <div style="background: #fff8e1; padding: 5px; margin-bottom: 5px; border-left: 3px solid #ffc107;">
-                <div class="summary-row" style="font-weight: bold;">
-                    <span>🏦 Pagos directos al profesional:</span>
+                @endif
+                @if($liquidationData['totals']['total_collected_by_professional'] > 0)
+                <div class="summary-row">
+                    <span>Cobros directos del profesional:</span>
                     <span>${{ number_format($liquidationData['totals']['total_collected_by_professional'], 0, ',', '.') }}</span>
                 </div>
-                <div class="summary-row" style="font-size: 10px; padding-left: 15px; color: #f57c00;">
-                    <span>Parte del centro a descontar ({{ $liquidationData['totals']['clinic_percentage'] }}%):</span>
-                    <span style="color: #c62828;">-${{ number_format($liquidationData['totals']['clinic_amount_from_direct'], 0, ',', '.') }}</span>
+                @endif
+                @if($liquidationData['totals']['total_refunds'] > 0)
+                <div class="summary-row">
+                    <span>Reintegros a Pacientes:</span>
+                    <span>-${{ number_format($liquidationData['totals']['total_refunds'], 0, ',', '.') }}</span>
                 </div>
+                @endif
             </div>
             @endif
 
-            @if($liquidationData['totals']['total_refunds'] > 0)
-            <div class="summary-row" style="color: #c62828;">
-                <span>🔄 Reintegros a Pacientes:</span>
-                <span>-${{ number_format($liquidationData['totals']['total_refunds'], 0, ',', '.') }}</span>
-            </div>
-            @endif
-
-            <div style="border-top: 2px solid #4caf50; padding-top: 5px; margin-top: 5px;">
+            {{-- Cálculo final del settlement --}}
+            <div style="border-top: 1px solid #4caf50; padding-top: 5px; margin-top: 2px;">
                 <div style="font-size: 10px; color: #666; margin-bottom: 3px;">
                     <div class="summary-row">
                         <span>Comisión sobre pagos al centro:</span>
@@ -333,13 +350,13 @@
                     </div>
                     @if($liquidationData['totals']['total_collected_by_professional'] > 0)
                     <div class="summary-row">
-                        <span>Comisión parte del centro sobre pagos directos:</span>
+                        <span>Descuento por cobros directos del profesional:</span>
                         <span>-${{ number_format($liquidationData['totals']['clinic_amount_from_direct'], 0, ',', '.') }}</span>
                     </div>
                     @endif
                     @if($liquidationData['totals']['total_refunds'] > 0)
                     <div class="summary-row">
-                        <span>Reintegros:</span>
+                        <span>Descuento por reintegros:</span>
                         <span>-${{ number_format($liquidationData['totals']['total_refunds'], 0, ',', '.') }}</span>
                     </div>
                     @endif
@@ -347,7 +364,7 @@
                 <div class="summary-row total">
                     <span>
                         @if($liquidationData['totals']['net_professional_amount'] >= 0)
-                            MONTO A ENTREGAR AL PROFESIONAL:
+                            A LIQUIDAR AL PROFESIONAL:
                         @else
                             MONTO QUE EL PROFESIONAL DEBE AL CENTRO:
                         @endif
