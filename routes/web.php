@@ -39,52 +39,63 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/dashboard/appointments/{appointment}/mark-completed-paid', [DashboardController::class, 'markCompletedAndPaid'])->name('dashboard.mark-completed-paid');
     Route::post('/dashboard/appointments/{appointment}/mark-absent', [DashboardController::class, 'markAbsent'])->name('dashboard.mark-absent');
 
-    Route::resource('professionals', ProfessionalController::class);
-    Route::patch('/professionals/{professional}/toggle-status', [ProfessionalController::class, 'toggleStatus'])->name('professionals.toggle-status');
+    // Rutas de Profesionales (módulo: professionals)
+    Route::middleware(['module:professionals'])->group(function () {
+        Route::resource('professionals', ProfessionalController::class);
+        Route::patch('/professionals/{professional}/toggle-status', [ProfessionalController::class, 'toggleStatus'])->name('professionals.toggle-status');
 
-    Route::get('/professionals/{professional}/schedules', [ProfessionalScheduleController::class, 'index'])->name('professionals.schedules.index');
-    Route::post('/professionals/{professional}/schedules', [ProfessionalScheduleController::class, 'store'])->name('professionals.schedules.store');
-    Route::put('/professionals/{professional}/schedules/{schedule}', [ProfessionalScheduleController::class, 'update'])->name('professionals.schedules.update');
-    Route::delete('/professionals/{professional}/schedules/{schedule}', [ProfessionalScheduleController::class, 'destroy'])->name('professionals.schedules.destroy');
+        Route::get('/professionals/{professional}/schedules', [ProfessionalScheduleController::class, 'index'])->name('professionals.schedules.index');
+        Route::post('/professionals/{professional}/schedules', [ProfessionalScheduleController::class, 'store'])->name('professionals.schedules.store');
+        Route::put('/professionals/{professional}/schedules/{schedule}', [ProfessionalScheduleController::class, 'update'])->name('professionals.schedules.update');
+        Route::delete('/professionals/{professional}/schedules/{schedule}', [ProfessionalScheduleController::class, 'destroy'])->name('professionals.schedules.destroy');
 
-    Route::get('/professionals/{professional}/absences/month', [ProfessionalAbsenceController::class, 'monthData'])->name('professionals.absences.month');
-    Route::post('/professionals/{professional}/absences/toggle', [ProfessionalAbsenceController::class, 'toggle'])->name('professionals.absences.toggle');
+        Route::get('/professionals/{professional}/absences/month', [ProfessionalAbsenceController::class, 'monthData'])->name('professionals.absences.month');
+        Route::post('/professionals/{professional}/absences/toggle', [ProfessionalAbsenceController::class, 'toggle'])->name('professionals.absences.toggle');
 
-    Route::resource('specialties', SpecialtyController::class)->only(['index', 'store', 'update', 'destroy']);
+        Route::resource('specialties', SpecialtyController::class)->only(['index', 'store', 'update', 'destroy']);
 
-    // Patient specific routes (must be before resource route)
-    Route::get('/patients/{patient}/detail', [PatientController::class, 'detail'])->name('patients.detail');
+        // Notas internas de profesionales
+        Route::get('/professionals/{professional}/notes', [ProfessionalNoteController::class, 'index'])->name('professionals.notes.index');
+        Route::post('/professionals/{professional}/notes', [ProfessionalNoteController::class, 'store'])->name('professionals.notes.store');
+        Route::delete('/professional-notes/{note}', [ProfessionalNoteController::class, 'destroy'])->name('professionals.notes.destroy');
+    });
 
-    Route::resource('patients', PatientController::class);
+    // Rutas de Pacientes (módulo: patients)
+    Route::middleware(['module:patients'])->group(function () {
+        // Patient specific routes (must be before resource route)
+        Route::get('/patients/{patient}/detail', [PatientController::class, 'detail'])->name('patients.detail');
+        Route::resource('patients', PatientController::class);
+    });
 
-    // Appointment specific routes (must be before resource route)
-    Route::get('/appointments/available-slots', [AppointmentController::class, 'availableSlots'])->name('appointments.available-slots');
-    Route::post('/appointments/urgency', [AppointmentController::class, 'storeUrgency'])->name('appointments.urgency.store');
+    // Rutas de Turnos (módulo: appointments)
+    Route::middleware(['module:appointments'])->group(function () {
+        Route::get('/appointments/available-slots', [AppointmentController::class, 'availableSlots'])->name('appointments.available-slots');
+        Route::post('/appointments/urgency', [AppointmentController::class, 'storeUrgency'])->name('appointments.urgency.store');
+        Route::resource('appointments', AppointmentController::class);
+    });
 
-    // Appointment resource routes
-    Route::resource('appointments', AppointmentController::class);
+    // Rutas de Agenda (módulo: agenda)
+    Route::middleware(['module:agenda'])->group(function () {
+        Route::get('/agenda', [AgendaController::class, 'index'])->name('agenda.index');
+    });
 
-    Route::get('/agenda', [AgendaController::class, 'index'])->name('agenda.index');
+    // Rutas de Pagos (módulo: payments)
+    Route::middleware(['module:payments'])->group(function () {
+        // Payment custom routes - DEBEN IR ANTES del resource
+        Route::get('/payments/{payment}/print-receipt', [PaymentController::class, 'printReceipt'])->name('payments.print-receipt');
+        Route::post('/payments/{payment}/annul', [PaymentController::class, 'annul'])->name('payments.annul');
+        Route::get('/payments/search-patients', [PaymentController::class, 'searchPatients'])->name('payments.search-patients');
+        Route::resource('payments', PaymentController::class);
+        Route::get('/payments/patients/{patient}/pending-appointments', [PaymentController::class, 'getPendingAppointments'])->name('payments.pending-appointments');
 
-    // Notas internas de profesionales (accesible a todos los usuarios autenticados)
-    Route::get('/professionals/{professional}/notes', [ProfessionalNoteController::class, 'index'])->name('professionals.notes.index');
-    Route::post('/professionals/{professional}/notes', [ProfessionalNoteController::class, 'store'])->name('professionals.notes.store');
-    Route::delete('/professional-notes/{note}', [ProfessionalNoteController::class, 'destroy'])->name('professionals.notes.destroy');
-
-    // Payment custom routes - DEBEN IR ANTES del resource
-    Route::get('/payments/{payment}/print-receipt', [PaymentController::class, 'printReceipt'])->name('payments.print-receipt');
-    Route::post('/payments/{payment}/annul', [PaymentController::class, 'annul'])->name('payments.annul');
-    Route::get('/payments/search-patients', [PaymentController::class, 'searchPatients'])->name('payments.search-patients');
-    Route::resource('payments', PaymentController::class);
-    Route::get('/payments/patients/{patient}/pending-appointments', [PaymentController::class, 'getPendingAppointments'])->name('payments.pending-appointments');
-
-    // Payment allocation routes
-    Route::post('/payments/{payment}/use-session', [PaymentController::class, 'usePackageSession'])->name('payments.use-session');
-    Route::post('/payments/{payment}/allocate-single', [PaymentController::class, 'allocateSinglePayment'])->name('payments.allocate-single');
-    Route::delete('/payment-appointments/{paymentAppointment}', [PaymentController::class, 'deallocatePayment'])->name('payments.deallocate');
-    Route::get('/patients/{patient}/available-packages', [PaymentController::class, 'getAvailablePackages'])->name('patients.available-packages');
-    Route::get('/payments/{payment}/allocation-summary', [PaymentController::class, 'getPaymentAllocationSummary'])->name('payments.allocation-summary');
-    Route::post('/appointments/{appointment}/auto-allocate', [PaymentController::class, 'autoAllocatePayment'])->name('appointments.auto-allocate');
+        // Payment allocation routes
+        Route::post('/payments/{payment}/use-session', [PaymentController::class, 'usePackageSession'])->name('payments.use-session');
+        Route::post('/payments/{payment}/allocate-single', [PaymentController::class, 'allocateSinglePayment'])->name('payments.allocate-single');
+        Route::delete('/payment-appointments/{paymentAppointment}', [PaymentController::class, 'deallocatePayment'])->name('payments.deallocate');
+        Route::get('/patients/{patient}/available-packages', [PaymentController::class, 'getAvailablePackages'])->name('patients.available-packages');
+        Route::get('/payments/{payment}/allocation-summary', [PaymentController::class, 'getPaymentAllocationSummary'])->name('payments.allocation-summary');
+        Route::post('/appointments/{appointment}/auto-allocate', [PaymentController::class, 'autoAllocatePayment'])->name('appointments.auto-allocate');
+    });
 
     // Reports routes
     Route::get('/reports/daily-schedule', [ReportController::class, 'dailySchedule'])->name('reports.daily-schedule');
@@ -133,29 +144,31 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/reports/flujo-caja-mensual/print',        [ReportController::class, 'printFlujoCajaMensual'])->name('reports.flujo-caja-mensual.print');
     });
 
-    // Cash management routes
-    Route::get('/cash/daily', [App\Http\Controllers\CashController::class, 'dailyCash'])->name('cash.daily');
-    Route::get('/cash/count', [App\Http\Controllers\CashController::class, 'cashCount'])->name('cash.count');
-    Route::get('/cash/daily-report', [App\Http\Controllers\CashController::class, 'dailyReport'])->name('cash.daily-report');
-    Route::get('/cash/report', [App\Http\Controllers\CashController::class, 'cashReport'])->name('cash.report');
-    Route::get('/cash/report/export', [App\Http\Controllers\CashController::class, 'exportCashReportCsv'])->name('cash.report.export');
-    Route::get('/cash/report/print', [App\Http\Controllers\CashController::class, 'printCashReport'])->name('cash.report.print');
-    Route::get('/cash/expense', [App\Http\Controllers\CashController::class, 'addExpense'])->name('cash.expense-form');
-    Route::post('/cash/expense', [App\Http\Controllers\CashController::class, 'addExpense'])->name('cash.expense.store');
-    Route::get('/cash/withdrawal', [App\Http\Controllers\CashController::class, 'withdrawalForm'])->name('cash.withdrawal-form');
-    Route::post('/cash/withdrawal', [App\Http\Controllers\CashController::class, 'withdrawalForm'])->name('cash.withdrawal.store');
-    Route::get('/cash/manual-income', [App\Http\Controllers\CashController::class, 'manualIncomeForm'])->name('cash.manual-income-form');
-    Route::post('/cash/manual-income', [App\Http\Controllers\CashController::class, 'manualIncomeForm'])->name('cash.manual-income.store');
-    Route::get('/cash/income-receipt/{payment}', [App\Http\Controllers\CashController::class, 'printIncomeReceipt'])->name('cash.income-receipt');
-    Route::get('/cash/movements/{cashMovement}', [App\Http\Controllers\CashController::class, 'getCashMovementDetails'])->name('cash.movement-details');
+    // Rutas de Caja (módulo: cash)
+    Route::middleware(['module:cash'])->group(function () {
+        Route::get('/cash/daily', [App\Http\Controllers\CashController::class, 'dailyCash'])->name('cash.daily');
+        Route::get('/cash/count', [App\Http\Controllers\CashController::class, 'cashCount'])->name('cash.count');
+        Route::get('/cash/daily-report', [App\Http\Controllers\CashController::class, 'dailyReport'])->name('cash.daily-report');
+        Route::get('/cash/report', [App\Http\Controllers\CashController::class, 'cashReport'])->name('cash.report');
+        Route::get('/cash/report/export', [App\Http\Controllers\CashController::class, 'exportCashReportCsv'])->name('cash.report.export');
+        Route::get('/cash/report/print', [App\Http\Controllers\CashController::class, 'printCashReport'])->name('cash.report.print');
+        Route::get('/cash/expense', [App\Http\Controllers\CashController::class, 'addExpense'])->name('cash.expense-form');
+        Route::post('/cash/expense', [App\Http\Controllers\CashController::class, 'addExpense'])->name('cash.expense.store');
+        Route::get('/cash/withdrawal', [App\Http\Controllers\CashController::class, 'withdrawalForm'])->name('cash.withdrawal-form');
+        Route::post('/cash/withdrawal', [App\Http\Controllers\CashController::class, 'withdrawalForm'])->name('cash.withdrawal.store');
+        Route::get('/cash/manual-income', [App\Http\Controllers\CashController::class, 'manualIncomeForm'])->name('cash.manual-income-form');
+        Route::post('/cash/manual-income', [App\Http\Controllers\CashController::class, 'manualIncomeForm'])->name('cash.manual-income.store');
+        Route::get('/cash/income-receipt/{payment}', [App\Http\Controllers\CashController::class, 'printIncomeReceipt'])->name('cash.income-receipt');
+        Route::get('/cash/movements/{cashMovement}', [App\Http\Controllers\CashController::class, 'getCashMovementDetails'])->name('cash.movement-details');
 
-    // Cash opening/closing routes
-    Route::get('/cash/status', [App\Http\Controllers\CashController::class, 'getCashStatus'])->name('cash.status');
-    Route::post('/cash/open', [App\Http\Controllers\CashController::class, 'openCash'])->name('cash.open');
-    Route::post('/cash/close', [App\Http\Controllers\CashController::class, 'closeCash'])->name('cash.close');
+        // Cash opening/closing routes
+        Route::get('/cash/status', [App\Http\Controllers\CashController::class, 'getCashStatus'])->name('cash.status');
+        Route::post('/cash/open', [App\Http\Controllers\CashController::class, 'openCash'])->name('cash.open');
+        Route::post('/cash/close', [App\Http\Controllers\CashController::class, 'closeCash'])->name('cash.close');
 
-    // Professional liquidation processing
-    Route::post('/liquidation/process', [App\Http\Controllers\LiquidationController::class, 'processLiquidation'])->name('liquidation.process');
+        // Professional liquidation processing
+        Route::post('/liquidation/process', [App\Http\Controllers\LiquidationController::class, 'processLiquidation'])->name('liquidation.process');
+    });
 
     // Rutas de Configuración (módulo: configuration)
     Route::middleware(['module:configuration'])->group(function () {

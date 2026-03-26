@@ -23,11 +23,15 @@ return new class extends Migration
             $table->index(['professional_id', 'is_liquidation_trigger'], 'pa_prof_liq_trigger_idx');
         });
 
-        // Poblar el campo professional_id con datos existentes
+        // Poblar el campo professional_id con datos existentes (sintaxis compatible con SQLite y MySQL)
         DB::statement('
-            UPDATE payment_appointments pa
-            INNER JOIN appointments a ON pa.appointment_id = a.id
-            SET pa.professional_id = a.professional_id
+            UPDATE payment_appointments
+            SET professional_id = (
+                SELECT appointments.professional_id
+                FROM appointments
+                WHERE appointments.id = payment_appointments.appointment_id
+            )
+            WHERE appointment_id IS NOT NULL
         ');
     }
 

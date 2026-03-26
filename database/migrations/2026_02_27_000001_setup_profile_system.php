@@ -32,8 +32,9 @@ return new class extends Migration
         // 4. Crear perfiles base y asignar usuarios existentes
         $this->seedProfiles();
 
-        // 5. Eliminar columna role
+        // 5. Eliminar columna role (y su índice)
         Schema::table('users', function (Blueprint $table) {
+            $table->dropIndex('users_role_index');
             $table->dropColumn('role');
         });
     }
