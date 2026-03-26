@@ -46,6 +46,11 @@
     </main>
 
     @stack('scripts')
+    @if(request()->get('print') === '1')
+    <script>
+        window.addEventListener('load', function () { window.print(); });
+    </script>
+    @endif
 </body>
 </html>
 
