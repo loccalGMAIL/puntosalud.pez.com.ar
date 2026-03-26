@@ -91,7 +91,7 @@ class ProfessionalLiquidation extends Model
 
     public function scopeByDate($query, $date)
     {
-        return $query->where('liquidation_date', $date);
+        return $query->whereDate('liquidation_date', $date);
     }
 
     public function isPaid()

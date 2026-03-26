@@ -341,6 +341,61 @@ class PaymentAllocationServiceTest extends TestCase
         $this->assertEquals(2, $pkg->fresh()->sessions_used);
     }
 
+    // ─── getPaymentAllocationSummary ───────────────────────────────────────
+
+    public function test_summary_returns_correct_structure_for_single_payment(): void
+    {
+        $patient = Patient::factory()->create();
+        $payment = Payment::factory()->single()->withAmount(8000)->create(['patient_id' => $patient->id]);
+
+        $summary = $this->service->getPaymentAllocationSummary($payment->id);
+
+        $this->assertEquals(1, $summary['total_sessions']);
+        $this->assertEquals(0, $summary['used_sessions']);
+        $this->assertEquals(1, $summary['remaining_sessions']);
+        $this->assertEquals(8000, $summary['total_amount']);
+        $this->assertEquals(0, $summary['allocated_amount']);
+        $this->assertFalse($summary['is_fully_allocated']);
+    }
+
+    public function test_summary_is_fully_allocated_when_single_payment_used(): void
+    {
+        $patient = Patient::factory()->create();
+        $payment = Payment::factory()->single()->withAmount(8000)->create(['patient_id' => $patient->id]);
+        $appointment = Appointment::factory()->attended()->create(['patient_id' => $patient->id]);
+        PaymentAppointment::factory()->create([
+            'payment_id' => $payment->id,
+            'appointment_id' => $appointment->id,
+            'allocated_amount' => 8000,
+        ]);
+
+        $summary = $this->service->getPaymentAllocationSummary($payment->id);
+
+        $this->assertTrue($summary['is_fully_allocated']);
+        $this->assertEquals(8000, $summary['allocated_amount']);
+        $this->assertEquals(0, $summary['remaining_amount']);
+    }
+
+    public function test_summary_uses_package_sessions_for_package_purchase(): void
+    {
+        $patient = Patient::factory()->create();
+        $payment = Payment::factory()->packagePurchase()->withAmount(50000)->create(['patient_id' => $patient->id]);
+        PatientPackage::factory()->withSessions(5, 2)->create([
+            'patient_id' => $patient->id,
+            'payment_id' => $payment->id,
+            'price_paid' => 50000,
+        ]);
+
+        $summary = $this->service->getPaymentAllocationSummary($payment->id);
+
+        $this->assertEquals(5, $summary['total_sessions']);
+        $this->assertEquals(2, $summary['used_sessions']);
+        $this->assertEquals(3, $summary['remaining_sessions']);
+        $this->assertFalse($summary['is_fully_allocated']);
+    }
+
+    // ─── deallocatePayment ─────────────────────────────────────────────────
+
     public function test_deallocate_restores_liquidation_status_when_package_has_remaining_sessions(): void
     {
         $patient = Patient::factory()->create();
