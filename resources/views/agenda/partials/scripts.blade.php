@@ -274,7 +274,10 @@ document.addEventListener('alpine:init', () => {
 
                 const result = await response.json();
 
-                if (response.ok && result.success) {
+                if (response.status === 419) {
+                    this.showNotification(result.message || 'Tu sesión ha expirado. Redirigiendo...', 'warning');
+                    setTimeout(() => { window.location.href = result.redirect || '/login'; }, 1500);
+                } else if (response.ok && result.success) {
                     this.modalOpen = false;
                     this.showNotification(result.message, 'success');
                     // Reload page to show changes
@@ -956,7 +959,10 @@ function patientModal() {
                         location.reload();
                     }, 500);
                 } else {
-                    if (response.status === 422 && result.errors) {
+                    if (response.status === 419) {
+                        window.showToast(result.message || 'Tu sesión ha expirado. Redirigiendo...', 'warning');
+                        setTimeout(() => { window.location.href = result.redirect || '/login'; }, 1500);
+                    } else if (response.status === 422 && result.errors) {
                         const errorMessages = Object.values(result.errors).flat().join('\n');
                         window.showToast('Errores de validación: ' + errorMessages, 'error');
                     } else {

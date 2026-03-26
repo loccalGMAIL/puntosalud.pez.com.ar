@@ -513,7 +513,10 @@ async function annulPayment(paymentId, receiptNumber) {
 
         const result = await response.json();
 
-        if (result.success) {
+        if (response.status === 419) {
+            window.showToast(result.message || 'Tu sesión ha expirado. Redirigiendo...', 'warning');
+            setTimeout(() => { window.location.href = result.redirect || '/login'; }, 1500);
+        } else if (result.success) {
             window.showToast(`Pago anulado exitosamente. Recibo: ${result.refund_receipt}`, 'success');
             window.location.reload();
         } else {

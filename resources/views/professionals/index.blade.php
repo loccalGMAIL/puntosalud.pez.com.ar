@@ -548,7 +548,10 @@ function professionalsPage() {
                 
                 const result = await response.json();
                 
-                if (response.ok && result.success) {
+                if (response.status === 419) {
+                    this.showNotification(result.message || 'Tu sesión ha expirado. Redirigiendo...', 'warning');
+                    setTimeout(() => { window.location.href = result.redirect || '/login'; }, 1500);
+                } else if (response.ok && result.success) {
                     this.modalOpen = false;
                     this.refreshData();
                     this.showNotification(result.message, 'success');

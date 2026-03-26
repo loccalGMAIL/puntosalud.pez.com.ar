@@ -7,6 +7,28 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [2.10.2] - 2026-03-26
+
+### 🔒 Fix CSRF 419 — Manejo de sesión expirada en formularios
+
+#### Problema
+En conexiones inestables (principalmente inalámbricas) la sesión en base de datos puede expirar o invalidarse mientras el usuario tiene un formulario abierto. Al intentar guardar, Laravel devuelve un **419 TokenMismatchException**, pero el frontend lo trataba como un error genérico: mostraba un toast inespecífico y la página quedaba bloqueada sin indicarle al usuario qué hacer.
+
+#### Corrección
+Se agregó manejo explícito del código HTTP 419 en los métodos de submit de todos los módulos con formularios Alpine.js. Cuando ocurre el error de sesión, ahora se muestra un toast de advertencia *"Tu sesión ha expirado. Redirigiendo..."* y a los 1,5 segundos se redirige automáticamente al login usando la URL devuelta por el servidor en `result.redirect`.
+
+**Archivos corregidos:**
+- `resources/views/patients/index.blade.php` — `submitForm()`
+- `resources/views/professionals/index.blade.php` — `submitForm()`
+- `resources/views/appointments/index.blade.php` — `submitForm()`
+- `resources/views/agenda/partials/scripts.blade.php` — `submitForm()` y `addPatient()`
+- `resources/views/payments/index.blade.php` — `annulPayment()`
+- `resources/views/cash/expense-form.blade.php` — submit de gastos
+- `resources/views/cash/manual-income-form.blade.php` — submit de ingresos manuales
+- `resources/views/cash/withdrawal-form.blade.php` — submit de retiros
+
+---
+
 ## [2.10.1] - 2026-03-26
 
 ### 🔐 Revisión de Seguridad y Cobertura de Tests
