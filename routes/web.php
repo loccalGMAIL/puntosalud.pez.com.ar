@@ -57,7 +57,7 @@ Route::middleware(['auth'])->group(function () {
         // Notas internas de profesionales
         Route::get('/professionals/{professional}/notes', [ProfessionalNoteController::class, 'index'])->name('professionals.notes.index');
         Route::post('/professionals/{professional}/notes', [ProfessionalNoteController::class, 'store'])->name('professionals.notes.store');
-        Route::delete('/professional-notes/{note}', [ProfessionalNoteController::class, 'destroy'])->name('professionals.notes.destroy');
+        Route::delete('/professionals/{professional}/notes/{note}', [ProfessionalNoteController::class, 'destroy'])->name('professionals.notes.destroy');
     });
 
     // Rutas de Pacientes (módulo: patients)
