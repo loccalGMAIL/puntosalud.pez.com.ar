@@ -7,6 +7,44 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [2.10.1] - 2026-03-26
+
+### 🔐 Revisión de Seguridad y Cobertura de Tests
+
+#### Seguridad
+- **Middleware de módulos en rutas core**: todas las rutas de `professionals`, `patients`, `appointments`, `agenda`, `payments` y `cash` ahora requieren el middleware `module:X` correspondiente. Previamente cualquier usuario autenticado podía acceder a módulos que no tenía habilitados en su perfil.
+- **Bug crítico `payment_type='expense'`**: `CashController::addExpense()` usaba el valor `'expense'` que no existe en el enum de la tabla `payments`. Corregido a `manual_income` con `total_amount` negativo, eliminando errores silenciosos en MySQL non-strict y errores fatales en MySQL strict.
+- **Log de datos sensibles**: eliminado `\Log::info('Appointment creation attempt', $request->all())` en `AppointmentController::store()` — debug temporal que exponía datos de pacientes y montos en logs de producción.
+- **Versión expuesta en login**: eliminada la versión hardcodeada `v2.2.3` del footer de la vista de login para evitar fingerprinting.
+- **IDOR en notas de profesionales**: ruta `DELETE /professional-notes/{note}` no validaba pertenencia; cambiada a `DELETE /professionals/{professional}/notes/{note}` con validación de ownership en el controller. URL del frontend actualizada en `agenda/partials/scripts.blade.php`.
+- **Filtro obsoleto eliminado**: `PaymentController::index()` filtraba `payment_type != 'expense'` — tipo ya inexistente tras el fix anterior.
+
+#### Correcciones de Migraciones (compatibilidad SQLite/tests)
+- `add_movement_type_id_to_cash_movements_table`: `dropIndex()` antes de `dropColumn('type')`.
+- `drop_movement_date_from_cash_movements_table`: `dropIndex()` antes de `dropColumn('movement_date')`.
+- `restructure_payments_table`: reemplazado `SET FOREIGN_KEY_CHECKS` por `Schema::disable/enableForeignKeyConstraints()`; `receipt_number` ahora nullable.
+- `add_professional_id_to_payment_appointments`: JOIN UPDATE de MySQL reemplazado por subquery portable.
+- `setup_profile_system`: `dropIndex('users_role_index')` antes de `dropColumn('role')`.
+- Nueva migración `add_birthday_to_professionals_table`: columna `birthday` (date, nullable) que faltaba en la tabla `professionals` aunque existía en el modelo.
+- `scopeByDate` en `ProfessionalLiquidation`: cambiado `where()` a `whereDate()` para compatibilidad MySQL/SQLite.
+
+#### Cobertura de Tests (138 tests en total)
+- **10 nuevas factories**: `Specialty`, `Office`, `Package`, `Professional`, `Patient`, `Appointment`, `Payment`, `PaymentDetail`, `PatientPackage`, `PaymentAppointment`.
+- **3 nuevas factories adicionales**: `MovementType`, `CashMovement`, `ProfessionalLiquidation`.
+- **`HasFactory` agregado** a `Package`, `PatientPackage` y `PaymentDetail`.
+- **Tests unitarios de modelos**:
+  - `ProfessionalTest` (14 tests): `calculateCommission`, `getClinicAmount`, accessors, scopes, `hasAppointmentAt`.
+  - `AppointmentTest` (22 tests): `markAsAttended`, `markAsAbsent`, `cancel`, `canBeCancelled`, `conflictsWith`, accessors, scopes.
+  - `PaymentTest` (24 tests): `generateReceiptNumber`, `canBeUsedForAppointment`, `markAsLiquidated`, `cancel`, `confirm`, sumas por receptor, scopes, accessors.
+  - `PatientPackageTest` (24 tests): `useSession`, `returnSession`, `cancel`, `markAsExpired`, `checkExpiration`, todos los accessors y scopes.
+  - `CashMovementTest` (17 tests): `isIncome`, `isExpense`, `isOpening`, `isClosing`, scopes, `getCashStatusForDate`, `isCashOpenToday`, `getCurrentBalanceWithLock`.
+  - `ProfessionalLiquidationTest` (10 tests): `isPaid`, `isPending`, scopes `pending`/`paid`/`byType`/`byDate`, relaciones.
+- **Tests unitarios de servicios**:
+  - `PaymentAllocationServiceTest` (26 tests): `allocateSinglePayment`, `allocatePackageSession`, `checkAndAllocatePayment`, `deallocatePayment`, `getPaymentAllocationSummary`.
+- **Eliminado** `tests/Feature/ExampleTest.php` (placeholder roto de Laravel scaffold).
+
+---
+
 ## [2.10.0] - 2026-03-26
 
 ### 📊 Módulo de Informes Analíticos

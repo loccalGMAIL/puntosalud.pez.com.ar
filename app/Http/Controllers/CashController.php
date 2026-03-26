@@ -272,7 +272,7 @@ class CashController extends Controller
             $payment = \App\Models\Payment::create([
                 'patient_id' => null, // Gastos no tienen paciente
                 'payment_date' => now(),
-                'payment_type' => 'expense',
+                'payment_type' => 'manual_income', // Egresos: manual_income con total_amount negativo
                 'total_amount' => -$validated['amount'], // Negativo para egreso
                 'is_advance_payment' => false,
                 'concept' => $description,

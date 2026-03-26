@@ -813,7 +813,7 @@ document.addEventListener('alpine:init', () => {
         async deleteNote(id) {
             if (!confirm('¿Eliminar esta nota?')) return;
             try {
-                const url = `/professional-notes/${id}`;
+                const url = `/professionals/${this.professionalId}/notes/${id}`;
                 const response = await fetch(url, {
                     method: 'DELETE',
                     headers: {

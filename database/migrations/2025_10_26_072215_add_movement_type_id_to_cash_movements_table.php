@@ -34,8 +34,9 @@ return new class extends Migration
             $table->foreignId('movement_type_id')->nullable(false)->change();
         });
 
-        // Paso 5: Eliminar el campo 'type' antiguo
+        // Paso 5: Eliminar el índice y el campo 'type' antiguo
         Schema::table('cash_movements', function (Blueprint $table) {
+            $table->dropIndex('cash_movements_type_index');
             $table->dropColumn('type');
         });
     }

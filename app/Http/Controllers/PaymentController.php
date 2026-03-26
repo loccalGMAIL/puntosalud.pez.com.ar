@@ -23,11 +23,7 @@ class PaymentController extends Controller
 
     public function index(Request $request)
     {
-        // Obtener todos los payments (ahora incluye pagos de pacientes e ingresos manuales)
-        // EXCLUIR gastos (expense) que no son ingresos y no tienen número de recibo
-        // Cargar paymentDetails para mostrar los métodos de pago
-        $query = Payment::with(['patient', 'paymentAppointments.appointment.professional', 'createdBy', 'paymentDetails'])
-            ->where('payment_type', '!=', 'expense');
+        $query = Payment::with(['patient', 'paymentAppointments.appointment.professional', 'createdBy', 'paymentDetails']);
 
         // Filtros
         if ($request->filled('search')) {

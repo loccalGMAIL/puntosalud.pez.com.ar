@@ -33,9 +33,9 @@ return new class extends Migration
 
         // PASO 2: Si la tabla existe vacía (ej: migrate:fresh), eliminarla para recrearla
         if (!$hasOldPaymentsTable && Schema::hasTable('payments')) {
-            DB::statement('SET FOREIGN_KEY_CHECKS=0');
+            Schema::disableForeignKeyConstraints();
             Schema::drop('payments');
-            DB::statement('SET FOREIGN_KEY_CHECKS=1');
+            Schema::enableForeignKeyConstraints();
         }
 
         // Crear nueva tabla payments con estructura actualizada
@@ -51,7 +51,7 @@ return new class extends Migration
 
             // Información del pago
             $table->dateTime('payment_date');
-            $table->string('receipt_number', 50)->unique();
+            $table->string('receipt_number', 50)->nullable()->unique();
             $table->decimal('total_amount', 10, 2)->comment('Monto total del pago (suma de payment_details)');
             $table->boolean('is_advance_payment')->default(false)->comment('Si es un pago anticipado sin turno asignado');
             $table->string('concept')->nullable()->comment('Concepto del pago o descripción');

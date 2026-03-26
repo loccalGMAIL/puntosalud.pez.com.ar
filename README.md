@@ -2,7 +2,7 @@
 
 [![Laravel](https://img.shields.io/badge/Laravel-12.x-red?style=flat\&logo=laravel)](https://laravel.com)
 [![PHP](https://img.shields.io/badge/PHP-8.2-blue?style=flat\&logo=php)](https://php.net)
-[![Version](https://img.shields.io/badge/Version-2.10.0-green?style=flat)](#changelog)
+[![Version](https://img.shields.io/badge/Version-2.10.1-green?style=flat)](#changelog)
 [![License](https://img.shields.io/badge/License-MIT-yellow?style=flat)](#license)
 
 Sistema integral de gestión médica para clínicas y consultorios, desarrollado con Laravel 12 y tecnologías modernas.
@@ -152,6 +152,7 @@ php artisan config:clear
 
 ### 🔄 Últimas versiones
 
+* **v2.10.1** (2026-03-26) – 🔐 Revisión de Seguridad: middleware de módulos en rutas core, fix bug crítico `payment_type='expense'`, eliminación de log de datos sensibles, fix IDOR en notas de profesionales. 138 tests unitarios con 13 factories nuevas cubriendo modelos y servicios clave.
 * **v2.10.0** (2026-03-26) – 📊 Módulo de Informes Analíticos: 13 nuevos reportes históricos (Profesionales, Pacientes, Financiero) con Chart.js, impresión universal y menú de Reportes reestructurado en submenús colapsables.
 * **v2.9.5** (2026-03-23) – 💰 Mejoras en vistas de Liquidación Profesional: totales de comisión explícitos, estilo minimalista en detalle de cobros, header de impresión rediseñado con logo.
 * **v2.9.4-2** (2026-03-10) – 🎨 UX Caja: formularios compactados con acordeón para notas/comprobante. 🌙 Toggle de tema claro/oscuro: barra persistente con fecha, versión del sistema y botón sol/luna; preferencia guardada en `localStorage`, light por defecto.

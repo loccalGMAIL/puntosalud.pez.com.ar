@@ -46,8 +46,12 @@ class ProfessionalNoteController extends Controller
         ], 201);
     }
 
-    public function destroy(ProfessionalNote $note)
+    public function destroy(Professional $professional, ProfessionalNote $note)
     {
+        if ($note->professional_id !== $professional->id) {
+            abort(404);
+        }
+
         $note->delete();
 
         return response()->json(['success' => true]);

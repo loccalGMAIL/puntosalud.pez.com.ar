@@ -104,9 +104,6 @@ class AppointmentController extends Controller
     public function store(Request $request)
     {
         try {
-            // Log temporal para debug
-            \Log::info('Appointment creation attempt', $request->all());
-
             $validated = $request->validate([
                 'professional_id' => 'required|exists:professionals,id',
                 'patient_id' => 'required|exists:patients,id',
