@@ -318,7 +318,10 @@ function expenseForm() {
 
                 const result = await response.json();
 
-                if (response.ok && result.success) {
+                if (response.status === 419) {
+                    window.showToast(result.message || 'Tu sesión ha expirado. Redirigiendo...', 'warning');
+                    setTimeout(() => { window.location.href = result.redirect || '/login'; }, 1500);
+                } else if (response.ok && result.success) {
                     window.location.href = '/cash/daily';
                 } else {
                     window.showToast(result.message || 'Error al registrar el gasto', 'error');
