@@ -96,6 +96,43 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/reports/expenses/export', [ReportController::class, 'exportExpensesReportCsv'])->name('reports.expenses.export');
     Route::get('/reports/expenses/print', [ReportController::class, 'printExpensesReport'])->name('reports.expenses.print');
 
+    // Analytics Reports (v2.10.0) — bajo módulo 'reports'
+    Route::middleware(['module:reports'])->group(function () {
+        Route::get('/reports/liquidaciones-historicas',        [ReportController::class, 'liquidacionesHistoricas'])->name('reports.liquidaciones-historicas');
+        Route::get('/reports/liquidaciones-historicas/print',  [ReportController::class, 'printLiquidacionesHistoricas'])->name('reports.liquidaciones-historicas.print');
+
+        Route::get('/reports/profesionales/ingresos',          [ReportController::class, 'profesionalesIngresos'])->name('reports.profesionales.ingresos');
+        Route::get('/reports/profesionales/ingresos/print',    [ReportController::class, 'printProfesionalesIngresos'])->name('reports.profesionales.ingresos.print');
+
+        Route::get('/reports/profesionales/consultas',         [ReportController::class, 'profesionalesConsultas'])->name('reports.profesionales.consultas');
+        Route::get('/reports/profesionales/consultas/print',  [ReportController::class, 'printProfesionalesConsultas'])->name('reports.profesionales.consultas.print');
+
+        Route::get('/reports/profesionales/comisiones',        [ReportController::class, 'profesionalesComisiones'])->name('reports.profesionales.comisiones');
+        Route::get('/reports/profesionales/comisiones/print',  [ReportController::class, 'printProfesionalesComisiones'])->name('reports.profesionales.comisiones.print');
+
+        Route::get('/reports/profesionales/comparativa',       [ReportController::class, 'profesionalesComparativa'])->name('reports.profesionales.comparativa');
+        Route::get('/reports/profesionales/comparativa/print', [ReportController::class, 'printProfesionalesComparativa'])->name('reports.profesionales.comparativa.print');
+
+        Route::get('/reports/pagos/tendencia',                 [ReportController::class, 'pagosTendencia'])->name('reports.pagos.tendencia');
+        Route::get('/reports/pagos/tendencia/print',           [ReportController::class, 'printPagosTendencia'])->name('reports.pagos.tendencia.print');
+
+        Route::get('/reports/pacientes/ausentismo',            [ReportController::class, 'pacientesAusentismo'])->name('reports.pacientes.ausentismo');
+        Route::get('/reports/pacientes/ausentismo/print',      [ReportController::class, 'printPacientesAusentismo'])->name('reports.pacientes.ausentismo.print');
+        Route::get('/reports/pacientes/retencion',             [ReportController::class, 'pacientesRetencion'])->name('reports.pacientes.retencion');
+        Route::get('/reports/pacientes/retencion/print',       [ReportController::class, 'printPacientesRetencion'])->name('reports.pacientes.retencion.print');
+        Route::get('/reports/pacientes/frecuencia',            [ReportController::class, 'pacientesFrecuencia'])->name('reports.pacientes.frecuencia');
+        Route::get('/reports/pacientes/frecuencia/print',      [ReportController::class, 'printPacientesFrecuencia'])->name('reports.pacientes.frecuencia.print');
+        Route::get('/reports/pacientes/nuevos-viejos',         [ReportController::class, 'pacientesNuevosViejos'])->name('reports.pacientes.nuevos-viejos');
+        Route::get('/reports/pacientes/nuevos-viejos/print',   [ReportController::class, 'printPacientesNuevosViejos'])->name('reports.pacientes.nuevos-viejos.print');
+
+        Route::get('/reports/ingresos-obra-social',            [ReportController::class, 'ingresosObraSocial'])->name('reports.ingresos-obra-social');
+        Route::get('/reports/ingresos-obra-social/print',      [ReportController::class, 'printIngresosObraSocial'])->name('reports.ingresos-obra-social.print');
+        Route::get('/reports/cobros-pendientes',               [ReportController::class, 'cobrosPendientes'])->name('reports.cobros-pendientes');
+        Route::get('/reports/cobros-pendientes/print',         [ReportController::class, 'printCobrosPendientes'])->name('reports.cobros-pendientes.print');
+        Route::get('/reports/flujo-caja-mensual',              [ReportController::class, 'flujoCajaMensual'])->name('reports.flujo-caja-mensual');
+        Route::get('/reports/flujo-caja-mensual/print',        [ReportController::class, 'printFlujoCajaMensual'])->name('reports.flujo-caja-mensual.print');
+    });
+
     // Cash management routes
     Route::get('/cash/daily', [App\Http\Controllers\CashController::class, 'dailyCash'])->name('cash.daily');
     Route::get('/cash/count', [App\Http\Controllers\CashController::class, 'cashCount'])->name('cash.count');

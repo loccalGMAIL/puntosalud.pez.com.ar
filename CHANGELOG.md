@@ -7,6 +7,48 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [2.10.0] - 2026-03-26
+
+### 📊 Módulo de Informes Analíticos
+
+#### Nuevos informes (13 en total) bajo `middleware('module:reports')`
+
+**Profesionales**
+- `reports/profesionales/ingresos` — Ingresos totales por profesional en el período, desglose mensual.
+- `reports/profesionales/consultas` — Estados de turnos por profesional (atendidos, ausentes, cancelados, pendientes, tasa de asistencia).
+- `reports/profesionales/comisiones` — Comisiones liquidadas: facturado, comisión profesional, comisión clínica; desglose mensual.
+- `reports/profesionales/comparativa` — Gráfico de barras agrupado (Chart.js): turnos atendidos + facturado + comisión por profesional.
+
+**Pacientes**
+- `reports/pacientes/ausentismo` — Tasa de inasistencia (ausentes / completados) por profesional.
+- `reports/pacientes/retencion` — Pacientes únicos, tasa de retención, nuevos vs recurrentes, distribución de visitas.
+- `reports/pacientes/frecuencia` — Promedio de días entre visitas consecutivas, agrupado en 5 buckets.
+- `reports/pacientes/nuevos-viejos` — Evolución mensual de pacientes nuevos vs que volvieron (Chart.js stacked bar).
+
+**Financiero**
+- `reports/liquidaciones-historicas` — Historial de liquidaciones con filtros de profesional y estado.
+- `reports/pagos/tendencia` — Evolución mensual por método de pago: Efectivo, Transferencia, Tarjeta, QR (Chart.js).
+- `reports/ingresos-obra-social` — Facturación y turnos agrupados por obra social / financiador.
+- `reports/cobros-pendientes` — Turnos atendidos sin pago registrado, con detalle por profesional.
+- `reports/flujo-caja-mensual` — Ingresos vs egresos mensuales de movimientos de caja (Chart.js).
+
+#### Impresión universal
+- Todos los 13 informes tienen botón **Imprimir** (`bg-gray-600`) en el header.
+- Al presionar, abre una nueva pestaña con la vista `*-print.blade.php` y dispara `window.print()` automáticamente.
+- Las vistas de impresión usan `layouts/print`, `<x-report-print-header>` y clases `.report-table/.report-th/.report-td`.
+- Los informes con Chart.js muestran tablas HTML en la vista de impresión (el canvas tiene `print:hidden`).
+
+#### Navegación — menú Reportes reestructurado
+- Submenú colapsable **Profesionales** (4 ítems).
+- Submenú colapsable **Pacientes** (4 ítems).
+- Submenú colapsable **Financiero** (8 ítems, incluye Movimientos de Caja, Análisis de Caja e Informe de Gastos que antes estaban sueltos).
+- `nav-main.blade.php` actualizado para soportar tipo `submenu` con Alpine.js colapsable y detección de ítem activo recursiva.
+
+#### Versión del sistema
+- `app.blade.php`: la barra superior ahora lee la versión desde el archivo `VERSION` en lugar de `composer.json`.
+
+---
+
 ## [2.9.5] - 2026-03-23
 
 ### 💰 Mejoras en vistas de Liquidación Profesional

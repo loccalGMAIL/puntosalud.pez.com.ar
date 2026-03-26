@@ -2,7 +2,7 @@
 
 [![Laravel](https://img.shields.io/badge/Laravel-12.x-red?style=flat\&logo=laravel)](https://laravel.com)
 [![PHP](https://img.shields.io/badge/PHP-8.2-blue?style=flat\&logo=php)](https://php.net)
-[![Version](https://img.shields.io/badge/Version-2.9.4--2-green?style=flat)](#changelog)
+[![Version](https://img.shields.io/badge/Version-2.10.0-green?style=flat)](#changelog)
 [![License](https://img.shields.io/badge/License-MIT-yellow?style=flat)](#license)
 
 Sistema integral de gestión médica para clínicas y consultorios, desarrollado con Laravel 12 y tecnologías modernas.
@@ -82,6 +82,7 @@ Sistema integral de gestión médica para clínicas y consultorios, desarrollado
 * Liquidación diaria de profesionales
 * Reportes optimizados para impresión y control administrativo
 * **Exportación de reportes de caja** a Excel (CSV estructurado) e impresión via navegador
+* **Módulo de Informes Analíticos** (v2.10.0): 13 informes históricos agrupados en Profesionales, Pacientes y Financiero; todos con impresión directa, gráficos Chart.js y submenús colapsables en la navegación
 
 ## 🛠 Tecnologías
 
@@ -151,6 +152,8 @@ php artisan config:clear
 
 ### 🔄 Últimas versiones
 
+* **v2.10.0** (2026-03-26) – 📊 Módulo de Informes Analíticos: 13 nuevos reportes históricos (Profesionales, Pacientes, Financiero) con Chart.js, impresión universal y menú de Reportes reestructurado en submenús colapsables.
+* **v2.9.5** (2026-03-23) – 💰 Mejoras en vistas de Liquidación Profesional: totales de comisión explícitos, estilo minimalista en detalle de cobros, header de impresión rediseñado con logo.
 * **v2.9.4-2** (2026-03-10) – 🎨 UX Caja: formularios compactados con acordeón para notas/comprobante. 🌙 Toggle de tema claro/oscuro: barra persistente con fecha, versión del sistema y botón sol/luna; preferencia guardada en `localStorage`, light por defecto.
 * **v2.9.4-1** (2026-03-07) – 🔧 Refactoring MovementType: eliminación de jerarquía padre/hijo, reclasificación de `refund` a gastos, retiros incluidos en Informe de Gastos, Excel mejorado con secciones y formato argentino, eliminación de botón PDF y DomPDF.
 * **v2.9.4** (2026-03-05) – 🖨️ Listado Diario: sistema de impresión estándar (layout/print + header con logo), auto-impresión y auto-cierre de pestaña, fix botón imprimir en cards de selección, fix conteo de pacientes sin cancelados.

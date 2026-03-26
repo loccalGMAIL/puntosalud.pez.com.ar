@@ -11,7 +11,13 @@
       "Bash(grep:*)",
       "Bash(do echo:*)",
       "Bash(php artisan:*)",
-      "mcp__context7__query-docs"
+      "mcp__context7__query-docs",
+      "Bash(php -l app/Http/Controllers/ReportController.php)",
+      "Bash(npm run:*)",
+      "Bash(php -r \":*)",
+      "Bash(for f:*)",
+      "Read(//d/DESARROLLO/CoDiGo/PuntoSalud/puntosalud.pez.com.ar/resources/views/reports/**)",
+      "Bash(done)"
     ],
     "deny": [],
     "ask": []
