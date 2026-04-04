@@ -35,6 +35,17 @@ class AuthController extends Controller
 
         // Intentar autenticación con usuarios activos únicamente
         if (Auth::attempt($credentials) && Auth::user()->isActive()) {
+            // Verificar bloqueo del centro
+            if (setting('center_active', '1') !== '1' && ! Auth::user()->canAccessModule('system')) {
+                Auth::logout();
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+
+                return back()->withErrors([
+                    'center_blocked' => 'El sistema se encuentra temporalmente bloqueado. Contacte al Administrador.',
+                ])->onlyInput('email');
+            }
+
             $request->session()->regenerate();
 
             ActivityLog::record('login', Auth::user(), Auth::user()->name, Auth::id());
