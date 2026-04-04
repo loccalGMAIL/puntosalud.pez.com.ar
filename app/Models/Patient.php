@@ -20,6 +20,7 @@ class Patient extends Model
         'last_name',
         'dni',
         'phone',
+        'phone_landline',
         'email',
         'health_insurance',
         'health_insurance_number',
@@ -63,6 +64,7 @@ class Patient extends Model
                 ->orWhere('last_name', 'like', "%{$search}%")
                 ->orWhere('dni', 'like', "%{$search}%")
                 ->orWhere('phone', 'like', "%{$search}%")
+                ->orWhere('phone_landline', 'like', "%{$search}%")
                 ->orWhere('email', 'like', "%{$search}%");
         });
     }

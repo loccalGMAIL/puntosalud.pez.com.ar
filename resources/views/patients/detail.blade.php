@@ -73,6 +73,13 @@
                             <div class="text-lg text-gray-900 dark:text-white">{{ $patient->phone ?: 'No especificado' }}</div>
                         </div>
 
+                        @if($patient->phone_landline)
+                        <div>
+                            <label class="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Teléfono Fijo</label>
+                            <div class="text-lg text-gray-900 dark:text-white">{{ $patient->phone_landline }}</div>
+                        </div>
+                        @endif
+
                         <div>
                             <label class="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Email</label>
                             <div class="text-lg text-gray-900 dark:text-white">{{ $patient->email ?: 'No especificado' }}</div>

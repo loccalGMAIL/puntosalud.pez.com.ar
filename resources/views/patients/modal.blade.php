@@ -97,7 +97,7 @@
                     <!-- Información de Contacto -->
                     <div>
                         <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Información de Contacto</h3>
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Teléfono *</label>
                                 <input x-model="form.phone" type="tel" required placeholder="+54 11 1234-5678"
@@ -105,6 +105,15 @@
                                        :class="hasError('phone') ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 dark:border-gray-600 focus:ring-emerald-500 focus:border-emerald-500'"
                                        class="w-full px-3 py-2 border rounded-md shadow-sm dark:bg-gray-700 dark:text-white">
                                 <p x-show="hasError('phone')" x-text="formErrors.phone" class="mt-1 text-xs text-red-600 dark:text-red-400"></p>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Teléfono Fijo</label>
+                                <input x-model="form.phone_landline" type="tel" placeholder="011 4123-5678"
+                                       @input="clearError('phone_landline')"
+                                       :class="hasError('phone_landline') ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 dark:border-gray-600 focus:ring-emerald-500 focus:border-emerald-500'"
+                                       class="w-full px-3 py-2 border rounded-md shadow-sm dark:bg-gray-700 dark:text-white">
+                                <p x-show="hasError('phone_landline')" x-text="formErrors.phone_landline" class="mt-1 text-xs text-red-600 dark:text-red-400"></p>
                             </div>
 
                             <div>

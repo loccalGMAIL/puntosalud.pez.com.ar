@@ -17,7 +17,9 @@
       "Bash(php -r \":*)",
       "Bash(for f:*)",
       "Read(//d/DESARROLLO/CoDiGo/PuntoSalud/puntosalud.pez.com.ar/resources/views/reports/**)",
-      "Bash(done)"
+      "Bash(done)",
+      "Bash(composer dump-autoload:*)",
+      "Bash(php -r \"require 'vendor/autoload.php'; echo 'OK';\")"
     ],
     "deny": [],
     "ask": []

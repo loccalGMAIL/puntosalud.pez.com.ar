@@ -28,7 +28,8 @@ class PatientController extends Controller
                     ->orWhere('dni', 'like', "%{$search}%")
                     // Búsqueda de DNI sin puntos (normalizada)
                     ->orWhereRaw('REPLACE(dni, ".", "") LIKE ?', ["%{$cleanSearch}%"])
-                    ->orWhere('phone', 'like', "%{$search}%");
+                    ->orWhere('phone', 'like', "%{$search}%")
+                    ->orWhere('phone_landline', 'like', "%{$search}%");
             });
         }
 
@@ -89,6 +90,7 @@ class PatientController extends Controller
                 'birth_date' => 'required|date|before:today',
                 'email' => ['nullable', 'string', 'max:255', 'regex:/^[a-zA-Z0-9._%+\-ñÑ]+@[a-zA-Z0-9.\-ñÑ]+\.[a-zA-Z]{2,}$/'],
                 'phone' => 'required|string|max:255',
+                'phone_landline' => 'nullable|string|max:50',
                 'address' => 'nullable|string|max:500',
                 'health_insurance' => 'nullable|string|max:255',
                 'health_insurance_number' => 'nullable|string|max:255',
@@ -193,6 +195,7 @@ class PatientController extends Controller
                 'birth_date' => 'required|date|before:today',
                 'email' => ['nullable', 'string', 'max:255', 'regex:/^[a-zA-Z0-9._%+\-ñÑ]+@[a-zA-Z0-9.\-ñÑ]+\.[a-zA-Z]{2,}$/'],
                 'phone' => 'required|string|max:255',
+                'phone_landline' => 'nullable|string|max:50',
                 'address' => 'nullable|string|max:500',
                 'health_insurance' => 'nullable|string|max:255',
                 'health_insurance_number' => 'nullable|string|max:255',

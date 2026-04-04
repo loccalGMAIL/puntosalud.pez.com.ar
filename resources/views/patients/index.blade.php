@@ -196,6 +196,7 @@
                             <div><span class="font-medium">DNI:</span> <span x-text="patient.dni" class="font-mono"></span></div>
                             <div><span class="font-medium">Edad:</span> <span x-text="calculateAge(patient.birth_date) + ' años'"></span></div>
                             <div><span class="font-medium">Tel:</span> <span x-text="patient.phone"></span></div>
+                            <div x-show="patient.phone_landline"><span class="font-medium">Fijo:</span> <span x-text="patient.phone_landline"></span></div>
                             <div>
                                 <span x-show="patient.health_insurance" class="inline-flex px-1.5 py-0.5 bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 rounded-full text-xs" x-text="patient.health_insurance"></span>
                                 <span x-show="!patient.health_insurance" class="text-gray-400">Sin O.S.</span>
@@ -279,6 +280,7 @@
                                 <td class="px-6 py-4">
                                     <div class="text-sm text-gray-900 dark:text-white" x-text="patient.email || 'Sin email'"></div>
                                     <div class="text-sm text-gray-500 dark:text-gray-400" x-text="patient.phone"></div>
+                                    <div x-show="patient.phone_landline" class="text-sm text-gray-500 dark:text-gray-400" x-text="'Fijo: ' + patient.phone_landline"></div>
                                 </td>
                                 
                                 <!-- Edad -->
@@ -394,6 +396,7 @@ function patientsPage() {
             birth_date: '',
             email: '',
             phone: '',
+            phone_landline: '',
             address: '',
             health_insurance: '',
             health_insurance_number: '',
@@ -489,6 +492,7 @@ function patientsPage() {
                 birth_date: this.formatDateForInput(patient.birth_date),
                 email: patient.email || '',
                 phone: patient.phone,
+                phone_landline: patient.phone_landline || '',
                 address: patient.address || '',
                 health_insurance: patient.health_insurance || '',
                 health_insurance_number: patient.health_insurance_number || '',
@@ -506,6 +510,7 @@ function patientsPage() {
                 birth_date: '',
                 email: '',
                 phone: '',
+                phone_landline: '',
                 address: '',
                 health_insurance: '',
                 health_insurance_number: '',

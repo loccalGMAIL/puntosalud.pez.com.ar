@@ -250,7 +250,7 @@ class AppointmentController extends Controller
                 return response()->json(['success' => true, 'message' => $message]);
             }
 
-            return redirect()->route('appointments.index')->with('success', $message);
+            return redirect()->back()->with('success', $message);
 
         } catch (\Exception $e) {
             DB::rollBack();
@@ -377,7 +377,7 @@ class AppointmentController extends Controller
                 return response()->json(['success' => true, 'message' => 'Turno actualizado exitosamente.']);
             }
 
-            return redirect()->route('appointments.index')->with('success', 'Turno actualizado exitosamente.');
+            return redirect()->back()->with('success', 'Turno actualizado exitosamente.');
 
         } catch (\Illuminate\Validation\ValidationException $e) {
             if ($request->ajax()) {
@@ -481,7 +481,7 @@ class AppointmentController extends Controller
                 return response()->json(['success' => true, 'message' => $message]);
             }
 
-            return redirect()->route('appointments.index')->with('success', $message);
+            return redirect()->back()->with('success', $message);
 
         } catch (\Exception $e) {
             DB::rollBack();

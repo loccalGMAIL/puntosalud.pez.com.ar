@@ -2,8 +2,7 @@
 
 [![Laravel](https://img.shields.io/badge/Laravel-12.x-red?style=flat\&logo=laravel)](https://laravel.com)
 [![PHP](https://img.shields.io/badge/PHP-8.2-blue?style=flat\&logo=php)](https://php.net)
-[![Version](https://img.shields.io/badge/Version-2.10.2-green?style=flat)](#changelog)
-[![HotFix](https://img.shields.io/badge/HotFix-BloqueAcceso-orange?style=flat)](#changelog)
+[![Version](https://img.shields.io/badge/Version-2.10.3-green?style=flat)](#changelog)
 [![License](https://img.shields.io/badge/License-MIT-yellow?style=flat)](#license)
 
 Sistema integral de gestión médica para clínicas y consultorios, desarrollado con Laravel 12 y tecnologías modernas.
@@ -72,6 +71,7 @@ Sistema integral de gestión médica para clínicas y consultorios, desarrollado
 
 * Registro completo de información personal y médica
 * **Formato de visualización profesional**: Apellido, Nombre
+* **Teléfono Fijo** (v2.10.3): campo opcional adicional al teléfono móvil, visible en índice y ficha de paciente
 * Historial de citas y tratamientos
 * Seguimiento de pagos y saldos
 
@@ -159,6 +159,7 @@ php artisan config:clear
 
 ### 🔄 Últimas versiones
 
+* **v2.10.3** (2026-04-04) – 📅 Persistencia de fecha en Agenda: al crear/modificar un turno se conserva el día seleccionado en lugar de volver siempre a hoy. 📞 Teléfono Fijo en Pacientes: nuevo campo opcional `phone_landline` en formulario, índice y ficha.
 * **v2.10.2** (2026-03-26) – 🔒 Fix CSRF 419: manejo explícito de sesión expirada en todos los formularios Alpine.js; toast de advertencia + redirección automática al login en 8 módulos (pacientes, profesionales, turnos, agenda, pagos, caja).
 * **v2.10.1** (2026-03-26) – 🔐 Revisión de Seguridad: middleware de módulos en rutas core, fix bug crítico `payment_type='expense'`, eliminación de log de datos sensibles, fix IDOR en notas de profesionales. 138 tests unitarios con 13 factories nuevas cubriendo modelos y servicios clave.
 * **v2.10.0** (2026-03-26) – 📊 Módulo de Informes Analíticos: 13 nuevos reportes históricos (Profesionales, Pacientes, Financiero) con Chart.js, impresión universal y menú de Reportes reestructurado en submenús colapsables.
