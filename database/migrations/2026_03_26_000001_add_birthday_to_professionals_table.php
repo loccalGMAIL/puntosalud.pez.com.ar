@@ -8,15 +8,19 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('professionals', function (Blueprint $table) {
-            $table->date('birthday')->nullable()->after('email');
-        });
+        if (! Schema::hasColumn('professionals', 'birthday')) {
+            Schema::table('professionals', function (Blueprint $table) {
+                $table->date('birthday')->nullable()->after('email');
+            });
+        }
     }
 
     public function down(): void
     {
-        Schema::table('professionals', function (Blueprint $table) {
-            $table->dropColumn('birthday');
-        });
+        if (Schema::hasColumn('professionals', 'birthday')) {
+            Schema::table('professionals', function (Blueprint $table) {
+                $table->dropColumn('birthday');
+            });
+        }
     }
 };
