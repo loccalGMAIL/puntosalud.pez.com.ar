@@ -33,6 +33,8 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 ### ✨ Mejoras de UX
 
 - **Ícono de ojo en campos de contraseña**: toggle mostrar/ocultar en los campos de contraseña del login, gestión de usuarios y perfil de usuario. Ícono cambia según el estado (ojo abierto = oculto, ojo tachado = visible).
+- **Fix: contraseña visible en login**: Alpine.js no estaba cargado en la vista standalone del login (no extiende `layouts.app`), causando que el binding `:type` no funcionara y la contraseña se mostrara en texto plano. Se agrega Alpine.js CDN directamente en el `<head>` del login.
+- **Fix: "Recordarme" no funcionaba**: `Auth::attempt()` no recibía el flag `remember`. Corregido pasando `$request->boolean('remember')`.
 
 ---
 
