@@ -232,9 +232,9 @@
     
     <!-- Header -->
     <div class="header">
-        <img src="{{ asset('logo.png') }}" alt="{{ config('app.name') }}" class="clinic-logo">
+        <img src="{{ center_image('logo', '') }}" alt="{{ setting('center_name', config('app.name')) }}" class="clinic-logo">
         <div class="header-text">
-            <div class="clinic-name">{{ config('app.name') }}</div>
+            <div class="clinic-name">{{ setting('center_name', config('app.name')) }}</div>
             <div class="report-title">
                 @if(isset($liquidationData['is_single_liquidation']) && $liquidationData['is_single_liquidation'])
                     LIQUIDACIÓN #{{ $liquidationData['single_liquidation_number'] }} DEL PROFESIONAL
@@ -769,7 +769,7 @@
     
     <!-- Footer -->
     <div class="footer">
-        <div>Punto Salud - @if($isSingleLiq)Liquidación #{{ $liquidationData['single_liquidation_number'] }} @else Liquidación @endif generada el {{ $liquidationData['generated_at']->format('d/m/Y H:i:s') }}</div>
+        <div>{{ setting('center_name', config('app.name')) }} - @if($isSingleLiq)Liquidación #{{ $liquidationData['single_liquidation_number'] }} @else Liquidación @endif generada el {{ $liquidationData['generated_at']->format('d/m/Y H:i:s') }}</div>
         <div>Dr. {{ $liquidationData['professional']->full_name }} - {{ $liquidationData['date']->format('d/m/Y') }}</div>
     </div>
     

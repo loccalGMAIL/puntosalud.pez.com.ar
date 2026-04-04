@@ -1,7 +1,5 @@
-@props(['user' => null])
-
 @php
-$user = $user ?? auth()->user();
+$navUser = auth()->user();
 @endphp
 
 <div x-data="{ open: false }" class="relative">
@@ -10,17 +8,17 @@ $user = $user ?? auth()->user();
         
         <!-- Avatar -->
         <div class="flex items-center justify-center w-8 h-8 rounded-full bg-emerald-600 text-white font-medium text-xs mr-3 flex-shrink-0">
-            @if($user->avatar ?? null)
-                <img src="{{ $user->avatar }}" alt="{{ $user->name }}" class="w-full h-full rounded-full object-cover">
+            @if($navUser->avatar ?? null)
+                <img src="{{ $navUser->avatar }}" alt="{{ $navUser->name }}" class="w-full h-full rounded-full object-cover">
             @else
-                {{ strtoupper(substr($user->name, 0, 2)) }}
+                {{ strtoupper(substr($navUser->name, 0, 2)) }}
             @endif
         </div>
         
         <!-- User Info -->
         <div x-show="!collapsed" x-cloak class="flex-1 text-left min-w-0">
-            <div class="font-medium text-gray-900 dark:text-white truncate">{{ $user->name }}</div>
-            <div class="text-xs text-gray-500 dark:text-gray-400 truncate">{{ $user->email }}</div>
+            <div class="font-medium text-gray-900 dark:text-white truncate">{{ $navUser->name }}</div>
+            <div class="text-xs text-gray-500 dark:text-gray-400 truncate">{{ $navUser->email }}</div>
         </div>
 
         <!-- Chevron -->
@@ -46,8 +44,8 @@ $user = $user ?? auth()->user();
         
         <!-- User Info Header -->
         <div class="px-4 py-2 border-b border-gray-200 dark:border-gray-700">
-            <div class="font-medium text-gray-900 dark:text-white">{{ $user->name }}</div>
-            <div class="text-sm text-gray-500 dark:text-gray-400">{{ $user->email }}</div>
+            <div class="font-medium text-gray-900 dark:text-white">{{ $navUser->name }}</div>
+            <div class="text-sm text-gray-500 dark:text-gray-400">{{ $navUser->email }}</div>
         </div>
         
         <!-- Menu Items -->
@@ -90,15 +88,15 @@ $user = $user ?? auth()->user();
         <!-- User Info -->
         <div class="flex items-center mb-3">
             <div class="flex items-center justify-center w-10 h-10 rounded-full bg-emerald-600 text-white font-medium mr-3">
-                @if($user->avatar ?? null)
-                    <img src="{{ $user->avatar }}" alt="{{ $user->name }}" class="w-full h-full rounded-full object-cover">
+                @if($navUser->avatar ?? null)
+                    <img src="{{ $navUser->avatar }}" alt="{{ $navUser->name }}" class="w-full h-full rounded-full object-cover">
                 @else
-                    {{ strtoupper(substr($user->name, 0, 2)) }}
+                    {{ strtoupper(substr($navUser->name, 0, 2)) }}
                 @endif
             </div>
             <div>
-                <div class="font-medium text-gray-900 dark:text-white">{{ $user->name }}</div>
-                <div class="text-sm text-gray-500 dark:text-gray-400">{{ $user->email }}</div>
+                <div class="font-medium text-gray-900 dark:text-white">{{ $navUser->name }}</div>
+                <div class="text-sm text-gray-500 dark:text-gray-400">{{ $navUser->email }}</div>
             </div>
         </div>
 

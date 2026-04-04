@@ -183,6 +183,11 @@ Route::middleware(['auth'])->group(function () {
 
     // Rutas de Sistema (módulo: system)
     Route::middleware(['module:system'])->group(function () {
+        // Configuración del centro
+        Route::get('/settings/center', [App\Http\Controllers\SettingsCenterController::class, 'index'])->name('settings.center');
+        Route::post('/settings/center', [App\Http\Controllers\SettingsCenterController::class, 'update'])->name('settings.center.update');
+        Route::post('/settings/center/toggle', [App\Http\Controllers\SettingsCenterController::class, 'toggle'])->name('settings.center.toggle');
+
         // Gestión de perfiles
         Route::resource('profiles', ProfileController::class)->except(['create', 'edit', 'show']);
 

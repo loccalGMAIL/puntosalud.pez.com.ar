@@ -20,7 +20,10 @@ class DatabaseSeeder extends Seeder
             ProfessionalSeeder::class,
             PatientsSeeder::class,
 
-            // 3. Configuraciones que dependen de profesionales
+            // 3. Configuraciones del sistema (independientes)
+            SettingSeeder::class,
+
+            // 4. Configuraciones que dependen de profesionales
             // ProfessionalScheduleSeeder::class,
             AppointmentSettingSeeder::class,
 

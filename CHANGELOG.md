@@ -7,7 +7,34 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
-## [2.10.2] - 2026-03-26
+## [2.10.2] - 2026-04-04
+
+### ⚙️ Configuración dinámica del centro
+
+- **Menú Sistema > General** — nueva sección de configuraciones del sistema, accesible solo para el perfil con módulo `system`.
+- **Pantalla "Configuración del Centro"** (`/settings/center`): permite editar nombre, subtítulo, dirección, teléfono y email del centro, así como subir el logo y la imagen de fondo del login. Los cambios se reflejan en toda la aplicación sin necesidad de tocar código.
+- **Tabla `settings`** (key/value) con `SettingService` (singleton, caché 5 min) y helper global `setting('key', default)`.
+- **Helper `center_image('name')`**: resuelve imágenes desde `public/center/` con cache-busting automático por `filemtime`.
+- **Datos dinámicos** reemplazados en: título y footer del login, logo del sidebar, encabezados de recibos de pago e ingreso, encabezado y footer del reporte de liquidación profesional, componente `report-print-header` (usado por todos los reportes).
+
+### 🔒 Bloqueo de acceso al sistema
+
+- **Switch habilitado/bloqueado** en la pantalla de configuración del centro.
+  - Al **bloquear**: solo usuarios con módulo `system` pueden ingresar; el resto es rechazado con mensaje *"Sistema bloqueado. Contacte al Administrador"* al intentar iniciar sesión.
+  - Al **habilitar**: acceso normal para todos los perfiles.
+- **`CheckCenterActive` middleware** aplicado globalmente: desconecta y redirige al login a cualquier usuario activo sin módulo `system` si el centro se bloquea mientras está navegando.
+- Confirmación obligatoria antes de ejecutar el bloqueo (modal Alpine.js).
+
+### 🐛 Correcciones
+
+- **Logo no visible en reportes**: el logo estaba en `public/center/logo.png` pero las vistas apuntaban a `public/logo.png` (inexistente). Corregido en todos los reportes y recibos mediante `center_image()`.
+- **Nav mostraba usuario incorrecto**: `nav-user.blade.php` usaba `$user ?? auth()->user()`, pero `@include` hereda el scope de la vista padre. Si alguna vista pasaba `$user` (ej. `users.profile`), ese valor pisaba al usuario autenticado. Corregido usando `$navUser = auth()->user()` siempre.
+
+### ✨ Mejoras de UX
+
+- **Ícono de ojo en campos de contraseña**: toggle mostrar/ocultar en los campos de contraseña del login, gestión de usuarios y perfil de usuario. Ícono cambia según el estado (ojo abierto = oculto, ojo tachado = visible).
+
+---
 
 ### 🔒 Fix CSRF 419 — Manejo de sesión expirada en formularios
 

@@ -3,6 +3,7 @@
 [![Laravel](https://img.shields.io/badge/Laravel-12.x-red?style=flat\&logo=laravel)](https://laravel.com)
 [![PHP](https://img.shields.io/badge/PHP-8.2-blue?style=flat\&logo=php)](https://php.net)
 [![Version](https://img.shields.io/badge/Version-2.10.2-green?style=flat)](#changelog)
+[![HotFix](https://img.shields.io/badge/HotFix-BloqueAcceso-orange?style=flat)](#changelog)
 [![License](https://img.shields.io/badge/License-MIT-yellow?style=flat)](#license)
 
 Sistema integral de gestión médica para clínicas y consultorios, desarrollado con Laravel 12 y tecnologías modernas.
@@ -17,6 +18,12 @@ Sistema integral de gestión médica para clínicas y consultorios, desarrollado
 * [Contribución](#contribución)
 
 ## ✨ Características
+
+### ⚙️ Configuración del Centro (v2.10.2)
+
+* **Menú Sistema > General**: configuración centralizada del centro médico (nombre, dirección, teléfono, email, logo, imagen de login).
+* **Bloqueo de acceso**: switch para suspender el acceso de todos los usuarios excepto el Administrador del sistema (útil ante problemas de pago u operativos).
+* Datos del centro dinámicos en toda la aplicación: login, sidebar, recibos, reportes.
 
 ### 🎯 Gestión de Turnos
 

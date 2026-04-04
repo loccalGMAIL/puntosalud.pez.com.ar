@@ -14,11 +14,13 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'auth' => \Illuminate\Auth\Middleware\Authenticate::class,
             'check.user.active' => \App\Http\Middleware\CheckUserActive::class,
+            'check.center.active' => \App\Http\Middleware\CheckCenterActive::class,
             'module' => \App\Http\Middleware\EnsureModuleAccess::class,
         ]);
 
         $middleware->web([
             \App\Http\Middleware\CheckUserActive::class,
+            \App\Http\Middleware\CheckCenterActive::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
