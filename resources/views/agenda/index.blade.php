@@ -23,6 +23,7 @@
             <!-- Professional Selector -->
             <form method="GET" action="{{ route('agenda.index') }}" class="flex gap-2 flex-1" id="professional-form">
                 <input type="hidden" name="month" value="{{ $currentMonth }}">
+                <input type="hidden" name="date" value="{{ $selectedDate }}">
                 <select name="professional_id"
                         id="agenda-professional-select"
                         style="width: 500px;"

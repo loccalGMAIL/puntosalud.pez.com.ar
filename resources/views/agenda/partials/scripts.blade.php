@@ -108,9 +108,9 @@ document.addEventListener('alpine:init', () => {
                 this.openDayModal(event.detail.date, event.detail.professionalId);
             });
 
-            // AUTO: abrir el día actual si hay profesional seleccionado
+            // AUTO: abrir el día seleccionado (o hoy si no hay parámetro) si hay profesional seleccionado
             @if($selectedProfessional)
-            this.openDayModal('{{ today()->format('Y-m-d') }}', {{ $selectedProfessional }});
+            this.openDayModal('{{ $selectedDate }}', {{ $selectedProfessional }});
             @endif
         },
 
@@ -280,8 +280,13 @@ document.addEventListener('alpine:init', () => {
                 } else if (response.ok && result.success) {
                     this.modalOpen = false;
                     this.showNotification(result.message, 'success');
-                    // Reload page to show changes
-                    setTimeout(() => window.location.reload(), 1000);
+                    // Reload page preservando la fecha seleccionada
+                    setTimeout(() => {
+                        const url = new URL(window.location.href);
+                        const dateToPreserve = this.selectedDayDate || this.form.appointment_date || '';
+                        if (dateToPreserve) url.searchParams.set('date', dateToPreserve);
+                        window.location.href = url.toString();
+                    }, 1000);
                 } else {
                     if (response.status === 422 && result.errors) {
                         this.setErrors(result.errors);

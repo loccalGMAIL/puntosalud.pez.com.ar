@@ -7,6 +7,27 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [2.10.3] - 2026-04-04
+
+### 📅 Persistencia de fecha en Agenda
+
+- **Problema corregido**: al crear o modificar un turno desde la Agenda, la página siempre volvía al día de hoy al recargar, perdiendo el día que el usuario estaba editando.
+- **`AgendaController`**: ahora lee el parámetro `?date=YYYY-MM-DD` de la URL, lo valida con Carbon y lo pasa a la vista como `$selectedDate` (por defecto: hoy).
+- **`agenda/partials/scripts.blade.php`**: al guardar exitosamente un turno, en lugar de `window.location.reload()` ahora navega a la misma URL preservando `?date=<fecha seleccionada>`.
+- **`agenda/index.blade.php`**: el `init()` de Alpine usa `$selectedDate` en lugar de `today()`. El formulario de cambio de profesional también incluye el parámetro `date` como hidden input para preservarlo al cambiar de profesional.
+- **`AppointmentController`**: los tres `redirect()->route('appointments.index')` en `store`, `update` y `storeUrgency` cambiados a `redirect()->back()` para preservar los filtros de fecha activos en la vista de Turnos.
+
+### 📞 Teléfono Fijo en Pacientes
+
+- **Nuevo campo `phone_landline`** (VARCHAR 50, opcional) en la tabla `patients`, posicionado junto al `phone` existente.
+- El campo existente `phone` ("Teléfono") no se modifica ni se hace obligatorio; `phone_landline` es completamente opcional.
+- **Formulario de paciente**: grilla de contacto ampliada a 4 columnas — Teléfono, Teléfono Fijo, Email, Dirección. Mismo patrón de validación visual (bordes rojos + mensaje de error) que el resto de los campos.
+- **Vista índice**: el teléfono fijo aparece debajo del móvil en tarjetas (móvil) y en la columna Contacto (escritorio), solo cuando tiene valor (`x-show`).
+- **Vista detalle del paciente**: bloque condicional que muestra "Teléfono Fijo" solo si el paciente tiene uno registrado.
+- **Búsqueda**: el campo `phone_landline` se incluye en el `scopeSearch` del modelo y en el `orWhere` del controlador, permitiendo buscar pacientes por número fijo.
+
+---
+
 ## [2.10.2] - 2026-04-04
 
 ### ⚙️ Configuración dinámica del centro

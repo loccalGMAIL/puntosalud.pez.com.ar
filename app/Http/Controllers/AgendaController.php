@@ -21,6 +21,12 @@ class AgendaController extends Controller
         $currentMonth = $request->get('month', now()->format('Y-m'));
         $selectedProfessional = $request->get('professional_id');
 
+        try {
+            $selectedDate = Carbon::createFromFormat('Y-m-d', $request->get('date', today()->format('Y-m-d')))->format('Y-m-d');
+        } catch (\Exception $e) {
+            $selectedDate = today()->format('Y-m-d');
+        }
+
         // Crear fecha con día 1 para evitar overflow en meses con menos días
         // Bug: Si hoy es 31 y navegas a un mes con 30 días, Carbon hace overflow
         $date = Carbon::createFromFormat('Y-m-d', $currentMonth . '-01');
@@ -137,7 +143,8 @@ class AgendaController extends Controller
             'holidays',
             'birthdays',
             'cashStatus',
-            'professionalDefaultDuration'
+            'professionalDefaultDuration',
+            'selectedDate'
         ));
     }
 }
