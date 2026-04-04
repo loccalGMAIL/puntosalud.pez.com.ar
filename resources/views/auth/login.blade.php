@@ -15,6 +15,7 @@
     <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600" rel="stylesheet" />
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
 
 <body class="bg-gradient-to-br from-emerald-50 to-green-100 min-h-screen">
@@ -143,7 +144,7 @@
                         <!-- Remember me -->
                         <div class="flex items-center justify-between">
                             <label class="flex items-center">
-                                <input type="checkbox" name="remember"
+                                <input type="checkbox" name="remember" {{ old('remember') ? 'checked' : '' }}
                                     class="w-4 h-4 text-emerald-600 bg-gray-100 border-gray-300 rounded focus:ring-emerald-500 focus:ring-2">
                                 <span class="ml-2 text-sm text-gray-700">Recordarme</span>
                             </label>

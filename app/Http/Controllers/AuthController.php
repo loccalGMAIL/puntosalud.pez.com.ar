@@ -34,7 +34,7 @@ class AuthController extends Controller
         ]);
 
         // Intentar autenticación con usuarios activos únicamente
-        if (Auth::attempt($credentials) && Auth::user()->isActive()) {
+        if (Auth::attempt($credentials, $request->boolean('remember')) && Auth::user()->isActive()) {
             // Verificar bloqueo del centro
             if (setting('center_active', '1') !== '1' && ! Auth::user()->canAccessModule('system')) {
                 Auth::logout();
