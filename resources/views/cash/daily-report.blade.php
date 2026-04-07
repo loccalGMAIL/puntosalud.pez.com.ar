@@ -517,8 +517,8 @@
                     if (urlParams.get('print') === 'true') {
                         setTimeout(() => {
                             window.print();
-                            // Cerrar la ventana después de imprimir
-                            setTimeout(() => window.close(), 500);
+                            window.addEventListener('afterprint', function() { window.close(); });
+                            setTimeout(() => window.close(), 3000);
                         }, 500);
                     }
                 }

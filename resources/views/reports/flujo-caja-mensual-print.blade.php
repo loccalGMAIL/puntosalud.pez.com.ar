@@ -72,3 +72,17 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+    if (window.location.search.includes('print=1')) {
+        window.onload = function() {
+            setTimeout(function() {
+                window.print();
+                window.addEventListener('afterprint', function() { window.close(); });
+                setTimeout(function() { window.close(); }, 3000);
+            }, 500);
+        }
+    }
+</script>
+@endpush

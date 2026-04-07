@@ -7,6 +7,21 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [2.10.4] - 2026-04-07
+
+### 🖨️ Fix: impresión doble en reportes
+
+- **Bug corregido**: al acceder a cualquier reporte print con `?print=1`, el diálogo de impresión del navegador se mostraba dos veces. La causa era que `layouts/print.blade.php` llamaba a `window.print()` vía `addEventListener('load')` **y** cada vista print también tenía su propio script con `window.print()` en `@push('scripts')`.
+- **Solución**: eliminado el bloque auto-print del layout (`layouts/print.blade.php`). Cada vista gestiona su propio auto-print, evitando la duplicación.
+
+### ✨ UX: cierre automático de pestaña tras imprimir (afterprint)
+
+- **Estandarizado el comportamiento post-impresión** en las 19 vistas que extienden `layouts.print`: todas ahora escuchan el evento `afterprint` para cerrar la pestaña automáticamente al finalizar (o cancelar) la impresión, con un fallback de 3 segundos.
+- **8 vistas sin script propio** (`pagos-tendencia`, `pacientes-retencion`, `pacientes-nuevos-viejos`, `pacientes-frecuencia`, `pacientes-ausentismo`, `ingresos-obra-social`, `flujo-caja-mensual`, `cobros-pendientes`): se les agrega `@push('scripts')` con el patrón estándar (`print=1` → `window.print()` + `afterprint` + `close()`).
+- **2 vistas Alpine.js** (`cash/daily-report`, `cash/count-report`): se reemplaza el `setTimeout(() => window.close(), 500)` por el listener `afterprint` con fallback de 3 segundos, igualando el comportamiento del resto.
+
+---
+
 ## [2.10.3] - 2026-04-04
 
 ### 📅 Persistencia de fecha en Agenda
