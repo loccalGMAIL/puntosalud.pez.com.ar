@@ -3,6 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Patient;
+use App\Models\Professional;
+use App\Models\WhatsAppOptOut;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class PatientController extends Controller
@@ -322,5 +325,55 @@ class PatientController extends Controller
             ->get();
 
         return view('patients.detail', compact('patient', 'appointments'));
+    }
+
+    /**
+     * GET: profesionales del paciente + IDs con opt-out activo
+     */
+    public function whatsappOptOuts(Patient $patient): JsonResponse
+    {
+        $professionalIds = $patient->appointments()
+            ->whereNotNull('professional_id')
+            ->distinct()
+            ->pluck('professional_id');
+
+        $professionals = Professional::whereIn('id', $professionalIds)
+            ->with('specialty')
+            ->orderBy('last_name')
+            ->orderBy('first_name')
+            ->get()
+            ->map(fn ($p) => [
+                'id'         => $p->id,
+                'first_name' => $p->first_name,
+                'last_name'  => $p->last_name,
+                'specialty'  => $p->specialty ? ['name' => $p->specialty->name] : null,
+            ]);
+
+        $optedOutIds = $patient->whatsappOptOuts()->pluck('professional_id')->toArray();
+
+        return response()->json(compact('professionals', 'optedOutIds'));
+    }
+
+    /**
+     * Toggle WhatsApp opt-out para un paciente/profesional específico
+     */
+    public function toggleWhatsappOptOut(Patient $patient, Professional $professional): JsonResponse
+    {
+        $existing = WhatsAppOptOut::where('patient_id', $patient->id)
+            ->where('professional_id', $professional->id)
+            ->first();
+
+        if ($existing) {
+            $existing->delete();
+            $isOptedOut = false;
+        } else {
+            WhatsAppOptOut::create([
+                'patient_id'      => $patient->id,
+                'professional_id' => $professional->id,
+            ]);
+            $isOptedOut = true;
+        }
+
+        return response()->json(['opted_out' => $isOptedOut]);
     }
 }

@@ -7,6 +7,7 @@ use App\Models\Appointment;
 use App\Models\WhatsAppMessage;
 use App\Services\WhatsAppService;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\DB;
 
 class SendWhatsAppReminders extends Command
 {
@@ -37,6 +38,12 @@ class SendWhatsAppReminders extends Command
             ->whereBetween('appointment_date', [$windowStart, $windowEnd])
             ->whereHas('patient', fn ($q) => $q->whereNotNull('phone')->where('phone', '!=', ''))
             ->whereDoesntHave('whatsappMessages')
+            ->whereNotExists(function ($query) {
+                $query->select(DB::raw(1))
+                    ->from('whatsapp_opt_outs')
+                    ->whereColumn('whatsapp_opt_outs.patient_id', 'appointments.patient_id')
+                    ->whereColumn('whatsapp_opt_outs.professional_id', 'appointments.professional_id');
+            })
             ->with(['patient', 'professional.specialty'])
             ->get();
 

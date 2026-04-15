@@ -190,8 +190,8 @@
                     </div>
                 </div>
             </div>
-        </div>
-    </div>
+
+        </div>{{-- /space-y-6 panel lateral --}}
 
     <!-- Historial de Turnos - Ancho Completo -->
     <div class="mt-6 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">

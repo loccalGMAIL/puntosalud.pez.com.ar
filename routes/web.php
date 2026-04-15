@@ -65,6 +65,8 @@ Route::middleware(['auth'])->group(function () {
     Route::middleware(['module:patients'])->group(function () {
         // Patient specific routes (must be before resource route)
         Route::get('/patients/{patient}/detail', [PatientController::class, 'detail'])->name('patients.detail');
+        Route::get('/patients/{patient}/whatsapp-opt-outs', [PatientController::class, 'whatsappOptOuts'])->name('patients.whatsapp-opt-outs');
+        Route::post('/patients/{patient}/whatsapp-opt-out/{professional}', [PatientController::class, 'toggleWhatsappOptOut'])->name('patients.whatsapp-opt-out');
         Route::resource('patients', PatientController::class);
     });
 
