@@ -68,11 +68,26 @@
                 'href' => '/payments',
                 'icon' => '<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H4.5m2.25 0v3m0 0v.75A.75.75 0 016 10.5h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H6.75m2.25 0h3m-3 7.5h3m-3-4.5h3M6.75 7.5H12m-3 3v6m-1.5-6h1.5m-1.5 0V9" /></svg>'
             ],
-            [
-                'title' => 'Caja del Día',
-                'href' => '/cash/daily',
-                'icon' => '<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0012 9.75c-2.551 0-5.056.2-7.5.582V21M3 21h18M12 6.75h.008v.008H12V6.75z" /></svg>'
-            ]
+        ];
+
+        // Agregar ítem de WhatsApp (módulo: whatsapp) — antes de Caja del Día
+        if (Auth::check() && Auth::user()->canAccessModule('whatsapp')) {
+            $navigationItems[] = [
+                'title' => 'WhatsApp',
+                'icon'  => '<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 20.25c4.556 0 8.25-3.694 8.25-8.25S16.556 3.75 12 3.75 3.75 7.444 3.75 12c0 1.43.365 2.775 1.008 3.946L3.75 20.25l4.304-1.008A8.206 8.206 0 0012 20.25z" /></svg>',
+                'children' => [
+                    ['title' => 'Conexión',      'href' => '/whatsapp'],
+                    ['title' => 'Recordatorios', 'href' => '/whatsapp/settings'],
+                    ['title' => 'Mensajes',      'href' => '/whatsapp/messages'],
+                ],
+            ];
+        }
+
+        // Caja del Día — siempre visible para usuarios autenticados
+        $navigationItems[] = [
+            'title' => 'Caja del Día',
+            'href'  => '/cash/daily',
+            'icon'  => '<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0012 9.75c-2.551 0-5.056.2-7.5.582V21M3 21h18M12 6.75h.008v.008H12V6.75z" /></svg>',
         ];
 
         // Agregar menú de reportes (solo si tiene módulo reports)
@@ -158,7 +173,11 @@
                     [
                         'title' => 'Actividad',
                         'href' => '/activity-log'
-                    ]
+                    ],
+                    [
+                        'title' => 'WhatsApp',
+                        'href' => '/whatsapp/api'
+                    ],
                 ]
             ];
         }

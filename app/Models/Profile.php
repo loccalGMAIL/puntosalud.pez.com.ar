@@ -18,6 +18,7 @@ class Profile extends Model
         'cash'          => 'Caja',
         'payments'      => 'Cobros',
         'reports'       => 'Reportes',
+        'whatsapp'      => 'WhatsApp',
         'configuration' => 'Configuración',
         'system'        => 'Sistema',
     ];

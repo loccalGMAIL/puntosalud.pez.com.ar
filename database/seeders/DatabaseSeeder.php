@@ -22,6 +22,7 @@ class DatabaseSeeder extends Seeder
 
             // 3. Configuraciones del sistema (independientes)
             SettingSeeder::class,
+            WhatsAppSettingSeeder::class,
 
             // 4. Configuraciones que dependen de profesionales
             // ProfessionalScheduleSeeder::class,

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ActivityLogController;
 use App\Http\Controllers\AgendaController;
+use App\Http\Controllers\WhatsAppController;
 use App\Http\Controllers\AppointmentController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
@@ -168,6 +169,19 @@ Route::middleware(['auth'])->group(function () {
 
         // Professional liquidation processing
         Route::post('/liquidation/process', [App\Http\Controllers\LiquidationController::class, 'processLiquidation'])->name('liquidation.process');
+    });
+
+    // Rutas de WhatsApp (módulo: whatsapp)
+    Route::middleware(['module:whatsapp'])->prefix('whatsapp')->name('whatsapp.')->group(function () {
+        Route::get('/',           [WhatsAppController::class, 'index'])->name('index');
+        Route::get('/qr-code',    [WhatsAppController::class, 'qrCode'])->name('qr-code');
+        Route::get('/status',     [WhatsAppController::class, 'connectionStatus'])->name('status');
+        Route::post('/disconnect',[WhatsAppController::class, 'disconnect'])->name('disconnect');
+        Route::get('/settings',   [WhatsAppController::class, 'settings'])->name('settings');
+        Route::post('/settings',  [WhatsAppController::class, 'saveSettings'])->name('settings.save');
+        Route::get('/api',        [WhatsAppController::class, 'apiSettings'])->name('api');
+        Route::post('/api',       [WhatsAppController::class, 'saveApiSettings'])->name('api.save');
+        Route::get('/messages',   [WhatsAppController::class, 'messages'])->name('messages');
     });
 
     // Rutas de Configuración (módulo: configuration)
