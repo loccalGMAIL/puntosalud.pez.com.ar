@@ -54,9 +54,19 @@ class WhatsAppService
                 ->timeout(10)
                 ->get("{$this->baseUrl()}/instance/connectionState/{$this->instance()}");
 
-            return $response->successful()
-                ? $response->json()
-                : ['state' => 'error', 'raw' => $response->body()];
+            if (! $response->successful()) {
+                return ['state' => 'error', 'raw' => $response->body()];
+            }
+
+            $json = $response->json();
+
+            // Evolution API v2 devuelve {"instance": {"state": "..."}}
+            // Normalizamos para que siempre exista $json['state'] en la raíz
+            if (! isset($json['state']) && isset($json['instance']['state'])) {
+                $json['state'] = $json['instance']['state'];
+            }
+
+            return $json;
         } catch (\Exception $e) {
             Log::error('WhatsApp connectionState failed', ['error' => $e->getMessage()]);
             return ['state' => 'error', 'message' => $e->getMessage()];
@@ -89,22 +99,64 @@ class WhatsAppService
 
     /**
      * DELETE /instance/logout/{instance}
+     * Retorna ['success' => bool, 'message' => string]
+     *
+     * Evolution API v2 requiere que el socket esté en estado 'open' para logout.
+     * Si está 'close', intenta reconectar primero (Baileys usa credenciales guardadas).
      */
-    public function disconnect(): bool
+    public function disconnect(): array
     {
         if (! $this->isConfigured()) {
-            return false;
+            return ['success' => false, 'message' => 'not_configured'];
         }
 
+        $state = $this->connectionState();
+
+        // Socket abierto: logout directo
+        if (($state['state'] ?? '') === 'open') {
+            return $this->doLogout();
+        }
+
+        // Socket cerrado: intentar que Baileys reconecte con las credenciales guardadas
+        try {
+            Http::withHeaders($this->headers())
+                ->timeout(5)
+                ->get("{$this->baseUrl()}/instance/connect/{$this->instance()}");
+        } catch (\Exception) {}
+
+        // Esperar hasta 5s a que el socket vuelva a 'open'
+        for ($i = 0; $i < 5; $i++) {
+            sleep(1);
+            $state = $this->connectionState();
+            if (($state['state'] ?? '') === 'open') {
+                return $this->doLogout();
+            }
+        }
+
+        return ['success' => false, 'message' => 'socket_closed'];
+    }
+
+    /**
+     * Ejecutar el logout asumiendo que el socket está abierto.
+     */
+    private function doLogout(): array
+    {
         try {
             $response = Http::withHeaders($this->headers())
                 ->timeout(10)
                 ->delete("{$this->baseUrl()}/instance/logout/{$this->instance()}");
 
-            return $response->successful();
+            if (! $response->successful()) {
+                Log::warning('WhatsApp logout returned error', [
+                    'status' => $response->status(),
+                    'body'   => $response->body(),
+                ]);
+            }
+
+            return ['success' => $response->successful()];
         } catch (\Exception $e) {
-            Log::error('WhatsApp disconnect failed', ['error' => $e->getMessage()]);
-            return false;
+            Log::error('WhatsApp logout failed', ['error' => $e->getMessage()]);
+            return ['success' => false, 'message' => 'exception'];
         }
     }
 

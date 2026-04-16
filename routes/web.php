@@ -183,7 +183,8 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/settings',  [WhatsAppController::class, 'saveSettings'])->name('settings.save');
         Route::get('/api',        [WhatsAppController::class, 'apiSettings'])->name('api');
         Route::post('/api',       [WhatsAppController::class, 'saveApiSettings'])->name('api.save');
-        Route::get('/messages',   [WhatsAppController::class, 'messages'])->name('messages');
+        Route::get('/messages',      [WhatsAppController::class, 'messages'])->name('messages');
+        Route::post('/test-message', [WhatsAppController::class, 'testMessage'])->name('test-message');
     });
 
     // Rutas de Configuración (módulo: configuration)

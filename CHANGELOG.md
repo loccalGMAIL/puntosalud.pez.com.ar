@@ -7,6 +7,51 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [2.10.5] - 2026-04-16
+
+### 💬 WhatsApp: Integración de recordatorios automáticos
+
+Nuevo módulo completo de recordatorios de turnos vía WhatsApp usando [Evolution API v2](https://doc.evolution-api.com/).
+
+#### Configuración y conexión
+- **Página de conexión** (`/whatsapp`): escaneo de QR, estado de conexión en tiempo real y botón de desconexión.
+- **Configuración de API** (`/whatsapp/api`): URL del servidor, API key, nombre de instancia y switch habilitado/deshabilitado.
+- **Configuración de recordatorios** (`/whatsapp/settings`): plantilla de mensaje con variables (`{{nombre}}`, `{{fecha}}`, `{{hora}}`, `{{profesional}}`) y anticipación en horas (1h, 2h, 4h, 12h, 24h, 48h).
+- **Historial de mensajes** (`/whatsapp/messages`): log de todos los envíos con estado (enviado/fallido/pendiente) y estadísticas globales.
+
+#### Envío automático
+- **`SendWhatsAppReminders` (Artisan command)**: busca turnos próximos dentro de la ventana configurada, filtra pacientes con opt-out habilitado y pacientes sin teléfono, evita duplicados y registra cada envío en `whatsapp_messages`.
+- **`POST /api/scheduler/run`** con autenticación Bearer (`SCHEDULER_TOKEN`): endpoint para que n8n (u otro scheduler externo) dispare los recordatorios periódicamente desde el VPS.
+
+#### Estado de conexión
+- **Normalización de respuesta de Evolution API v2**: la API devuelve `{"instance":{"state":"..."}}` (anidado); se normaliza copiando el estado a la raíz para compatibilidad interna.
+- **Guard de estado "connecting"**: el polling de QR ya no llama a `/instance/connect` cuando Baileys está reconectando con credenciales guardadas, evitando interrumpir el proceso.
+- **Sincronización post-redirect**: `checkStatusOnce()` verifica el estado real via AJAX cuando la página carga con flash message (evita que Alpine muestre estado PHP desactualizado).
+- **Spinner "Reconectando..."** (ámbar) mientras el socket está en estado `connecting`.
+
+#### Desconexión robusta
+- `disconnect()` verifica el estado antes de intentar logout.
+- Si el socket está `close`, intenta reconectar via `/instance/connect` y espera hasta 5s a que vuelva a `open` antes de ejecutar el `DELETE /instance/logout`.
+- Si no puede reconectar: mensaje claro al usuario con instrucciones para desvincular manualmente desde el teléfono.
+
+#### Envío de mensaje de prueba
+- Formulario inline en la página de conexión (solo visible cuando está conectado).
+- Formatea automáticamente números argentinos al estándar internacional `549XXXXXXXXXX`.
+
+#### Ícono de estado en barra superior
+- Ícono de WhatsApp en la barra superior (junto al toggle de tema), visible para usuarios con módulo `whatsapp`.
+- **Punto verde** = conectado, **punto rojo** = desconectado. Link directo a `/whatsapp`.
+
+### 🗂️ Tabla de Pacientes más compacta
+- Reducido el padding de celdas (`px-6 py-4` → `px-4 py-2`) y botones de acción para mostrar más filas sin scroll.
+- Columna "Contacto" simplificada: solo muestra el teléfono (sin email).
+- Edad abreviada (`XX años` → `XX a.`), obra social vacía muestra `—`.
+
+### 🐛 Fix: toggle opt-out WhatsApp en Pacientes
+- El modal de opt-out usaba `this.editingPatient.id` en lugar de `this.whatsappPatient.id`, enviando el ID del último paciente editado en el formulario principal en vez del paciente correcto.
+
+---
+
 ## [2.10.4] - 2026-04-07
 
 ### 🖨️ Fix: impresión doble en reportes

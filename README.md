@@ -2,7 +2,7 @@
 
 [![Laravel](https://img.shields.io/badge/Laravel-12.x-red?style=flat\&logo=laravel)](https://laravel.com)
 [![PHP](https://img.shields.io/badge/PHP-8.2-blue?style=flat\&logo=php)](https://php.net)
-[![Version](https://img.shields.io/badge/Version-2.10.4-green?style=flat)](#changelog)
+[![Version](https://img.shields.io/badge/Version-2.10.5-green?style=flat)](#changelog)
 [![License](https://img.shields.io/badge/License-MIT-yellow?style=flat)](#license)
 
 Sistema integral de gestión médica para clínicas y consultorios, desarrollado con Laravel 12 y tecnologías modernas.
@@ -17,6 +17,14 @@ Sistema integral de gestión médica para clínicas y consultorios, desarrollado
 * [Contribución](#contribución)
 
 ## ✨ Características
+
+### 💬 Recordatorios por WhatsApp (v2.10.5)
+
+* **Integración con Evolution API v2**: conexión mediante QR, gestión de instancia y envío de mensajes.
+* **Recordatorios automáticos**: comando Artisan + endpoint `POST /api/scheduler/run` (Bearer token) para disparo externo vía n8n u otro scheduler.
+* **Plantilla configurable** con variables (`{{nombre}}`, `{{fecha}}`, `{{hora}}`, `{{profesional}}`), anticipación en horas y opt-out por paciente.
+* **Historial de mensajes** con estado (enviado/fallido/pendiente) y estadísticas.
+* **Ícono de estado** en la barra superior: verde = conectado, rojo = desconectado.
 
 ### ⚙️ Configuración del Centro (v2.10.2)
 
@@ -160,6 +168,7 @@ php artisan config:clear
 
 ### 🔄 Últimas versiones
 
+* **v2.10.5** (2026-04-16) – 💬 WhatsApp: módulo completo de recordatorios automáticos de turnos con Evolution API v2; QR, desconexión robusta, plantilla configurable, historial de mensajes, endpoint para n8n, ícono de estado en barra superior. 🗂️ Tabla de pacientes compactada. 🐛 Fix toggle opt-out WhatsApp en Pacientes.
 * **v2.10.4** (2026-04-07) – 🖨️ Fix impresión doble en reportes: corregido bug donde el diálogo de impresión se mostraba dos veces; estandarizado comportamiento `afterprint` con cierre automático de pestaña en todas las vistas print (19 vistas).
 * **v2.10.3** (2026-04-04) – 📅 Persistencia de fecha en Agenda: al crear/modificar un turno se conserva el día seleccionado en lugar de volver siempre a hoy. 📞 Teléfono Fijo en Pacientes: nuevo campo opcional `phone_landline` en formulario, índice y ficha.
 * **v2.10.2** (2026-03-26) – 🔒 Fix CSRF 419: manejo explícito de sesión expirada en todos los formularios Alpine.js; toast de advertencia + redirección automática al login en 8 módulos (pacientes, profesionales, turnos, agenda, pagos, caja).

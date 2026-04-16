@@ -33,10 +33,12 @@
             <div class="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium"
                  :class="connected
                     ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
-                    : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'">
+                    : reconnecting
+                        ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
+                        : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'">
                 <span class="w-2.5 h-2.5 rounded-full"
-                      :class="connected ? 'bg-emerald-500' : 'bg-amber-500 animate-pulse'"></span>
-                <span x-text="connected ? 'Conectado' : 'Desconectado'"></span>
+                      :class="connected ? 'bg-emerald-500' : reconnecting ? 'bg-amber-500 animate-pulse' : 'bg-red-500'"></span>
+                <span x-text="connected ? 'Conectado' : reconnecting ? 'Reconectando...' : 'Desconectado'"></span>
             </div>
         </div>
     </div>
@@ -101,6 +103,34 @@
                         </button>
                     </form>
                     @endif
+
+                    <!-- Formulario de mensaje de prueba -->
+                    <div x-data="{ phone: '', sending: false, result: null }"
+                         class="w-full mt-2 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600 text-left">
+                        <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">Enviar mensaje de prueba</p>
+                        <div class="flex gap-2">
+                            <input x-model="phone" type="text" placeholder="Ej: 1112345678"
+                                   class="flex-1 px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 outline-none" />
+                            <button @click="
+                                    sending = true; result = null;
+                                    fetch('{{ route('whatsapp.test-message') }}', {
+                                        method: 'POST',
+                                        headers: {
+                                            'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content,
+                                            'Content-Type': 'application/json'
+                                        },
+                                        body: JSON.stringify({ phone })
+                                    }).then(r => r.json()).then(d => { result = d; sending = false; }).catch(() => { result = { success: false, message: 'Error de red.' }; sending = false; })"
+                                    :disabled="sending || !phone.trim()"
+                                    class="px-3 py-1.5 text-sm bg-emerald-600 hover:bg-emerald-700 text-white rounded-md disabled:opacity-50 transition-colors whitespace-nowrap">
+                                <span x-show="!sending">Enviar</span>
+                                <span x-show="sending">...</span>
+                            </button>
+                        </div>
+                        <p x-show="result" x-text="result?.message"
+                           :class="result?.success ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'"
+                           class="text-xs mt-2"></p>
+                    </div>
                 </div>
             </template>
 
@@ -108,8 +138,22 @@
             <template x-if="!connected">
                 <div class="flex flex-col items-center gap-4 w-full">
 
+                    <!-- Reconectando: Baileys usa credenciales guardadas -->
+                    <template x-if="reconnecting">
+                        <div class="flex flex-col items-center gap-3 text-center">
+                            <div class="w-16 h-16 bg-amber-100 dark:bg-amber-900/30 rounded-full flex items-center justify-center">
+                                <svg class="w-8 h-8 text-amber-500 animate-spin" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                            </div>
+                            <p class="text-sm font-medium text-gray-700 dark:text-gray-300">Reconectando...</p>
+                            <p class="text-xs text-gray-500 dark:text-gray-400">Restableciendo sesión anterior</p>
+                        </div>
+                    </template>
+
                     <!-- QR cargado -->
-                    <template x-if="qrBase64">
+                    <template x-if="!reconnecting && qrBase64">
                         <div class="flex flex-col items-center gap-3">
                             <img :src="'data:image/png;base64,' + qrBase64"
                                  alt="Código QR de WhatsApp"
@@ -122,7 +166,7 @@
                     </template>
 
                     <!-- Esperando QR -->
-                    <template x-if="!qrBase64 && loading">
+                    <template x-if="!reconnecting && !qrBase64 && loading">
                         <div class="flex flex-col items-center gap-3">
                             <div class="w-56 h-56 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 flex items-center justify-center">
                                 <svg class="w-10 h-10 text-gray-400 animate-spin" fill="none" viewBox="0 0 24 24">
@@ -135,7 +179,7 @@
                     </template>
 
                     <!-- Error -->
-                    <template x-if="error">
+                    <template x-if="!reconnecting && error">
                         <div class="flex flex-col items-center gap-3 text-center">
                             <div class="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center">
                                 <svg class="w-8 h-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
@@ -214,10 +258,32 @@ function whatsappConnection() {
         connected: {{ $isConnected ? 'true' : 'false' }},
         qrBase64: null,
         loading: false,
+        reconnecting: false,
         error: null,
         polling: null,
 
         init() {
+            // Si venimos de una acción (flash message), verificar el estado real
+            // vía AJAX en lugar de confiar en el valor PHP inicial
+            const hasFlash = {{ session()->has('success') || session()->has('error') ? 'true' : 'false' }};
+
+            if (hasFlash) {
+                this.checkStatusOnce();
+            } else if (!this.connected) {
+                this.startPolling();
+            }
+        },
+
+        async checkStatusOnce() {
+            try {
+                const res = await fetch('{{ route('whatsapp.status') }}', {
+                    headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+                });
+                const data = await res.json();
+                this.connected = data.connected;
+            } catch (e) {
+                this.connected = false;
+            }
             if (!this.connected) {
                 this.startPolling();
             }
@@ -256,12 +322,22 @@ function whatsappConnection() {
 
                 if (data.connected) {
                     this.connected = true;
+                    this.reconnecting = false;
                     this.stopPolling();
                     this.loading = false;
                     this.qrBase64 = null;
                     return;
                 }
 
+                // Estado intermedio: Baileys reconectando con credenciales guardadas
+                if (data.state === 'connecting') {
+                    this.reconnecting = true;
+                    this.qrBase64 = null;
+                    this.loading = false;
+                    return;
+                }
+
+                this.reconnecting = false;
                 if (data.qr) {
                     this.qrBase64 = data.qr;
                     this.loading = false;

@@ -34,15 +34,32 @@ class WhatsAppController extends Controller
      */
     public function qrCode(): JsonResponse
     {
-        $qrData    = $this->whatsApp->getQrCode();
+        // Verificar estado primero — si ya está conectado no llamar a getQrCode()
+        // (llamar a /instance/connect en una instancia activa puede interferir)
         $connState = $this->whatsApp->connectionState();
-        $connected = ($connState['state'] ?? '') === 'open';
+        $state     = $connState['state'] ?? 'unknown';
 
-        return response()->json([
-            'connected' => $connected,
-            'qr'        => $qrData['base64'] ?? null,
-            'state'     => $connState['state'] ?? 'unknown',
-        ]);
+        // Conectado: retornar inmediatamente sin pedir QR
+        if ($state === 'open') {
+            return response()->json(['connected' => true, 'qr' => null, 'state' => 'open']);
+        }
+
+        // Conectando: Baileys está reconectando con credenciales guardadas.
+        // NO llamar a getQrCode() — interrumpiría el proceso de reconexión.
+        if ($state === 'connecting') {
+            return response()->json(['connected' => false, 'qr' => null, 'state' => 'connecting']);
+        }
+
+        // Desconectado: pedir QR para nueva conexión
+        $qrData = $this->whatsApp->getQrCode();
+
+        // Evolution API puede devolver el base64 con o sin el prefijo data:URI
+        $qr = $qrData['base64'] ?? null;
+        if ($qr && str_starts_with($qr, 'data:')) {
+            $qr = substr($qr, strpos($qr, ',') + 1);
+        }
+
+        return response()->json(['connected' => false, 'qr' => $qr, 'state' => $state]);
     }
 
     /**
@@ -62,13 +79,19 @@ class WhatsAppController extends Controller
      */
     public function disconnect(): RedirectResponse
     {
-        $success = $this->whatsApp->disconnect();
+        $result = $this->whatsApp->disconnect();
 
-        return redirect()->route('whatsapp.index')
-            ->with(
-                $success ? 'success' : 'error',
-                $success ? 'Sesión de WhatsApp cerrada correctamente.' : 'No se pudo cerrar la sesión de WhatsApp.'
-            );
+        if ($result['success']) {
+            return redirect()->route('whatsapp.index')
+                ->with('success', 'Sesión de WhatsApp cerrada correctamente.');
+        }
+
+        $msg = match ($result['message'] ?? '') {
+            'socket_closed' => 'No se pudo cerrar la sesión automáticamente. Para desvincular el dispositivo, andá en tu teléfono a WhatsApp → Ajustes → Dispositivos vinculados y eliminá este dispositivo.',
+            default         => 'No se pudo cerrar la sesión de WhatsApp.',
+        };
+
+        return redirect()->route('whatsapp.index')->with('error', $msg);
     }
 
     /**
@@ -136,6 +159,36 @@ class WhatsAppController extends Controller
 
         return redirect()->route('whatsapp.api')
             ->with('success', 'Configuración de la API guardada.');
+    }
+
+    /**
+     * POST /whatsapp/test-message
+     */
+    public function testMessage(Request $request): JsonResponse
+    {
+        $validated = $request->validate(['phone' => 'required|string|max:50']);
+
+        if (! $this->whatsApp->isConnected()) {
+            return response()->json(['success' => false, 'message' => 'WhatsApp no está conectado.'], 422);
+        }
+
+        $formatted = $this->whatsApp->formatArgentinaPhone($validated['phone']);
+
+        if (! $formatted) {
+            return response()->json(['success' => false, 'message' => 'Número inválido. Ingresá solo los dígitos, ej: 3541693286'], 422);
+        }
+
+        $result = $this->whatsApp->sendMessage(
+            $formatted,
+            '✅ Mensaje de prueba desde PuntoSalud. La conexión funciona correctamente.'
+        );
+
+        $ok = $result['success'] && isset($result['data']['key']['id']);
+
+        return response()->json([
+            'success' => $ok,
+            'message' => $ok ? 'Mensaje enviado correctamente.' : 'No se pudo enviar. Revisá el número e intentá de nuevo.',
+        ]);
     }
 
     /**
