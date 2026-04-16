@@ -181,6 +181,8 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/disconnect',[WhatsAppController::class, 'disconnect'])->name('disconnect');
         Route::get('/settings',   [WhatsAppController::class, 'settings'])->name('settings');
         Route::post('/settings',  [WhatsAppController::class, 'saveSettings'])->name('settings.save');
+        Route::post('/features',  [WhatsAppController::class, 'saveFeatures'])->name('features.save');
+        Route::post('/feature',   [WhatsAppController::class, 'toggleFeature'])->name('feature.toggle');
         Route::get('/api',        [WhatsAppController::class, 'apiSettings'])->name('api');
         Route::post('/api',       [WhatsAppController::class, 'saveApiSettings'])->name('api.save');
         Route::get('/messages',      [WhatsAppController::class, 'messages'])->name('messages');

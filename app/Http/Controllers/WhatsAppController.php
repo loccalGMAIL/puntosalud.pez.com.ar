@@ -22,11 +22,16 @@ class WhatsAppController extends Controller
      */
     public function index(): View
     {
-        $state       = $this->whatsApp->connectionState();
-        $isConnected = ($state['state'] ?? '') === 'open';
+        $state        = $this->whatsApp->connectionState();
+        $isConnected  = ($state['state'] ?? '') === 'open';
         $isConfigured = $this->whatsApp->isConfigured();
+        $features     = [
+            'send_reminders' => setting('whatsapp.send_reminders', '1'),
+            'send_on_create' => setting('whatsapp.send_on_create', '0'),
+            'send_on_cancel' => setting('whatsapp.send_on_cancel', '0'),
+        ];
 
-        return view('whatsapp.index', compact('state', 'isConnected', 'isConfigured'));
+        return view('whatsapp.index', compact('state', 'isConnected', 'isConfigured', 'features'));
     }
 
     /**
@@ -92,6 +97,37 @@ class WhatsAppController extends Controller
         };
 
         return redirect()->route('whatsapp.index')->with('error', $msg);
+    }
+
+    /**
+     * POST /whatsapp/feature — Guarda un toggle individual vía AJAX
+     */
+    public function toggleFeature(Request $request): JsonResponse
+    {
+        $allowed = ['send_reminders', 'send_on_create', 'send_on_cancel'];
+
+        $validated = $request->validate([
+            'key'   => 'required|in:' . implode(',', $allowed),
+            'value' => 'required|in:0,1',
+        ]);
+
+        $this->settings->set('whatsapp.' . $validated['key'], 'whatsapp', $validated['value']);
+
+        return response()->json(['success' => true]);
+    }
+
+    /**
+     * POST /whatsapp/features — Guarda los toggles de funciones desde la página de conexión
+     */
+    public function saveFeatures(Request $request): RedirectResponse
+    {
+        $group = 'whatsapp';
+        $this->settings->set('whatsapp.send_reminders', $group, $request->input('send_reminders') === '1' ? '1' : '0');
+        $this->settings->set('whatsapp.send_on_create', $group, $request->input('send_on_create')  === '1' ? '1' : '0');
+        $this->settings->set('whatsapp.send_on_cancel', $group, $request->input('send_on_cancel')  === '1' ? '1' : '0');
+
+        return redirect()->route('whatsapp.index')
+            ->with('success', 'Funciones actualizadas correctamente.');
     }
 
     /**

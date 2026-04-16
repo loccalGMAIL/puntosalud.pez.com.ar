@@ -54,7 +54,7 @@
                 <div>
                     <h2 class="text-base font-semibold text-gray-900 dark:text-white">Estado del módulo</h2>
                     <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-                        Activa o desactiva el envío automático de recordatorios por WhatsApp
+                        Interruptor general del módulo. Si está deshabilitado, no se envía ningún mensaje independientemente de las funciones activas.
                     </p>
                 </div>
                 <label class="relative inline-flex items-center cursor-pointer" x-data="{ enabled: {{ $current['enabled'] === '1' ? 'true' : 'false' }} }">

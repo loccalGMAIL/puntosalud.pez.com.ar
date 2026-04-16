@@ -14,7 +14,7 @@
                             if (!empty($child['children'])) {
                                 $hrefs = array_merge($hrefs, $collectHrefs($child['children']));
                             } elseif (isset($child['href'])) {
-                                $hrefs[] = ltrim($child['href'], '/') . '*';
+                                $hrefs[] = ltrim($child['href'], '/');
                             }
                         }
                         return $hrefs;
@@ -66,14 +66,14 @@
                                         @foreach($child['children'] as $subItem)
                                             <a href="{{ $subItem['href'] }}"
                                                class="block px-4 py-1.5 hover:bg-gray-800 transition-colors
-                                                      {{ request()->is(ltrim($subItem['href'], '/') . '*') ? 'bg-gray-800 text-emerald-400' : '' }}">
+                                                      {{ request()->is(ltrim($subItem['href'], '/')) ? 'bg-gray-800 text-emerald-400' : '' }}">
                                                 {{ $subItem['title'] }}
                                             </a>
                                         @endforeach
                                     @else
                                         <a href="{{ $child['href'] }}"
                                            class="block px-3 py-2 hover:bg-gray-800 transition-colors
-                                                  {{ request()->is(ltrim($child['href'], '/') . '*') ? 'bg-gray-800 text-emerald-400' : '' }}">
+                                                  {{ request()->is(ltrim($child['href'], '/')) ? 'bg-gray-800 text-emerald-400' : '' }}">
                                             {{ $child['title'] }}
                                         </a>
                                     @endif
@@ -94,7 +94,7 @@
                             @elseif(isset($child['submenu']))
                                 {{-- Colapsable de tercer nivel --}}
                                 @php
-                                    $subHrefs = array_map(fn($c) => ltrim($c['href'], '/') . '*', $child['children']);
+                                    $subHrefs  = array_map(fn($c) => ltrim($c['href'], '/'), $child['children']);
                                     $subIsOpen = !empty($subHrefs) && request()->is(...$subHrefs) ? 'true' : 'false';
                                 @endphp
                                 <div x-data="{ subOpen: {{ $subIsOpen }} }">
@@ -110,7 +110,7 @@
                                         @foreach($child['children'] as $subItem)
                                             <a href="{{ $subItem['href'] }}"
                                                class="flex items-center px-3 py-1.5 rounded-lg text-sm font-medium
-                                                      {{ request()->is(ltrim($subItem['href'], '/') . '*')
+                                                      {{ request()->is(ltrim($subItem['href'], '/'))
                                                          ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-400'
                                                          : 'text-gray-500 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-800/50' }}">
                                                 {{ $subItem['title'] }}
@@ -125,7 +125,7 @@
                                 @foreach($child['children'] as $groupItem)
                                     <a href="{{ $groupItem['href'] }}"
                                        class="flex items-center px-3 py-1.5 rounded-lg text-sm font-medium
-                                              {{ request()->is(ltrim($groupItem['href'], '/') . '*')
+                                              {{ request()->is(ltrim($groupItem['href'], '/'))
                                                  ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-400'
                                                  : 'text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-800/50' }}">
                                         {{ $groupItem['title'] }}
@@ -134,7 +134,7 @@
                             @else
                                 <a href="{{ $child['href'] }}"
                                    class="flex items-center px-3 py-2 rounded-lg text-sm font-medium
-                                          {{ request()->is(ltrim($child['href'], '/') . '*')
+                                          {{ request()->is(ltrim($child['href'], '/'))
                                              ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-400'
                                              : 'text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-800/50' }}">
                                     {{ $child['title'] }}
@@ -147,7 +147,7 @@
                 <!-- Regular Menu Item -->
                 <a href="{{ $item['href'] }}"
                    class="group flex items-center px-3 py-2 rounded-lg text-sm font-medium
-                          {{ request()->is(ltrim($item['href'], '/') . '*')
+                          {{ request()->is(ltrim($item['href'], '/'))
                              ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-400'
                              : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800' }}"
                    x-data="{ tooltip: false }"

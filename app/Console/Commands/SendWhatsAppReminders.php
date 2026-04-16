@@ -21,6 +21,11 @@ class SendWhatsAppReminders extends Command
             return self::SUCCESS;
         }
 
+        if (setting('whatsapp.send_reminders', '1') !== '1') {
+            $this->info('El envío de recordatorios está desactivado en la configuración. Omitiendo.');
+            return self::SUCCESS;
+        }
+
         if (! $whatsAppService->isConnected()) {
             $this->warn('WhatsApp no está conectado. Omitiendo.');
             return self::SUCCESS;
