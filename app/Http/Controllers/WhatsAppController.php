@@ -104,7 +104,7 @@ class WhatsAppController extends Controller
      */
     public function toggleFeature(Request $request): JsonResponse
     {
-        $allowed = ['send_reminders', 'send_on_create', 'send_on_cancel'];
+        $allowed = ['enabled', 'send_reminders', 'send_on_create', 'send_on_cancel'];
 
         $validated = $request->validate([
             'key'   => 'required|in:' . implode(',', $allowed),
@@ -188,7 +188,6 @@ class WhatsAppController extends Controller
         ]);
 
         $group = 'whatsapp';
-        $this->settings->set('whatsapp.enabled',  $group, $request->boolean('enabled') ? '1' : '0');
         $this->settings->set('whatsapp.api_url',  $group, $validated['api_url'] ?? '');
         $this->settings->set('whatsapp.api_key',  $group, $validated['api_key'] ?? '');
         $this->settings->set('whatsapp.instance', $group, $validated['instance'] ?? '');

@@ -57,17 +57,28 @@
                         Interruptor general del módulo. Si está deshabilitado, no se envía ningún mensaje independientemente de las funciones activas.
                     </p>
                 </div>
-                <label class="relative inline-flex items-center cursor-pointer" x-data="{ enabled: {{ $current['enabled'] === '1' ? 'true' : 'false' }} }">
-                    <input type="checkbox" name="enabled" value="1" class="sr-only" :checked="enabled" x-model="enabled">
+                <div x-data="{
+                        enabled: {{ $current['enabled'] === '1' ? 'true' : 'false' }},
+                        async toggle() {
+                            this.enabled = !this.enabled;
+                            await fetch('{{ route('whatsapp.feature.toggle') }}', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content,
+                                },
+                                body: JSON.stringify({ key: 'enabled', value: this.enabled ? '1' : '0' }),
+                            });
+                        }
+                    }" class="flex items-center gap-3 cursor-pointer" @click="toggle()">
                     <div class="w-11 h-6 rounded-full transition-colors duration-200 ease-in-out"
-                         :class="enabled ? 'bg-emerald-500' : 'bg-gray-300 dark:bg-gray-600'"
-                         @click="enabled = !enabled">
+                         :class="enabled ? 'bg-emerald-500' : 'bg-gray-300 dark:bg-gray-600'">
                         <div class="w-5 h-5 bg-white rounded-full shadow transform transition-transform duration-200 ease-in-out mt-0.5"
                              :class="enabled ? 'translate-x-5 ml-0.5' : 'translate-x-0.5'"></div>
                     </div>
-                    <span class="ml-3 text-sm font-medium text-gray-700 dark:text-gray-300"
+                    <span class="text-sm font-medium text-gray-700 dark:text-gray-300"
                           x-text="enabled ? 'Habilitado' : 'Deshabilitado'"></span>
-                </label>
+                </div>
             </div>
         </div>
 

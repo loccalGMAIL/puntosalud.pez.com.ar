@@ -865,6 +865,17 @@ function patientModal() {
         modalOpen: false,
         editingPatient: null,
         loading: false,
+        formErrors: {},
+
+        clearError(field) { delete this.formErrors[field]; },
+        clearAllErrors() { this.formErrors = {}; },
+        setErrors(errors) {
+            this.formErrors = {};
+            Object.keys(errors).forEach(key => {
+                this.formErrors[key] = errors[key][0];
+            });
+        },
+        hasError(field) { return !!this.formErrors[field]; },
 
         form: {
             first_name: '',
@@ -923,6 +934,7 @@ function patientModal() {
                 titular_obra_social: '',
                 plan_obra_social: ''
             };
+            this.clearAllErrors();
         },
 
         async submitForm() {
@@ -968,8 +980,7 @@ function patientModal() {
                         window.showToast(result.message || 'Tu sesión ha expirado. Redirigiendo...', 'warning');
                         setTimeout(() => { window.location.href = result.redirect || '/login'; }, 1500);
                     } else if (response.status === 422 && result.errors) {
-                        const errorMessages = Object.values(result.errors).flat().join('\n');
-                        window.showToast('Errores de validación: ' + errorMessages, 'error');
+                        this.setErrors(result.errors);
                     } else {
                         window.showToast(result.message || 'Error al guardar el paciente', 'error');
                     }
