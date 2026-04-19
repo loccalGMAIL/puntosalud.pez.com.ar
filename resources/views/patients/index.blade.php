@@ -454,13 +454,12 @@
                                      x-text="professional.specialty ? professional.specialty.name : 'Sin especialidad'"></div>
                             </div>
                             <button @click="toggleWhatsappOptOut(professional)"
-                                    :disabled="whatsapp.toggling[professional.id]"
                                     type="button"
-                                    class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 disabled:opacity-50"
-                                    :class="isWhatsappOptedOut(professional.id) ? 'bg-gray-300 dark:bg-gray-600' : 'bg-emerald-500'"
-                                    :title="isWhatsappOptedOut(professional.id) ? 'Desactivado — clic para activar' : 'Activo — clic para desactivar'">
+                                    class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
+                                    :class="professional.optedOut ? 'bg-gray-300 dark:bg-gray-600' : 'bg-emerald-500'"
+                                    :title="professional.optedOut ? 'Desactivado — clic para activar' : 'Activo — clic para desactivar'">
                                 <span class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200"
-                                      :class="isWhatsappOptedOut(professional.id) ? 'translate-x-0' : 'translate-x-5'"></span>
+                                      :class="professional.optedOut ? 'translate-x-0' : 'translate-x-5'"></span>
                             </button>
                         </li>
                     </template>
@@ -497,7 +496,6 @@ function patientsPage() {
         whatsappPatient: null,
         whatsapp: {
             professionals: [],
-            optedOutIds: [],
             loading: false,
             toggling: {},
         },
@@ -608,7 +606,7 @@ function patientsPage() {
 
         openWhatsappModal(patient) {
             this.whatsappPatient = patient;
-            this.whatsapp = { professionals: [], optedOutIds: [], loading: false, toggling: {} };
+            this.whatsapp = { professionals: [], loading: false, toggling: {} };
             this.whatsappModalOpen = true;
             this.loadWhatsappOptOuts(patient.id);
         },
@@ -715,8 +713,10 @@ function patientsPage() {
                     headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
                 });
                 const data = await res.json();
-                this.whatsapp.professionals = data.professionals;
-                this.whatsapp.optedOutIds   = data.optedOutIds;
+                this.whatsapp.professionals = data.professionals.map(p => ({
+                    ...p,
+                    optedOut: data.optedOutIds.includes(p.id),
+                }));
             } catch (e) {
                 console.error('Error cargando opt-outs WhatsApp:', e);
             } finally {
@@ -724,31 +724,39 @@ function patientsPage() {
             }
         },
 
-        isWhatsappOptedOut(professionalId) {
-            return this.whatsapp.optedOutIds.includes(professionalId);
-        },
-
         async toggleWhatsappOptOut(professional) {
-            if (this.whatsapp.toggling[professional.id]) return;
-            this.whatsapp.toggling = { ...this.whatsapp.toggling, [professional.id]: true };
+            const pid = professional.id;
+            if (this.whatsapp.toggling[pid]) return;
+            this.whatsapp.toggling = { ...this.whatsapp.toggling, [pid]: true };
+
+            // Update optimista: invertir estado localmente antes de la respuesta del servidor
+            const previousOptedOut = professional.optedOut;
+            this.whatsapp.professionals = this.whatsapp.professionals.map(p =>
+                p.id === pid ? { ...p, optedOut: !previousOptedOut } : p
+            );
+
             try {
-                const res = await fetch(`/patients/${this.whatsappPatient.id}/whatsapp-opt-out/${professional.id}`, {
+                const res = await fetch(`/patients/${this.whatsappPatient.id}/whatsapp-opt-out/${pid}`, {
                     method: 'POST',
                     headers: {
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
                         'Accept': 'application/json',
                     },
                 });
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
                 const data = await res.json();
-                if (data.opted_out) {
-                    this.whatsapp.optedOutIds = [...this.whatsapp.optedOutIds, professional.id];
-                } else {
-                    this.whatsapp.optedOutIds = this.whatsapp.optedOutIds.filter(id => id !== professional.id);
-                }
+                // Confirmar con la respuesta del servidor
+                this.whatsapp.professionals = this.whatsapp.professionals.map(p =>
+                    p.id === pid ? { ...p, optedOut: data.opted_out } : p
+                );
             } catch (e) {
+                // Revertir el update optimista si hubo error
+                this.whatsapp.professionals = this.whatsapp.professionals.map(p =>
+                    p.id === pid ? { ...p, optedOut: previousOptedOut } : p
+                );
                 console.error('Error toggling WhatsApp opt-out:', e);
             } finally {
-                this.whatsapp.toggling = { ...this.whatsapp.toggling, [professional.id]: false };
+                this.whatsapp.toggling = { ...this.whatsapp.toggling, [pid]: false };
             }
         },
         
