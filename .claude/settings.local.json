@@ -19,7 +19,11 @@
       "Read(//d/DESARROLLO/CoDiGo/PuntoSalud/puntosalud.pez.com.ar/resources/views/reports/**)",
       "Bash(done)",
       "Bash(composer dump-autoload:*)",
-      "Bash(php -r \"require 'vendor/autoload.php'; echo 'OK';\")"
+      "Bash(php -r \"require 'vendor/autoload.php'; echo 'OK';\")",
+      "Bash(find /d/DESARROLLO/CoDiGo/PuntoSalud/puntosalud.pez.com.ar -name \"*.php\" -type f -exec grep -l \"schedule\\\\|Kernel\" {} \\\\;})",
+      "mcp__n8n-mcp__n8n_health_check",
+      "mcp__n8n-mcp__n8n_create_workflow",
+      "Bash(php -r \"echo bin2hex\\(random_bytes\\(32\\)\\);\")"
     ],
     "deny": [],
     "ask": []

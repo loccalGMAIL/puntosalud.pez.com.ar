@@ -171,8 +171,8 @@
 
     <!-- Tabla de pacientes -->
     <div class="bg-white dark:bg-gray-800 rounded-lg border border-emerald-200/50 dark:border-emerald-800/30 shadow-sm">
-        <div class="p-6">
-            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+        <div class="p-4">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
                 <svg class="w-5 h-5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />
                 </svg>
@@ -210,6 +210,13 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                 </svg>
                             </a>
+                            @if(auth()->user()->canAccessModule('whatsapp'))
+                            <button @click="openWhatsappModal(patient)" class="p-2 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg" title="Recordatorios WhatsApp">
+                                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 20.25c4.556 0 8.25-3.694 8.25-8.25S16.556 3.75 12 3.75 3.75 7.444 3.75 12c0 1.43.365 2.775 1.008 3.946L3.75 20.25l4.304-1.008A8.206 8.206 0 0012 20.25z" />
+                                </svg>
+                            </button>
+                            @endif
                             <button @click="openEditModal(patient)" class="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg" title="Editar">
                                 <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
@@ -236,13 +243,13 @@
                 <table class="min-w-full divide-y divide-emerald-200/50 dark:divide-emerald-800/30">
                     <thead class="bg-emerald-50/50 dark:bg-emerald-950/20">
                         <tr>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">Paciente</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">DNI</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">Contacto</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">Edad</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">Obra Social</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">Estado</th>
-                            <th class="px-6 py-3 text-right text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">Acciones</th>
+                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">Paciente</th>
+                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">DNI</th>
+                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">Teléfono</th>
+                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">Edad</th>
+                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">Obra Social</th>
+                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">Estado</th>
+                            <th class="px-4 py-2 text-right text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">Acciones</th>
                         </tr>
                     </thead>
                     <tbody class="bg-white dark:bg-gray-800 divide-y divide-emerald-200/30 dark:divide-emerald-800/30">
@@ -265,58 +272,51 @@
                         <template x-for="patient in filteredPatients" :key="patient.id">
                             <tr class="hover:bg-emerald-50/30 dark:hover:bg-emerald-950/20 transition-colors duration-200">
                                 <!-- Paciente -->
-                                <td class="px-6 py-4">
-                                    <div>
-                                        <div class="text-sm font-semibold text-gray-900 dark:text-white" x-text="patient.last_name + ' ' + patient.first_name"></div>
-                                    </div>
+                                <td class="px-4 py-2">
+                                    <span class="text-sm font-semibold text-gray-900 dark:text-white" x-text="patient.last_name + ', ' + patient.first_name"></span>
                                 </td>
-                                
+
                                 <!-- DNI -->
-                                <td class="px-6 py-4">
+                                <td class="px-4 py-2">
                                     <span class="text-sm font-mono text-gray-900 dark:text-white" x-text="patient.dni"></span>
                                 </td>
-                                
-                                <!-- Contacto -->
-                                <td class="px-6 py-4">
-                                    <div class="text-sm text-gray-900 dark:text-white" x-text="patient.email || 'Sin email'"></div>
-                                    <div class="text-sm text-gray-500 dark:text-gray-400" x-text="patient.phone"></div>
-                                    <div x-show="patient.phone_landline" class="text-sm text-gray-500 dark:text-gray-400" x-text="'Fijo: ' + patient.phone_landline"></div>
+
+                                <!-- Teléfono -->
+                                <td class="px-4 py-2">
+                                    <span class="text-sm text-gray-900 dark:text-white" x-text="patient.phone"></span>
                                 </td>
-                                
+
                                 <!-- Edad -->
-                                <td class="px-6 py-4">
-                                    <div class="text-center">
-                                        <div class="text-sm font-semibold text-gray-900 dark:text-white" x-text="calculateAge(patient.birth_date)"></div>
-                                        <div class="text-xs text-gray-500 dark:text-gray-400">años</div>
-                                    </div>
+                                <td class="px-4 py-2">
+                                    <span class="text-sm text-gray-900 dark:text-white" x-text="calculateAge(patient.birth_date) + ' a.'"></span>
                                 </td>
-                                
+
                                 <!-- Obra Social -->
-                                <td class="px-6 py-4">
-                                    <span x-show="patient.health_insurance" 
-                                          class="inline-flex px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 rounded-full" 
+                                <td class="px-4 py-2">
+                                    <span x-show="patient.health_insurance"
+                                          class="inline-flex px-2 py-0.5 text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 rounded-full"
                                           x-text="patient.health_insurance">
                                     </span>
-                                    <span x-show="!patient.health_insurance" 
-                                          class="inline-flex px-2 py-1 text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400 rounded-full">
-                                        Sin obra social
+                                    <span x-show="!patient.health_insurance"
+                                          class="text-xs text-gray-400 dark:text-gray-500">
+                                        —
                                     </span>
                                 </td>
-                                
+
                                 <!-- Estado -->
-                                <td class="px-6 py-4">
-                                    <span :class="patient.is_active ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'" 
-                                          class="inline-flex px-2 py-1 text-xs font-medium rounded-full" 
+                                <td class="px-4 py-2">
+                                    <span :class="patient.is_active ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'"
+                                          class="inline-flex px-2 py-0.5 text-xs font-medium rounded-full"
                                           x-text="patient.is_active ? 'Activo' : 'Inactivo'">
                                     </span>
                                 </td>
-                                
+
                                 <!-- Acciones -->
-                                <td class="px-6 py-4 text-right">
-                                    <div class="flex items-center justify-end gap-2">
+                                <td class="px-4 py-2 text-right">
+                                    <div class="flex items-center justify-end gap-1">
                                         <!-- Botón Ver Detalle -->
                                         <a :href="`/patients/${patient.id}/detail`"
-                                           class="p-2 text-emerald-600 hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded-lg transition-colors inline-block"
+                                           class="p-1.5 text-emerald-600 hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded-lg transition-colors inline-block"
                                            title="Ver detalle">
                                             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                                                 <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
@@ -324,9 +324,20 @@
                                             </svg>
                                         </a>
 
+                                        @if(auth()->user()->canAccessModule('whatsapp'))
+                                        <!-- Botón WhatsApp -->
+                                        <button @click="openWhatsappModal(patient)"
+                                                class="p-1.5 text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors"
+                                                title="Recordatorios WhatsApp">
+                                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 20.25c4.556 0 8.25-3.694 8.25-8.25S16.556 3.75 12 3.75 3.75 7.444 3.75 12c0 1.43.365 2.775 1.008 3.946L3.75 20.25l4.304-1.008A8.206 8.206 0 0012 20.25z" />
+                                            </svg>
+                                        </button>
+                                        @endif
+
                                         <!-- Botón Editar -->
                                         <button @click="openEditModal(patient)"
-                                                class="p-2 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                                                class="p-1.5 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
                                                 title="Editar paciente">
                                             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                                                 <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
@@ -334,15 +345,13 @@
                                         </button>
 
                                         <!-- Botón Activar/Desactivar -->
-                                        <button @click="toggleStatus(patient)" 
+                                        <button @click="toggleStatus(patient)"
                                                 :class="patient.is_active ? 'text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20' : 'text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300 hover:bg-green-50 dark:hover:bg-green-900/20'"
-                                                class="p-2 rounded-lg transition-colors"
+                                                class="p-1.5 rounded-lg transition-colors"
                                                 :title="patient.is_active ? 'Desactivar paciente' : 'Activar paciente'">
-                                            <!-- Icono Desactivar (cuando está activo) -->
                                             <svg x-show="patient.is_active" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                                                 <path stroke-linecap="round" stroke-linejoin="round" d="M22 10.5h-6m-2.25-4.125a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zM4 19.5a8.25 8.25 0 0116.5 0v.5H4v-.5z" />
                                             </svg>
-                                            <!-- Icono Activar (cuando está inactivo) -->
                                             <svg x-show="!patient.is_active" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                                                 <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                             </svg>
@@ -356,13 +365,117 @@
             </div>
 
             <!-- Paginación -->
-            <div class="mt-4 px-6 pb-6">
+            <div class="mt-3 px-2 pb-2">
                 {{ $patients->links() }}
             </div>
         </div>
     </div>
 
     @include('patients.modal')
+
+    @if(auth()->user()->canAccessModule('whatsapp'))
+    {{-- Modal exclusivo: Recordatorios WhatsApp por profesional --}}
+    <div x-show="whatsappModalOpen"
+         x-cloak
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-150"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
+         @click.self="whatsappModalOpen = false">
+
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-lg"
+             x-transition:enter="transition ease-out duration-200"
+             x-transition:enter-start="opacity-0 scale-95"
+             x-transition:enter-end="opacity-100 scale-100"
+             @click.stop>
+
+            <!-- Header -->
+            <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                <div class="flex items-center gap-3">
+                    <div class="flex items-center justify-center w-9 h-9 bg-green-100 dark:bg-green-900/30 rounded-lg">
+                        <svg class="w-5 h-5 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 20.25c4.556 0 8.25-3.694 8.25-8.25S16.556 3.75 12 3.75 3.75 7.444 3.75 12c0 1.43.365 2.775 1.008 3.946L3.75 20.25l4.304-1.008A8.206 8.206 0 0012 20.25z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="text-base font-semibold text-gray-900 dark:text-white">Recordatorios WhatsApp</h3>
+                        <p class="text-xs text-gray-500 dark:text-gray-400"
+                           x-text="whatsappPatient ? whatsappPatient.last_name + ', ' + whatsappPatient.first_name : ''"></p>
+                    </div>
+                </div>
+                <button @click="whatsappModalOpen = false"
+                        class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors">
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Body -->
+            <div class="px-6 py-4">
+                <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
+                    Activá o desactivá el envío de recordatorios para cada profesional con el que atiende este paciente.
+                    <span class="block mt-1">
+                        <span class="inline-flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-400">
+                            <span class="inline-block w-3 h-3 rounded-full bg-emerald-500"></span> Activo
+                        </span>
+                        <span class="inline-flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 ml-3">
+                            <span class="inline-block w-3 h-3 rounded-full bg-gray-300 dark:bg-gray-600"></span> Desactivado
+                        </span>
+                    </span>
+                </p>
+
+                <!-- Cargando -->
+                <div x-show="whatsapp.loading" class="flex items-center justify-center py-8 text-gray-500 dark:text-gray-400">
+                    <svg class="animate-spin w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                    </svg>
+                    Cargando profesionales...
+                </div>
+
+                <!-- Sin profesionales -->
+                <div x-show="!whatsapp.loading && whatsapp.professionals.length === 0"
+                     class="text-center py-8 text-gray-500 dark:text-gray-400 text-sm">
+                    Este paciente no tiene turnos registrados con ningún profesional.
+                </div>
+
+                <!-- Lista -->
+                <ul x-show="!whatsapp.loading && whatsapp.professionals.length > 0" class="space-y-2">
+                    <template x-for="professional in whatsapp.professionals" :key="professional.id">
+                        <li class="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-700/50">
+                            <div class="min-w-0 mr-4">
+                                <div class="text-sm font-medium text-gray-900 dark:text-white"
+                                     x-text="professional.last_name + ', ' + professional.first_name"></div>
+                                <div class="text-xs text-gray-500 dark:text-gray-400"
+                                     x-text="professional.specialty ? professional.specialty.name : 'Sin especialidad'"></div>
+                            </div>
+                            <button @click="toggleWhatsappOptOut(professional)"
+                                    type="button"
+                                    class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
+                                    :class="professional.optedOut ? 'bg-gray-300 dark:bg-gray-600' : 'bg-emerald-500'"
+                                    :title="professional.optedOut ? 'Desactivado — clic para activar' : 'Activo — clic para desactivar'">
+                                <span class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200"
+                                      :class="professional.optedOut ? 'translate-x-0' : 'translate-x-5'"></span>
+                            </button>
+                        </li>
+                    </template>
+                </ul>
+            </div>
+
+            <!-- Footer -->
+            <div class="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex justify-end">
+                <button @click="whatsappModalOpen = false"
+                        class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors">
+                    Cerrar
+                </button>
+            </div>
+        </div>
+    </div>
+    @endif
 </div>
 
 <script>
@@ -377,6 +490,15 @@ function patientsPage() {
         editingPatient: null,
         loading: false,
         formErrors: {},
+
+        // WhatsApp opt-outs
+        whatsappModalOpen: false,
+        whatsappPatient: null,
+        whatsapp: {
+            professionals: [],
+            loading: false,
+            toggling: {},
+        },
 
         // Filtros
         filters: {
@@ -482,6 +604,13 @@ function patientsPage() {
             this.modalOpen = true;
         },
 
+        openWhatsappModal(patient) {
+            this.whatsappPatient = patient;
+            this.whatsapp = { professionals: [], loading: false, toggling: {} };
+            this.whatsappModalOpen = true;
+            this.loadWhatsappOptOuts(patient.id);
+        },
+
         openEditModal(patient) {
             this.editingPatient = patient;
             this.clearAllErrors();
@@ -575,6 +704,60 @@ function patientsPage() {
         async refreshData() {
             // Recargar la página para reflejar los cambios
             window.location.reload();
+        },
+
+        async loadWhatsappOptOuts(patientId) {
+            this.whatsapp.loading = true;
+            try {
+                const res = await fetch(`/patients/${patientId}/whatsapp-opt-outs`, {
+                    headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+                });
+                const data = await res.json();
+                this.whatsapp.professionals = data.professionals.map(p => ({
+                    ...p,
+                    optedOut: data.optedOutIds.includes(p.id),
+                }));
+            } catch (e) {
+                console.error('Error cargando opt-outs WhatsApp:', e);
+            } finally {
+                this.whatsapp.loading = false;
+            }
+        },
+
+        async toggleWhatsappOptOut(professional) {
+            const pid = professional.id;
+            if (this.whatsapp.toggling[pid]) return;
+            this.whatsapp.toggling = { ...this.whatsapp.toggling, [pid]: true };
+
+            // Update optimista: invertir estado localmente antes de la respuesta del servidor
+            const previousOptedOut = professional.optedOut;
+            this.whatsapp.professionals = this.whatsapp.professionals.map(p =>
+                p.id === pid ? { ...p, optedOut: !previousOptedOut } : p
+            );
+
+            try {
+                const res = await fetch(`/patients/${this.whatsappPatient.id}/whatsapp-opt-out/${pid}`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'Accept': 'application/json',
+                    },
+                });
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const data = await res.json();
+                // Confirmar con la respuesta del servidor
+                this.whatsapp.professionals = this.whatsapp.professionals.map(p =>
+                    p.id === pid ? { ...p, optedOut: data.opted_out } : p
+                );
+            } catch (e) {
+                // Revertir el update optimista si hubo error
+                this.whatsapp.professionals = this.whatsapp.professionals.map(p =>
+                    p.id === pid ? { ...p, optedOut: previousOptedOut } : p
+                );
+                console.error('Error toggling WhatsApp opt-out:', e);
+            } finally {
+                this.whatsapp.toggling = { ...this.whatsapp.toggling, [pid]: false };
+            }
         },
         
         clearFilters() {

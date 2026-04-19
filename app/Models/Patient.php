@@ -54,6 +54,11 @@ class Patient extends Model
         return $this->hasMany(Payment::class);
     }
 
+    public function whatsappOptOuts()
+    {
+        return $this->hasMany(WhatsAppOptOut::class);
+    }
+
     /**
      * Scopes
      */
