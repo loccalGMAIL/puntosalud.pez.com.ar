@@ -42,7 +42,7 @@ class SendWhatsAppReminders extends Command
         $appointments = Appointment::scheduled()
             ->whereBetween('appointment_date', [$windowStart, $windowEnd])
             ->whereHas('patient', fn ($q) => $q->whereNotNull('phone')->where('phone', '!=', ''))
-            ->whereDoesntHave('whatsappMessages')
+            ->whereDoesntHave('whatsappMessages', fn ($q) => $q->where('type', 'reminder'))
             ->whereNotExists(function ($query) {
                 $query->select(DB::raw(1))
                     ->from('whatsapp_opt_outs')

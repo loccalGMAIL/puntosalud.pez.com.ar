@@ -14,8 +14,10 @@ class WhatsAppSettingSeeder extends Seeder
             'whatsapp.api_url'      => '',
             'whatsapp.api_key'      => '',
             'whatsapp.instance'     => '',
-            'whatsapp.hours_before' => '24',
-            'whatsapp.template'     => 'Hola {{nombre}}, le recordamos su turno el {{fecha}} a las {{hora}} con {{profesional}}. Por favor confirme su asistencia respondiendo SI o NO.',
+            'whatsapp.hours_before'       => '24',
+            'whatsapp.template'           => 'Hola {{nombre}}, le recordamos su turno el {{fecha}} a las {{hora}} con {{profesional}}. Por favor confirme su asistencia respondiendo SI o NO.',
+            'whatsapp.template_on_create' => 'Hola {{nombre}}, su turno ha sido confirmado para el {{fecha}} a las {{hora}} con {{profesional}}. Ante cualquier consulta no dude en comunicarse con nosotros.',
+            'whatsapp.template_on_cancel' => 'Hola {{nombre}}, le informamos que su turno del {{fecha}} a las {{hora}} con {{profesional}} ha sido cancelado. Por favor comuníquese con nosotros para reprogramarlo.',
         ];
 
         foreach ($defaults as $key => $value) {

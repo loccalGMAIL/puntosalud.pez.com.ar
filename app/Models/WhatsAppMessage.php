@@ -18,6 +18,7 @@ class WhatsAppMessage extends Model
         'sent_at',
         'error',
         'instance',
+        'type',
     ];
 
     protected $casts = [

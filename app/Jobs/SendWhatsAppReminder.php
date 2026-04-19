@@ -27,10 +27,11 @@ class SendWhatsAppReminder implements ShouldQueue
             return;
         }
 
-        // Revalidar que el turno sigue programado
+        // Revalidar estado del turno según tipo de mensaje
         $appointment = $message->appointment;
-        if (! $appointment || $appointment->status !== 'scheduled') {
-            $message->markFailed('Turno cancelado o no disponible al momento del envío');
+        $expectedStatus = $message->type === 'cancellation' ? 'cancelled' : 'scheduled';
+        if (! $appointment || $appointment->status !== $expectedStatus) {
+            $message->markFailed('Estado del turno inválido al momento del envío');
             return;
         }
 

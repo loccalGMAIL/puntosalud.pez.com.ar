@@ -2,6 +2,10 @@
 
 namespace App\Services;
 
+use App\Jobs\SendWhatsAppReminder;
+use App\Models\Appointment;
+use App\Models\WhatsAppMessage;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -227,6 +231,80 @@ class WhatsAppService
         }
 
         return null;
+    }
+
+    /**
+     * Encola un mensaje de WhatsApp para un turno según el tipo indicado ('reminder' o 'creation').
+     * Verifica habilitación, conexión, teléfono válido y opt-out antes de crear el registro y despachar el job.
+     * Retorna true si se encoló, false si se omitió por cualquier condición.
+     */
+    public function queueAppointmentMessage(Appointment $appointment, string $type): bool
+    {
+        if (! $this->isEnabled() || ! $this->isConnected()) {
+            return false;
+        }
+
+        // Asegurarse de tener las relaciones cargadas
+        $appointment->loadMissing(['patient', 'professional.specialty']);
+
+        $patient = $appointment->patient;
+
+        if (! $patient || empty($patient->phone)) {
+            return false;
+        }
+
+        // Verificar opt-out del paciente para este profesional
+        $hasOptOut = DB::table('whatsapp_opt_outs')
+            ->where('patient_id', $appointment->patient_id)
+            ->where('professional_id', $appointment->professional_id)
+            ->exists();
+
+        if ($hasOptOut) {
+            return false;
+        }
+
+        $formattedPhone = $this->formatArgentinaPhone($patient->phone);
+        if (! $formattedPhone) {
+            Log::warning('WhatsApp: teléfono inválido al encolar mensaje', [
+                'appointment_id' => $appointment->id,
+                'phone'          => $patient->phone,
+                'type'           => $type,
+            ]);
+            return false;
+        }
+
+        $templateKey = match ($type) {
+            'creation'     => 'whatsapp.template_on_create',
+            'cancellation' => 'whatsapp.template_on_cancel',
+            default        => 'whatsapp.template',
+        };
+        $template    = setting($templateKey, '');
+
+        if (empty($template)) {
+            return false;
+        }
+
+        $renderedMessage = $this->renderTemplate($template, [
+            'nombre'       => $patient->full_name,
+            'fecha'        => $appointment->appointment_date->format('d/m/Y'),
+            'hora'         => $appointment->appointment_date->format('H:i'),
+            'profesional'  => $appointment->professional?->full_name ?? 'el/la profesional',
+            'especialidad' => $appointment->professional?->specialty?->name ?? '',
+        ]);
+
+        $waMessage = WhatsAppMessage::create([
+            'appointment_id' => $appointment->id,
+            'patient_id'     => $patient->id,
+            'phone'          => $formattedPhone,
+            'message'        => $renderedMessage,
+            'status'         => 'pending',
+            'instance'       => setting('whatsapp.instance', ''),
+            'type'           => $type,
+        ]);
+
+        SendWhatsAppReminder::dispatch($waMessage->id);
+
+        return true;
     }
 
     /**

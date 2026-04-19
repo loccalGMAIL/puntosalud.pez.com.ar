@@ -136,8 +136,10 @@ class WhatsAppController extends Controller
     public function settings(): View
     {
         $current = [
-            'hours_before' => setting('whatsapp.hours_before', '24'),
-            'template'     => setting('whatsapp.template', ''),
+            'hours_before'       => setting('whatsapp.hours_before', '24'),
+            'template'           => setting('whatsapp.template', ''),
+            'template_on_create' => setting('whatsapp.template_on_create', ''),
+            'template_on_cancel' => setting('whatsapp.template_on_cancel', ''),
         ];
 
         return view('whatsapp.settings', compact('current'));
@@ -149,13 +151,23 @@ class WhatsAppController extends Controller
     public function saveSettings(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'hours_before' => 'required|in:1,2,4,12,24,48',
-            'template'     => 'required|string|max:1000',
+            'hours_before'       => 'required|in:1,2,4,12,24,48',
+            'template'           => 'nullable|string|max:1000',
+            'template_on_create' => 'nullable|string|max:1000',
+            'template_on_cancel' => 'nullable|string|max:1000',
+        ], [
+            'hours_before.required'  => 'Seleccioná con cuánta anticipación enviar el recordatorio.',
+            'hours_before.in'        => 'El valor de anticipación no es válido.',
+            'template.max'           => 'El mensaje de recordatorio no puede superar los 1000 caracteres.',
+            'template_on_create.max' => 'El mensaje de confirmación no puede superar los 1000 caracteres.',
+            'template_on_cancel.max' => 'El mensaje de cancelación no puede superar los 1000 caracteres.',
         ]);
 
         $group = 'whatsapp';
-        $this->settings->set('whatsapp.hours_before', $group, $validated['hours_before']);
-        $this->settings->set('whatsapp.template',     $group, $validated['template']);
+        $this->settings->set('whatsapp.hours_before',       $group, $validated['hours_before']);
+        $this->settings->set('whatsapp.template',           $group, $validated['template'] ?? '');
+        $this->settings->set('whatsapp.template_on_create', $group, $validated['template_on_create'] ?? '');
+        $this->settings->set('whatsapp.template_on_cancel', $group, $validated['template_on_cancel'] ?? '');
 
         return redirect()->route('whatsapp.settings')
             ->with('success', 'Configuración del recordatorio guardada.');
@@ -236,6 +248,10 @@ class WhatsAppController extends Controller
 
         if ($request->filled('status')) {
             $query->where('status', $request->status);
+        }
+
+        if ($request->filled('type') && in_array($request->type, ['reminder', 'creation', 'cancellation'])) {
+            $query->where('type', $request->type);
         }
 
         $messages = $query->paginate(50)->withQueryString();

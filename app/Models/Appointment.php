@@ -81,6 +81,11 @@ class Appointment extends Model
         return $this->hasMany(LiquidationDetail::class);
     }
 
+    public function whatsappMessages()
+    {
+        return $this->hasMany(WhatsAppMessage::class);
+    }
+
     /**
      * Scopes
      */

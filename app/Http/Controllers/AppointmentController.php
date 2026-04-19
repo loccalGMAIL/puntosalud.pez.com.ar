@@ -12,6 +12,7 @@ use App\Models\Professional;
 use App\Models\ProfessionalSchedule;
 use App\Models\ScheduleException;
 use App\Services\PaymentAllocationService;
+use App\Services\WhatsAppService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -241,6 +242,15 @@ class AppointmentController extends Controller
 
             DB::commit();
 
+            // Notificación WhatsApp al crear turno (si está habilitada)
+            if (setting('whatsapp.send_on_create', '0') === '1') {
+                try {
+                    app(WhatsAppService::class)->queueAppointmentMessage($appointment, 'creation');
+                } catch (\Throwable) {
+                    // No interrumpir el flujo si falla WhatsApp
+                }
+            }
+
             $message = 'Turno creado exitosamente.';
             if ($request->boolean('pay_now')) {
                 $message .= ' Pago registrado correctamente.';
@@ -294,6 +304,7 @@ class AppointmentController extends Controller
     {
         // Si es solo cambio de estado
         if ($request->has('status') && ! $request->has('professional_id')) {
+            $previousStatus = $appointment->status;
             $updateData = ['status' => $request->status];
 
             if ($request->status === 'attended' && ! $appointment->final_amount) {
@@ -301,6 +312,16 @@ class AppointmentController extends Controller
             }
 
             $appointment->update($updateData);
+
+            // Notificación WhatsApp de cancelación vía cambio de estado
+            if ($request->status === 'cancelled' && $previousStatus === 'scheduled'
+                && setting('whatsapp.send_on_cancel', '0') === '1') {
+                try {
+                    app(WhatsAppService::class)->queueAppointmentMessage($appointment, 'cancellation');
+                } catch (\Throwable) {
+                    // No interrumpir el flujo si falla WhatsApp
+                }
+            }
 
             if ($request->ajax()) {
                 return response()->json(['success' => true, 'message' => 'Estado del turno actualizado.']);
@@ -408,6 +429,15 @@ class AppointmentController extends Controller
         }
 
         $appointment->update(['status' => 'cancelled']);
+
+        // Notificación WhatsApp de cancelación (si está habilitada)
+        if (setting('whatsapp.send_on_cancel', '0') === '1') {
+            try {
+                app(WhatsAppService::class)->queueAppointmentMessage($appointment, 'cancellation');
+            } catch (\Throwable) {
+                // No interrumpir el flujo si falla WhatsApp
+            }
+        }
 
         if (request()->ajax()) {
             return response()->json([

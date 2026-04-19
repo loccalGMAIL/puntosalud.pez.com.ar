@@ -77,7 +77,7 @@
                 'icon'  => '<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 20.25c4.556 0 8.25-3.694 8.25-8.25S16.556 3.75 12 3.75 3.75 7.444 3.75 12c0 1.43.365 2.775 1.008 3.946L3.75 20.25l4.304-1.008A8.206 8.206 0 0012 20.25z" /></svg>',
                 'children' => [
                     ['title' => 'Conexión',      'href' => '/whatsapp'],
-                    ['title' => 'Recordatorios', 'href' => '/whatsapp/settings'],
+                    ['title' => 'Plantillas',     'href' => '/whatsapp/settings'],
                     ['title' => 'Mensajes',      'href' => '/whatsapp/messages'],
                 ],
             ];
