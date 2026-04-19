@@ -7,6 +7,45 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [2.11.0] - 2026-04-19
+
+### 💬 WhatsApp: Notificaciones de creación y cancelación de turnos
+
+#### Nuevas notificaciones automáticas
+- **Confirmación al crear turno** (`send_on_create`): cuando se crea un turno, el paciente recibe un mensaje de confirmación inmediato si el módulo WhatsApp está conectado y habilitado.
+- **Aviso de cancelación** (`send_on_cancel`): cuando un turno es cancelado, el paciente recibe notificación automática.
+- **Columna `type`** en `whatsapp_messages`: `reminder` / `creation` / `cancellation`. El unique constraint pasa de `appointment_id` a `(appointment_id, type)`, permitiendo múltiples mensajes por turno.
+- Relación `whatsappMessages()` agregada en el modelo `Appointment`.
+- Método `queueAppointmentMessage()` en `WhatsAppService` centraliza la lógica de envío; el Job `SendWhatsAppReminder` valida el estado del turno según el tipo de mensaje.
+
+#### Toggles independientes por tipo
+- **Página Conexión** (`/whatsapp`): tres toggles AJAX — *Recordatorios automáticos*, *Confirmación al crear turno*, *Aviso de turno cancelado*.
+- **Endpoint `POST /whatsapp/feature`** (`whatsapp.feature.toggle`): guarda cualquiera de las 3 features en `settings` sin recargar la página. Indicador visual "Guardado" por 2 segundos.
+- El comando `SendWhatsAppReminders` respeta el toggle `send_reminders` antes de procesar la cola.
+
+#### Vista Plantillas rediseñada (`/whatsapp/settings`)
+- Layout reorganizado en acordeones colapsables: Recordatorio, Confirmación de turno, Cancelación.
+- **Preview en tiempo real**: al editar la plantilla se actualiza instantáneamente el mensaje de ejemplo con los valores de ejemplo.
+- Menú renombrado: "Recordatorios" → "Plantillas".
+
+#### Vista Mensajes mejorada (`/whatsapp/messages`)
+- Nueva columna **Tipo** con badges de color (azul = recordatorio, verde = confirmación, rojo = cancelación).
+- **Modal de detalle**: botón "Ver" en cada fila/card abre el contenido completo del mensaje.
+- **Filtro por tipo** en la barra de filtros.
+- Botón "Ver detalle" usa `json_encode` + `data-msg` attribute en lugar de interpolación inline con `addslashes`, evitando roturas con nombres que contienen comillas u otros caracteres especiales.
+
+### 🐛 Correcciones
+- **Toggle WhatsApp `enabled` via AJAX**: el interruptor principal en `/whatsapp/api` ahora guarda mediante AJAX igual que los demás toggles; se elimina su doble manejo en el formulario POST de la API.
+- **Fix doble-toggle en API settings**: reemplazado `label + checkbox` por `div @click` directo para evitar la inversión de estado por doble disparo de eventos.
+- **`formErrors` en `patientModal()` de Agenda**: faltaba el objeto `formErrors` y sus métodos (`hasError`, `clearError`, `clearAllErrors`, `setErrors`). Los errores 422 ahora muestran validación inline en el modal de nuevo paciente desde Agenda.
+- **Toggle opt-out WhatsApp en Pacientes** (reactividad Alpine): reemplazado array separado `optedOutIds` por propiedad `optedOut` embebida en cada objeto `professional` + reemplazo completo del array con `map()` para garantizar que Alpine detecte el cambio. Actualización optimista con rollback automático si el servidor falla.
+
+### 🗄️ Migraciones
+- `2026_03_28_100002_create_whatsapp_messages_table.php` — actualizada para incluir `type ENUM('reminder','creation','cancellation')` y unique compuesto `(appointment_id, type)` desde la creación (consolida las 2 migraciones alter posteriores).
+- `2026_04_15_100001_create_whatsapp_opt_outs_table.php` — sin cambios.
+
+---
+
 ## [2.10.5] - 2026-04-16
 
 ### 💬 WhatsApp: Integración de recordatorios automáticos

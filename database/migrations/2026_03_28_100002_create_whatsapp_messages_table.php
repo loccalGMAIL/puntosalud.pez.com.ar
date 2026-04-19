@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('whatsapp_messages', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('appointment_id')->unique()->constrained('appointments')->cascadeOnDelete();
+            $table->foreignId('appointment_id')->constrained('appointments')->cascadeOnDelete();
             $table->foreignId('patient_id')->constrained('patients')->cascadeOnDelete();
             $table->string('phone', 50);
             $table->text('message');
@@ -18,8 +18,10 @@ return new class extends Migration
             $table->timestamp('sent_at')->nullable();
             $table->text('error')->nullable();
             $table->string('instance', 100)->nullable();
+            $table->enum('type', ['reminder', 'creation', 'cancellation'])->default('reminder');
             $table->timestamps();
 
+            $table->unique(['appointment_id', 'type']);
             $table->index(['status', 'created_at']);
             $table->index('patient_id');
         });

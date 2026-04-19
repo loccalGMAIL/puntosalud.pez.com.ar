@@ -111,6 +111,19 @@
             </thead>
             <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
                 @foreach ($messages as $msg)
+                @php
+                    $msgData = [
+                        'patient'      => $msg->patient?->full_name ?? '-',
+                        'phone'        => $msg->phone,
+                        'date'         => $msg->appointment?->appointment_date->format('d/m/Y H:i') ?? '-',
+                        'professional' => $msg->appointment?->professional?->full_name ?? '-',
+                        'message'      => $msg->message,
+                        'type'         => $msg->type,
+                        'status'       => $msg->status,
+                        'sent_at'      => $msg->sent_at?->format('d/m/Y H:i') ?? '-',
+                        'error'        => $msg->error ?? '',
+                    ];
+                @endphp
                 <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
                     <td class="px-4 py-3 text-gray-500 dark:text-gray-400 font-mono text-xs">{{ $msg->id }}</td>
                     <td class="px-4 py-3">
@@ -161,17 +174,8 @@
                     </td>
                     <td class="px-4 py-3">
                         <button type="button"
-                                @click="open({
-                                    patient: '{{ addslashes($msg->patient?->full_name ?? '-') }}',
-                                    phone: '{{ $msg->phone }}',
-                                    date: '{{ $msg->appointment?->appointment_date->format('d/m/Y H:i') ?? '-' }}',
-                                    professional: '{{ addslashes($msg->appointment?->professional?->full_name ?? '-') }}',
-                                    message: '{{ addslashes($msg->message) }}',
-                                    type: '{{ $msg->type }}',
-                                    status: '{{ $msg->status }}',
-                                    sent_at: '{{ $msg->sent_at?->format('d/m/Y H:i') ?? '-' }}',
-                                    error: '{{ addslashes($msg->error ?? '') }}'
-                                })"
+                                data-msg="{{ json_encode($msgData, JSON_UNESCAPED_UNICODE) }}"
+                                @click="open(JSON.parse($el.dataset.msg))"
                                 class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors">
                             <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.964-7.178z" />
@@ -193,7 +197,18 @@
         @php
             $typeLabels = ['reminder' => 'Recordatorio', 'creation' => 'Confirmación', 'cancellation' => 'Cancelación'];
             $typeColors = ['reminder' => 'blue', 'creation' => 'emerald', 'cancellation' => 'red'];
-            $tColor = $typeColors[$msg->type] ?? 'gray';
+            $tColor     = $typeColors[$msg->type] ?? 'gray';
+            $msgData    = [
+                'patient'      => $msg->patient?->full_name ?? '-',
+                'phone'        => $msg->phone,
+                'date'         => $msg->appointment?->appointment_date->format('d/m/Y H:i') ?? '-',
+                'professional' => $msg->appointment?->professional?->full_name ?? '-',
+                'message'      => $msg->message,
+                'type'         => $msg->type,
+                'status'       => $msg->status,
+                'sent_at'      => $msg->sent_at?->format('d/m/Y H:i') ?? '-',
+                'error'        => $msg->error ?? '',
+            ];
         @endphp
         <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm p-4">
             <div class="flex items-start justify-between mb-2">
@@ -228,17 +243,8 @@
             <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">Enviado: {{ $msg->sent_at->format('d/m/Y H:i') }}</p>
             @endif
             <button type="button"
-                    @click="open({
-                        patient: '{{ addslashes($msg->patient?->full_name ?? '-') }}',
-                        phone: '{{ $msg->phone }}',
-                        date: '{{ $msg->appointment?->appointment_date->format('d/m/Y H:i') ?? '-' }}',
-                        professional: '{{ addslashes($msg->appointment?->professional?->full_name ?? '-') }}',
-                        message: '{{ addslashes($msg->message) }}',
-                        type: '{{ $msg->type }}',
-                        status: '{{ $msg->status }}',
-                        sent_at: '{{ $msg->sent_at?->format('d/m/Y H:i') ?? '-' }}',
-                        error: '{{ addslashes($msg->error ?? '') }}'
-                    })"
+                    data-msg="{{ json_encode($msgData, JSON_UNESCAPED_UNICODE) }}"
+                    @click="open(JSON.parse($el.dataset.msg))"
                     class="mt-2 inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors">
                 <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.964-7.178z" />
