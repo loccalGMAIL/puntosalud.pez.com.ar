@@ -15,7 +15,7 @@ class UserController extends Controller
      */
     public function index()
     {
-        $users = User::with(['lastLogin', 'profile.modules'])->orderBy('name')->get();
+        $users = User::with(['lastLogin', 'profile.modules', 'profile.permissions'])->orderBy('name')->get();
         $profiles = Profile::orderBy('name')->get();
 
         return view('users.index', compact('users', 'profiles'));

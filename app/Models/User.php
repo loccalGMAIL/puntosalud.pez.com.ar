@@ -88,6 +88,30 @@ class User extends Authenticatable
     }
 
     /**
+     * Verificar si el usuario puede realizar una acción (módulo completo o sub-permiso)
+     */
+    public function canDo(string $permission): bool
+    {
+        $module = explode('.', $permission)[0];
+
+        if ($this->canAccessModule($module)) {
+            return true;
+        }
+
+        if (! $this->profile) {
+            return false;
+        }
+
+        // Si se consulta solo el módulo padre, es true si tiene CUALQUIER sub-permiso de ese módulo
+        if ($permission === $module) {
+            return $this->profile->permissions
+                ->contains(fn ($p) => str_starts_with($p->permission, $module . '.'));
+        }
+
+        return $this->profile->allowsPermission($permission);
+    }
+
+    /**
      * Alias semántico: administrador = acceso a configuración
      */
     public function isAdmin(): bool
