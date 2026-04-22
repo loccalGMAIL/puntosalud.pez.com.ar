@@ -7,6 +7,15 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [2.11.2] - 2026-04-22
+
+### 🐛 Correcciones
+
+- **Acceso a reportes operativos**: `Listado de Pacientes a Atender` y `Liquidación del Profesional` ahora son accesibles a todos los usuarios autenticados, sin requerir el módulo `reports`. La ruta de listado diario se mueve a `/agenda/daily-schedule` (semánticamente más precisa); la liquidación conserva su URL.
+- **WhatsApp `connectionState()` devolvía null**: si la API respondía con cuerpo no-JSON (servidor apagado, timeout), el método violaba su tipo de retorno `array`. Ahora retorna `['state' => 'error']` en ese caso, evitando el TypeError al cargar el layout.
+
+---
+
 ## [2.11.1] - 2026-04-22
 
 ### 🐛 Correcciones

@@ -100,11 +100,13 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/appointments/{appointment}/auto-allocate', [PaymentController::class, 'autoAllocatePayment'])->name('appointments.auto-allocate');
     });
 
+    // Reportes operativos — accesibles a todos los usuarios autenticados (sin módulo)
+    Route::get('/agenda/daily-schedule', [ReportController::class, 'dailySchedule'])->name('agenda.daily-schedule');
+    Route::get('/reports/professional-liquidation', [ReportController::class, 'professionalLiquidation'])->name('reports.professional-liquidation');
+
     // Reports routes
     Route::middleware(['module:reports'])->group(function () {
-        Route::get('/reports/daily-schedule', [ReportController::class, 'dailySchedule'])->name('reports.daily-schedule');
         Route::get('/reports/daily-summary', [ReportController::class, 'dailySummary'])->name('reports.daily-summary');
-        Route::get('/reports/professional-liquidation', [ReportController::class, 'professionalLiquidation'])->name('reports.professional-liquidation');
         Route::get('/reports/expenses', [ReportController::class, 'expensesReport'])->name('reports.expenses');
         Route::get('/reports/expenses/export', [ReportController::class, 'exportExpensesReportCsv'])->name('reports.expenses.export');
         Route::get('/reports/expenses/print', [ReportController::class, 'printExpensesReport'])->name('reports.expenses.print');

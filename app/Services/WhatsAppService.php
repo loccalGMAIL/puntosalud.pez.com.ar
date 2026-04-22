@@ -64,6 +64,10 @@ class WhatsAppService
 
             $json = $response->json();
 
+            if (! is_array($json)) {
+                return ['state' => 'error', 'raw' => $response->body()];
+            }
+
             // Evolution API v2 devuelve {"instance": {"state": "..."}}
             // Normalizamos para que siempre exista $json['state'] en la raíz
             if (! isset($json['state']) && isset($json['instance']['state'])) {

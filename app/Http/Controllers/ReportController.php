@@ -180,7 +180,7 @@ class ReportController extends Controller
 
         // Si no se especifica profesional, mostrar vista de selección
         if (! $professionalId) {
-            return view('reports.daily-schedule-select', compact('allProfessionals', 'professionalsWithAppointments', 'selectedDate'));
+            return view('agenda.daily-schedule-select', compact('allProfessionals', 'professionalsWithAppointments', 'selectedDate'));
         }
 
         // Obtener el profesional seleccionado
@@ -241,11 +241,11 @@ class ReportController extends Controller
 
         // Si es para imprimir, devolver vista de impresión
         if ($request->get('print') === '1') {
-            return view('reports.daily-schedule-print', compact('reportData'));
+            return view('agenda.daily-schedule-print', compact('reportData'));
         }
 
         // Vista normal
-        return view('reports.daily-schedule', compact('reportData', 'allProfessionals'));
+        return view('agenda.daily-schedule', compact('reportData', 'allProfessionals'));
     }
 
     /**
