@@ -451,14 +451,18 @@ function whatsappConnection() {
             }
         },
 
-        forceQr() {
+        async forceQr() {
             this.forceMode = true;
             this.reconnecting = false;
             this.reconnectingTicks = 0;
             this.loading = true;
             this.stopPolling();
-            this.fetchQr(true);
-            this.polling = setInterval(() => this.fetchQr(this.forceMode), 3000);
+            // El force solo se envía en esta llamada inicial; el polling posterior va sin force
+            // para no repetir el reset de instancia en cada tick
+            await this.fetchQr(true);
+            if (!this.connected) {
+                this.polling = setInterval(() => this.fetchQr(false), 3000);
+            }
         },
 
         async fetchQr(force = false) {
@@ -489,23 +493,38 @@ function whatsappConnection() {
                     return;
                 }
 
-                // Estado intermedio: Baileys reconectando con credenciales guardadas
+                // QR disponible — mostrarlo sin importar el estado transitorio de Baileys
+                if (data.qr) {
+                    this.qrBase64 = data.qr;
+                    this.forceMode = false;
+                    this.loading = false;
+                    this.error = null;
+                    this.reconnecting = false;
+                    this.reconnectingTicks = 0;
+                    return;
+                }
+
+                // Sin QR: Baileys reconectando con credenciales guardadas
                 if (data.state === 'connecting') {
+                    if (force) {
+                        // Modo forzado: el backend está ejecutando el reset, seguir esperando
+                        this.qrBase64 = null;
+                        this.loading = true;
+                        return;
+                    }
+                    // Si ya hay un QR visible, mantenerlo — es estado transitorio de Baileys
+                    // después de mostrar el QR; no lo borres hasta que llegue uno nuevo o se conecte
+                    if (this.qrBase64) {
+                        return;
+                    }
                     this.reconnecting = true;
                     this.reconnectingTicks++;
-                    this.qrBase64 = null;
                     this.loading = false;
                     return;
                 }
 
                 this.reconnecting = false;
                 this.reconnectingTicks = 0;
-                if (data.qr) {
-                    this.qrBase64 = data.qr;
-                    this.forceMode = true;
-                    this.loading = false;
-                    this.error = null;
-                }
             } catch (e) {
                 this.forceMode = false;
                 this.error = 'No se pudo comunicar con la API de WhatsApp. Verificá la configuración.';

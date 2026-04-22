@@ -13,6 +13,8 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 - **Acceso a reportes operativos**: `Listado de Pacientes a Atender` y `Liquidación del Profesional` ahora son accesibles a todos los usuarios autenticados, sin requerir el módulo `reports`. La ruta de listado diario se mueve a `/agenda/daily-schedule` (semánticamente más precisa); la liquidación conserva su URL.
 - **WhatsApp `connectionState()` devolvía null**: si la API respondía con cuerpo no-JSON (servidor apagado, timeout), el método violaba su tipo de retorno `array`. Ahora retorna `['state' => 'error']` en ese caso, evitando el TypeError al cargar el layout.
+- **WhatsApp QR desaparece antes de poder escanearlo**: al generar el QR con `?force=1`, el siguiente tick de polling (sin force) veía `state: connecting` y borraba el código de la UI antes de que el usuario pudiera escanearlo. El QR ahora se mantiene visible hasta que la sesión se abre o llega un código nuevo.
+- **WhatsApp `forceNewQrCode()` borraba la instancia**: la estrategia de reset usaba `DELETE /instance/delete` + `POST /instance/create`, eliminando la configuración de la instancia en Evolution API. Se reemplaza por `DELETE /instance/logout` (limpia credenciales de Baileys sin borrar la instancia) seguido de `POST /instance/restart`.
 
 ---
 
