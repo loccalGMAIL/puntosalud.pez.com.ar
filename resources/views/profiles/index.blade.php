@@ -74,6 +74,15 @@
                                     </span>
                                     @endif
                                 @endforeach
+                                @foreach($availablePermissions as $moduleKey => $perms)
+                                    @foreach($perms as $permKey => $permLabel)
+                                        @if($profile->permissions->contains('permission', $permKey))
+                                        <span class="inline-flex px-2 py-0.5 text-xs font-medium rounded bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">
+                                            {{ $permLabel }}
+                                        </span>
+                                        @endif
+                                    @endforeach
+                                @endforeach
                             </div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
@@ -81,7 +90,7 @@
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
                             @can('update', $profile)
-                            <button @click="openModal('edit', {{ $profile->id }}, '{{ addslashes($profile->name) }}', '{{ addslashes($profile->description ?? '') }}', {{ $profile->modules->pluck('module')->toJson() }})"
+                            <button @click="openModal('edit', {{ $profile->id }}, '{{ addslashes($profile->name) }}', '{{ addslashes($profile->description ?? '') }}', {{ $profile->modules->pluck('module')->toJson() }}, {{ $profile->permissions->pluck('permission')->toJson() }})"
                                     class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300">
                                 Editar
                             </button>
@@ -120,7 +129,7 @@
              x-transition:enter="transition ease-out duration-200"
              x-transition:enter-start="opacity-0 scale-95"
              x-transition:enter-end="opacity-100 scale-100"
-             class="bg-white dark:bg-gray-800 rounded-xl max-w-lg w-full shadow-xl">
+             class="bg-white dark:bg-gray-800 rounded-xl max-w-lg w-full shadow-xl max-h-[90vh] overflow-y-auto">
             <div class="p-6">
                 <div class="flex justify-between items-center mb-6">
                     <h3 class="text-lg font-semibold text-gray-900 dark:text-white"
@@ -172,6 +181,27 @@
                                 @endforeach
                             </div>
                         </div>
+
+                        <!-- Permisos específicos -->
+                        @foreach($availablePermissions as $moduleKey => $perms)
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                Permisos individuales — {{ \App\Models\Profile::MODULES[$moduleKey] ?? ucfirst($moduleKey) }}
+                            </label>
+                            <p class="text-xs text-gray-400 dark:text-gray-500 mb-2">Otorgan acceso a funciones puntuales sin requerir el módulo completo.</p>
+                            <div class="grid grid-cols-1 gap-2">
+                                @foreach($perms as $permKey => $permLabel)
+                                <label class="flex items-center gap-2 p-2.5 rounded-lg border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors"
+                                       :class="form.permissions.includes('{{ $permKey }}') ? 'border-blue-300 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-700' : ''">
+                                    <input type="checkbox" value="{{ $permKey }}"
+                                           x-model="form.permissions"
+                                           class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                                    <span class="text-sm text-gray-700 dark:text-gray-300">{{ $permLabel }}</span>
+                                </label>
+                                @endforeach
+                            </div>
+                        </div>
+                        @endforeach
                     </div>
 
                     <div class="flex gap-3 mt-6">
@@ -202,6 +232,7 @@ function profilesApp() {
             name: '',
             description: '',
             modules: [],
+            permissions: [],
         },
         formErrors: {},
 
@@ -215,7 +246,7 @@ function profilesApp() {
             this.formErrors = {};
         },
 
-        openModal(action, id = null, name = '', description = '', modules = []) {
+        openModal(action, id = null, name = '', description = '', modules = [], permissions = []) {
             this.clearErrors();
             this.isEditing = action === 'edit';
             this.currentId = id;
@@ -223,6 +254,7 @@ function profilesApp() {
                 name: name,
                 description: description,
                 modules: Array.isArray(modules) ? modules : [],
+                permissions: Array.isArray(permissions) ? permissions : [],
             };
             this.showModal = true;
         },
@@ -246,6 +278,7 @@ function profilesApp() {
             body.append('name', this.form.name);
             body.append('description', this.form.description);
             this.form.modules.forEach(m => body.append('modules[]', m));
+            this.form.permissions.forEach(p => body.append('permissions[]', p));
 
             try {
                 const response = await fetch(url, {

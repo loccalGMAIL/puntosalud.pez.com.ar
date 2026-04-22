@@ -20,6 +20,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'check.user.active' => \App\Http\Middleware\CheckUserActive::class,
             'check.center.active' => \App\Http\Middleware\CheckCenterActive::class,
             'module' => \App\Http\Middleware\EnsureModuleAccess::class,
+            'permission' => \App\Http\Middleware\EnsurePermissionAccess::class,
         ]);
 
         $middleware->web([

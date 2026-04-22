@@ -90,47 +90,62 @@
             'icon'  => '<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0012 9.75c-2.551 0-5.056.2-7.5.582V21M3 21h18M12 6.75h.008v.008H12V6.75z" /></svg>',
         ];
 
-        // Agregar menú de reportes (solo si tiene módulo reports)
-        if (Auth::check() && Auth::user()->canAccessModule('reports')) {
+        // Agregar menú de reportes (módulo completo o sub-permiso)
+        if (Auth::check() && Auth::user()->canDo('reports')) {
+            $user = Auth::user();
+            $hasFullReports = $user->canAccessModule('reports');
+
+            $financieroChildren = [];
+            if ($user->canDo('reports.financiero.cash')) {
+                $financieroChildren[] = ['title' => 'Movimientos de Caja', 'href' => '/reports/cash'];
+            }
+            if ($hasFullReports) {
+                $financieroChildren[] = ['title' => 'Análisis de Caja',     'href' => '/cash/report'];
+                $financieroChildren[] = ['title' => 'Informe de Gastos',    'href' => '/reports/expenses'];
+                $financieroChildren[] = ['title' => 'Liquidaciones Hist.',  'href' => '/reports/liquidaciones-historicas'];
+                $financieroChildren[] = ['title' => 'Métodos de Pago',      'href' => '/reports/pagos/tendencia'];
+                $financieroChildren[] = ['title' => 'Ingresos Obra Social', 'href' => '/reports/ingresos-obra-social'];
+                $financieroChildren[] = ['title' => 'Cobros Pendientes',    'href' => '/reports/cobros-pendientes'];
+                $financieroChildren[] = ['title' => 'Flujo Mensual Caja',   'href' => '/reports/flujo-caja-mensual'];
+            }
+
+            $reportChildren = [];
+
+            if ($hasFullReports) {
+                $reportChildren[] = [
+                    'submenu' => true,
+                    'title' => 'Profesionales',
+                    'children' => [
+                        ['title' => 'Ingresos',    'href' => '/reports/profesionales/ingresos'],
+                        ['title' => 'Consultas',   'href' => '/reports/profesionales/consultas'],
+                        ['title' => 'Comisiones',  'href' => '/reports/profesionales/comisiones'],
+                        ['title' => 'Comparativa', 'href' => '/reports/profesionales/comparativa'],
+                    ],
+                ];
+                $reportChildren[] = [
+                    'submenu' => true,
+                    'title' => 'Pacientes',
+                    'children' => [
+                        ['title' => 'Ausentismo',       'href' => '/reports/pacientes/ausentismo'],
+                        ['title' => 'Retención',        'href' => '/reports/pacientes/retencion'],
+                        ['title' => 'Frecuencia',       'href' => '/reports/pacientes/frecuencia'],
+                        ['title' => 'Nuevos vs Viejos', 'href' => '/reports/pacientes/nuevos-viejos'],
+                    ],
+                ];
+            }
+
+            if (!empty($financieroChildren)) {
+                $reportChildren[] = [
+                    'submenu' => true,
+                    'title'    => 'Financiero',
+                    'children' => $financieroChildren,
+                ];
+            }
+
             $navigationItems[] = [
                 'title' => 'Reportes',
                 'icon' => '<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" /></svg>',
-                'children' => [
-                    [
-                        'submenu' => true,
-                        'title' => 'Profesionales',
-                        'children' => [
-                            ['title' => 'Ingresos',    'href' => '/reports/profesionales/ingresos'],
-                            ['title' => 'Consultas',   'href' => '/reports/profesionales/consultas'],
-                            ['title' => 'Comisiones',  'href' => '/reports/profesionales/comisiones'],
-                            ['title' => 'Comparativa', 'href' => '/reports/profesionales/comparativa'],
-                        ],
-                    ],
-                    [
-                        'submenu' => true,
-                        'title' => 'Pacientes',
-                        'children' => [
-                            ['title' => 'Ausentismo',      'href' => '/reports/pacientes/ausentismo'],
-                            ['title' => 'Retención',       'href' => '/reports/pacientes/retencion'],
-                            ['title' => 'Frecuencia',      'href' => '/reports/pacientes/frecuencia'],
-                            ['title' => 'Nuevos vs Viejos','href' => '/reports/pacientes/nuevos-viejos'],
-                        ],
-                    ],
-                    [
-                        'submenu' => true,
-                        'title' => 'Financiero',
-                        'children' => [
-                            ['title' => 'Movimientos de Caja',  'href' => '/reports/cash'],
-                            ['title' => 'Análisis de Caja',     'href' => '/cash/report'],
-                            ['title' => 'Informe de Gastos',    'href' => '/reports/expenses'],
-                            ['title' => 'Liquidaciones Hist.',  'href' => '/reports/liquidaciones-historicas'],
-                            ['title' => 'Métodos de Pago',      'href' => '/reports/pagos/tendencia'],
-                            ['title' => 'Ingresos Obra Social', 'href' => '/reports/ingresos-obra-social'],
-                            ['title' => 'Cobros Pendientes',    'href' => '/reports/cobros-pendientes'],
-                            ['title' => 'Flujo Mensual Caja',   'href' => '/reports/flujo-caja-mensual'],
-                        ],
-                    ],
-                ]
+                'children' => $reportChildren,
             ];
         }
 

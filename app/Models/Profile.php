@@ -23,6 +23,21 @@ class Profile extends Model
         'system'        => 'Sistema',
     ];
 
+    /**
+     * Sub-permisos granulares disponibles, agrupados por módulo padre
+     */
+    public const PERMISSIONS = [
+        'reports' => [
+            'reports.financiero.cash'          => 'Movimientos de Caja',
+            'reports.financiero.expenses'      => 'Informe de Gastos',
+            'reports.financiero.liquidaciones' => 'Liquidaciones Históricas',
+            'reports.financiero.pagos'         => 'Métodos de Pago',
+            'reports.financiero.os'            => 'Ingresos Obra Social',
+            'reports.financiero.cobros'        => 'Cobros Pendientes',
+            'reports.financiero.flujo'         => 'Flujo Mensual',
+        ],
+    ];
+
     protected $fillable = [
         'name',
         'description',
@@ -36,6 +51,11 @@ class Profile extends Model
         return $this->hasMany(ProfileModule::class);
     }
 
+    public function permissions(): HasMany
+    {
+        return $this->hasMany(ProfilePermission::class);
+    }
+
     public function users(): HasMany
     {
         return $this->hasMany(User::class);
@@ -47,5 +67,13 @@ class Profile extends Model
     public function allowsModule(string $module): bool
     {
         return $this->modules->contains('module', $module);
+    }
+
+    /**
+     * Verificar si el perfil tiene un sub-permiso específico
+     */
+    public function allowsPermission(string $permission): bool
+    {
+        return $this->permissions->contains('permission', $permission);
     }
 }

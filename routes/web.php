@@ -101,14 +101,20 @@ Route::middleware(['auth'])->group(function () {
     });
 
     // Reports routes
-    Route::get('/reports/daily-schedule', [ReportController::class, 'dailySchedule'])->name('reports.daily-schedule');
-    Route::get('/reports/daily-summary', [ReportController::class, 'dailySummary'])->name('reports.daily-summary');
-    Route::get('/reports/professional-liquidation', [ReportController::class, 'professionalLiquidation'])->name('reports.professional-liquidation');
-    Route::get('/reports/cash', [ReportController::class, 'cashReport'])->name('reports.cash');
-    Route::get('/reports/cash/print', [ReportController::class, 'cashMovementsPrint'])->name('reports.cash.print');
-    Route::get('/reports/expenses', [ReportController::class, 'expensesReport'])->name('reports.expenses');
-    Route::get('/reports/expenses/export', [ReportController::class, 'exportExpensesReportCsv'])->name('reports.expenses.export');
-    Route::get('/reports/expenses/print', [ReportController::class, 'printExpensesReport'])->name('reports.expenses.print');
+    Route::middleware(['module:reports'])->group(function () {
+        Route::get('/reports/daily-schedule', [ReportController::class, 'dailySchedule'])->name('reports.daily-schedule');
+        Route::get('/reports/daily-summary', [ReportController::class, 'dailySummary'])->name('reports.daily-summary');
+        Route::get('/reports/professional-liquidation', [ReportController::class, 'professionalLiquidation'])->name('reports.professional-liquidation');
+        Route::get('/reports/expenses', [ReportController::class, 'expensesReport'])->name('reports.expenses');
+        Route::get('/reports/expenses/export', [ReportController::class, 'exportExpensesReportCsv'])->name('reports.expenses.export');
+        Route::get('/reports/expenses/print', [ReportController::class, 'printExpensesReport'])->name('reports.expenses.print');
+    });
+
+    // Movimientos de caja: accesible con módulo completo O sub-permiso específico
+    Route::middleware(['permission:reports.financiero.cash'])->group(function () {
+        Route::get('/reports/cash', [ReportController::class, 'cashReport'])->name('reports.cash');
+        Route::get('/reports/cash/print', [ReportController::class, 'cashMovementsPrint'])->name('reports.cash.print');
+    });
 
     // Analytics Reports (v2.10.0) — bajo módulo 'reports'
     Route::middleware(['module:reports'])->group(function () {
