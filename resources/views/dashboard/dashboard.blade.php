@@ -505,7 +505,7 @@ function urgencyModalDashboard() {
             <!-- Card 3: Acceso Rápido a Reportes -->
             <div class="bg-white dark:bg-gray-800 rounded-xl border border-emerald-200/50 p-4 shadow-sm dark:border-emerald-800/30">
                 <div class="space-y-3">
-                    <a href="{{ route('reports.daily-schedule') }}" 
+                    <a href="{{ route('agenda.daily-schedule') }}"
                        class="flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-blue-50 to-blue-100 hover:from-blue-100 hover:to-blue-200 border border-blue-200 dark:from-blue-900/20 dark:to-blue-800/20 dark:border-blue-700 transition-all duration-200 group">
                         <div class="flex items-center gap-3">
                             <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-500 text-white">

@@ -1,7 +1,7 @@
 @extends('layouts.print')
 
 @section('title', 'Listado Diario - ' . $reportData['professional']->full_name . ' - ' . $reportData['date']->format('d/m/Y'))
-@section('back-url', route('reports.daily-schedule'))
+@section('back-url', route('agenda.daily-schedule'))
 
 @section('content')
 <div class="p-6 print:p-1">
