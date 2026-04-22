@@ -32,7 +32,7 @@ class ProfileController extends Controller
     {
         Gate::authorize('create', Profile::class);
 
-        $allPermissions = collect(Profile::PERMISSIONS)->flatten()->keys()->toArray();
+        $allPermissions = collect(Profile::PERMISSIONS)->flatMap(fn ($perms) => array_keys($perms))->toArray();
 
         $validator = Validator::make($request->all(), [
             'name'          => ['required', 'string', 'max:255', 'unique:profiles'],
@@ -73,7 +73,7 @@ class ProfileController extends Controller
     {
         Gate::authorize('update', $profile);
 
-        $allPermissions = collect(Profile::PERMISSIONS)->flatten()->keys()->toArray();
+        $allPermissions = collect(Profile::PERMISSIONS)->flatMap(fn ($perms) => array_keys($perms))->toArray();
 
         $validator = Validator::make($request->all(), [
             'name'          => ['required', 'string', 'max:255', 'unique:profiles,name,' . $profile->id],
