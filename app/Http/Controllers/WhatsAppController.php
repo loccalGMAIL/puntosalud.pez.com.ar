@@ -56,8 +56,11 @@ class WhatsAppController extends Controller
             return response()->json(['connected' => false, 'qr' => null, 'state' => 'connecting']);
         }
 
-        // Desconectado: pedir QR para nueva conexión
-        $qrData = $this->whatsApp->getQrCode();
+        // Force=1: limpiar sesión guardada y pedir QR fresco (rompe el ciclo 'connecting')
+        // Sin force: pedir QR directo (instancia sin credenciales previas)
+        $qrData = $request->boolean('force')
+            ? $this->whatsApp->forceNewQrCode()
+            : $this->whatsApp->getQrCode();
 
         // Evolution API puede devolver el base64 con o sin el prefijo data:URI
         $qr = $qrData['base64'] ?? null;

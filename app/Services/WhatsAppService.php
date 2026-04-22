@@ -59,12 +59,17 @@ class WhatsAppService
                 ->get("{$this->baseUrl()}/instance/connectionState/{$this->instance()}");
 
             if (! $response->successful()) {
+                Log::warning("WhatsApp connectionState: respuesta no exitosa", [
+                    'status' => $response->status(),
+                    'body'   => $response->body(),
+                ]);
                 return ['state' => 'error', 'raw' => $response->body()];
             }
 
             $json = $response->json();
 
             if (! is_array($json)) {
+                Log::warning("WhatsApp connectionState: respuesta no es JSON", ['raw' => $response->body()]);
                 return ['state' => 'error', 'raw' => $response->body()];
             }
 
@@ -74,11 +79,72 @@ class WhatsAppService
                 $json['state'] = $json['instance']['state'];
             }
 
+            Log::debug("WhatsApp connectionState: " . ($json['state'] ?? 'unknown'), ['json' => $json]);
+
             return $json;
         } catch (\Exception $e) {
             Log::error('WhatsApp connectionState failed', ['error' => $e->getMessage()]);
             return ['state' => 'error', 'message' => $e->getMessage()];
         }
+    }
+
+    /**
+     * Fuerza una sesión nueva: cierra credenciales guardadas y pide QR fresco.
+     * Usar cuando la instancia está atascada en estado 'connecting' con creds inválidas.
+     */
+    public function forceNewQrCode(): array
+    {
+        if (! $this->isConfigured()) {
+            return ['error' => 'not_configured'];
+        }
+
+        $instance = $this->instance();
+        Log::info("WhatsApp forceNewQrCode: reiniciando instancia", ['instance' => $instance]);
+
+        // Paso 1: Reiniciar Baileys sin eliminar la instancia ni su configuración
+        try {
+            $res = Http::withHeaders($this->headers())
+                ->timeout(8)
+                ->delete("{$this->baseUrl()}/instance/logout/{$instance}");
+            Log::info("WhatsApp forceNewQrCode: DELETE /instance/logout (pre-restart)", [
+                'status' => $res->status(),
+                'body'   => $res->body(),
+            ]);
+        } catch (\Exception $e) {
+            Log::warning("WhatsApp forceNewQrCode: DELETE /instance/logout falló", ['error' => $e->getMessage()]);
+        }
+
+        // Paso 2: Restart — reinicia Baileys sin borrar la instancia
+        try {
+            $res = Http::withHeaders($this->headers())
+                ->timeout(8)
+                ->post("{$this->baseUrl()}/instance/restart/{$instance}");
+            Log::info("WhatsApp forceNewQrCode: POST /instance/restart", [
+                'status' => $res->status(),
+                'body'   => $res->body(),
+            ]);
+        } catch (\Exception $e) {
+            Log::warning("WhatsApp forceNewQrCode: POST /instance/restart falló", ['error' => $e->getMessage()]);
+        }
+
+        // Paso 3: Logout inmediato — en la ventana de arranque antes de que Baileys recargue creds del disco
+        try {
+            $res = Http::withHeaders($this->headers())
+                ->timeout(5)
+                ->delete("{$this->baseUrl()}/instance/logout/{$instance}");
+            Log::info("WhatsApp forceNewQrCode: DELETE /instance/logout (post-restart)", [
+                'status' => $res->status(),
+                'body'   => $res->body(),
+            ]);
+        } catch (\Exception $e) {
+            Log::warning("WhatsApp forceNewQrCode: DELETE /instance/logout (post-restart) falló", ['error' => $e->getMessage()]);
+        }
+
+        Log::info("WhatsApp forceNewQrCode: esperando 3s para estabilización...");
+        sleep(3);
+
+        Log::info("WhatsApp forceNewQrCode: solicitando QR...");
+        return $this->getQrCode();
     }
 
     /**
@@ -95,6 +161,14 @@ class WhatsAppService
             $response = Http::withHeaders($this->headers())
                 ->timeout(15)
                 ->get("{$this->baseUrl()}/instance/connect/{$this->instance()}");
+
+            $keys = array_keys($response->json() ?? []);
+            Log::info("WhatsApp getQrCode: GET /instance/connect", [
+                'status'    => $response->status(),
+                'keys'      => $keys,
+                'has_base64' => in_array('base64', $keys),
+                'body_snippet' => substr($response->body(), 0, 200),
+            ]);
 
             return $response->successful()
                 ? $response->json()
