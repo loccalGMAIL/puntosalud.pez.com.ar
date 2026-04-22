@@ -404,6 +404,7 @@ function whatsappConnection() {
         loading: false,
         reconnecting: false,
         reconnectingTicks: 0,
+        forceMode: false,
         error: null,
         polling: null,
 
@@ -437,7 +438,7 @@ function whatsappConnection() {
         startPolling() {
             this.loading = true;
             this.fetchQr();
-            this.polling = setInterval(() => this.fetchQr(), 3000);
+            this.polling = setInterval(() => this.fetchQr(this.forceMode), 3000);
 
             // Limpiar intervalo si se cierra la pestaña
             window.addEventListener('beforeunload', () => this.stopPolling());
@@ -451,12 +452,13 @@ function whatsappConnection() {
         },
 
         forceQr() {
+            this.forceMode = true;
             this.reconnecting = false;
             this.reconnectingTicks = 0;
             this.loading = true;
             this.stopPolling();
             this.fetchQr(true);
-            this.polling = setInterval(() => this.fetchQr(), 3000);
+            this.polling = setInterval(() => this.fetchQr(this.forceMode), 3000);
         },
 
         async fetchQr(force = false) {
@@ -480,6 +482,7 @@ function whatsappConnection() {
                 if (data.connected) {
                     this.connected = true;
                     this.reconnecting = false;
+                    this.forceMode = false;
                     this.stopPolling();
                     this.loading = false;
                     this.qrBase64 = null;
@@ -499,10 +502,12 @@ function whatsappConnection() {
                 this.reconnectingTicks = 0;
                 if (data.qr) {
                     this.qrBase64 = data.qr;
+                    this.forceMode = true;
                     this.loading = false;
                     this.error = null;
                 }
             } catch (e) {
+                this.forceMode = false;
                 this.error = 'No se pudo comunicar con la API de WhatsApp. Verificá la configuración.';
                 this.loading = false;
                 this.stopPolling();
