@@ -149,6 +149,18 @@
                             </div>
                             <p class="text-sm font-medium text-gray-700 dark:text-gray-300">Reconectando...</p>
                             <p class="text-xs text-gray-500 dark:text-gray-400">Restableciendo sesión anterior</p>
+                            <template x-if="reconnectingTicks >= 5">
+                                <div class="mt-1">
+                                    <p class="text-xs text-gray-400 dark:text-gray-500 mb-2">¿Es una instancia nueva o la sesión no conecta?</p>
+                                    <button @click="forceQr()"
+                                            class="inline-flex items-center gap-1.5 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white text-xs font-medium rounded-lg transition-colors duration-200">
+                                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
+                                        </svg>
+                                        Forzar nuevo QR
+                                    </button>
+                                </div>
+                            </template>
                         </div>
                     </template>
 
@@ -391,6 +403,7 @@ function whatsappConnection() {
         qrBase64: null,
         loading: false,
         reconnecting: false,
+        reconnectingTicks: 0,
         error: null,
         polling: null,
 
@@ -437,9 +450,21 @@ function whatsappConnection() {
             }
         },
 
-        async fetchQr() {
+        forceQr() {
+            this.reconnecting = false;
+            this.reconnectingTicks = 0;
+            this.loading = true;
+            this.stopPolling();
+            this.fetchQr(true);
+            this.polling = setInterval(() => this.fetchQr(), 3000);
+        },
+
+        async fetchQr(force = false) {
+            const url = force
+                ? '{{ route('whatsapp.qr-code') }}?force=1'
+                : '{{ route('whatsapp.qr-code') }}';
             try {
-                const response = await fetch('{{ route('whatsapp.qr-code') }}', {
+                const response = await fetch(url, {
                     headers: {
                         'Accept': 'application/json',
                         'X-Requested-With': 'XMLHttpRequest',
@@ -464,12 +489,14 @@ function whatsappConnection() {
                 // Estado intermedio: Baileys reconectando con credenciales guardadas
                 if (data.state === 'connecting') {
                     this.reconnecting = true;
+                    this.reconnectingTicks++;
                     this.qrBase64 = null;
                     this.loading = false;
                     return;
                 }
 
                 this.reconnecting = false;
+                this.reconnectingTicks = 0;
                 if (data.qr) {
                     this.qrBase64 = data.qr;
                     this.loading = false;
