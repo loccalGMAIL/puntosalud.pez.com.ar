@@ -37,7 +37,7 @@ class WhatsAppController extends Controller
     /**
      * GET /whatsapp/qr-code — Polling Ajax: retorna QR o estado conectado
      */
-    public function qrCode(): JsonResponse
+    public function qrCode(Request $request): JsonResponse
     {
         // Verificar estado primero — si ya está conectado no llamar a getQrCode()
         // (llamar a /instance/connect en una instancia activa puede interferir)
@@ -51,7 +51,8 @@ class WhatsAppController extends Controller
 
         // Conectando: Baileys está reconectando con credenciales guardadas.
         // NO llamar a getQrCode() — interrumpiría el proceso de reconexión.
-        if ($state === 'connecting') {
+        // Excepción: ?force=1 permite forzar QR (instancia nueva o sesión rota).
+        if ($state === 'connecting' && ! $request->boolean('force')) {
             return response()->json(['connected' => false, 'qr' => null, 'state' => 'connecting']);
         }
 

@@ -7,6 +7,14 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [2.11.1] - 2026-04-22
+
+### 🐛 Correcciones
+
+- **WhatsApp QR atascado en "Reconectando"**: cuando Evolution API reportaba estado `connecting` de forma indefinida (instancia nueva o sesión rota), la app bloqueaba el pedido del QR para no interrumpir una reconexión con credenciales guardadas, pero sin mecanismo de escape. Se agrega soporte `?force=1` al endpoint `GET /whatsapp/qr-code` para saltear esa guardia. En la vista, tras 5 polls consecutivos en estado `connecting` (~15 s), aparece el botón **"Forzar nuevo QR"** que llama al endpoint con `force=1` y retoma el polling normal una vez obtenido el código.
+
+---
+
 ## [2.11.0] - 2026-04-19
 
 ### 💬 WhatsApp: Notificaciones de creación y cancelación de turnos
