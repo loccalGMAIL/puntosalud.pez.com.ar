@@ -2,7 +2,6 @@
 
 namespace App\Console\Commands;
 
-use App\Jobs\SendWhatsAppReminder;
 use App\Models\Appointment;
 use App\Models\WhatsAppMessage;
 use App\Services\WhatsAppService;
@@ -82,11 +81,17 @@ class SendWhatsAppReminders extends Command
                 'instance'       => $instance,
             ]);
 
-            SendWhatsAppReminder::dispatch($waMessage->id);
-            $dispatched++;
+            $result = $whatsAppService->sendMessage($waMessage->phone, $waMessage->message);
+            if ($result['success']) {
+                $waMessage->markSent();
+                $dispatched++;
+            } else {
+                $waMessage->markFailed($result['error'] ?? 'Error desconocido');
+                $skipped++;
+            }
         }
 
-        $this->info("Despachados: {$dispatched}, Omitidos: {$skipped}");
+        $this->info("Enviados: {$dispatched}, Fallidos/Omitidos: {$skipped}");
         return self::SUCCESS;
     }
 }
