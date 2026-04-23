@@ -380,7 +380,7 @@ class WhatsAppService
             'type'           => $type,
         ]);
 
-        SendWhatsAppReminder::dispatch($waMessage->id);
+        SendWhatsAppReminder::dispatchSync($waMessage->id);
 
         return true;
     }
