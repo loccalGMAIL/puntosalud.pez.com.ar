@@ -187,6 +187,7 @@
                                     <option value="30">30 min</option>
                                     <option value="40">40 min</option>
                                     <option value="45">45 min</option>
+                                    <option value="50">50 min</option>
                                     <option value="60">60 min</option>
                                     <option value="90">90 min</option>
                                     <option value="120">120 min</option>

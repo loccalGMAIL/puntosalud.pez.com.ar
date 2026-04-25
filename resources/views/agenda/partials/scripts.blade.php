@@ -68,6 +68,7 @@ document.addEventListener('alpine:init', () => {
             { value: 30,  label: '30 minutos' },
             { value: 40,  label: '40 minutos' },
             { value: 45,  label: '45 minutos' },
+            { value: 50,  label: '50 minutos' },
             { value: 60,  label: '1 hora' },
             { value: 90,  label: '1 hora 30 minutos' },
             { value: 120, label: '2 horas' },
