@@ -145,6 +145,33 @@ class PaymentAllocationServiceTest extends TestCase
         $this->assertEquals(10000, $pa->allocated_amount); // 50000 / 5
     }
 
+    public function test_allocate_package_session_distributes_rounding_remainder(): void
+    {
+        $patient = Patient::factory()->create();
+        $payment = Payment::factory()->packagePurchase()->create(['patient_id' => $patient->id]);
+        PatientPackage::factory()->withSessions(3, 0)->create([
+            'patient_id' => $patient->id,
+            'payment_id' => $payment->id,
+            'price_paid' => '100.01',
+        ]);
+
+        $a1 = Appointment::factory()->attended()->create(['patient_id' => $patient->id]);
+        $a2 = Appointment::factory()->attended()->create(['patient_id' => $patient->id]);
+        $a3 = Appointment::factory()->attended()->create(['patient_id' => $patient->id]);
+
+        $pa1 = $this->service->allocatePackageSession($payment->id, $a1->id);
+        $pa2 = $this->service->allocatePackageSession($payment->id, $a2->id);
+        $pa3 = $this->service->allocatePackageSession($payment->id, $a3->id);
+
+        // 100.01 / 3 => 33.34, 33.34, 33.33
+        $this->assertEquals('33.34', (string) $pa1->allocated_amount);
+        $this->assertEquals('33.34', (string) $pa2->allocated_amount);
+        $this->assertEquals('33.33', (string) $pa3->allocated_amount);
+
+        $allocated = PaymentAppointment::where('payment_id', $payment->id)->sum('allocated_amount');
+        $this->assertEquals('100.01', number_format((float) $allocated, 2, '.', ''));
+    }
+
     public function test_allocate_package_session_first_session_is_liquidation_trigger(): void
     {
         $patient = Patient::factory()->create();

@@ -43,7 +43,8 @@ class PaymentAllocationService
             $this->validatePackageSessionAllocation($payment, $appointment);
 
             $isFirstSession = $patientPackage->sessions_used == 0;
-            $sessionAmount = $patientPackage->price_paid / $patientPackage->sessions_included;
+            $sessionNumber = $patientPackage->sessions_used + 1;
+            $sessionAmount = $this->calculatePackageSessionAmount($patientPackage->price_paid, $patientPackage->sessions_included, $sessionNumber);
 
             $paymentAppointment = PaymentAppointment::create([
                 'payment_id' => $paymentId,
@@ -63,6 +64,60 @@ class PaymentAllocationService
 
             return $paymentAppointment;
         });
+    }
+
+    private function calculatePackageSessionAmount(string|int|float $totalAmount, int $sessionsIncluded, int $sessionNumber): string
+    {
+        if ($sessionsIncluded <= 0) {
+            return '0.00';
+        }
+
+        $totalCents = $this->toCents($totalAmount);
+        $baseCents = intdiv($totalCents, $sessionsIncluded);
+        $remainder = $totalCents % $sessionsIncluded;
+
+        // Distribuir el resto (centavos) en las primeras sesiones para que la suma total coincida.
+        $sessionCents = $baseCents + (($sessionNumber >= 1 && $sessionNumber <= $remainder) ? 1 : 0);
+
+        return $this->fromCents($sessionCents);
+    }
+
+    private function toCents(string|int|float $amount): int
+    {
+        $str = trim((string) $amount);
+        if ($str === '') {
+            return 0;
+        }
+
+        $negative = false;
+        if (str_starts_with($str, '-')) {
+            $negative = true;
+            $str = substr($str, 1);
+        }
+
+        $str = str_replace(',', '.', $str);
+        [$whole, $dec] = array_pad(explode('.', $str, 2), 2, '');
+
+        $whole = preg_replace('/\\D/', '', $whole) ?: '0';
+        $dec = preg_replace('/\\D/', '', $dec);
+        $dec = substr(str_pad($dec, 2, '0'), 0, 2);
+
+        $cents = ((int) $whole) * 100 + (int) $dec;
+
+        return $negative ? -$cents : $cents;
+    }
+
+    private function fromCents(int $cents): string
+    {
+        $negative = $cents < 0;
+        $cents = abs($cents);
+
+        $whole = intdiv($cents, 100);
+        $dec = $cents % 100;
+
+        $value = $whole . '.' . str_pad((string) $dec, 2, '0', STR_PAD_LEFT);
+
+        return $negative ? '-' . $value : $value;
     }
 
     public function checkAndAllocatePayment(int $appointmentId): ?PaymentAppointment
