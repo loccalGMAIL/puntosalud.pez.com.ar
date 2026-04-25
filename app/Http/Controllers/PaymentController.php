@@ -10,7 +10,9 @@ use App\Models\Payment;
 use App\Models\PaymentAppointment;
 use App\Services\PaymentAllocationService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 class PaymentController extends Controller
 {
@@ -130,7 +132,7 @@ class PaymentController extends Controller
             'amount' => 'required|numeric|min:0',
             'concept' => 'nullable|string|max:500',
             'sessions_included' => 'required_if:payment_type,package|nullable|integer|min:1',
-            'appointment_ids' => 'nullable|array',
+            'appointment_ids' => ['nullable', 'array', Rule::when($request->input('payment_type') === 'single', ['max:1'])],
             'appointment_ids.*' => 'exists:appointments,id',
             'allocated_amounts' => 'nullable|array',
             'allocated_amounts.*' => 'numeric|min:0',
@@ -149,7 +151,7 @@ class PaymentController extends Controller
                 'concept' => $validated['concept'],
                 'status' => 'confirmed',
                 'liquidation_status' => 'pending',
-                'created_by' => auth()->id(),
+                'created_by' => Auth::id(),
             ]);
 
             // Crear payment_detail con el método de pago
@@ -179,9 +181,9 @@ class PaymentController extends Controller
 
             // Si es pago individual, asignar usando el servicio
             if ($validated['payment_type'] === 'single' && ! empty($validated['appointment_ids'])) {
-                foreach ($validated['appointment_ids'] as $appointmentId) {
-                    $this->paymentAllocationService->allocateSinglePayment($payment->id, $appointmentId);
-                }
+                // El pago individual solo puede asignarse a 1 turno
+                $appointmentId = $validated['appointment_ids'][0];
+                $this->paymentAllocationService->allocateSinglePayment($payment->id, $appointmentId);
             }
 
             // Si es reembolso, crear las relaciones manualmente
@@ -308,6 +310,77 @@ class PaymentController extends Controller
             return redirect()->back()
                 ->withErrors(['error' => 'Error al eliminar el pago: '.$e->getMessage()]);
         }
+    }
+
+    private function reverseCashMovement(Payment $payment): void
+    {
+        $movementQuery = CashMovement::query()
+            ->where('reference_type', Payment::class)
+            ->where('reference_id', $payment->id);
+
+        if (! $movementQuery->exists()) {
+            return;
+        }
+
+        $movementQuery->delete();
+
+        // Recalcular balances para mantener consistencia del libro de caja
+        $this->recalculateCashBalances();
+    }
+
+    private function recalculateCashBalances(): void
+    {
+        $balanceCents = 0;
+
+        CashMovement::withoutEvents(function () use (&$balanceCents) {
+            CashMovement::query()
+                ->orderBy('created_at', 'asc')
+                ->orderBy('id', 'asc')
+                ->chunk(500, function ($movements) use (&$balanceCents) {
+                    foreach ($movements as $movement) {
+                        $balanceCents += $this->toCents($movement->amount);
+                        $movement->forceFill(['balance_after' => $this->fromCents($balanceCents)])->save();
+                    }
+                });
+        });
+    }
+
+    private function toCents(string|int|float $amount): int
+    {
+        $str = trim((string) $amount);
+        if ($str === '') {
+            return 0;
+        }
+
+        $negative = false;
+        if (str_starts_with($str, '-')) {
+            $negative = true;
+            $str = substr($str, 1);
+        }
+
+        $str = str_replace(',', '.', $str);
+        [$whole, $dec] = array_pad(explode('.', $str, 2), 2, '');
+
+        $whole = preg_replace('/\D/', '', $whole) ?: '0';
+        $dec = preg_replace('/\D/', '', $dec);
+        $dec = substr(str_pad($dec, 2, '0'), 0, 2);
+
+        $cents = ((int) $whole) * 100 + (int) $dec;
+
+        return $negative ? -$cents : $cents;
+    }
+
+    private function fromCents(int $cents): string
+    {
+        $negative = $cents < 0;
+        $cents = abs($cents);
+
+        $whole = intdiv($cents, 100);
+        $dec = $cents % 100;
+
+        $value = $whole . '.' . str_pad((string) $dec, 2, '0', STR_PAD_LEFT);
+
+        return $negative ? '-' . $value : $value;
     }
 
     // Métodos para búsqueda AJAX
@@ -528,7 +601,7 @@ class PaymentController extends Controller
                 'concept' => 'Anulación de pago - Recibo #' . $payment->receipt_number,
                 'status' => 'confirmed',
                 'liquidation_status' => 'not_applicable', // Los refunds no se liquidan
-                'created_by' => auth()->id(),
+                'created_by' => Auth::id(),
             ]);
 
             // Crear payment_details del refund copiando los métodos del pago original
@@ -635,12 +708,12 @@ class PaymentController extends Controller
                 'reference_type' => Payment::class,
                 'reference_id' => $payment->id,
                 'balance_after' => $newBalance,
-                'user_id' => auth()->id(),
+                'user_id' => Auth::id(),
             ]);
         }
     }
 
-    // Métodos removidos: updateCashMovement() y reverseCashMovement()
+    // Métodos removidos: updateCashMovement()
     // Ya no se permite editar pagos para mantener integridad contable
 
     private function getDefaultConcept(Payment $payment)

@@ -79,6 +79,7 @@ class SendWhatsAppReminders extends Command
                 'message'        => $renderedMessage,
                 'status'         => 'pending',
                 'instance'       => $instance,
+                'type'           => 'reminder',
             ]);
 
             $result = $whatsAppService->sendMessage($waMessage->phone, $waMessage->message);

@@ -15,6 +15,7 @@ use App\Services\PaymentAllocationService;
 use App\Services\WhatsAppService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class AppointmentController extends Controller
@@ -120,7 +121,7 @@ class AppointmentController extends Controller
                 'pay_now' => 'nullable|in:true,false,1,0,"true","false","1","0"',
                 'payment_type' => 'nullable|in:single,package',
                 'payment_amount' => 'nullable|numeric|min:0',
-                'payment_method' => 'nullable|in:cash,transfer,debit_card,credit_card',
+                'payment_method' => 'nullable|in:cash,transfer,debit_card,credit_card,qr',
                 'payment_concept' => 'nullable|string|max:500',
                 // Campos de paquete
                 'package_sessions' => 'nullable|integer|min:2|max:20',
@@ -633,7 +634,7 @@ class AppointmentController extends Controller
             'liquidation_status' => 'pending',
             'concept' => ($validated['payment_concept'] ?? '') ?: 'Paquete '.$validated['package_sessions'].' sesiones - '.$appointment->patient->full_name,
             'status' => 'confirmed',
-            'created_by' => auth()->id(),
+            'created_by' => Auth::id(),
         ]);
 
         // Crear payment_detail (nueva estructura v2.6.0)
@@ -681,7 +682,7 @@ class AppointmentController extends Controller
             'liquidation_status' => 'pending',
             'concept' => ($validated['payment_concept'] ?? '') ?: 'Pago anticipado - '.$appointment->patient->full_name,
             'status' => 'confirmed',
-            'created_by' => auth()->id(),
+            'created_by' => Auth::id(),
         ]);
 
         // Crear payment_detail (nueva estructura v2.6.0)
@@ -769,7 +770,7 @@ class AppointmentController extends Controller
                 'reference_type' => Payment::class,
                 'reference_id' => $payment->id,
                 'balance_after' => $newBalance,
-                'user_id' => auth()->id(),
+                'user_id' => Auth::id(),
             ]);
         }
     }
