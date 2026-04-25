@@ -4,21 +4,25 @@ namespace App\Http\Controllers;
 
 use App\Models\Appointment;
 use App\Models\CashMovement;
-use App\Models\MovementType;
 use App\Models\Patient;
 use App\Models\Payment;
 use App\Models\PaymentAppointment;
+use App\Services\CashMovementService;
 use App\Services\PaymentAllocationService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 class PaymentController extends Controller
 {
     protected $paymentAllocationService;
+    protected $cashMovementService;
 
-    public function __construct(PaymentAllocationService $paymentAllocationService)
+    public function __construct(PaymentAllocationService $paymentAllocationService, CashMovementService $cashMovementService)
     {
         $this->paymentAllocationService = $paymentAllocationService;
+        $this->cashMovementService = $cashMovementService;
     }
 
     public function index(Request $request)
@@ -130,7 +134,7 @@ class PaymentController extends Controller
             'amount' => 'required|numeric|min:0',
             'concept' => 'nullable|string|max:500',
             'sessions_included' => 'required_if:payment_type,package|nullable|integer|min:1',
-            'appointment_ids' => 'nullable|array',
+            'appointment_ids' => ['nullable', 'array', Rule::when($request->input('payment_type') === 'single', ['max:1'])],
             'appointment_ids.*' => 'exists:appointments,id',
             'allocated_amounts' => 'nullable|array',
             'allocated_amounts.*' => 'numeric|min:0',
@@ -149,7 +153,7 @@ class PaymentController extends Controller
                 'concept' => $validated['concept'],
                 'status' => 'confirmed',
                 'liquidation_status' => 'pending',
-                'created_by' => auth()->id(),
+                'created_by' => Auth::id(),
             ]);
 
             // Crear payment_detail con el método de pago
@@ -179,9 +183,9 @@ class PaymentController extends Controller
 
             // Si es pago individual, asignar usando el servicio
             if ($validated['payment_type'] === 'single' && ! empty($validated['appointment_ids'])) {
-                foreach ($validated['appointment_ids'] as $appointmentId) {
-                    $this->paymentAllocationService->allocateSinglePayment($payment->id, $appointmentId);
-                }
+                // El pago individual solo puede asignarse a 1 turno
+                $appointmentId = $validated['appointment_ids'][0];
+                $this->paymentAllocationService->allocateSinglePayment($payment->id, $appointmentId);
             }
 
             // Si es reembolso, crear las relaciones manualmente
@@ -199,7 +203,7 @@ class PaymentController extends Controller
             }
 
             // Registrar movimiento de caja
-            $this->createCashMovement($payment);
+            $this->cashMovementService->createForPayment($payment);
 
             DB::commit();
 
@@ -278,7 +282,7 @@ class PaymentController extends Controller
             $payment->paymentAppointments()->delete();
 
             // Revertir movimiento de caja
-            $this->reverseCashMovement($payment);
+            $this->cashMovementService->reverseForPayment($payment);
 
             // Eliminar el pago
             $payment->delete();
@@ -528,7 +532,7 @@ class PaymentController extends Controller
                 'concept' => 'Anulación de pago - Recibo #' . $payment->receipt_number,
                 'status' => 'confirmed',
                 'liquidation_status' => 'not_applicable', // Los refunds no se liquidan
-                'created_by' => auth()->id(),
+                'created_by' => Auth::id(),
             ]);
 
             // Crear payment_details del refund copiando los métodos del pago original
@@ -543,7 +547,7 @@ class PaymentController extends Controller
             }
 
             // Registrar movimiento de caja negativo
-            $this->createCashMovement($refund);
+            $this->cashMovementService->createForPayment($refund);
 
             // Revertir turnos asociados al pago
             $appointments = $payment->paymentAppointments;
@@ -586,71 +590,6 @@ class PaymentController extends Controller
         }
     }
 
-    // Métodos privados
-    private function createCashMovement(Payment $payment)
-    {
-        // Verificar que la caja esté abierta
-        if (! CashMovement::isCashOpenToday()) {
-            throw new \Exception('No se pueden registrar pagos. La caja debe estar abierta para realizar esta operación.');
-        }
-
-        // NUEVO v2.6.0: Crear movimientos de caja solo para payment_details recibidos por el centro
-        $paymentDetails = $payment->paymentDetails()->where('received_by', 'centro')->get();
-
-        if ($paymentDetails->isEmpty()) {
-            // No hay movimientos para la caja del centro (todo fue directo a profesionales)
-            return;
-        }
-
-        // Determinar tipo según si es reembolso o pago
-        $movementTypeCode = $payment->payment_type === 'refund' ? 'refund' : 'patient_payment';
-
-        // Generar descripción base del movimiento
-        $baseDescription = $payment->concept ?: $this->getDefaultConcept($payment);
-
-        // Crear UN movimiento por cada payment_detail del centro
-        foreach ($paymentDetails as $paymentDetail) {
-            // Obtener balance actual con lock pesimista
-            $currentBalance = CashMovement::getCurrentBalanceWithLock();
-
-            // Monto: negativo si es refund, positivo si es pago
-            $amount = $payment->payment_type === 'refund' ? -$paymentDetail->amount : $paymentDetail->amount;
-            $newBalance = $currentBalance + $amount;
-
-            // Descripción con método de pago
-            $methodLabel = match($paymentDetail->payment_method) {
-                'cash' => 'Efectivo',
-                'transfer' => 'Transferencia',
-                'debit_card' => 'Débito',
-                'credit_card' => 'Crédito',
-                default => ucfirst($paymentDetail->payment_method)
-            };
-            $description = $baseDescription . ' - ' . $methodLabel;
-
-            CashMovement::create([
-                'movement_type_id' => MovementType::getIdByCode($movementTypeCode),
-                'amount' => $amount,
-                'payment_method' => $paymentDetail->payment_method,
-                'description' => $description,
-                'reference_type' => Payment::class,
-                'reference_id' => $payment->id,
-                'balance_after' => $newBalance,
-                'user_id' => auth()->id(),
-            ]);
-        }
-    }
-
-    // Métodos removidos: updateCashMovement() y reverseCashMovement()
+    // Métodos removidos: updateCashMovement()
     // Ya no se permite editar pagos para mantener integridad contable
-
-    private function getDefaultConcept(Payment $payment)
-    {
-        $concepts = [
-            'single' => 'Pago individual - '.$payment->patient->full_name,
-            'package' => 'Paquete de sesiones - '.$payment->patient->full_name,
-            'refund' => 'Reembolso - '.$payment->patient->full_name,
-        ];
-
-        return $concepts[$payment->payment_type] ?? 'Pago - '.$payment->patient->full_name;
-    }
 }

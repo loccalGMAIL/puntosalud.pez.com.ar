@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Appointment;
 use App\Models\Payment;
 use App\Models\PaymentAppointment;
+use App\Support\Money;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 use RuntimeException;
@@ -43,7 +44,8 @@ class PaymentAllocationService
             $this->validatePackageSessionAllocation($payment, $appointment);
 
             $isFirstSession = $patientPackage->sessions_used == 0;
-            $sessionAmount = $patientPackage->price_paid / $patientPackage->sessions_included;
+            $sessionNumber = $patientPackage->sessions_used + 1;
+            $sessionAmount = $this->calculatePackageSessionAmount($patientPackage->price_paid, $patientPackage->sessions_included, $sessionNumber);
 
             $paymentAppointment = PaymentAppointment::create([
                 'payment_id' => $paymentId,
@@ -63,6 +65,22 @@ class PaymentAllocationService
 
             return $paymentAppointment;
         });
+    }
+
+    private function calculatePackageSessionAmount(string|int|float $totalAmount, int $sessionsIncluded, int $sessionNumber): string
+    {
+        if ($sessionsIncluded <= 0) {
+            return '0.00';
+        }
+
+        $totalCents = Money::toCents($totalAmount);
+        $baseCents = intdiv($totalCents, $sessionsIncluded);
+        $remainder = $totalCents % $sessionsIncluded;
+
+        // Distribuir el resto (centavos) en las primeras sesiones para que la suma total coincida.
+        $sessionCents = $baseCents + (($sessionNumber >= 1 && $sessionNumber <= $remainder) ? 1 : 0);
+
+        return Money::fromCents($sessionCents);
     }
 
     public function checkAndAllocatePayment(int $appointmentId): ?PaymentAppointment
@@ -226,7 +244,7 @@ class PaymentAllocationService
         // Verificar sesiones disponibles desde PatientPackage
         $patientPackage = \App\Models\PatientPackage::where('payment_id', $payment->id)->first();
 
-        if (!$patientPackage) {
+        if (! $patientPackage) {
             throw new RuntimeException('No se encontró el paquete asociado al pago');
         }
 
@@ -235,7 +253,7 @@ class PaymentAllocationService
         }
 
         if ($patientPackage->status !== 'active') {
-            throw new RuntimeException('No se pueden usar sesiones de un paquete ' . $patientPackage->status);
+            throw new RuntimeException('No se pueden usar sesiones de un paquete '.$patientPackage->status);
         }
     }
 }
