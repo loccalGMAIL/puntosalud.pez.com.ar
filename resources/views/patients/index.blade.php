@@ -194,7 +194,7 @@
                         </div>
                         <div class="grid grid-cols-2 gap-2 text-xs text-gray-600 dark:text-gray-400">
                             <div><span class="font-medium">DNI:</span> <span x-text="patient.dni" class="font-mono"></span></div>
-                            <div><span class="font-medium">Edad:</span> <span x-text="calculateAge(patient.birth_date) + ' años'"></span></div>
+                            <div><span class="font-medium">Edad:</span> <span x-text="formatAge(patient.birth_date, ' años')"></span></div>
                             <div><span class="font-medium">Tel:</span> <span x-text="patient.phone"></span></div>
                             <div x-show="patient.phone_landline"><span class="font-medium">Fijo:</span> <span x-text="patient.phone_landline"></span></div>
                             <div>
@@ -288,7 +288,7 @@
 
                                 <!-- Edad -->
                                 <td class="px-4 py-2">
-                                    <span class="text-sm text-gray-900 dark:text-white" x-text="calculateAge(patient.birth_date) + ' a.'"></span>
+                                    <span class="text-sm text-gray-900 dark:text-white" x-text="formatAge(patient.birth_date, ' a.')"></span>
                                 </td>
 
                                 <!-- Obra Social -->
@@ -770,16 +770,26 @@ function patientsPage() {
         },
         
         calculateAge(birthDate) {
-            const today = new Date();
+            if (!birthDate) return null;
+
             const birth = new Date(birthDate);
+            if (Number.isNaN(birth.getTime())) return null;
+
+            const today = new Date();
             let age = today.getFullYear() - birth.getFullYear();
             const monthDiff = today.getMonth() - birth.getMonth();
-            
+
             if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
                 age--;
             }
-            
+
             return age;
+        },
+
+        formatAge(birthDate, suffix = '') {
+            const age = this.calculateAge(birthDate);
+            if (age === null) return '—';
+            return `${age}${suffix}`;
         },
 
         async toggleStatus(patient) {

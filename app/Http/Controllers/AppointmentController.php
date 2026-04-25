@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ActivityLog;
 use App\Models\Appointment;
 use App\Models\CashMovement;
 use App\Models\Office;
@@ -21,6 +22,7 @@ use Illuminate\Support\Facades\DB;
 class AppointmentController extends Controller
 {
     protected $paymentAllocationService;
+
     protected $cashMovementService;
 
     public function __construct(PaymentAllocationService $paymentAllocationService, CashMovementService $cashMovementService)
@@ -34,7 +36,13 @@ class AppointmentController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Appointment::with(['professional.specialty', 'patient', 'office']);
+        $query = Appointment::with([
+            'professional.specialty',
+            'patient',
+            'office',
+            'createdBy:id,name',
+            'paymentAppointments.payment:id,receipt_number,total_amount,is_advance_payment',
+        ]);
 
         // Filtros de fecha (por defecto: hoy y próximos 7 días)
         $startDate = $request->get('start_date', today()->format('Y-m-d'));
@@ -230,6 +238,7 @@ class AppointmentController extends Controller
                 'estimated_amount' => $validated['estimated_amount'],
                 'status' => 'scheduled',
                 'is_between_turn' => $isBetweenTurn,
+                'created_by' => Auth::id(),
             ]);
 
             // Si se paga ahora, crear el pago (pero no asignarlo hasta que se atienda)
@@ -298,6 +307,47 @@ class AppointmentController extends Controller
         $appointment->load(['professional.specialty', 'patient', 'office']);
 
         return view('appointments.show', compact('appointment'));
+    }
+
+    /**
+     * Auditoría simple del turno (creación / última modificación / cancelación).
+     */
+    public function audit(Appointment $appointment)
+    {
+        $baseQuery = ActivityLog::with('user:id,name')
+            ->where('subject_type', 'Appointment')
+            ->where('subject_id', $appointment->id);
+
+        $created = (clone $baseQuery)
+            ->where('action', 'created')
+            ->orderBy('id', 'asc')
+            ->first();
+
+        $lastUpdated = (clone $baseQuery)
+            ->where('action', 'updated')
+            ->orderBy('id', 'desc')
+            ->first();
+
+        $cancelled = (clone $baseQuery)
+            ->where('action', 'updated')
+            ->where('subject_description', 'like', '%Cancelado%')
+            ->orderBy('id', 'desc')
+            ->first();
+
+        return response()->json([
+            'created' => $created ? [
+                'name' => $created->user?->name,
+                'at' => optional($created->created_at)->toIso8601String(),
+            ] : null,
+            'last_updated' => $lastUpdated ? [
+                'name' => $lastUpdated->user?->name,
+                'at' => optional($lastUpdated->created_at)->toIso8601String(),
+            ] : null,
+            'cancelled' => $cancelled ? [
+                'name' => $cancelled->user?->name,
+                'at' => optional($cancelled->created_at)->toIso8601String(),
+            ] : null,
+        ]);
     }
 
     /**
@@ -504,6 +554,7 @@ class AppointmentController extends Controller
                 'notes' => $validated['notes'],
                 'estimated_amount' => $validated['estimated_amount'],
                 'status' => 'scheduled',
+                'created_by' => Auth::id(),
             ]);
 
             DB::commit();
@@ -800,8 +851,8 @@ class AppointmentController extends Controller
     /**
      * Determina quién recibe el pago según el método de pago y la configuración del profesional
      *
-     * @param string $paymentMethod Método de pago (cash, transfer, debit_card, credit_card, other)
-     * @param \App\Models\Professional $professional Profesional del turno
+     * @param  string  $paymentMethod  Método de pago (cash, transfer, debit_card, credit_card, other)
+     * @param  \App\Models\Professional  $professional  Profesional del turno
      * @return string 'centro' o 'profesional'
      */
     private function determineReceivedBy(string $paymentMethod, $professional): string

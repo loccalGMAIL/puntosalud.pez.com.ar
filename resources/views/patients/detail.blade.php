@@ -57,14 +57,14 @@
                         <div>
                             <label class="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Fecha de Nacimiento</label>
                             <div class="text-lg text-gray-900 dark:text-white">
-                                {{ \Carbon\Carbon::parse($patient->birth_date)->format('d/m/Y') }}
+                                {{ $patient->birth_date ? \Carbon\Carbon::parse($patient->birth_date)->format('d/m/Y') : 'No especificado' }}
                             </div>
                         </div>
 
                         <div>
                             <label class="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Edad</label>
                             <div class="text-lg text-gray-900 dark:text-white">
-                                {{ \Carbon\Carbon::parse($patient->birth_date)->age }} años
+                                {{ $patient->birth_date ? \Carbon\Carbon::parse($patient->birth_date)->age . ' años' : '—' }}
                             </div>
                         </div>
 
