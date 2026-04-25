@@ -5,10 +5,14 @@ namespace App\Models;
 use App\Traits\LogsActivity;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
+use Throwable;
 
 class Payment extends Model
 {
     use HasFactory, LogsActivity;
+
+    private const RECEIPT_SEQUENCE_KEY = 'payments_receipt';
 
     public function activityDescription(): string
     {
@@ -299,12 +303,58 @@ class Payment extends Model
      */
     public static function generateReceiptNumber(): string
     {
-        $lastPayment = self::whereNotNull('receipt_number')
-            ->orderBy('receipt_number', 'desc')
-            ->first();
+        try {
+            return DB::transaction(function () {
+                $sequenceQuery = DB::table('receipt_sequences')->where('key', self::RECEIPT_SEQUENCE_KEY);
 
-        $newNumber = $lastPayment ? (intval($lastPayment->receipt_number) + 1) : 1;
+                // SQLite no soporta FOR UPDATE
+                if (DB::getDriverName() !== 'sqlite') {
+                    $sequenceQuery->lockForUpdate();
+                }
 
-        return str_pad($newNumber, 6, '0', STR_PAD_LEFT);
+                $sequence = $sequenceQuery->first();
+
+                // Como el formato es siempre de 6 digitos (padded), el MAX lexicografico coincide con el max numerico.
+                $maxExisting = DB::table('payments')
+                    ->whereNotNull('receipt_number')
+                    ->max('receipt_number');
+
+                $maxExistingNumber = $maxExisting ? (int) $maxExisting : 0;
+
+                if (! $sequence) {
+                    $number = $maxExistingNumber + 1;
+
+                    DB::table('receipt_sequences')->insert([
+                        'key' => self::RECEIPT_SEQUENCE_KEY,
+                        'next_number' => $number + 1,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+
+                    return str_pad((string) $number, 6, '0', STR_PAD_LEFT);
+                }
+
+                $sequenceNext = (int) $sequence->next_number;
+                $number = max($sequenceNext, $maxExistingNumber + 1);
+
+                DB::table('receipt_sequences')
+                    ->where('key', self::RECEIPT_SEQUENCE_KEY)
+                    ->update([
+                        'next_number' => $number + 1,
+                        'updated_at' => now(),
+                    ]);
+
+                return str_pad((string) $number, 6, '0', STR_PAD_LEFT);
+            });
+        } catch (Throwable $e) {
+            // Fallback (por ejemplo, si la tabla receipt_sequences todavia no existe)
+            $lastPayment = self::whereNotNull('receipt_number')
+                ->orderBy('receipt_number', 'desc')
+                ->first();
+
+            $newNumber = $lastPayment ? ((int) $lastPayment->receipt_number + 1) : 1;
+
+            return str_pad((string) $newNumber, 6, '0', STR_PAD_LEFT);
+        }
     }
 }
