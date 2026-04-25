@@ -90,9 +90,9 @@ class PatientController extends Controller
                 'first_name' => ['required', 'string', 'max:255', 'regex:/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/'],
                 'last_name' => ['required', 'string', 'max:255', 'regex:/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/'],
                 'dni' => ['required', 'string', 'max:20', 'unique:patients', 'regex:/^[0-9.]+$/'],
-                'birth_date' => 'required|date|before:today',
+                'birth_date' => 'nullable|date|before:today',
                 'email' => ['nullable', 'string', 'max:255', 'regex:/^[a-zA-Z0-9._%+\-ñÑ]+@[a-zA-Z0-9.\-ñÑ]+\.[a-zA-Z]{2,}$/'],
-                'phone' => 'required|string|max:255',
+                'phone' => 'nullable|string|max:255',
                 'phone_landline' => 'nullable|string|max:50',
                 'address' => 'nullable|string|max:500',
                 'health_insurance' => 'nullable|string|max:255',
@@ -116,7 +116,7 @@ class PatientController extends Controller
                 return response()->json([
                     'success' => true,
                     'message' => 'Paciente creado exitosamente.',
-                    'patient' => $patient
+                    'patient' => $patient,
                 ]);
             }
 
@@ -195,9 +195,9 @@ class PatientController extends Controller
                 'first_name' => ['required', 'string', 'max:255', 'regex:/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/'],
                 'last_name' => ['required', 'string', 'max:255', 'regex:/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/'],
                 'dni' => ['required', 'string', 'max:20', 'unique:patients,dni,'.$patient->id, 'regex:/^[0-9.]+$/'],
-                'birth_date' => 'required|date|before:today',
+                'birth_date' => 'nullable|date|before:today',
                 'email' => ['nullable', 'string', 'max:255', 'regex:/^[a-zA-Z0-9._%+\-ñÑ]+@[a-zA-Z0-9.\-ñÑ]+\.[a-zA-Z]{2,}$/'],
-                'phone' => 'required|string|max:255',
+                'phone' => 'nullable|string|max:255',
                 'phone_landline' => 'nullable|string|max:50',
                 'address' => 'nullable|string|max:500',
                 'health_insurance' => 'nullable|string|max:255',
@@ -343,10 +343,10 @@ class PatientController extends Controller
             ->orderBy('first_name')
             ->get()
             ->map(fn ($p) => [
-                'id'         => $p->id,
+                'id' => $p->id,
                 'first_name' => $p->first_name,
-                'last_name'  => $p->last_name,
-                'specialty'  => $p->specialty ? ['name' => $p->specialty->name] : null,
+                'last_name' => $p->last_name,
+                'specialty' => $p->specialty ? ['name' => $p->specialty->name] : null,
             ]);
 
         $optedOutIds = $patient->whatsappOptOuts()->pluck('professional_id')->toArray();
@@ -368,7 +368,7 @@ class PatientController extends Controller
             $isOptedOut = false;
         } else {
             WhatsAppOptOut::create([
-                'patient_id'      => $patient->id,
+                'patient_id' => $patient->id,
                 'professional_id' => $professional->id,
             ]);
             $isOptedOut = true;

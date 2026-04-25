@@ -74,6 +74,7 @@ Route::middleware(['auth'])->group(function () {
     Route::middleware(['module:appointments'])->group(function () {
         Route::get('/appointments/available-slots', [AppointmentController::class, 'availableSlots'])->name('appointments.available-slots');
         Route::post('/appointments/urgency', [AppointmentController::class, 'storeUrgency'])->name('appointments.urgency.store');
+        Route::get('/appointments/{appointment}/audit', [AppointmentController::class, 'audit'])->name('appointments.audit');
         Route::resource('appointments', AppointmentController::class);
     });
 

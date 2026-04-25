@@ -1,5 +1,5 @@
 {{-- Pestaña colapsada: visible cuando el panel está cerrado --}}
-<div x-show="!open"
+<div x-show="!open" x-cloak
      @click="toggleOpen()"
      class="fixed right-0 top-1/2 -translate-y-1/2 z-40 cursor-pointer select-none"
      title="Notas internas del profesional">
@@ -12,7 +12,7 @@
 </div>
 
 {{-- Panel expandido --}}
-<div x-show="open"
+<div x-show="open" x-cloak
      x-transition:enter="transition ease-out duration-200"
      x-transition:enter-start="translate-x-full opacity-0"
      x-transition:enter-end="translate-x-0 opacity-100"

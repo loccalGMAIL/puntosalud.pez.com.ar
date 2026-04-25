@@ -251,13 +251,28 @@
                                     <span class="text-xs font-bold text-red-600">URGENCIA</span>
                                 </template>
                                 <template x-if="appointment.is_between_turn && appointment.duration > 0">
-                                    <span class="text-xs font-bold text-orange-600">ENTRETURNO</span>
+                                    <div class="flex items-center gap-1">
+                                        <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-orange-100 text-orange-800 border border-orange-300 dark:bg-orange-900/40 dark:text-orange-300 dark:border-orange-700"
+                                              title="Entreturno">
+                                            <span class="text-[10px] leading-none">⏱</span>
+                                        </span>
+                                        <span class="text-xs text-gray-500" x-text="appointment.duration + ' min'"></span>
+                                    </div>
                                 </template>
                                 <template x-if="!appointment.is_between_turn && appointment.duration > 0">
                                     <span class="text-xs text-gray-500" x-text="appointment.duration + ' min'"></span>
                                 </template>
                             </div>
                             <div class="flex gap-2">
+                                <button type="button"
+                                        @click="openInfoModal(appointment)"
+                                        class="p-2 text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-700 rounded-lg"
+                                        title="Información del turno">
+                                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    </svg>
+                                </button>
                                 <button @click="openEditModal(appointment)" class="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg" title="Editar">
                                     <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
@@ -295,7 +310,7 @@
                             <th class="px-3 py-2 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">Estado</th>
                             <th class="px-3 py-2 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">Monto</th>
                             <th class="px-3 py-2 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">Consult.</th>
-                            <th class="px-3 py-2 text-right text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">Acciones</th>
+                            <th class="px-2 py-2 text-right text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">Acciones</th>
                         </tr>
                     </thead>
                     <tbody class="bg-white dark:bg-gray-800 divide-y divide-emerald-200/30 dark:divide-emerald-800/30">
@@ -351,9 +366,10 @@
                                         </span>
                                     </template>
                                     <template x-if="appointment.duration > 0 && appointment.is_between_turn">
-                                        <div class="flex items-center gap-1.5">
-                                            <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-bold bg-orange-100 text-orange-800 border border-orange-300 dark:bg-orange-900/40 dark:text-orange-300 dark:border-orange-700">
-                                                ⏱️ ENTRETURNO
+                                        <div class="flex items-center gap-1">
+                                            <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-orange-100 text-orange-800 border border-orange-300 dark:bg-orange-900/40 dark:text-orange-300 dark:border-orange-700"
+                                                  title="Entreturno">
+                                                <span class="text-[10px] leading-none">⏱</span>
                                             </span>
                                             <span class="text-xs text-gray-500 dark:text-gray-400" x-text="appointment.duration + ' min'"></span>
                                         </div>
@@ -392,14 +408,25 @@
                                 </td>
 
                                 <!-- Acciones -->
-                                <td class="px-3 py-2 text-right">
-                                    <div class="flex items-center justify-end gap-1">
+                                <td class="px-2 py-2 text-right">
+                                    <div class="flex items-center justify-end gap-0.5">
                                         <!-- Botón Editar -->
                                         <button @click="openEditModal(appointment)"
-                                                class="p-1.5 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors"
+                                                class="p-1 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors"
                                                 title="Editar turno">
                                             <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                                                 <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
+                                            </svg>
+                                        </button>
+
+                                        <!-- Botón Info -->
+                                        <button type="button"
+                                                @click="openInfoModal(appointment)"
+                                                class="p-1 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 rounded transition-colors"
+                                                title="Información del turno">
+                                            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                             </svg>
                                         </button>
 
@@ -407,7 +434,7 @@
                                         <div class="relative" x-data="{ statusDropdownOpen: false }" @click.away="statusDropdownOpen = false">
                                             <!-- Botón de estado -->
                                             <button @click="statusDropdownOpen = !statusDropdownOpen"
-                                                    class="p-1.5 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors"
+                                                    class="p-1 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors"
                                                     title="Cambiar estado">
                                                 <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                                                     <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
@@ -502,6 +529,78 @@
     </div>
 
     @include('appointments.modal')
+
+    <!-- Modal: información del turno -->
+    <div x-show="infoModalOpen" x-cloak
+         class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+         @click.self="infoModalOpen = false">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6"
+             @keydown.escape.window="infoModalOpen = false">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                Información del turno #<span x-text="infoModalData?.id"></span>
+            </h3>
+            <dl class="space-y-3 text-sm">
+                <div>
+                    <dt class="text-gray-500 dark:text-gray-400">Creado por</dt>
+                    <dd class="text-gray-900 dark:text-white"
+                        x-text="infoAudit?.created?.name ?? infoModalData?.created_by_name ?? 'No registrado'"></dd>
+                </div>
+                <div>
+                    <dt class="text-gray-500 dark:text-gray-400">Fecha de creación</dt>
+                    <dd class="text-gray-900 dark:text-white"
+                        x-text="formatDateTime(infoAudit?.created?.at ?? infoModalData?.created_at)"></dd>
+                </div>
+
+                <div x-show="infoAuditLoading">
+                    <dt class="text-gray-500 dark:text-gray-400">Auditoría</dt>
+                    <dd class="text-gray-400">Cargando...</dd>
+                </div>
+
+                <div x-show="infoAuditError">
+                    <dt class="text-gray-500 dark:text-gray-400">Auditoría</dt>
+                    <dd class="text-amber-600" x-text="infoAuditError"></dd>
+                </div>
+
+                <div x-show="infoAudit?.last_updated && infoAudit.last_updated.at !== (infoAudit?.created?.at ?? null) && infoAudit.last_updated.at !== (infoAudit?.cancelled?.at ?? null)">
+                    <dt class="text-gray-500 dark:text-gray-400">Última modificación</dt>
+                    <dd class="text-gray-900 dark:text-white">
+                        <span x-text="infoAudit?.last_updated?.name ?? '—'"></span>
+                        <span class="text-gray-400">•</span>
+                        <span x-text="formatDateTime(infoAudit?.last_updated?.at)"></span>
+                    </dd>
+                </div>
+
+                <div x-show="infoAudit?.cancelled">
+                    <dt class="text-gray-500 dark:text-gray-400">Cancelado por</dt>
+                    <dd class="text-gray-900 dark:text-white">
+                        <span x-text="infoAudit?.cancelled?.name ?? '—'"></span>
+                        <span class="text-gray-400">•</span>
+                        <span x-text="formatDateTime(infoAudit?.cancelled?.at)"></span>
+                    </dd>
+                </div>
+
+                <div>
+                    <dt class="text-gray-500 dark:text-gray-400">Recibo asociado</dt>
+                    <dd class="text-gray-900 dark:text-white">
+                        <template x-if="infoModalData?.receipt">
+                            <span>
+                                #<span x-text="infoModalData.receipt.number"></span>
+                                (<span x-text="formatMoney(infoModalData.receipt.amount)"></span>)
+                                <span x-show="infoModalData.receipt.is_advance" class="ml-1 text-xs text-amber-600">— Anticipo</span>
+                            </span>
+                        </template>
+                        <span x-show="!infoModalData?.receipt" class="text-gray-400">Sin recibo</span>
+                    </dd>
+                </div>
+            </dl>
+            <div class="mt-6 flex justify-end">
+                <button type="button" @click="infoModalOpen = false"
+                        class="px-4 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded-md text-sm">
+                    Cerrar
+                </button>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script>
@@ -520,6 +619,13 @@ function appointmentsPage() {
         loading: false,
         pastTimeError: '',
         formErrors: {},
+
+        // Modal info turno
+        infoModalOpen: false,
+        infoModalData: null,
+        infoAuditLoading: false,
+        infoAuditError: '',
+        infoAudit: null,
         
         init() {
             console.log('AppointmentsPage initialized');
@@ -618,6 +724,45 @@ function appointmentsPage() {
                 is_between_turn: appointment.is_between_turn || false
             };
             this.modalOpen = true;
+        },
+
+        openInfoModal(appointment) {
+            const firstPayment = appointment.payment_appointments?.[0]?.payment;
+
+            this.infoModalData = {
+                id: appointment.id,
+                created_by_name: appointment.created_by?.name,
+                created_at: appointment.created_at,
+                receipt: firstPayment ? {
+                    number: firstPayment.receipt_number,
+                    amount: firstPayment.total_amount,
+                    is_advance: firstPayment.is_advance_payment,
+                } : null,
+            };
+
+            this.infoAuditLoading = true;
+            this.infoAuditError = '';
+            this.infoAudit = null;
+            this.infoModalOpen = true;
+
+            fetch(`/appointments/${appointment.id}/audit`, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+                .then(async (res) => {
+                    if (!res.ok) throw new Error('request_failed');
+                    return res.json();
+                })
+                .then((data) => {
+                    this.infoAudit = data;
+                })
+                .catch(() => {
+                    this.infoAuditError = 'No se pudo cargar la auditoría.';
+                })
+                .finally(() => {
+                    this.infoAuditLoading = false;
+                });
         },
         
         resetForm() {
@@ -862,6 +1007,32 @@ function appointmentsPage() {
                 hour: '2-digit',
                 minute: '2-digit',
                 hour12: false
+            });
+        },
+
+        formatDateTime(dateString) {
+            if (!dateString) return '—';
+            const date = new Date(dateString);
+            if (Number.isNaN(date.getTime())) return '—';
+
+            return date.toLocaleString('es-ES', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false,
+            });
+        },
+
+        formatMoney(amount) {
+            if (amount === null || amount === undefined || amount === '') return '—';
+            const value = Number(amount);
+            if (Number.isNaN(value)) return '—';
+
+            return '$' + value.toLocaleString('es-AR', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
             });
         },
 
