@@ -100,7 +100,7 @@ class ProfessionalController extends Controller
                 'commission_percentage' => 'required|numeric|min:0|max:100',
                 'receives_transfers_directly' => 'boolean',
                 'notes' => 'nullable|string|max:1000',
-                'default_duration_minutes' => 'nullable|integer|in:5,10,15,20,25,30,40,45,60,90,120',
+                'default_duration_minutes' => 'nullable|integer|in:5,10,15,20,25,30,40,45,50,60,90,120',
             ], [
                 'first_name.regex' => 'El nombre solo puede contener letras y espacios.',
                 'last_name.regex' => 'El apellido solo puede contener letras y espacios.',
@@ -216,7 +216,7 @@ class ProfessionalController extends Controller
                 'receives_transfers_directly' => 'boolean',
                 'notes' => 'nullable|string|max:1000',
                 'is_active' => 'required|in:0,1',
-                'default_duration_minutes' => 'nullable|integer|in:5,10,15,20,25,30,40,45,60,90,120',
+                'default_duration_minutes' => 'nullable|integer|in:5,10,15,20,25,30,40,45,50,60,90,120',
             ], [
                 'first_name.regex' => 'El nombre solo puede contener letras y espacios.',
                 'last_name.regex' => 'El apellido solo puede contener letras y espacios.',
