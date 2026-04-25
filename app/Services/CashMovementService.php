@@ -5,14 +5,12 @@ namespace App\Services;
 use App\Models\CashMovement;
 use App\Models\MovementType;
 use App\Models\Payment;
+use App\Support\Money;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
 
 class CashMovementService
 {
-    private ?bool $hasPaymentMethodColumn = null;
-
     public function createForPayment(Payment $payment, ?string $fallbackBaseDescription = null, ?int $userId = null): void
     {
         DB::transaction(function () use ($payment, $fallbackBaseDescription, $userId) {
@@ -37,21 +35,15 @@ class CashMovementService
                 $amount = $payment->payment_type === 'refund' ? -$paymentDetail->amount : $paymentDetail->amount;
                 $currentBalance += $amount;
 
-                $data = [
+                CashMovement::create([
                     'movement_type_id' => MovementType::getIdByCode($movementTypeCode),
                     'amount' => $amount,
-                    'description' => $baseDescription . ' - ' . $this->getPaymentMethodLabel($paymentDetail->payment_method),
+                    'description' => $baseDescription.' - '.$this->getPaymentMethodLabel($paymentDetail->payment_method),
                     'reference_type' => Payment::class,
                     'reference_id' => $payment->id,
                     'balance_after' => $currentBalance,
                     'user_id' => $userId ?? Auth::id(),
-                ];
-
-                if ($this->cashMovementsHasPaymentMethodColumn()) {
-                    $data['payment_method'] = $paymentDetail->payment_method;
-                }
-
-                CashMovement::create($data);
+                ]);
             }
         });
     }
@@ -78,8 +70,8 @@ class CashMovementService
                 ->orderBy('id', 'asc')
                 ->chunk(500, function ($movements) use (&$balanceCents) {
                     foreach ($movements as $movement) {
-                        $balanceCents += $this->toCents($movement->amount);
-                        $movement->forceFill(['balance_after' => $this->fromCents($balanceCents)])->save();
+                        $balanceCents += Money::toCents($movement->amount);
+                        $movement->forceFill(['balance_after' => Money::fromCents($balanceCents)])->save();
                     }
                 });
         });
@@ -109,55 +101,6 @@ class CashMovementService
             default => 'Pago',
         };
 
-        return $patientName ? $label . ' - ' . $patientName : $label;
-    }
-
-    private function cashMovementsHasPaymentMethodColumn(): bool
-    {
-        if ($this->hasPaymentMethodColumn !== null) {
-            return $this->hasPaymentMethodColumn;
-        }
-
-        $this->hasPaymentMethodColumn = Schema::hasColumn('cash_movements', 'payment_method');
-
-        return $this->hasPaymentMethodColumn;
-    }
-
-    private function toCents(string|int|float $amount): int
-    {
-        $str = trim((string) $amount);
-        if ($str === '') {
-            return 0;
-        }
-
-        $negative = false;
-        if (str_starts_with($str, '-')) {
-            $negative = true;
-            $str = substr($str, 1);
-        }
-
-        $str = str_replace(',', '.', $str);
-        [$whole, $dec] = array_pad(explode('.', $str, 2), 2, '');
-
-        $whole = preg_replace('/\\D/', '', $whole) ?: '0';
-        $dec = preg_replace('/\\D/', '', $dec);
-        $dec = substr(str_pad($dec, 2, '0'), 0, 2);
-
-        $cents = ((int) $whole) * 100 + (int) $dec;
-
-        return $negative ? -$cents : $cents;
-    }
-
-    private function fromCents(int $cents): string
-    {
-        $negative = $cents < 0;
-        $cents = abs($cents);
-
-        $whole = intdiv($cents, 100);
-        $dec = $cents % 100;
-
-        $value = $whole . '.' . str_pad((string) $dec, 2, '0', STR_PAD_LEFT);
-
-        return $negative ? '-' . $value : $value;
+        return $patientName ? $label.' - '.$patientName : $label;
     }
 }

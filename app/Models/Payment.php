@@ -6,7 +6,7 @@ use App\Traits\LogsActivity;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
-use Throwable;
+use Illuminate\Support\Facades\Schema;
 
 class Payment extends Model
 {
@@ -16,16 +16,17 @@ class Payment extends Model
 
     public function activityDescription(): string
     {
-        $base = $this->receipt_number ? 'Recibo #' . $this->receipt_number : 'Pago #' . $this->id;
+        $base = $this->receipt_number ? 'Recibo #'.$this->receipt_number : 'Pago #'.$this->id;
 
         if ($this->patient_id) {
             $patient = $this->patient()->first();
-            $patientName = $patient ? $patient->last_name . ', ' . $patient->first_name : '';
-            return $patientName ? $base . ' - ' . $patientName : $base;
+            $patientName = $patient ? $patient->last_name.', '.$patient->first_name : '';
+
+            return $patientName ? $base.' - '.$patientName : $base;
         }
 
         if ($this->concept) {
-            return $base . ' - ' . \Illuminate\Support\Str::limit($this->concept, 40);
+            return $base.' - '.\Illuminate\Support\Str::limit($this->concept, 40);
         }
 
         return $base;
@@ -172,11 +173,13 @@ class Payment extends Model
         // Si ya está cargada la relación, usarla
         if ($this->relationLoaded('paymentDetails')) {
             $firstDetail = $this->paymentDetails->first();
+
             return $firstDetail ? $firstDetail->payment_method : null;
         }
 
         // Sino, hacer query
         $firstDetail = $this->paymentDetails()->first();
+
         return $firstDetail ? $firstDetail->payment_method : null;
     }
 
@@ -303,58 +306,63 @@ class Payment extends Model
      */
     public static function generateReceiptNumber(): string
     {
-        try {
-            return DB::transaction(function () {
-                $sequenceQuery = DB::table('receipt_sequences')->where('key', self::RECEIPT_SEQUENCE_KEY);
+        // Si la migración aún no se corrió, usar el camino legacy.
+        if (! Schema::hasTable('receipt_sequences')) {
+            return self::generateReceiptNumberLegacy();
+        }
 
-                // SQLite no soporta FOR UPDATE
-                if (DB::getDriverName() !== 'sqlite') {
-                    $sequenceQuery->lockForUpdate();
-                }
+        return DB::transaction(function () {
+            $sequenceQuery = DB::table('receipt_sequences')->where('key', self::RECEIPT_SEQUENCE_KEY);
 
-                $sequence = $sequenceQuery->first();
+            // SQLite no soporta FOR UPDATE
+            if (DB::getDriverName() !== 'sqlite') {
+                $sequenceQuery->lockForUpdate();
+            }
 
-                // Como el formato es siempre de 6 digitos (padded), el MAX lexicografico coincide con el max numerico.
-                $maxExisting = DB::table('payments')
-                    ->whereNotNull('receipt_number')
-                    ->max('receipt_number');
+            $sequence = $sequenceQuery->first();
 
-                $maxExistingNumber = $maxExisting ? (int) $maxExisting : 0;
+            // Como el formato es siempre de 6 digitos (padded), el MAX lexicografico coincide con el max numerico.
+            $maxExisting = DB::table('payments')
+                ->whereNotNull('receipt_number')
+                ->max('receipt_number');
 
-                if (! $sequence) {
-                    $number = $maxExistingNumber + 1;
+            $maxExistingNumber = $maxExisting ? (int) $maxExisting : 0;
 
-                    DB::table('receipt_sequences')->insert([
-                        'key' => self::RECEIPT_SEQUENCE_KEY,
-                        'next_number' => $number + 1,
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                    ]);
+            if (! $sequence) {
+                $number = $maxExistingNumber + 1;
 
-                    return str_pad((string) $number, 6, '0', STR_PAD_LEFT);
-                }
-
-                $sequenceNext = (int) $sequence->next_number;
-                $number = max($sequenceNext, $maxExistingNumber + 1);
-
-                DB::table('receipt_sequences')
-                    ->where('key', self::RECEIPT_SEQUENCE_KEY)
-                    ->update([
-                        'next_number' => $number + 1,
-                        'updated_at' => now(),
-                    ]);
+                DB::table('receipt_sequences')->insert([
+                    'key' => self::RECEIPT_SEQUENCE_KEY,
+                    'next_number' => $number + 1,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
 
                 return str_pad((string) $number, 6, '0', STR_PAD_LEFT);
-            });
-        } catch (Throwable $e) {
-            // Fallback (por ejemplo, si la tabla receipt_sequences todavia no existe)
-            $lastPayment = self::whereNotNull('receipt_number')
-                ->orderBy('receipt_number', 'desc')
-                ->first();
+            }
 
-            $newNumber = $lastPayment ? ((int) $lastPayment->receipt_number + 1) : 1;
+            $sequenceNext = (int) $sequence->next_number;
+            $number = max($sequenceNext, $maxExistingNumber + 1);
 
-            return str_pad((string) $newNumber, 6, '0', STR_PAD_LEFT);
-        }
+            DB::table('receipt_sequences')
+                ->where('key', self::RECEIPT_SEQUENCE_KEY)
+                ->update([
+                    'next_number' => $number + 1,
+                    'updated_at' => now(),
+                ]);
+
+            return str_pad((string) $number, 6, '0', STR_PAD_LEFT);
+        });
+    }
+
+    private static function generateReceiptNumberLegacy(): string
+    {
+        $lastPayment = self::whereNotNull('receipt_number')
+            ->orderBy('receipt_number', 'desc')
+            ->first();
+
+        $newNumber = $lastPayment ? ((int) $lastPayment->receipt_number + 1) : 1;
+
+        return str_pad((string) $newNumber, 6, '0', STR_PAD_LEFT);
     }
 }

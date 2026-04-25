@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Appointment;
 use App\Models\Payment;
 use App\Models\PaymentAppointment;
+use App\Support\Money;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 use RuntimeException;
@@ -72,52 +73,14 @@ class PaymentAllocationService
             return '0.00';
         }
 
-        $totalCents = $this->toCents($totalAmount);
+        $totalCents = Money::toCents($totalAmount);
         $baseCents = intdiv($totalCents, $sessionsIncluded);
         $remainder = $totalCents % $sessionsIncluded;
 
         // Distribuir el resto (centavos) en las primeras sesiones para que la suma total coincida.
         $sessionCents = $baseCents + (($sessionNumber >= 1 && $sessionNumber <= $remainder) ? 1 : 0);
 
-        return $this->fromCents($sessionCents);
-    }
-
-    private function toCents(string|int|float $amount): int
-    {
-        $str = trim((string) $amount);
-        if ($str === '') {
-            return 0;
-        }
-
-        $negative = false;
-        if (str_starts_with($str, '-')) {
-            $negative = true;
-            $str = substr($str, 1);
-        }
-
-        $str = str_replace(',', '.', $str);
-        [$whole, $dec] = array_pad(explode('.', $str, 2), 2, '');
-
-        $whole = preg_replace('/\\D/', '', $whole) ?: '0';
-        $dec = preg_replace('/\\D/', '', $dec);
-        $dec = substr(str_pad($dec, 2, '0'), 0, 2);
-
-        $cents = ((int) $whole) * 100 + (int) $dec;
-
-        return $negative ? -$cents : $cents;
-    }
-
-    private function fromCents(int $cents): string
-    {
-        $negative = $cents < 0;
-        $cents = abs($cents);
-
-        $whole = intdiv($cents, 100);
-        $dec = $cents % 100;
-
-        $value = $whole . '.' . str_pad((string) $dec, 2, '0', STR_PAD_LEFT);
-
-        return $negative ? '-' . $value : $value;
+        return Money::fromCents($sessionCents);
     }
 
     public function checkAndAllocatePayment(int $appointmentId): ?PaymentAppointment
@@ -281,7 +244,7 @@ class PaymentAllocationService
         // Verificar sesiones disponibles desde PatientPackage
         $patientPackage = \App\Models\PatientPackage::where('payment_id', $payment->id)->first();
 
-        if (!$patientPackage) {
+        if (! $patientPackage) {
             throw new RuntimeException('No se encontró el paquete asociado al pago');
         }
 
@@ -290,7 +253,7 @@ class PaymentAllocationService
         }
 
         if ($patientPackage->status !== 'active') {
-            throw new RuntimeException('No se pueden usar sesiones de un paquete ' . $patientPackage->status);
+            throw new RuntimeException('No se pueden usar sesiones de un paquete '.$patientPackage->status);
         }
     }
 }

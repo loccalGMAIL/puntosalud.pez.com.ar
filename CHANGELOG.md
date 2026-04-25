@@ -7,6 +7,40 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [2.11.3] - 2026-04-24
+
+### 🐛 Correcciones
+
+- **Recibos duplicados bajo concurrencia**: la generación de `receipt_number` se basaba en `MAX(receipt_number) + 1` sin lock, por lo que dos pagos simultáneos podían tomar el mismo número. Ahora se usa una nueva tabla `receipt_sequences` con `lockForUpdate()` dentro de transacción; SQLite cae a un fallback compatible. La secuencia se siembra del máximo existente y resiste inserciones manuales (`max(seq, max_existing + 1)`).
+- **Crash al eliminar pagos**: la eliminación de un pago no revertía su movimiento de caja, dejando el balance descuadrado. Se restaura la reversión y se recalculan todos los `balance_after` posteriores en cadena (centavos, sin redondeos acumulados).
+- **Sesiones de paquete con redondeo perdido**: al dividir el precio del paquete entre N sesiones, los centavos del resto se descartaban (p.ej. $100.01 / 3 → 33.33 × 3 = 99.99). Ahora el remanente se distribuye en las primeras sesiones, garantizando que la suma asignada coincida con el monto pagado.
+- **Recordatorios de WhatsApp duplicados**: el comando `whatsapp:send-reminders` no persistía el `type` del mensaje, perdiendo la dedupe del unique constraint `(appointment_id, type)`. Ahora se guarda explícitamente como `'reminder'`.
+- **Login de usuarios inactivos**: la validación `Auth::attempt() && isActive()` autenticaba primero y rechazaba después, exponiendo enumeración de usuarios. Ahora `is_active = true` viaja como credencial — los usuarios inactivos fallan a nivel "credenciales inválidas" sin distinción.
+- **Pago individual asignado a múltiples turnos**: la validación permitía `appointment_ids` array sin tope cuando `payment_type=single`; el primer match era el efectivo y el resto se ignoraba silenciosamente. Se agrega `max:1` condicional al array.
+- **Descripciones de movimientos de caja para paquetes**: el `match` de descripciones por defecto usaba `'package'` cuando el enum real es `'package_purchase'`, por lo que los pagos de paquete caían al fallback genérico "Pago - {paciente}". Ahora muestran "Paquete de sesiones - {paciente}" y se agrega también "Ingreso manual" para `manual_income`.
+- **WhatsApp `type` en `AppointmentController`**: faltaba `qr` en el whitelist de `payment_method` al crear turnos con pago anticipado, rechazando la opción QR aunque el resto del sistema la soporta.
+
+### ⚙️ Endurecimiento y rendimiento
+
+- **`POST /api/scheduler/run`** ahora aplica `throttle:10,1` además del bearer token, mitigando abuso/brute-force.
+- **Indicador de WhatsApp en la barra superior**: dejó de hacer una llamada síncrona a Evolution API en cada render del layout. Ahora el dot inicia neutro y se actualiza por polling client-side cada 30 s contra `whatsapp.status`. Render del layout deja de bloquearse cuando Evolution está caído.
+- **`Payment::generateReceiptNumber()`** dejó de usar `try/catch (Throwable)` global como guard de tabla inexistente: ahora chequea `Schema::hasTable('receipt_sequences')` y deja propagar excepciones reales (deadlocks, conexión perdida).
+
+### ♻️ Refactor
+
+- **`CashMovementService`** consolida la lógica de creación, reversión y rebalanceo de movimientos de caja, reemplazando 3 copias casi idénticas en `PaymentController`, `AppointmentController` y `DashboardController`. Toda la operación va en `DB::transaction` y el balance con lock se toma una sola vez fuera del loop, acumulando en PHP.
+- **`App\Support\Money`**: helper estático con `toCents()` / `fromCents()` para evitar duplicación entre `CashMovementService` y `PaymentAllocationService`.
+
+### 🗄️ Migraciones
+
+- `2026_04_25_000001_create_receipt_sequences_table.php` — nueva tabla `receipt_sequences (key PK, next_number, timestamps)`. La migración inicializa la secuencia con `MAX(receipt_number)` de pagos existentes, por lo que es segura en bases con datos.
+
+### 🧪 Tests
+
+- Nuevo: `PaymentAllocationServiceTest::test_allocate_package_session_distributes_rounding_remainder` verifica que la suma de `allocated_amount` por sesión iguale el `price_paid` del paquete con números no divisibles.
+
+---
+
 ## [2.11.2] - 2026-04-22
 
 ### 🐛 Correcciones
