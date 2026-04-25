@@ -4,10 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\Appointment;
 use App\Models\CashMovement;
-use App\Models\MovementType;
 use App\Models\Patient;
 use App\Models\Payment;
 use App\Models\PaymentAppointment;
+use App\Services\CashMovementService;
 use App\Services\PaymentAllocationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -17,10 +17,12 @@ use Illuminate\Validation\Rule;
 class PaymentController extends Controller
 {
     protected $paymentAllocationService;
+    protected $cashMovementService;
 
-    public function __construct(PaymentAllocationService $paymentAllocationService)
+    public function __construct(PaymentAllocationService $paymentAllocationService, CashMovementService $cashMovementService)
     {
         $this->paymentAllocationService = $paymentAllocationService;
+        $this->cashMovementService = $cashMovementService;
     }
 
     public function index(Request $request)
@@ -201,7 +203,7 @@ class PaymentController extends Controller
             }
 
             // Registrar movimiento de caja
-            $this->createCashMovement($payment);
+            $this->cashMovementService->createForPayment($payment);
 
             DB::commit();
 
@@ -280,7 +282,7 @@ class PaymentController extends Controller
             $payment->paymentAppointments()->delete();
 
             // Revertir movimiento de caja
-            $this->reverseCashMovement($payment);
+            $this->cashMovementService->reverseForPayment($payment);
 
             // Eliminar el pago
             $payment->delete();
@@ -310,77 +312,6 @@ class PaymentController extends Controller
             return redirect()->back()
                 ->withErrors(['error' => 'Error al eliminar el pago: '.$e->getMessage()]);
         }
-    }
-
-    private function reverseCashMovement(Payment $payment): void
-    {
-        $movementQuery = CashMovement::query()
-            ->where('reference_type', Payment::class)
-            ->where('reference_id', $payment->id);
-
-        if (! $movementQuery->exists()) {
-            return;
-        }
-
-        $movementQuery->delete();
-
-        // Recalcular balances para mantener consistencia del libro de caja
-        $this->recalculateCashBalances();
-    }
-
-    private function recalculateCashBalances(): void
-    {
-        $balanceCents = 0;
-
-        CashMovement::withoutEvents(function () use (&$balanceCents) {
-            CashMovement::query()
-                ->orderBy('created_at', 'asc')
-                ->orderBy('id', 'asc')
-                ->chunk(500, function ($movements) use (&$balanceCents) {
-                    foreach ($movements as $movement) {
-                        $balanceCents += $this->toCents($movement->amount);
-                        $movement->forceFill(['balance_after' => $this->fromCents($balanceCents)])->save();
-                    }
-                });
-        });
-    }
-
-    private function toCents(string|int|float $amount): int
-    {
-        $str = trim((string) $amount);
-        if ($str === '') {
-            return 0;
-        }
-
-        $negative = false;
-        if (str_starts_with($str, '-')) {
-            $negative = true;
-            $str = substr($str, 1);
-        }
-
-        $str = str_replace(',', '.', $str);
-        [$whole, $dec] = array_pad(explode('.', $str, 2), 2, '');
-
-        $whole = preg_replace('/\D/', '', $whole) ?: '0';
-        $dec = preg_replace('/\D/', '', $dec);
-        $dec = substr(str_pad($dec, 2, '0'), 0, 2);
-
-        $cents = ((int) $whole) * 100 + (int) $dec;
-
-        return $negative ? -$cents : $cents;
-    }
-
-    private function fromCents(int $cents): string
-    {
-        $negative = $cents < 0;
-        $cents = abs($cents);
-
-        $whole = intdiv($cents, 100);
-        $dec = $cents % 100;
-
-        $value = $whole . '.' . str_pad((string) $dec, 2, '0', STR_PAD_LEFT);
-
-        return $negative ? '-' . $value : $value;
     }
 
     // Métodos para búsqueda AJAX
@@ -616,7 +547,7 @@ class PaymentController extends Controller
             }
 
             // Registrar movimiento de caja negativo
-            $this->createCashMovement($refund);
+            $this->cashMovementService->createForPayment($refund);
 
             // Revertir turnos asociados al pago
             $appointments = $payment->paymentAppointments;
@@ -659,71 +590,6 @@ class PaymentController extends Controller
         }
     }
 
-    // Métodos privados
-    private function createCashMovement(Payment $payment)
-    {
-        // Verificar que la caja esté abierta
-        if (! CashMovement::isCashOpenToday()) {
-            throw new \Exception('No se pueden registrar pagos. La caja debe estar abierta para realizar esta operación.');
-        }
-
-        // NUEVO v2.6.0: Crear movimientos de caja solo para payment_details recibidos por el centro
-        $paymentDetails = $payment->paymentDetails()->where('received_by', 'centro')->get();
-
-        if ($paymentDetails->isEmpty()) {
-            // No hay movimientos para la caja del centro (todo fue directo a profesionales)
-            return;
-        }
-
-        // Determinar tipo según si es reembolso o pago
-        $movementTypeCode = $payment->payment_type === 'refund' ? 'refund' : 'patient_payment';
-
-        // Generar descripción base del movimiento
-        $baseDescription = $payment->concept ?: $this->getDefaultConcept($payment);
-
-        // Crear UN movimiento por cada payment_detail del centro
-        foreach ($paymentDetails as $paymentDetail) {
-            // Obtener balance actual con lock pesimista
-            $currentBalance = CashMovement::getCurrentBalanceWithLock();
-
-            // Monto: negativo si es refund, positivo si es pago
-            $amount = $payment->payment_type === 'refund' ? -$paymentDetail->amount : $paymentDetail->amount;
-            $newBalance = $currentBalance + $amount;
-
-            // Descripción con método de pago
-            $methodLabel = match($paymentDetail->payment_method) {
-                'cash' => 'Efectivo',
-                'transfer' => 'Transferencia',
-                'debit_card' => 'Débito',
-                'credit_card' => 'Crédito',
-                default => ucfirst($paymentDetail->payment_method)
-            };
-            $description = $baseDescription . ' - ' . $methodLabel;
-
-            CashMovement::create([
-                'movement_type_id' => MovementType::getIdByCode($movementTypeCode),
-                'amount' => $amount,
-                'payment_method' => $paymentDetail->payment_method,
-                'description' => $description,
-                'reference_type' => Payment::class,
-                'reference_id' => $payment->id,
-                'balance_after' => $newBalance,
-                'user_id' => Auth::id(),
-            ]);
-        }
-    }
-
     // Métodos removidos: updateCashMovement()
     // Ya no se permite editar pagos para mantener integridad contable
-
-    private function getDefaultConcept(Payment $payment)
-    {
-        $concepts = [
-            'single' => 'Pago individual - '.$payment->patient->full_name,
-            'package' => 'Paquete de sesiones - '.$payment->patient->full_name,
-            'refund' => 'Reembolso - '.$payment->patient->full_name,
-        ];
-
-        return $concepts[$payment->payment_type] ?? 'Pago - '.$payment->patient->full_name;
-    }
 }

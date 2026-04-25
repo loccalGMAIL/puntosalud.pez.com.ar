@@ -4,13 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Models\Appointment;
 use App\Models\CashMovement;
-use App\Models\MovementType;
 use App\Models\Office;
 use App\Models\Patient;
 use App\Models\Payment;
 use App\Models\Professional;
 use App\Models\ProfessionalSchedule;
 use App\Models\ScheduleException;
+use App\Services\CashMovementService;
 use App\Services\PaymentAllocationService;
 use App\Services\WhatsAppService;
 use Carbon\Carbon;
@@ -21,10 +21,12 @@ use Illuminate\Support\Facades\DB;
 class AppointmentController extends Controller
 {
     protected $paymentAllocationService;
+    protected $cashMovementService;
 
-    public function __construct(PaymentAllocationService $paymentAllocationService)
+    public function __construct(PaymentAllocationService $paymentAllocationService, CashMovementService $cashMovementService)
     {
         $this->paymentAllocationService = $paymentAllocationService;
+        $this->cashMovementService = $cashMovementService;
     }
 
     /**
@@ -664,7 +666,7 @@ class AppointmentController extends Controller
         }
 
         // Registrar movimiento de caja - TODO EL PAQUETE INGRESA HOY
-        $this->createCashMovement($payment);
+        $this->cashMovementService->createForPayment($payment, 'Pago anticipado - '.$appointment->patient->full_name);
     }
 
     /**
@@ -699,80 +701,7 @@ class AppointmentController extends Controller
         }
 
         // Registrar movimiento de caja - INGRESA INMEDIATAMENTE
-        $this->createCashMovement($payment);
-    }
-
-    /**
-     * Generar número de recibo
-     */
-    private function generateReceiptNumber()
-    {
-        $year = date('Y');
-        $month = date('m');
-
-        $lastPayment = Payment::whereYear('payment_date', $year)
-            ->whereMonth('payment_date', $month)
-            ->orderBy('receipt_number', 'desc')
-            ->first();
-
-        if ($lastPayment && $lastPayment->receipt_number) {
-            $lastNumber = intval(substr($lastPayment->receipt_number, -4));
-            $newNumber = $lastNumber + 1;
-        } else {
-            $newNumber = 1;
-        }
-
-        return $year.$month.str_pad($newNumber, 4, '0', STR_PAD_LEFT);
-    }
-
-    /**
-     * Crear movimiento de caja
-     */
-    private function createCashMovement(Payment $payment)
-    {
-        // Verificar que la caja esté abierta
-        if (! CashMovement::isCashOpenToday()) {
-            throw new \Exception('No se pueden registrar pagos. La caja debe estar abierta para realizar esta operación.');
-        }
-
-        // NUEVO v2.6.0: Crear movimientos de caja SOLO para payment_details recibidos por el CENTRO
-        // Los pagos directos a profesionales (received_by='profesional') NO ingresan a caja del centro
-        $paymentDetails = $payment->paymentDetails()
-            ->where('received_by', 'centro')
-            ->get();
-
-        if ($paymentDetails->isEmpty()) {
-            // No hay movimientos para la caja del centro (todo fue directo a profesionales)
-            return;
-        }
-
-        $movementTypeId = MovementType::getIdByCode('patient_payment');
-        $baseDescription = $payment->concept ?: 'Pago anticipado - '.$payment->patient->full_name;
-
-        // Crear UN movimiento por cada payment_detail del centro
-        foreach ($paymentDetails as $paymentDetail) {
-            $currentBalance = CashMovement::getCurrentBalanceWithLock();
-            $newBalance = $currentBalance + $paymentDetail->amount;
-
-            $methodLabel = match($paymentDetail->payment_method) {
-                'cash' => 'Efectivo',
-                'transfer' => 'Transferencia',
-                'debit_card' => 'Débito',
-                'credit_card' => 'Crédito',
-                'qr' => 'QR',
-                default => ucfirst($paymentDetail->payment_method),
-            };
-
-            CashMovement::create([
-                'movement_type_id' => $movementTypeId,
-                'amount' => $paymentDetail->amount,
-                'description' => $baseDescription . ' - ' . $methodLabel,
-                'reference_type' => Payment::class,
-                'reference_id' => $payment->id,
-                'balance_after' => $newBalance,
-                'user_id' => Auth::id(),
-            ]);
-        }
+        $this->cashMovementService->createForPayment($payment, 'Pago anticipado - '.$appointment->patient->full_name);
     }
 
     /**
