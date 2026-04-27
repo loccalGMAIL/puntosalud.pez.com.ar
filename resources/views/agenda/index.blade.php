@@ -38,27 +38,6 @@
                     @endforeach
                 </select>
             </form>
-
-            <!-- Month Navigation -->
-            <div class="flex items-center gap-2">
-                <a href="{{ route('agenda.index', ['month' => $date->copy()->subMonth()->format('Y-m'), 'professional_id' => $selectedProfessional]) }}"
-                   class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
-                    </svg>
-                </a>
-
-                <h2 class="text-lg font-semibold text-gray-900 dark:text-white min-w-[180px] text-center">
-                    {{ $date->locale('es')->isoFormat('MMMM YYYY') }}
-                </h2>
-
-                <a href="{{ route('agenda.index', ['month' => $date->copy()->addMonth()->format('Y-m'), 'professional_id' => $selectedProfessional]) }}"
-                   class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-                    </svg>
-                </a>
-            </div>
         </div>
     </div>
 
