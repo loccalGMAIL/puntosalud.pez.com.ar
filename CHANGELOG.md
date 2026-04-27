@@ -7,6 +7,29 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [2.11.5] - 2026-04-27
+
+### 💬 WhatsApp
+
+- **Forzar recordatorio desde Dashboard**: nuevo botón en `/dashboard` y `/dashboard/appointments` para enviar el recordatorio manualmente, sin necesidad de modificar el turno. El endpoint registra el envío en `whatsapp_messages` y respeta habilitación/conexión, opt-out y validación de teléfono.
+- **Compartir PDF del listado diario al profesional**: nuevo botón **Compartir** en `Agenda → Pacientes a Atender` que genera el PDF usando la vista `agenda.daily-schedule-print` y lo envía como documento por WhatsApp al teléfono del profesional.
+
+### 🖨️ PDF (DomPDF)
+
+- **Encabezado/Logo consistente en PDF**: el logo se embebe como `data:` para garantizar render en DomPDF y el encabezado se ajusta al formato usado en impresión.
+- **Secciones compactas en PDF**: las cards de información y estadísticas usan layout compatible con DomPDF (tablas) para evitar estiramientos.
+
+---
+
+## [2.11.4] - 2026-04-27
+
+### ✨ Mejoras de UX
+
+- **Pacientes**: `birth_date` y `phone` pasan a ser opcionales; vistas y cálculo de edad muestran placeholder cuando no hay fecha.
+- **Dashboard**: notas del turno pasan de tooltip a texto inline con clamp/expand para mejor legibilidad.
+- **Turnos**: se agrega modal de información/auditoría (creación, última modificación, cancelación) usando `ActivityLog` y persistencia de `created_by`.
+- **Agenda**: se evita FOUC del panel de notas (`x-cloak`) y se reubica el selector de mes por encima de la grilla del calendario.
+
 ## [2.11.3] - 2026-04-24
 
 ### 🐛 Correcciones

@@ -386,6 +386,115 @@ class WhatsAppService
     }
 
     /**
+     * Envía un mensaje de turno de forma sincrónica (sin pasar por el job).
+     * Mantiene las validaciones de queueAppointmentMessage, pero no revalida el status del turno.
+     *
+     * Retorna: ['success' => bool, 'message' => string]
+     */
+    public function sendAppointmentMessageNow(Appointment $appointment, string $type): array
+    {
+        if (! $this->isEnabled()) {
+            return ['success' => false, 'message' => 'WhatsApp deshabilitado'];
+        }
+
+        if (! $this->isConnected()) {
+            return ['success' => false, 'message' => 'WhatsApp no conectado'];
+        }
+
+        $appointment->loadMissing(['patient', 'professional.specialty']);
+
+        $patient = $appointment->patient;
+
+        if (! $patient || empty($patient->phone)) {
+            return ['success' => false, 'message' => 'El paciente no tiene teléfono registrado'];
+        }
+
+        $hasOptOut = DB::table('whatsapp_opt_outs')
+            ->where('patient_id', $appointment->patient_id)
+            ->where('professional_id', $appointment->professional_id)
+            ->exists();
+
+        if ($hasOptOut) {
+            return ['success' => false, 'message' => 'El paciente optó por no recibir mensajes'];
+        }
+
+        $formattedPhone = $this->formatArgentinaPhone($patient->phone);
+        if (! $formattedPhone) {
+            return ['success' => false, 'message' => 'Teléfono inválido'];
+        }
+
+        $templateKey = match ($type) {
+            'creation'     => 'whatsapp.template_on_create',
+            'cancellation' => 'whatsapp.template_on_cancel',
+            default        => 'whatsapp.template',
+        };
+        $template = setting($templateKey, '');
+
+        if (empty($template)) {
+            return ['success' => false, 'message' => 'Plantilla no configurada'];
+        }
+
+        $renderedMessage = $this->renderTemplate($template, [
+            'nombre'       => $patient->full_name,
+            'fecha'        => $appointment->appointment_date->format('d/m/Y'),
+            'hora'         => $appointment->appointment_date->format('H:i'),
+            'profesional'  => $appointment->professional?->full_name ?? 'el/la profesional',
+            'especialidad' => $appointment->professional?->specialty?->name ?? '',
+        ]);
+
+        $waMessage = WhatsAppMessage::create([
+            'appointment_id' => $appointment->id,
+            'patient_id'     => $patient->id,
+            'phone'          => $formattedPhone,
+            'message'        => $renderedMessage,
+            'status'         => 'pending',
+            'instance'       => setting('whatsapp.instance', ''),
+            'type'           => $type,
+        ]);
+
+        $result = $this->sendMessage($formattedPhone, $renderedMessage);
+
+        if ($result['success']) {
+            $waMessage->markSent();
+            return ['success' => true, 'message' => 'Recordatorio enviado'];
+        }
+
+        $waMessage->markFailed($result['error'] ?? 'Error desconocido');
+        return ['success' => false, 'message' => 'No se pudo enviar el mensaje'];
+    }
+
+    /**
+     * POST /message/sendMedia/{instance}
+     */
+    public function sendMediaFile(string $number, string $base64, string $filename, string $caption = ''): array
+    {
+        if (! $this->isConfigured()) {
+            return ['success' => false, 'error' => 'not_configured'];
+        }
+
+        try {
+            $response = Http::withHeaders($this->headers())
+                ->timeout(60)
+                ->post("{$this->baseUrl()}/message/sendMedia/{$this->instance()}", [
+                    'number'    => $number,
+                    'mediatype' => 'document',
+                    'media'     => $base64,
+                    'fileName'  => $filename,
+                    'caption'   => $caption,
+                ]);
+
+            return [
+                'success' => $response->successful(),
+                'data'    => $response->json(),
+                'error'   => $response->successful() ? null : $response->body(),
+            ];
+        } catch (\Exception $e) {
+            Log::error('WhatsApp sendMediaFile failed', ['number' => $number, 'error' => $e->getMessage()]);
+            return ['success' => false, 'error' => $e->getMessage()];
+        }
+    }
+
+    /**
      * Renderiza el template sustituyendo {{variable}} con los valores dados.
      */
     public function renderTemplate(string $template, array $variables): string

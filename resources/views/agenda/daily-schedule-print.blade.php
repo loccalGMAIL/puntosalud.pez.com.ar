@@ -3,61 +3,124 @@
 @section('title', 'Listado Diario - ' . $reportData['professional']->full_name . ' - ' . $reportData['date']->format('d/m/Y'))
 @section('back-url', route('agenda.daily-schedule'))
 
+@push('styles')
+@if($isPdf ?? false)
+<style>
+    body { font-family: DejaVu Sans, sans-serif; }
+    .pdf-card { border: 1px solid #d1d5db; border-radius: 10px; }
+    .pdf-header { border-bottom: 1px solid #d1d5db; }
+    .pdf-info { border: 1px solid #d1d5db; border-radius: 10px; background: #f9fafb; }
+    .pdf-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .pdf-stat { border: 1px solid #d1d5db; border-radius: 10px; background: #f3f4f6; padding: 10px; }
+    .pdf-table { width: 100%; border-collapse: collapse; }
+    .pdf-table th, .pdf-table td { border: 1px solid #d1d5db; padding: 3px 6px; vertical-align: top; }
+    .pdf-badge { display: inline-block; padding: 2px 6px; border-radius: 999px; font-size: 8px; font-weight: 700; text-transform: uppercase; }
+    .pdf-badge--scheduled { background: #fef3c7; color: #92400e; }
+    .pdf-badge--attended { background: #d1fae5; color: #065f46; }
+    .pdf-badge--cancelled { background: #fee2e2; color: #991b1b; }
+    .pdf-badge--absent { background: #e5e7eb; color: #374151; }
+</style>
+@endif
+@endpush
+
 @section('content')
 <div class="p-6 print:p-1">
-    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 print:shadow-none print:border-none">
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 print:shadow-none print:border-none pdf-card">
 
         <!-- Encabezado del Reporte -->
-        <div class="p-2 border-b border-gray-200 dark:border-gray-700 print:border-gray-400 print:p-0.5">
+        <div class="p-2 border-b border-gray-200 dark:border-gray-700 print:border-gray-400 print:p-0.5 pdf-header {{ ($isPdf ?? false) ? 'border-b-0 print:border-b-0' : '' }}">
             <x-report-print-header
                 title="Listado de Pacientes a Atender"
                 :subtitle="$reportData['date']->translatedFormat('l, d \d\e F \d\e Y')"
+                :generated-at="$reportData['generated_at']"
+                :is-pdf="($isPdf ?? false)"
             />
         </div>
 
         <div class="p-6 print:p-2">
 
             <!-- Info del Profesional -->
-            <div class="flex gap-4 mb-6 print:mb-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 print:border-gray-400 rounded-lg p-3 print:p-1.5">
-                <div class="flex-1">
-                    <p class="text-[10px] font-bold text-gray-500 dark:text-gray-400 print:text-gray-600 uppercase">Profesional</p>
-                    <p class="text-sm font-semibold text-gray-900 dark:text-white print:text-black">Dr. {{ $reportData['professional']->full_name }}</p>
-                    <p class="text-xs text-gray-500 dark:text-gray-400 print:text-gray-600">{{ $reportData['professional']->specialty->name }}</p>
+            @if($isPdf ?? false)
+                <table class="pdf-table" style="margin-bottom: 12px; border-radius: 10px; overflow: hidden;">
+                    <tbody>
+                        <tr>
+                            <td style="width: 33.33%; background: #f9fafb;">
+                                <div style="font-size: 10px; font-weight: 700; color: #4b5563; text-transform: uppercase;">Profesional</div>
+                                <div style="font-size: 12px; font-weight: 700; color: #111827;">Dr. {{ $reportData['professional']->full_name }}</div>
+                                <div style="font-size: 10px; color: #4b5563;">{{ $reportData['professional']->specialty->name }}</div>
+                            </td>
+                            <td style="width: 33.33%; background: #f9fafb;">
+                                <div style="font-size: 10px; font-weight: 700; color: #4b5563; text-transform: uppercase;">Fecha</div>
+                                <div style="font-size: 12px; font-weight: 700; color: #111827;">{{ $reportData['date']->format('d/m/Y') }}</div>
+                                <div style="font-size: 10px; color: #4b5563;">{{ $reportData['date']->translatedFormat('l') }}</div>
+                            </td>
+                            <td style="width: 33.33%; background: #f9fafb;">
+                                <div style="font-size: 10px; font-weight: 700; color: #4b5563; text-transform: uppercase;">Generado</div>
+                                <div style="font-size: 12px; font-weight: 700; color: #111827;">{{ $reportData['generated_at']->format('d/m/Y H:i') }}</div>
+                                <div style="font-size: 10px; color: #4b5563;">Por: {{ $reportData['generated_by'] }}</div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            @else
+                <div class="flex gap-4 mb-6 print:mb-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 print:border-gray-400 rounded-lg p-3 print:p-1.5 pdf-info">
+                    <div class="flex-1">
+                        <p class="text-[10px] font-bold text-gray-500 dark:text-gray-400 print:text-gray-600 uppercase">Profesional</p>
+                        <p class="text-sm font-semibold text-gray-900 dark:text-white print:text-black">Dr. {{ $reportData['professional']->full_name }}</p>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 print:text-gray-600">{{ $reportData['professional']->specialty->name }}</p>
+                    </div>
+                    <div class="flex-1">
+                        <p class="text-[10px] font-bold text-gray-500 dark:text-gray-400 print:text-gray-600 uppercase">Fecha</p>
+                        <p class="text-sm font-semibold text-gray-900 dark:text-white print:text-black">{{ $reportData['date']->format('d/m/Y') }}</p>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 print:text-gray-600">{{ $reportData['date']->translatedFormat('l') }}</p>
+                    </div>
+                    <div class="flex-1">
+                        <p class="text-[10px] font-bold text-gray-500 dark:text-gray-400 print:text-gray-600 uppercase">Generado</p>
+                        <p class="text-sm font-semibold text-gray-900 dark:text-white print:text-black">{{ $reportData['generated_at']->format('d/m/Y H:i') }}</p>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 print:text-gray-600">Por: {{ $reportData['generated_by'] }}</p>
+                    </div>
                 </div>
-                <div class="flex-1">
-                    <p class="text-[10px] font-bold text-gray-500 dark:text-gray-400 print:text-gray-600 uppercase">Fecha</p>
-                    <p class="text-sm font-semibold text-gray-900 dark:text-white print:text-black">{{ $reportData['date']->format('d/m/Y') }}</p>
-                    <p class="text-xs text-gray-500 dark:text-gray-400 print:text-gray-600">{{ $reportData['date']->translatedFormat('l') }}</p>
-                </div>
-                <div class="flex-1">
-                    <p class="text-[10px] font-bold text-gray-500 dark:text-gray-400 print:text-gray-600 uppercase">Generado</p>
-                    <p class="text-sm font-semibold text-gray-900 dark:text-white print:text-black">{{ $reportData['generated_at']->format('d/m/Y H:i') }}</p>
-                    <p class="text-xs text-gray-500 dark:text-gray-400 print:text-gray-600">Por: {{ $reportData['generated_by'] }}</p>
-                </div>
-            </div>
+            @endif
 
             <!-- Stats -->
-            <div class="grid grid-cols-2 gap-4 mb-6 print:gap-1 print:mb-2">
-                <div class="bg-gray-50 dark:bg-gray-700 p-3 rounded-lg print:bg-gray-100 print:border print:border-gray-300 print:p-1">
-                    <p class="flex items-baseline justify-between gap-2">
-                        <span class="text-[10px] font-medium text-gray-700 dark:text-gray-200 print:text-gray-800">Total Pacientes</span>
-                        <span class="text-base font-bold text-gray-900 dark:text-white print:text-black print:text-sm">{{ $reportData['stats']['total_appointments'] }}</span>
-                    </p>
+            @if($isPdf ?? false)
+                <table class="pdf-table" style="margin-bottom: 12px;">
+                    <tbody>
+                        <tr>
+                            <td style="width: 50%; background: #f3f4f6;">
+                                <span style="font-size: 10px; font-weight: 600; color: #111827;">Total Pacientes</span>
+                                <span style="float: right; font-size: 14px; font-weight: 800; color: #111827;">{{ $reportData['stats']['total_appointments'] }}</span>
+                            </td>
+                            <td style="width: 50%; background: #f3f4f6;">
+                                <span style="font-size: 10px; font-weight: 600; color: #111827;">Programados</span>
+                                <span style="float: right; font-size: 14px; font-weight: 800; color: #111827;">{{ $reportData['stats']['scheduled'] }}</span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            @else
+                <div class="grid grid-cols-2 gap-4 mb-6 print:gap-1 print:mb-2 pdf-stats">
+                    <div class="bg-gray-50 dark:bg-gray-700 p-3 rounded-lg print:bg-gray-100 print:border print:border-gray-300 print:p-1 pdf-stat">
+                        <p class="flex items-baseline justify-between gap-2">
+                            <span class="text-[10px] font-medium text-gray-700 dark:text-gray-200 print:text-gray-800">Total Pacientes</span>
+                            <span class="text-base font-bold text-gray-900 dark:text-white print:text-black print:text-sm">{{ $reportData['stats']['total_appointments'] }}</span>
+                        </p>
+                    </div>
+                    <div class="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg print:bg-gray-100 print:border print:border-gray-300 print:p-1 pdf-stat">
+                        <p class="flex items-baseline justify-between gap-2">
+                            <span class="text-[10px] font-medium text-blue-900 dark:text-blue-200 print:text-gray-800">Programados</span>
+                            <span class="text-base font-bold text-blue-700 dark:text-blue-300 print:text-black print:text-sm">{{ $reportData['stats']['scheduled'] }}</span>
+                        </p>
+                    </div>
                 </div>
-                <div class="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg print:bg-gray-100 print:border print:border-gray-300 print:p-1">
-                    <p class="flex items-baseline justify-between gap-2">
-                        <span class="text-[10px] font-medium text-blue-900 dark:text-blue-200 print:text-gray-800">Programados</span>
-                        <span class="text-base font-bold text-blue-700 dark:text-blue-300 print:text-black print:text-sm">{{ $reportData['stats']['scheduled'] }}</span>
-                    </p>
-                </div>
-            </div>
+            @endif
 
             <!-- Tabla de Turnos -->
             @if($reportData['appointments']->count() > 0)
             <div class="mb-2 print:mb-0.5">
                 <h5 class="report-section-title">Turnos del Día ({{ $reportData['appointments']->count() }})</h5>
                 <div class="overflow-x-auto">
-                    <table class="w-full text-[11px] print:text-[9px] border-collapse">
+                    <table class="w-full text-[11px] print:text-[9px] border-collapse pdf-table">
                         <thead>
                             <tr class="border-b border-gray-300 dark:border-gray-600 print:border-gray-400">
                                 <th class="text-center py-[2px] px-1 font-semibold text-gray-900 dark:text-white print:text-black" style="width:8%">Hora</th>
@@ -90,7 +153,7 @@
                                         ];
                                         $cls = $statusClasses[$appointment['status']] ?? 'bg-gray-100 text-gray-700';
                                     @endphp
-                                    <span class="inline-block px-1 py-0.5 rounded text-[8px] font-bold uppercase {{ $cls }}">
+                                    <span class="inline-block px-1 py-0.5 rounded text-[8px] font-bold uppercase {{ $cls }} pdf-badge pdf-badge--{{ $appointment['status'] }}">
                                         {{ $appointment['status_label'] }}
                                     </span>
                                 </td>
@@ -123,16 +186,18 @@
 </div>
 @endsection
 
-@push('scripts')
-<script>
-    if (window.location.search.includes('print=1')) {
-        window.onload = function() {
-            setTimeout(function() {
-                window.print();
-                window.addEventListener('afterprint', function() { window.close(); });
-                setTimeout(function() { window.close(); }, 3000);
-            }, 500);
+@if(! ($isPdf ?? false))
+    @push('scripts')
+    <script>
+        if (window.location.search.includes('print=1')) {
+            window.onload = function() {
+                setTimeout(function() {
+                    window.print();
+                    window.addEventListener('afterprint', function() { window.close(); });
+                    setTimeout(function() { window.close(); }, 3000);
+                }, 500);
+            }
         }
-    }
-</script>
-@endpush
+    </script>
+    @endpush
+@endif

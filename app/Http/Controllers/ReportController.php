@@ -8,9 +8,15 @@ use App\Models\MovementType;
 use App\Models\Patient;
 use App\Models\Professional;
 use App\Models\ProfessionalLiquidation;
+use App\Services\WhatsAppService;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 
 class ReportController extends Controller
 {
@@ -183,11 +189,94 @@ class ReportController extends Controller
             return view('agenda.daily-schedule-select', compact('allProfessionals', 'professionalsWithAppointments', 'selectedDate'));
         }
 
-        // Obtener el profesional seleccionado
+        $reportData = $this->buildDailyScheduleData((int) $professionalId, $selectedDate);
+
+        // Si es para imprimir, devolver vista de impresión
+        if ($request->get('print') === '1') {
+            return view('agenda.daily-schedule-print', compact('reportData'));
+        }
+
+        // Vista normal
+        return view('agenda.daily-schedule', compact('reportData', 'allProfessionals'));
+    }
+
+    public function shareDailyScheduleViaWhatsApp(Request $request, WhatsAppService $whatsApp): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'professional_id' => 'required|exists:professionals,id',
+            'date'            => 'required|date',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => $validator->errors()->first() ?: 'Datos inválidos.',
+            ], 422);
+        }
+
+        $validated = $validator->validated();
+        $professional = Professional::findOrFail($validated['professional_id']);
+
+        if (! $whatsApp->isEnabled() || ! $whatsApp->isConnected()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'WhatsApp no está conectado.',
+            ], 422);
+        }
+
+        if (empty($professional->phone)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'El profesional no tiene teléfono registrado.',
+            ], 422);
+        }
+
+        $formatted = $whatsApp->formatArgentinaPhone($professional->phone);
+        if (! $formatted) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Teléfono del profesional inválido.',
+            ], 422);
+        }
+
+        $reportData = $this->buildDailyScheduleData(
+            (int) $validated['professional_id'],
+            Carbon::parse($validated['date'])
+        );
+
+        $pdf = Pdf::loadView('agenda.daily-schedule-print', [
+            'reportData' => $reportData,
+            'isPdf'      => true,
+        ])
+            ->setPaper('a4')
+            ->setOption('isRemoteEnabled', false)
+            ->setOption('isHtml5ParserEnabled', true)
+            ->setOption('chroot', public_path());
+        $base64 = base64_encode($pdf->output());
+
+        $safeName = Str::slug($professional->full_name, '_');
+        if (empty($safeName)) {
+            $safeName = 'profesional_' . $professional->id;
+        }
+
+        $filename = 'listado-' . $reportData['date']->format('Y-m-d') . '-' . $safeName . '.pdf';
+        $caption  = 'Listado de pacientes ' . $reportData['date']->format('d/m/Y');
+
+        $result = $whatsApp->sendMediaFile($formatted, $base64, $filename, $caption);
+
+        return response()->json([
+            'success' => (bool) ($result['success'] ?? false),
+            'message' => ($result['success'] ?? false)
+                ? 'Listado enviado por WhatsApp al profesional.'
+                : 'No se pudo enviar el mensaje. Intentá nuevamente.',
+        ]);
+    }
+
+    private function buildDailyScheduleData(int $professionalId, Carbon $selectedDate): array
+    {
         $professional = Professional::with('specialty')->findOrFail($professionalId);
 
-        // Obtener pacientes del día para el profesional
-        $appointments = Appointment::with(['patient', 'paymentAppointments.payment'])
+        $appointments = Appointment::with(['office', 'patient', 'paymentAppointments.payment'])
             ->where('professional_id', $professionalId)
             ->forDate($selectedDate)
             ->where('status', '!=', 'cancelled')
@@ -214,10 +303,9 @@ class ReportController extends Controller
                     'is_between_turn' => $appointment->is_between_turn,
                 ];
             })
-            ->sortByDesc('is_urgency') // Urgencias primero
+            ->sortByDesc('is_urgency')
             ->values();
 
-        // Estadísticas del día
         $stats = [
             'total_appointments' => $appointments->count(),
             'scheduled' => $appointments->where('status', 'scheduled')->count(),
@@ -229,23 +317,14 @@ class ReportController extends Controller
             'total_final' => $appointments->whereNotNull('final_amount')->sum('final_amount'),
         ];
 
-        // Información adicional
-        $reportData = [
+        return [
             'professional' => $professional,
             'date' => $selectedDate,
             'appointments' => $appointments,
             'stats' => $stats,
             'generated_at' => now(),
-            'generated_by' => auth()->user()->name ?? 'Sistema',
+            'generated_by' => Auth::user()?->name ?? 'Sistema',
         ];
-
-        // Si es para imprimir, devolver vista de impresión
-        if ($request->get('print') === '1') {
-            return view('agenda.daily-schedule-print', compact('reportData'));
-        }
-
-        // Vista normal
-        return view('agenda.daily-schedule', compact('reportData', 'allProfessionals'));
     }
 
     /**
@@ -300,7 +379,7 @@ class ReportController extends Controller
                 'total_final' => $professionals->sum('total_final'),
             ],
             'generated_at' => now(),
-            'generated_by' => auth()->user()->name ?? 'Sistema',
+            'generated_by' => Auth::user()?->name ?? 'Sistema',
         ];
 
         if ($request->get('print') === '1') {
@@ -647,7 +726,7 @@ class ReportController extends Controller
                 ];
             }),
             'generated_at' => now(),
-            'generated_by' => auth()->user()->name ?? 'Sistema',
+            'generated_by' => Auth::user()?->name ?? 'Sistema',
         ];
 
         // Si es para imprimir, devolver vista de impresión
