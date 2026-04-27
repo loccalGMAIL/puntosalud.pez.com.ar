@@ -24,7 +24,9 @@
       "mcp__n8n-mcp__n8n_health_check",
       "mcp__n8n-mcp__n8n_create_workflow",
       "Bash(php -r \"echo bin2hex\\(random_bytes\\(32\\)\\);\")",
-      "Bash(git commit *)"
+      "Bash(git commit *)",
+      "Bash(git push *)",
+      "Bash(git log *)"
     ],
     "deny": [],
     "ask": []
