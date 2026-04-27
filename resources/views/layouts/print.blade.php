@@ -10,12 +10,126 @@
     <link rel="icon" type="image/svg+xml" href="{{ asset('favicon.svg') }}">
     <link rel="alternate icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
 
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
-    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    @php
+        $inlineViteCss = false;
+        $viteCssFile = null;
+        $viteCssHref = null;
+
+        if (($isPdf ?? false) && file_exists(public_path('build/manifest.json'))) {
+            $manifest = json_decode(file_get_contents(public_path('build/manifest.json')), true);
+            $viteCssFile = $manifest['resources/css/app.css']['file'] ?? null;
+            $inlineViteCss = ! empty($viteCssFile) && file_exists(public_path('build/' . $viteCssFile));
+
+            if ($inlineViteCss) {
+                $viteCssHref = str_replace('\\', '/', public_path('build/' . $viteCssFile));
+            }
+        }
+    @endphp
+
+    @if($inlineViteCss)
+        <link rel="stylesheet" href="{{ $viteCssHref }}">
+    @else
+        @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @endif
+
+    @if(! ($isPdf ?? false))
+        <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    @endif
+
     @stack('styles')
+
+    @php
+        $printRules = <<<CSS
+@page {
+    margin: 1.5cm;
+    size: A4;
+}
+
+body {
+    font-size: 12px;
+    line-height: 1.4;
+    color: black !important;
+    background: white !important;
+    margin: 0;
+    padding: 0;
+}
+
+/* Ocultar elementos no imprimibles */
+.no-print,
+.print\\:hidden,
+header,
+nav,
+button,
+.btn,
+[onclick],
+[href*="javascript"],
+.screen-only {
+    display: none !important;
+}
+
+/* Ajustar contenido para impresión */
+main {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    max-width: none !important;
+    box-shadow: none !important;
+    border: none !important;
+}
+
+/* Utilidades usadas en vistas print */
+.print\\:p-2 { padding: 0.5rem !important; }
+.print\\:p-4 { padding: 1rem !important; }
+.print\\:p-1 { padding: 0.25rem !important; }
+.print\\:p-0\\.5 { padding: 0.125rem !important; }
+.print\\:text-black { color: black !important; }
+.print\\:text-gray-600 { color: #4b5563 !important; }
+.print\\:text-gray-700 { color: #374151 !important; }
+.print\\:text-gray-800 { color: #1f2937 !important; }
+.print\\:bg-gray-100 { background-color: #f3f4f6 !important; }
+.print\\:border { border-width: 1px !important; }
+.print\\:border-gray-300 { border-color: #d1d5db !important; }
+.print\\:border-gray-400 { border-color: #9ca3af !important; }
+.print\\:shadow-none { box-shadow: none !important; }
+.print\\:border-none { border: none !important; }
+.print\\:divide-gray-400 > :not([hidden]) ~ :not([hidden]) { border-color: #9ca3af !important; }
+
+table {
+    border-collapse: collapse !important;
+    width: 100% !important;
+}
+
+th, td {
+    border: 1px solid #d1d5db !important;
+    padding: 2px 4px !important;
+}
+
+.page-break-inside-avoid { page-break-inside: avoid; }
+
+.report-section-title {
+    font-size: 0.875rem !important;
+    font-weight: 600 !important;
+    color: black !important;
+    margin-bottom: 0.5rem !important;
+}
+CSS;
+    @endphp
+
+    @if($isPdf ?? false)
+        <style>
+        {!! $printRules !!}
+        </style>
+    @else
+        <style>
+        @media print {
+        {!! $printRules !!}
+        }
+        </style>
+    @endif
 </head>
 <body class="bg-white print:bg-white">
     <!-- Header para pantalla -->
+    @if(! ($isPdf ?? false))
     <header class="print:hidden bg-gray-50 border-b border-gray-200 p-4 no-print">
         <div class="flex items-center justify-between">
             <div>
@@ -39,6 +153,7 @@
             </div>
         </div>
     </header>
+    @endif
 
     <!-- Contenido principal -->
     <main class="min-h-screen print:min-h-0">
@@ -48,181 +163,3 @@
     @stack('scripts')
 </body>
 </html>
-
-<style>
-@media print {
-    @page {
-        margin: 1.5cm;
-        size: A4;
-    }
-
-    body {
-        font-size: 12px;
-        line-height: 1.4;
-        color: black !important;
-        background: white !important;
-        margin: 0;
-        padding: 0;
-    }
-
-    /* Ocultar elementos no imprimibles */
-    .no-print,
-    .print\\:hidden,
-    header,
-    nav,
-    button,
-    .btn,
-    [onclick],
-    [href*="javascript"],
-    .screen-only {
-        display: none !important;
-    }
-
-    /* Ajustar contenido para impresión */
-    main {
-        margin: 0 !important;
-        padding: 0 !important;
-        width: 100% !important;
-        max-width: none !important;
-        box-shadow: none !important;
-        border: none !important;
-    }
-
-    /* Estilos específicos para impresión */
-    .print\\:p-2 {
-        padding: 0.5rem !important;
-    }
-
-    .print\\:p-4 {
-        padding: 1rem !important;
-    }
-
-    .print\\:text-black {
-        color: black !important;
-    }
-
-    .print\\:text-gray-600 {
-        color: #4b5563 !important;
-    }
-
-    .print\\:text-gray-700 {
-        color: #374151 !important;
-    }
-
-    .print\\:text-gray-800 {
-        color: #1f2937 !important;
-    }
-
-    .print\\:bg-gray-100 {
-        background-color: #f3f4f6 !important;
-    }
-
-    .print\\:bg-yellow-100 {
-        background-color: #fef3c7 !important;
-    }
-
-    .print\\:border {
-        border-width: 1px !important;
-    }
-
-    .print\\:border-gray-300 {
-        border-color: #d1d5db !important;
-    }
-
-    .print\\:border-gray-400 {
-        border-color: #9ca3af !important;
-    }
-
-    .print\\:border-yellow-400 {
-        border-color: #fbbf24 !important;
-    }
-
-    .print\\:shadow-none {
-        box-shadow: none !important;
-    }
-
-    .print\\:border-none {
-        border: none !important;
-    }
-
-    .print\\:divide-gray-400 > :not([hidden]) ~ :not([hidden]) {
-        border-color: #9ca3af !important;
-    }
-
-    /* Mejorar contraste para impresión */
-    .text-green-600,
-    .text-green-400 {
-        color: #059669 !important;
-    }
-
-    .text-red-600,
-    .text-red-400 {
-        color: #dc2626 !important;
-    }
-
-    .text-blue-600,
-    .text-blue-400 {
-        color: #2563eb !important;
-    }
-
-    /* Asegurar que las tablas se vean bien */
-    table {
-        border-collapse: collapse !important;
-        width: 100% !important;
-    }
-
-    /* th, td {
-        border: 1px solid #d1d5db !important;
-        padding: 0.5rem !important;
-    } */
-
-    th, td {
-        border: 1px solid #d1d5db !important;
-        padding: 2px 4px !important; /* mucho más compacto */
-    }
-
-
-    /* Evitar saltos de página en elementos importantes */
-    .page-break-inside-avoid {
-        page-break-inside: avoid;
-    }
-
-    /* Clases reutilizables para reportes */
-    .report-section-title {
-        font-size: 0.875rem !important; /* text-sm */
-        font-weight: 600 !important; /* font-semibold */
-        color: black !important;
-        margin-bottom: 0.5rem !important; /* mb-2 */
-    }
-
-    .report-table {
-        width: 100% !important;
-        font-size: 9px !important;
-        border-collapse: collapse !important;
-    }
-
-    .report-th {
-        padding: 2px 4px !important;
-        font-weight: 600 !important;
-        color: black !important;
-    }
-
-    .report-td {
-        padding: 1px 4px !important;
-        color: black !important;
-    }
-}
-</style>
-
-<style>
-/* Clases reutilizables para pantalla y print */
-.report-section-title {
-    @apply text-base font-semibold text-gray-900 dark:text-white mb-4;
-}
-
-@media print {
-    .report-section-title {
-        @apply text-sm mb-2 !important;
-    }
-}
-</style>

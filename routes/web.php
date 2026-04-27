@@ -39,6 +39,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/dashboard/appointments/{appointment}/mark-attended', [DashboardController::class, 'markAttended'])->name('dashboard.mark-attended');
     Route::post('/dashboard/appointments/{appointment}/mark-completed-paid', [DashboardController::class, 'markCompletedAndPaid'])->name('dashboard.mark-completed-paid');
     Route::post('/dashboard/appointments/{appointment}/mark-absent', [DashboardController::class, 'markAbsent'])->name('dashboard.mark-absent');
+    Route::post('/dashboard/appointments/{appointment}/send-whatsapp-reminder', [DashboardController::class, 'forceWhatsAppReminder'])->name('dashboard.send-whatsapp-reminder');
 
     // Rutas de Profesionales (módulo: professionals)
     Route::middleware(['module:professionals'])->group(function () {
@@ -103,6 +104,7 @@ Route::middleware(['auth'])->group(function () {
 
     // Reportes operativos — accesibles a todos los usuarios autenticados (sin módulo)
     Route::get('/agenda/daily-schedule', [ReportController::class, 'dailySchedule'])->name('agenda.daily-schedule');
+    Route::post('/agenda/daily-schedule/share-whatsapp', [ReportController::class, 'shareDailyScheduleViaWhatsApp'])->name('agenda.daily-schedule.share-whatsapp');
     Route::get('/reports/professional-liquidation', [ReportController::class, 'professionalLiquidation'])->name('reports.professional-liquidation');
 
     // Reports routes

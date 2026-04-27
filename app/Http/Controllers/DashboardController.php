@@ -8,7 +8,9 @@ use App\Models\Payment;
 use App\Models\Professional;
 use App\Services\CashMovementService;
 use App\Services\PaymentAllocationService;
+use App\Services\WhatsAppService;
 use Carbon\Carbon;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -491,6 +493,23 @@ class DashboardController extends Controller
                 'message' => 'Error al marcar como ausente: '.$e->getMessage(),
             ], 500);
         }
+    }
+
+    public function forceWhatsAppReminder(Appointment $appointment, WhatsAppService $whatsAppService): JsonResponse
+    {
+        if ($appointment->status === 'attended') {
+            return response()->json([
+                'success' => false,
+                'message' => 'El turno ya fue atendido.',
+            ], 400);
+        }
+
+        $result = $whatsAppService->sendAppointmentMessageNow($appointment, 'reminder');
+
+        return response()->json(
+            $result,
+            ($result['success'] ?? false) ? 200 : 422
+        );
     }
 
     private function getStatusLabel($status)

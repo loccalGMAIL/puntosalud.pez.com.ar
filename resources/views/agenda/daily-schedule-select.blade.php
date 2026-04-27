@@ -94,25 +94,36 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="flex flex-col gap-1 ml-3">
-                                <a href="{{ route('agenda.daily-schedule', ['professional_id' => $professional['id'], 'date' => $selectedDate->format('Y-m-d')]) }}"
-                                   class="inline-flex items-center px-3 py-1 bg-blue-100 hover:bg-blue-200 text-blue-800 text-xs font-medium rounded transition-colors">
+                             <div class="flex flex-col gap-1 ml-3">
+                                 <a href="{{ route('agenda.daily-schedule', ['professional_id' => $professional['id'], 'date' => $selectedDate->format('Y-m-d')]) }}"
+                                    class="inline-flex items-center px-3 py-1 bg-blue-100 hover:bg-blue-200 text-blue-800 text-xs font-medium rounded transition-colors">
                                     <svg class="w-3 h-3 mr-1" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
                                     </svg>
                                     Ver
                                 </a>
-                                <a href="{{ route('agenda.daily-schedule', ['professional_id' => $professional['id'], 'date' => $selectedDate->format('Y-m-d'), 'print' => '1']) }}" target="_blank"
-                                   class="inline-flex items-center px-3 py-1 bg-blue-100 hover:bg-blue-200 text-blue-800 text-xs font-medium rounded transition-colors">
+                                 <a href="{{ route('agenda.daily-schedule', ['professional_id' => $professional['id'], 'date' => $selectedDate->format('Y-m-d'), 'print' => '1']) }}" target="_blank"
+                                    class="inline-flex items-center px-3 py-1 bg-blue-100 hover:bg-blue-200 text-blue-800 text-xs font-medium rounded transition-colors">
                                     <svg class="w-3 h-3 mr-1" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M6.72 13.829c-.24.03-.48.062-.72.096m.72-.096a42.415 42.415 0 0 1 10.56 0m-10.56 0L6.34 18m10.94-4.171c.24.03.48.062.72.096m-.72-.096L17.66 18m0 0 .229 2.523a1.125 1.125 0 0 1-1.12 1.227H7.231c-.662 0-1.18-.568-1.12-1.227L6.34 18m11.318 0h1.091A2.25 2.25 0 0 0 21 15.75V9.456c0-1.081-.768-2.015-1.837-2.175a48.055 48.055 0 0 0-1.913-.247M6.34 18H5.25A2.25 2.25 0 0 1 3 15.75V9.456c0-1.081.768-2.015 1.837-2.175a48.041 48.041 0 0 1 1.913-.247m10.5 0a48.536 48.536 0 0 0-10.5 0m10.5 0V3.375c0-.621-.504-1.125-1.125-1.125h-8.25c-.621 0-1.125.504-1.125 1.125v3.659M18 10.5h.008v.008H18V10.5Zm-3 0h.008v.008H15V10.5Z" />
                                     </svg>
-                                    Imprimir
-                                </a>
-                            </div>
-                        </div>
-                    </div>
+                                     Imprimir
+                                 </a>
+
+                                 <button type="button"
+                                         onclick="shareViaWhatsAppFromButton(event)"
+                                         data-professional-id="{{ $professional['id'] }}"
+                                         data-date="{{ $selectedDate->format('Y-m-d') }}"
+                                         class="inline-flex items-center px-3 py-1 bg-emerald-100 hover:bg-emerald-200 disabled:opacity-50 text-emerald-800 text-xs font-medium rounded transition-colors">
+                                     <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 24 24">
+                                         <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893A11.821 11.821 0 0020.885 3.488"/>
+                                     </svg>
+                                     Compartir
+                                 </button>
+                             </div>
+                         </div>
+                     </div>
                 @endforeach
             </div>
         </div>
@@ -134,6 +145,76 @@
 </div>
 
 <script>
+function shareViaWhatsAppFromButton(ev) {
+    const btn = ev?.currentTarget;
+    if (!btn) return;
+    const professionalId = parseInt(btn.dataset.professionalId || '', 10);
+    const date = btn.dataset.date;
+    if (!professionalId || !date) {
+        window.showToast('Error al enviar el listado.', 'error');
+        return;
+    }
+    shareViaWhatsApp(professionalId, date, ev);
+}
+
+async function shareViaWhatsApp(professionalId, date, ev) {
+    const btn = ev?.currentTarget;
+    if (!btn) return;
+
+    btn.disabled = true;
+    const original = btn.innerHTML;
+    btn.innerHTML = 'Enviando...';
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 90000);
+
+    try {
+        const csrf = document.querySelector('meta[name="csrf-token"]')?.content;
+
+        const r = await fetch('/agenda/daily-schedule/share-whatsapp', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': csrf || '',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            signal: controller.signal,
+            body: JSON.stringify({ professional_id: professionalId, date })
+        });
+
+        let data = null;
+        try {
+            data = await r.json();
+        } catch (e) {
+            data = null;
+        }
+
+        const success = !!(data && data.success);
+
+        if (data && data.message) {
+            window.showToast(data.message, success ? 'success' : 'error');
+            return;
+        }
+
+        if (data && data.errors) {
+            const firstError = Object.values(data.errors)?.flat()?.[0];
+            window.showToast(firstError || 'Error al enviar el listado.', 'error');
+            return;
+        }
+
+        window.showToast(success ? 'Listado enviado por WhatsApp al profesional.' : 'Error al enviar el listado.', success ? 'success' : 'error');
+    } catch (e) {
+        const msg = (e && e.name === 'AbortError')
+            ? 'La operación demoró demasiado. Intentá nuevamente.'
+            : 'Error al enviar el listado.';
+        window.showToast(msg, 'error');
+    } finally {
+        clearTimeout(timeoutId);
+        btn.disabled = false;
+        btn.innerHTML = original;
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     const dateInput = document.querySelector('#dateSelector');
 

@@ -2,7 +2,7 @@
 
 [![Laravel](https://img.shields.io/badge/Laravel-12.x-red?style=flat\&logo=laravel)](https://laravel.com)
 [![PHP](https://img.shields.io/badge/PHP-8.2-blue?style=flat\&logo=php)](https://php.net)
-[![Version](https://img.shields.io/badge/Version-2.11.3-green?style=flat)](#changelog)
+[![Version](https://img.shields.io/badge/Version-2.11.5-green?style=flat)](#changelog)
 [![License](https://img.shields.io/badge/License-MIT-yellow?style=flat)](#license)
 
 Sistema integral de gestión médica para clínicas y consultorios, desarrollado con Laravel 12 y tecnologías modernas.
@@ -172,6 +172,8 @@ php artisan config:clear
 
 ### 🔄 Últimas versiones
 
+* **v2.11.5** (2026-04-27) – 💬 WhatsApp: botón para forzar envío de recordatorio desde Dashboard + botón Compartir para enviar el PDF del listado diario al profesional por WhatsApp.
+* **v2.11.4** (2026-04-27) – ✨ UX: pacientes (teléfono/fecha de nacimiento opcionales), dashboard (notas inline expandibles), turnos (modal de info/auditoría), agenda (notes panel sin FOUC + selector de mes reubicado).
 * **v2.11.0** (2026-04-19) – 💬 WhatsApp: notificaciones al crear/cancelar turno, toggles independientes por tipo, vista Plantillas con acordeones y preview en tiempo real, historial con modal de detalle. 🐛 Fix toggle enabled AJAX, formErrors en patientModal de Agenda, reactividad opt-out en Pacientes.
 * **v2.10.5** (2026-04-16) – 💬 WhatsApp: módulo completo de recordatorios automáticos de turnos con Evolution API v2; QR, desconexión robusta, plantilla configurable, historial de mensajes, endpoint para n8n, ícono de estado en barra superior. 🗂️ Tabla de pacientes compactada. 🐛 Fix toggle opt-out WhatsApp en Pacientes.
 * **v2.10.4** (2026-04-07) – 🖨️ Fix impresión doble en reportes: corregido bug donde el diálogo de impresión se mostraba dos veces; estandarizado comportamiento `afterprint` con cierre automático de pestaña en todas las vistas print (19 vistas).
