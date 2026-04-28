@@ -2,7 +2,7 @@
 
 [![Laravel](https://img.shields.io/badge/Laravel-12.x-red?style=flat\&logo=laravel)](https://laravel.com)
 [![PHP](https://img.shields.io/badge/PHP-8.2-blue?style=flat\&logo=php)](https://php.net)
-[![Version](https://img.shields.io/badge/Version-2.11.6-green?style=flat)](#changelog)
+[![Version](https://img.shields.io/badge/Version-2.11.7-green?style=flat)](#changelog)
 [![License](https://img.shields.io/badge/License-MIT-yellow?style=flat)](#license)
 
 Sistema integral de gestión médica para clínicas y consultorios, desarrollado con Laravel 12 y tecnologías modernas.
@@ -17,6 +17,14 @@ Sistema integral de gestión médica para clínicas y consultorios, desarrollado
 * [Contribución](#contribución)
 
 ## ✨ Características
+
+### 🧾 Recibos + WhatsApp + UX de Cobro (v2.11.7)
+
+* **Modal unificado de recibo**: luego de cobrar, permite elegir entre **Imprimir** o **Enviar por WhatsApp** (sin duplicar confirmaciones en cada vista).
+* **Compartir recibo por WhatsApp**: envío del PDF del recibo al teléfono del paciente, registrando el evento en `whatsapp_messages` como tipo `receipt`.
+* **Historial WhatsApp mejorado**: soporte de tipo **Recibo** + buscador por paciente/DNI/teléfono.
+* **Dashboard / Consultas del día**: se reutiliza el modal de cobro multi-forma en ambas vistas y se agrega botón **Compartir recibo** cuando el pago ya existe.
+* **Errores WhatsApp amigables**: ante fallos de API/instancia/teléfono inválido se devuelve mensaje claro al usuario y el detalle técnico queda en logs.
 
 ### 💼 Gastos Externos y Dashboard Admin (v2.11.6)
 
@@ -180,6 +188,7 @@ php artisan config:clear
 
 ### 🔄 Últimas versiones
 
+* **v2.11.7** (2026-04-28) – 🧾 Recibos: modal unificado (imprimir/WhatsApp) + envío de PDF por WhatsApp. 💬 WhatsApp: historial con buscador + soporte tipo `receipt` y mensajes de error amigables. 💳 Cobro: modal multi-forma reutilizado en vistas de dashboard.
 * **v2.11.6** (2026-04-27) – 💼 Nuevo módulo Gastos Externos (sueldos, impuestos, alquiler, servicios) con comprobantes y reportes consolidados. 📊 Dashboard Administrativo con resumen financiero del mes, top de gastos y flujo a 6 meses. 👥 Nuevo perfil "Administrativo" + columna `default_dashboard` por perfil. ♻️ Análisis de Caja movido a `/reports/cash-analysis` (módulo `reports` en lugar de `cash`).
 * **v2.11.5** (2026-04-27) – 💬 WhatsApp: botón para forzar envío de recordatorio desde Dashboard + botón Compartir para enviar el PDF del listado diario al profesional por WhatsApp.
 * **v2.11.4** (2026-04-27) – ✨ UX: pacientes (teléfono/fecha de nacimiento opcionales), dashboard (notas inline expandibles), turnos (modal de info/auditoría), agenda (notes panel sin FOUC + selector de mes reubicado).

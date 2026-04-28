@@ -166,6 +166,7 @@ class DashboardController extends Controller
                 return [
                     'id' => $appointment->id,
                     'paciente' => $appointment->patient->full_name,
+                    'hasPhone' => ! empty($appointment->patient?->phone),
                     'profesional' => $appointment->professional->full_name,
                     'hora' => $appointment->appointment_date->format('H:i'),
                     'monto' => $appointment->final_amount ?? $appointment->estimated_amount ?? 0,
@@ -242,6 +243,7 @@ class DashboardController extends Controller
                 return [
                     'id' => $appointment->id,
                     'paciente' => $appointment->patient->full_name,
+                    'hasPhone' => ! empty($appointment->patient?->phone),
                     'profesional' => $appointment->professional->full_name,
                     'hora' => $appointment->appointment_date->format('H:i'),
                     'monto' => $appointment->final_amount ?? $appointment->estimated_amount ?? 0,
@@ -507,6 +509,29 @@ class DashboardController extends Controller
                 'success' => false,
                 'message' => 'El turno ya fue atendido.',
             ], 400);
+        }
+
+        $conn = $whatsAppService->validateConnection();
+        if (! ($conn['ok'] ?? false)) {
+            return response()->json([
+                'success' => false,
+                'message' => $conn['message'] ?? 'WhatsApp no está disponible.',
+            ], 422);
+        }
+
+        $appointment->loadMissing(['patient']);
+        $recipient = $whatsAppService->validateRecipient($appointment->patient?->phone);
+        if (! ($recipient['ok'] ?? false)) {
+            \Log::info('WhatsApp manual send blocked', [
+                'appointment_id' => $appointment->id,
+                'patient_id'     => $appointment->patient_id,
+                'error_code'     => $recipient['error_code'] ?? null,
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => $recipient['message'] ?? 'El número de teléfono no es válido.',
+            ], 422);
         }
 
         $result = $whatsAppService->sendAppointmentMessageNow($appointment, 'reminder');

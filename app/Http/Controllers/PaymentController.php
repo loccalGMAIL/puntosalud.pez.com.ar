@@ -7,11 +7,16 @@ use App\Models\CashMovement;
 use App\Models\Patient;
 use App\Models\Payment;
 use App\Models\PaymentAppointment;
+use App\Models\WhatsAppMessage;
 use App\Services\CashMovementService;
 use App\Services\PaymentAllocationService;
+use App\Services\WhatsAppService;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 
 class PaymentController extends Controller
@@ -471,6 +476,91 @@ class PaymentController extends Controller
             ->values();
 
         return view('receipts.print', compact('payment', 'professionals'));
+    }
+
+    /**
+     * POST /payments/{payment}/share-whatsapp
+     */
+    public function shareReceiptViaWhatsApp(Payment $payment, WhatsAppService $whatsApp): JsonResponse
+    {
+        $conn = $whatsApp->validateConnection();
+        if (! ($conn['ok'] ?? false)) {
+            return response()->json([
+                'success' => false,
+                'message' => $conn['message'] ?? 'WhatsApp no está disponible.',
+            ], 422);
+        }
+
+        $payment->load(['patient', 'paymentAppointments.appointment.professional.specialty', 'paymentDetails']);
+
+        $recipient = $whatsApp->validateRecipient($payment->patient?->phone);
+        if (! ($recipient['ok'] ?? false)) {
+            Log::info('WhatsApp receipt share blocked', [
+                'payment_id' => $payment->id,
+                'patient_id' => $payment->patient_id,
+                'error_code' => $recipient['error_code'] ?? null,
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => $recipient['message'] ?? 'El número de teléfono no es válido.',
+            ], 422);
+        }
+
+        // Profesionales únicos asociados al pago (mismo criterio que printReceipt)
+        $professionals = $payment->paymentAppointments
+            ->map(fn ($pa) => $pa->appointment?->professional)
+            ->filter()
+            ->unique('id')
+            ->values();
+
+        $pdf = Pdf::loadView('receipts.whatsapp', compact('payment', 'professionals'))
+            ->setPaper('a5')
+            ->setOption('isRemoteEnabled', false)
+            ->setOption('isHtml5ParserEnabled', true)
+            ->setOption('chroot', public_path());
+
+        $base64 = base64_encode($pdf->output());
+        $filename = 'Recibo-' . $payment->receipt_number . '.pdf';
+        $caption = 'Recibo de pago #' . $payment->receipt_number;
+
+        $phone = $recipient['phone'];
+
+        // Log en historial (asociamos al primer turno del pago, si existe)
+        $appointmentId = $payment->paymentAppointments->first()?->appointment_id;
+        $waMessage = null;
+        if ($appointmentId && $payment->patient_id) {
+            $waMessage = WhatsAppMessage::create([
+                'appointment_id' => $appointmentId,
+                'patient_id'     => $payment->patient_id,
+                'phone'          => $phone,
+                'message'        => $caption,
+                'status'         => 'pending',
+                'instance'       => setting('whatsapp.instance', ''),
+                'type'           => 'receipt',
+            ]);
+        }
+
+        $result = $whatsApp->sendMediaFile($phone, $base64, $filename, $caption);
+
+        if (($result['success'] ?? false) === true) {
+            $waMessage?->markSent();
+            return response()->json([
+                'success' => true,
+                'message' => 'Recibo enviado por WhatsApp.',
+            ]);
+        }
+
+        $friendly = match ($result['error'] ?? '') {
+            'not_configured' => 'WhatsApp no está configurado correctamente.',
+            default          => 'No se pudo enviar el recibo. Intentá nuevamente.',
+        };
+
+        $waMessage?->markFailed($friendly);
+        return response()->json([
+            'success' => false,
+            'message' => $friendly,
+        ], 422);
     }
 
     /**

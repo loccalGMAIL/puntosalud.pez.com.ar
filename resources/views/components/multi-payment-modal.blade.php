@@ -47,7 +47,7 @@
                                step="0.01"
                                min="0"
                                :readonly="isReadonlyAmount"
-                               @input="updateRemaining()"
+                               @input="onTotalAmountInput()"
                                class="w-full pl-7 pr-3 py-2.5 text-lg font-semibold rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-750 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                :class="isReadonlyAmount ? 'bg-gray-100 dark:bg-gray-900' : ''"
                                required>
@@ -196,9 +196,9 @@ function multiPaymentModal(readonlyAmount = false) {
             this.onSubmitCallback = callback;
             this.show = true;
 
-            // Agregar una forma de pago por defecto con el monto completo solo si amount > 0
+            // Agregar una forma de pago por defecto (efectivo) con el monto completo solo si amount > 0
             if (parseFloat(amount) > 0) {
-                this.addPaymentMethod();
+                this.addPaymentMethod('cash');
             }
 
             // Hacer foco en el campo de monto después de abrir el modal
@@ -214,9 +214,9 @@ function multiPaymentModal(readonlyAmount = false) {
             this.show = false;
         },
 
-        addPaymentMethod() {
+        addPaymentMethod(defaultType = '') {
             this.paymentMethods.push({
-                type: '',
+                type: defaultType,
                 amount: this.remaining > 0 ? this.remaining : 0
             });
             this.updateRemaining();
@@ -226,6 +226,23 @@ function multiPaymentModal(readonlyAmount = false) {
             this.paymentMethods.splice(index, 1);
             this.updateRemaining();
         },
+
+         onTotalAmountInput() {
+             const hadNoMethods = this.paymentMethods.length === 0;
+             this.updateRemaining();
+             // Si el modal arrancó en 0 y el usuario pasó a un monto > 0, agregar efectivo por defecto
+             if (hadNoMethods && parseFloat(this.totalAmount) > 0) {
+                 this.addPaymentMethod('cash');
+                 return;
+             }
+
+             // Si hay un unico metodo y es efectivo, mantenerlo sincronizado con el monto total.
+             // Esto evita que quede desactualizado cuando el usuario sigue ajustando el total.
+             if (this.paymentMethods.length === 1 && this.paymentMethods[0].type === 'cash') {
+                 this.paymentMethods[0].amount = parseFloat(this.totalAmount || 0);
+                 this.updateRemaining();
+             }
+         },
 
         updateRemaining() {
             this.assignedAmount = this.paymentMethods.reduce((sum, method) => {

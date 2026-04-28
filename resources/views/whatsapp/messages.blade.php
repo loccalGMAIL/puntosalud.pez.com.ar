@@ -6,12 +6,12 @@
 @section('content')
 <div class="flex h-full flex-1 flex-col gap-6 p-4"
      x-data="{
-         modal: false,
-         selected: { patient: '', phone: '', date: '', professional: '', message: '', type: '', status: '', sent_at: '', error: '' },
-         open(data) { this.selected = data; this.modal = true; },
-         typeLabel(t) { return { reminder: 'Recordatorio', creation: 'Confirmación', cancellation: 'Cancelación' }[t] ?? t; },
-         typeColor(t) { return { reminder: 'blue', creation: 'emerald', cancellation: 'red' }[t] ?? 'gray'; }
-     }"
+          modal: false,
+          selected: { patient: '', phone: '', date: '', professional: '', message: '', type: '', status: '', sent_at: '', error: '' },
+          open(data) { this.selected = data; this.modal = true; },
+          typeLabel(t) { return { reminder: 'Recordatorio', creation: 'Confirmación', cancellation: 'Cancelación', receipt: 'Recibo' }[t] ?? t; },
+          typeColor(t) { return { reminder: 'blue', creation: 'emerald', cancellation: 'red', receipt: 'purple' }[t] ?? 'gray'; }
+      }"
      @keydown.escape.window="modal = false">
 
     <!-- Header -->
@@ -61,6 +61,12 @@
     <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm p-4">
         <form method="GET" action="{{ route('whatsapp.messages') }}" class="flex flex-wrap items-center gap-3">
             <label class="text-sm font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">Filtrar:</label>
+            <input type="text"
+                   name="search"
+                   value="{{ request('search') }}"
+                   placeholder="Buscar por paciente, DNI o teléfono..."
+                   class="px-3 py-1.5 text-sm bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+            />
             <select name="status" onchange="this.form.submit()"
                     class="px-3 py-1.5 text-sm bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent">
                 <option value="" {{ ! request('status') ? 'selected' : '' }}>Todos los estados</option>
@@ -74,8 +80,9 @@
                 <option value="reminder"     {{ request('type') === 'reminder'     ? 'selected' : '' }}>Recordatorio</option>
                 <option value="creation"     {{ request('type') === 'creation'     ? 'selected' : '' }}>Confirmación</option>
                 <option value="cancellation" {{ request('type') === 'cancellation' ? 'selected' : '' }}>Cancelación</option>
+                <option value="receipt"      {{ request('type') === 'receipt'      ? 'selected' : '' }}>Recibo</option>
             </select>
-            @if (request('status') || request('type'))
+            @if (request('status') || request('type') || request('search'))
             <a href="{{ route('whatsapp.messages') }}" class="text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
                 Limpiar filtros
             </a>
@@ -142,14 +149,15 @@
                     </td>
                     <td class="px-4 py-3">
                         @php
-                            $typeLabels = ['reminder' => 'Recordatorio', 'creation' => 'Confirmación', 'cancellation' => 'Cancelación'];
-                            $typeColors = ['reminder' => 'blue', 'creation' => 'emerald', 'cancellation' => 'red'];
+                            $typeLabels = ['reminder' => 'Recordatorio', 'creation' => 'Confirmación', 'cancellation' => 'Cancelación', 'receipt' => 'Recibo'];
+                            $typeColors = ['reminder' => 'blue', 'creation' => 'emerald', 'cancellation' => 'red', 'receipt' => 'purple'];
                             $tColor = $typeColors[$msg->type] ?? 'gray';
                         @endphp
                         <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium
                             @if($tColor === 'blue') bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400
                             @elseif($tColor === 'emerald') bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400
                             @elseif($tColor === 'red') bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400
+                            @elseif($tColor === 'purple') bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300
                             @else bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300 @endif">
                             {{ $typeLabels[$msg->type] ?? $msg->type }}
                         </span>
@@ -195,8 +203,8 @@
     <div class="md:hidden space-y-3">
         @forelse ($messages as $msg)
         @php
-            $typeLabels = ['reminder' => 'Recordatorio', 'creation' => 'Confirmación', 'cancellation' => 'Cancelación'];
-            $typeColors = ['reminder' => 'blue', 'creation' => 'emerald', 'cancellation' => 'red'];
+            $typeLabels = ['reminder' => 'Recordatorio', 'creation' => 'Confirmación', 'cancellation' => 'Cancelación', 'receipt' => 'Recibo'];
+            $typeColors = ['reminder' => 'blue', 'creation' => 'emerald', 'cancellation' => 'red', 'receipt' => 'purple'];
             $tColor     = $typeColors[$msg->type] ?? 'gray';
             $msgData    = [
                 'patient'      => $msg->patient?->full_name ?? '-',
@@ -221,6 +229,7 @@
                         @if($tColor === 'blue') bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400
                         @elseif($tColor === 'emerald') bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400
                         @elseif($tColor === 'red') bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400
+                        @elseif($tColor === 'purple') bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300
                         @else bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300 @endif">
                         {{ $typeLabels[$msg->type] ?? $msg->type }}
                     </span>
@@ -316,7 +325,8 @@
                           :class="{
                               'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400': selected.type === 'reminder',
                               'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400': selected.type === 'creation',
-                              'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400': selected.type === 'cancellation'
+                              'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400': selected.type === 'cancellation',
+                              'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300': selected.type === 'receipt'
                           }"
                           x-text="typeLabel(selected.type)">
                     </span>

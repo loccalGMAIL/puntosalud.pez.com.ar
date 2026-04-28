@@ -7,6 +7,35 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [2.11.7] - 2026-04-28
+
+### 🧾 Recibos: modal unificado + WhatsApp
+
+- **Nuevo modal unificado de recibo** (Imprimir / WhatsApp) reutilizable en Dashboard y Caja.
+- **Compartir recibo de pago por WhatsApp**: nuevo endpoint `POST /payments/{payment}/share-whatsapp` que genera el PDF optimizado y lo envia por WhatsApp.
+- **Compartir recibo de ingreso manual por WhatsApp**: nuevo endpoint `POST /cash/income-receipt/{payment}/share-whatsapp`.
+- **PDF para WhatsApp**: nuevas vistas `receipts/whatsapp` y `receipts/income-whatsapp` en formato A5 vertical con logo embebido.
+
+### 💬 WhatsApp: historial mejorado y errores amigables
+
+- **whatsapp_messages**: nuevo tipo `receipt` y ajuste de indices para permitir multiples envios de recibos.
+- **Vista Mensajes**: buscador por paciente/DNI/telefono + filtro de tipo incluye `Recibo`.
+- **Errores amigables**: validacion centralizada de conexion y destinatario; se loguea el detalle tecnico y se muestra un mensaje claro al usuario.
+
+### 💳 Cobro: coherencia entre dashboards
+
+- `/dashboard/appointments` ahora reutiliza el **modal de cobro multi-forma** (mismo componente que `/dashboard`).
+- Boton **Compartir recibo** disponible cuando el pago ya esta generado.
+- Fix: si el usuario ajusta varias veces el **Monto Total**, el efectivo se mantiene sincronizado con el valor final.
+
+### 🧪 Seguridad en tests
+
+- Guard en `tests/TestCase.php` para evitar correr tests contra MySQL por error (solo permite `sqlite/:memory:` en `APP_ENV=testing`).
+
+### 🧰 Dev tools
+
+- Nuevo comando `php artisan dev:sanitize-import` para post-procesar dumps importados (setear telefonos de prueba y configurar WhatsApp en desarrollo). Bloqueado en `production`.
+
 ## [2.11.6] - 2026-04-27
 
 ### ✨ Nuevo módulo Gastos Externos

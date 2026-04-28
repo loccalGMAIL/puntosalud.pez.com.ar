@@ -219,15 +219,17 @@ class WhatsAppController extends Controller
     {
         $validated = $request->validate(['phone' => 'required|string|max:50']);
 
-        if (! $this->whatsApp->isConnected()) {
-            return response()->json(['success' => false, 'message' => 'WhatsApp no está conectado.'], 422);
+        $conn = $this->whatsApp->validateConnection();
+        if (! ($conn['ok'] ?? false)) {
+            return response()->json(['success' => false, 'message' => $conn['message'] ?? 'WhatsApp no está disponible.'], 422);
         }
 
-        $formatted = $this->whatsApp->formatArgentinaPhone($validated['phone']);
-
-        if (! $formatted) {
-            return response()->json(['success' => false, 'message' => 'Número inválido. Ingresá solo los dígitos, ej: 3541693286'], 422);
+        $recipient = $this->whatsApp->validateRecipient($validated['phone']);
+        if (! ($recipient['ok'] ?? false)) {
+            return response()->json(['success' => false, 'message' => $recipient['message'] ?? 'El número de teléfono no es válido.'], 422);
         }
+
+        $formatted = $recipient['phone'];
 
         $result = $this->whatsApp->sendMessage(
             $formatted,
@@ -238,7 +240,7 @@ class WhatsAppController extends Controller
 
         return response()->json([
             'success' => $ok,
-            'message' => $ok ? 'Mensaje enviado correctamente.' : 'No se pudo enviar. Revisá el número e intentá de nuevo.',
+            'message' => $ok ? 'Mensaje enviado correctamente.' : 'No se pudo enviar el mensaje. Intentá nuevamente.',
         ]);
     }
 
@@ -254,8 +256,21 @@ class WhatsAppController extends Controller
             $query->where('status', $request->status);
         }
 
-        if ($request->filled('type') && in_array($request->type, ['reminder', 'creation', 'cancellation'])) {
+        if ($request->filled('type') && in_array($request->type, ['reminder', 'creation', 'cancellation', 'receipt'])) {
             $query->where('type', $request->type);
+        }
+
+        if ($request->filled('search')) {
+            $term = trim((string) $request->get('search'));
+
+            if ($term !== '') {
+                $query->where(function ($q) use ($term) {
+                    $q->where('phone', 'like', "%{$term}%")
+                        ->orWhereHas('patient', function ($p) use ($term) {
+                            $p->search($term);
+                        });
+                });
+            }
         }
 
         $messages = $query->paginate(50)->withQueryString();
