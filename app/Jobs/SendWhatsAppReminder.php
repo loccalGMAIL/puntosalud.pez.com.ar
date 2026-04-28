@@ -10,9 +10,10 @@ use Illuminate\Queue\InteractsWithQueue;
 
 class SendWhatsAppReminder implements ShouldQueue
 {
-    use Queueable, InteractsWithQueue;
+    use InteractsWithQueue, Queueable;
 
-    public int $tries   = 2;
+    public int $tries = 2;
+
     public int $timeout = 60;
 
     public function __construct(
@@ -32,7 +33,25 @@ class SendWhatsAppReminder implements ShouldQueue
         $expectedStatus = $message->type === 'cancellation' ? 'cancelled' : 'scheduled';
         if (! $appointment || $appointment->status !== $expectedStatus) {
             $message->markFailed('Estado del turno inválido al momento del envío');
+
             return;
+        }
+
+        // Re-consultar el teléfono actual del paciente (puede haber cambiado desde que se creó el row)
+        $appointment->loadMissing('patient');
+        $livePhone = $whatsAppService->formatArgentinaPhone(
+            $appointment->patient?->phone ?? ''
+        );
+
+        if (! $livePhone) {
+            $message->markFailed('El paciente no tiene un número de teléfono válido.');
+
+            return;
+        }
+
+        if ($livePhone !== $message->phone) {
+            $message->phone = $livePhone;
+            $message->save();
         }
 
         $result = $whatsAppService->sendMessage($message->phone, $message->message);
@@ -40,13 +59,17 @@ class SendWhatsAppReminder implements ShouldQueue
         if ($result['success']) {
             $message->markSent();
         } else {
-            $message->markFailed($result['error'] ?? 'Error desconocido');
+            $friendly = match ($result['error'] ?? '') {
+                'not_configured' => 'WhatsApp no está configurado correctamente.',
+                default => 'No se pudo enviar el mensaje. Intentá nuevamente.',
+            };
+            $message->markFailed($friendly);
         }
     }
 
     public function failed(\Throwable $exception): void
     {
         $message = WhatsAppMessage::find($this->whatsappMessageId);
-        $message?->markFailed('Job fallido: ' . $exception->getMessage());
+        $message?->markFailed('Job fallido: '.$exception->getMessage());
     }
 }

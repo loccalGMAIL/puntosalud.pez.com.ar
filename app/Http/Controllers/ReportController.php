@@ -218,27 +218,27 @@ class ReportController extends Controller
         $validated = $validator->validated();
         $professional = Professional::findOrFail($validated['professional_id']);
 
-        if (! $whatsApp->isEnabled() || ! $whatsApp->isConnected()) {
+        $conn = $whatsApp->validateConnection();
+        if (! ($conn['ok'] ?? false)) {
             return response()->json([
                 'success' => false,
-                'message' => 'WhatsApp no está conectado.',
+                'message' => $conn['message'] ?? 'WhatsApp no está disponible.',
             ], 422);
         }
 
-        if (empty($professional->phone)) {
+        $recipient = $whatsApp->validateRecipient($professional->phone);
+        if (! ($recipient['ok'] ?? false)) {
+            $msg = ($recipient['error_code'] ?? '') === 'no_phone'
+                ? 'El profesional no tiene un número de teléfono registrado.'
+                : ($recipient['message'] ?? 'Teléfono del profesional inválido.');
+
             return response()->json([
                 'success' => false,
-                'message' => 'El profesional no tiene teléfono registrado.',
+                'message' => $msg,
             ], 422);
         }
 
-        $formatted = $whatsApp->formatArgentinaPhone($professional->phone);
-        if (! $formatted) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Teléfono del profesional inválido.',
-            ], 422);
-        }
+        $formatted = $recipient['phone'];
 
         $reportData = $this->buildDailyScheduleData(
             (int) $validated['professional_id'],

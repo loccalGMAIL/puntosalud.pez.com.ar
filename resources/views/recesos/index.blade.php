@@ -266,9 +266,7 @@ function recesosPage() {
 
                 const formData = new FormData();
                 Object.keys(this.form).forEach(key => {
-                    if (this.form[key] !== '') {
-                        formData.append(key, this.form[key]);
-                    }
+                    formData.append(key, this.form[key] ?? '');
                 });
 
                 if (this.editingHoliday) {

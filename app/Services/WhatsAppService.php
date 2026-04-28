@@ -11,6 +11,62 @@ use Illuminate\Support\Facades\Log;
 
 class WhatsAppService
 {
+    /**
+     * Valida que WhatsApp esté habilitado y conectado.
+     * Shape:
+     * - ['ok' => true]
+     * - ['ok' => false, 'error_code' => 'disabled'|'not_connected', 'message' => '...']
+     */
+    public function validateConnection(): array
+    {
+        if (! $this->isEnabled()) {
+            return [
+                'ok' => false,
+                'error_code' => 'disabled',
+                'message' => 'WhatsApp no está habilitado en el sistema.',
+            ];
+        }
+
+        if (! $this->isConnected()) {
+            return [
+                'ok' => false,
+                'error_code' => 'not_connected',
+                'message' => 'WhatsApp no está conectado. Escaneá el QR e intentá nuevamente.',
+            ];
+        }
+
+        return ['ok' => true];
+    }
+
+    /**
+     * Normaliza y valida el teléfono del destinatario.
+     * Shape:
+     * - ['ok' => true, 'phone' => '549...']
+     * - ['ok' => false, 'error_code' => 'no_phone'|'invalid_phone', 'message' => '...']
+     */
+    public function validateRecipient(?string $rawPhone): array
+    {
+        if (empty($rawPhone)) {
+            return [
+                'ok' => false,
+                'error_code' => 'no_phone',
+                'message' => 'El paciente no tiene un número de teléfono registrado.',
+            ];
+        }
+
+        $formatted = $this->formatArgentinaPhone($rawPhone);
+
+        if (! $formatted) {
+            return [
+                'ok' => false,
+                'error_code' => 'invalid_phone',
+                'message' => 'El número de teléfono no es válido. Verificá el formato (ej: 3541693286).',
+            ];
+        }
+
+        return ['ok' => true, 'phone' => $formatted];
+    }
+
     private function baseUrl(): string
     {
         return rtrim(setting('whatsapp.api_url', ''), '/');
@@ -259,14 +315,27 @@ class WhatsAppService
                     'text'   => $text,
                 ]);
 
+            if (! $response->successful()) {
+                Log::error('WhatsApp Evolution API error (sendText)', [
+                    'url'    => "{$this->baseUrl()}/message/sendText/{$this->instance()}",
+                    'status' => $response->status(),
+                    'body'   => $response->body(),
+                ]);
+            }
+
             return [
                 'success' => $response->successful(),
                 'data'    => $response->json(),
-                'error'   => $response->successful() ? null : $response->body(),
+                // No exponer el body crudo al usuario. El detalle queda en logs.
+                'error'   => $response->successful() ? null : 'send_failed',
             ];
         } catch (\Exception $e) {
-            Log::error('WhatsApp sendMessage failed', ['number' => $number, 'error' => $e->getMessage()]);
-            return ['success' => false, 'error' => $e->getMessage()];
+            Log::error('WhatsApp sendMessage failed', [
+                'number' => $number,
+                'error'  => $e->getMessage(),
+                'trace'  => $e->getTraceAsString(),
+            ]);
+            return ['success' => false, 'error' => 'exception'];
         }
     }
 
@@ -318,7 +387,13 @@ class WhatsAppService
      */
     public function queueAppointmentMessage(Appointment $appointment, string $type): bool
     {
-        if (! $this->isEnabled() || ! $this->isConnected()) {
+        if (! $this->isEnabled()) {
+            Log::info('WhatsApp skipped', ['reason' => 'disabled', 'appointment_id' => $appointment->id, 'type' => $type]);
+            return false;
+        }
+
+        if (! $this->isConnected()) {
+            Log::info('WhatsApp skipped', ['reason' => 'not_connected', 'appointment_id' => $appointment->id, 'type' => $type]);
             return false;
         }
 
@@ -328,6 +403,7 @@ class WhatsAppService
         $patient = $appointment->patient;
 
         if (! $patient || empty($patient->phone)) {
+            Log::info('WhatsApp skipped', ['reason' => 'no_phone', 'appointment_id' => $appointment->id, 'patient_id' => $appointment->patient_id, 'type' => $type]);
             return false;
         }
 
@@ -338,16 +414,23 @@ class WhatsAppService
             ->exists();
 
         if ($hasOptOut) {
+            Log::info('WhatsApp skipped', ['reason' => 'opt_out', 'appointment_id' => $appointment->id, 'patient_id' => $appointment->patient_id, 'professional_id' => $appointment->professional_id, 'type' => $type]);
             return false;
         }
 
         $formattedPhone = $this->formatArgentinaPhone($patient->phone);
         if (! $formattedPhone) {
-            Log::warning('WhatsApp: teléfono inválido al encolar mensaje', [
-                'appointment_id' => $appointment->id,
-                'phone'          => $patient->phone,
-                'type'           => $type,
-            ]);
+            Log::info('WhatsApp skipped', ['reason' => 'invalid_phone', 'appointment_id' => $appointment->id, 'phone' => $patient->phone, 'type' => $type]);
+            return false;
+        }
+
+        // Evitar duplicados por turno/tipo (antes lo garantizaba el unique index).
+        $alreadyExists = WhatsAppMessage::query()
+            ->where('appointment_id', $appointment->id)
+            ->where('type', $type)
+            ->exists();
+        if ($alreadyExists) {
+            Log::info('WhatsApp skipped', ['reason' => 'already_exists', 'appointment_id' => $appointment->id, 'type' => $type]);
             return false;
         }
 
@@ -359,6 +442,7 @@ class WhatsAppService
         $template    = setting($templateKey, '');
 
         if (empty($template)) {
+            Log::info('WhatsApp skipped', ['reason' => 'missing_template', 'appointment_id' => $appointment->id, 'type' => $type]);
             return false;
         }
 
@@ -393,20 +477,18 @@ class WhatsAppService
      */
     public function sendAppointmentMessageNow(Appointment $appointment, string $type): array
     {
-        if (! $this->isEnabled()) {
-            return ['success' => false, 'message' => 'WhatsApp deshabilitado'];
-        }
-
-        if (! $this->isConnected()) {
-            return ['success' => false, 'message' => 'WhatsApp no conectado'];
+        $conn = $this->validateConnection();
+        if (! ($conn['ok'] ?? false)) {
+            return ['success' => false, 'message' => $conn['message'] ?? 'WhatsApp no está disponible.'];
         }
 
         $appointment->loadMissing(['patient', 'professional.specialty']);
 
         $patient = $appointment->patient;
 
-        if (! $patient || empty($patient->phone)) {
-            return ['success' => false, 'message' => 'El paciente no tiene teléfono registrado'];
+        $recipient = $this->validateRecipient($patient?->phone);
+        if (! ($recipient['ok'] ?? false)) {
+            return ['success' => false, 'message' => $recipient['message'] ?? 'El número de teléfono no es válido.'];
         }
 
         $hasOptOut = DB::table('whatsapp_opt_outs')
@@ -418,10 +500,7 @@ class WhatsAppService
             return ['success' => false, 'message' => 'El paciente optó por no recibir mensajes'];
         }
 
-        $formattedPhone = $this->formatArgentinaPhone($patient->phone);
-        if (! $formattedPhone) {
-            return ['success' => false, 'message' => 'Teléfono inválido'];
-        }
+        $formattedPhone = $recipient['phone'];
 
         $templateKey = match ($type) {
             'creation'     => 'whatsapp.template_on_create',
@@ -459,8 +538,14 @@ class WhatsAppService
             return ['success' => true, 'message' => 'Recordatorio enviado'];
         }
 
-        $waMessage->markFailed($result['error'] ?? 'Error desconocido');
-        return ['success' => false, 'message' => 'No se pudo enviar el mensaje'];
+        $friendly = match ($result['error'] ?? '') {
+            'not_configured' => 'WhatsApp no está configurado correctamente.',
+            default          => 'No se pudo enviar el mensaje. Intentá nuevamente.',
+        };
+
+        // Guardar error legible (no body crudo/stack trace)
+        $waMessage->markFailed($friendly);
+        return ['success' => false, 'message' => $friendly];
     }
 
     /**
@@ -483,14 +568,26 @@ class WhatsAppService
                     'caption'   => $caption,
                 ]);
 
+            if (! $response->successful()) {
+                Log::error('WhatsApp Evolution API error (sendMedia)', [
+                    'url'    => "{$this->baseUrl()}/message/sendMedia/{$this->instance()}",
+                    'status' => $response->status(),
+                    'body'   => $response->body(),
+                ]);
+            }
+
             return [
                 'success' => $response->successful(),
                 'data'    => $response->json(),
-                'error'   => $response->successful() ? null : $response->body(),
+                'error'   => $response->successful() ? null : 'send_failed',
             ];
         } catch (\Exception $e) {
-            Log::error('WhatsApp sendMediaFile failed', ['number' => $number, 'error' => $e->getMessage()]);
-            return ['success' => false, 'error' => $e->getMessage()];
+            Log::error('WhatsApp sendMediaFile failed', [
+                'number' => $number,
+                'error'  => $e->getMessage(),
+                'trace'  => $e->getTraceAsString(),
+            ]);
+            return ['success' => false, 'error' => 'exception'];
         }
     }
 

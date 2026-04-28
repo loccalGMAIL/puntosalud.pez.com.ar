@@ -944,9 +944,7 @@ function patientModal() {
             try {
                 const formData = new FormData();
                 Object.keys(this.form).forEach(key => {
-                    if (this.form[key] !== '') {
-                        formData.append(key, this.form[key]);
-                    }
+                    formData.append(key, this.form[key] ?? '');
                 });
 
                 formData.append('_token', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));

@@ -12,34 +12,23 @@
             box-sizing: border-box;
         }
 
+        @page {
+            size: A5 portrait;
+            margin: 8mm 6mm;
+        }
+
         body {
             font-family: Arial, sans-serif;
             font-size: 13px;
             line-height: 1.6;
             color: #000;
             background: white;
-            padding: 0;
-            margin: 0;
-            width: 100vw;
-            height: 100vh;
-            overflow: hidden;
-            display: flex;
-            justify-content: flex-end;
-            align-items: flex-start;
         }
 
         .receipt-container {
-            width: 12cm;
-            min-height: 18cm;
-            max-width: 12cm;
-            max-height: 18cm;
-            padding: 10mm 8mm;
-            margin: 0 1cm 0 0;
-            background: white;
-            page-break-after: always;
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-start;
+            width: 100%;
+            padding: 0;
+            margin: 0;
         }
 
         .header {
@@ -194,113 +183,46 @@
             color: #333;
             line-height: 1.5;
         }
-
-        .print-button {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: #2563eb;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 14px;
-            z-index: 1000;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-        }
-
-        .print-button:hover {
-            background: #1d4ed8;
-        }
-
-        @media print {
-            body {
-                -webkit-print-color-adjust: exact;
-                print-color-adjust: exact;
-                margin: 0 !important;
-                padding: 0 !important;
-                width: 100vw;
-                height: 100vh;
-                overflow: hidden;
-                display: flex;
-                justify-content: flex-end;
-                align-items: flex-start;
-            }
-
-            .receipt-container {
-                width: 12cm;
-                min-height: 18cm;
-                max-width: 12cm;
-                max-height: 18cm;
-                padding: 10mm 8mm;
-                margin: 0 1cm 0 0;
-                background: white;
-                display: flex;
-                flex-direction: column;
-                justify-content: flex-start;
-            }
-
-            .print-button {
-                display: none !important;
-            }
-
-            .page-break {
-                page-break-after: always;
-            }
-
-            @page {
-                size: A4 landscape;
-                margin: 0;
-            }
-        }
-
-        .badge {
-            display: inline-block;
-            padding: 3px 8px;
-            border-radius: 3px;
-            font-size: 10px;
-            font-weight: 600;
-        }
-
-        .badge-green {
-            background-color: #d4edda;
-            color: #155724;
-        }
-
-        .badge-blue {
-            background-color: #cfe2ff;
-            color: #084298;
-        }
-
-        .badge-yellow {
-            background-color: #fff3cd;
-            color: #856404;
-        }
     </style>
 </head>
 
 <body>
-    <button class="print-button" onclick="window.print()">🖨️ Imprimir Recibo</button>
+    @php
+        $logoDataUri = null;
+        foreach (['png', 'jpg', 'jpeg', 'webp'] as $ext) {
+            $candidate = public_path("center/logo.{$ext}");
+            if (is_file($candidate)) {
+                $mime = match ($ext) {
+                    'jpg', 'jpeg' => 'image/jpeg',
+                    'webp' => 'image/webp',
+                    default => 'image/png',
+                };
+                $logoDataUri = 'data:' . $mime . ';base64,' . base64_encode(file_get_contents($candidate));
+                break;
+            }
+        }
+    @endphp
 
     <div class="receipt-container">
         <!-- Header -->
         <div class="header">
             <!-- Logo -->
-            <div class="logo">
-                <img src="{{ center_image('logo', '') }}" alt="{{ setting('center_name', config('app.name')) }}">
-            </div>
+            @if ($logoDataUri)
+                <div class="logo">
+                    <img src="{{ $logoDataUri }}" alt="{{ setting('center_name', config('app.name')) }}">
+                </div>
+            @endif
 
             <div class="clinic-info">{{ setting('center_name', 'Centro de Atención Médica') }}</div>
             @if(setting('center_address'))
-            <div class="clinic-info">Dirección: {{ setting('center_address') }}</div>
+                <div class="clinic-info">Dirección: {{ setting('center_address') }}</div>
             @endif
             @if(setting('center_phone') || setting('center_email'))
-            <div class="clinic-info">
-                @if(setting('center_phone'))Tel: {{ setting('center_phone') }}@endif
-                @if(setting('center_phone') && setting('center_email')) | @endif
-                @if(setting('center_email'))Email: {{ setting('center_email') }}@endif
-            </div>
+                <div class="clinic-info">
+                    @if(setting('center_phone'))Tel: {{ setting('center_phone') }}@endif
+                    @if(setting('center_phone') && setting('center_email')) | @endif
+                    @if(setting('center_email'))Email: {{ setting('center_email') }}@endif
+                </div>
             @endif
 
             <div class="receipt-title">RECIBO DE PAGO</div>
@@ -344,7 +266,6 @@
                 @endif
             </div>
         @endif
-
 
         <div class="divider"></div>
 
@@ -405,22 +326,6 @@
             </p>
         </div>
     </div>
-
-    <script>
-        // Auto-imprimir si viene con parámetro print
-        if (window.location.search.includes('print=1')) {
-            window.onload = function() {
-                setTimeout(function() {
-                    window.print();
-
-                    // Cerrar la ventana después de imprimir o cancelar
-                    setTimeout(function() {
-                        window.close();
-                    }, 100);
-                }, 500);
-            }
-        }
-    </script>
 </body>
 
 </html>

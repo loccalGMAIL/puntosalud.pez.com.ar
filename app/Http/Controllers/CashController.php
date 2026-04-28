@@ -5,9 +5,13 @@ namespace App\Http\Controllers;
 use App\Models\CashMovement;
 use App\Models\MovementType;
 use App\Models\Payment;
+use App\Services\WhatsAppService;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class CashController extends Controller
 {
@@ -1228,6 +1232,79 @@ class CashController extends Controller
         }
 
         return view('receipts.income-print', compact('payment'));
+    }
+
+    /**
+     * POST /cash/income-receipt/{payment}/share-whatsapp
+     */
+    public function shareIncomeReceiptViaWhatsApp(Request $request, Payment $payment, WhatsAppService $whatsApp): JsonResponse
+    {
+        if ($payment->payment_type !== 'manual_income') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Este pago no corresponde a un ingreso manual.',
+            ], 422);
+        }
+
+        // Ingresos manuales no tienen paciente asociado.
+        if (empty($payment->patient_id)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Este ingreso no tiene un paciente asociado para compartir el recibo.',
+            ], 422);
+        }
+
+        $conn = $whatsApp->validateConnection();
+        if (! ($conn['ok'] ?? false)) {
+            return response()->json([
+                'success' => false,
+                'message' => $conn['message'] ?? 'WhatsApp no está disponible.',
+            ], 422);
+        }
+
+        $payment->load(['patient']);
+        $recipient = $whatsApp->validateRecipient($payment->patient?->phone);
+        if (! ($recipient['ok'] ?? false)) {
+            Log::info('WhatsApp income receipt share blocked', [
+                'payment_id' => $payment->id,
+                'patient_id' => $payment->patient_id,
+                'error_code' => $recipient['error_code'] ?? null,
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => $recipient['message'] ?? 'El número de teléfono no es válido.',
+            ], 422);
+        }
+
+        $pdf = Pdf::loadView('receipts.income-whatsapp', compact('payment'))
+            ->setPaper('a5')
+            ->setOption('isRemoteEnabled', false)
+            ->setOption('isHtml5ParserEnabled', true)
+            ->setOption('chroot', public_path());
+
+        $base64 = base64_encode($pdf->output());
+        $filename = 'Recibo-' . $payment->receipt_number . '.pdf';
+        $caption = 'Recibo #' . $payment->receipt_number;
+
+        $result = $whatsApp->sendMediaFile($recipient['phone'], $base64, $filename, $caption);
+
+        if (($result['success'] ?? false) === true) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Recibo enviado por WhatsApp.',
+            ]);
+        }
+
+        $friendly = match ($result['error'] ?? '') {
+            'not_configured' => 'WhatsApp no está configurado correctamente.',
+            default          => 'No se pudo enviar el recibo. Intentá nuevamente.',
+        };
+
+        return response()->json([
+            'success' => false,
+            'message' => $friendly,
+        ], 422);
     }
 
     /**
