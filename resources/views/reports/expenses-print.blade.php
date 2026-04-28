@@ -93,21 +93,23 @@
                             <tr class="border-b border-gray-300 dark:border-gray-600 print:border-gray-400">
                                 <th class="text-left py-[2px] px-1 font-semibold text-gray-900 dark:text-white print:text-black" style="width:13%">Fecha</th>
                                 <th class="text-left py-[2px] px-1 font-semibold text-gray-900 dark:text-white print:text-black" style="width:8%">Hora</th>
-                                <th class="text-left py-[2px] px-1 font-semibold text-gray-900 dark:text-white print:text-black" style="width:22%">Tipo</th>
-                                <th class="text-left py-[2px] px-1 font-semibold text-gray-900 dark:text-white print:text-black" style="width:37%">Descripción</th>
-                                <th class="text-right py-[2px] px-1 font-semibold text-gray-900 dark:text-white print:text-black" style="width:12%">Monto</th>
-                                <th class="text-left py-[2px] px-1 font-semibold text-gray-900 dark:text-white print:text-black" style="width:8%">Usuario</th>
+                                <th class="text-left py-[2px] px-1 font-semibold text-gray-900 dark:text-white print:text-black" style="width:10%">Origen</th>
+                                <th class="text-left py-[2px] px-1 font-semibold text-gray-900 dark:text-white print:text-black" style="width:20%">Tipo</th>
+                                <th class="text-left py-[2px] px-1 font-semibold text-gray-900 dark:text-white print:text-black" style="width:33%">Descripción</th>
+                                <th class="text-right py-[2px] px-1 font-semibold text-gray-900 dark:text-white print:text-black" style="width:10%">Monto</th>
+                                <th class="text-left py-[2px] px-1 font-semibold text-gray-900 dark:text-white print:text-black" style="width:6%">Usuario</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-200 dark:divide-gray-700 print:divide-gray-400">
                             @foreach($movements as $m)
                             <tr>
-                                <td class="py-[1px] px-1 text-gray-900 dark:text-white print:text-black">{{ $m->created_at->format('d/m/Y') }}</td>
-                                <td class="py-[1px] px-1 text-gray-600 dark:text-gray-400 print:text-gray-700">{{ $m->created_at->format('H:i') }}</td>
-                                <td class="py-[1px] px-1 text-gray-900 dark:text-white print:text-black">{{ $m->movementType?->name ?? '-' }}</td>
-                                <td class="py-[1px] px-1 text-gray-900 dark:text-white print:text-black">{{ $m->description ?: '-' }}</td>
-                                <td class="py-[1px] px-1 text-right text-red-600 dark:text-red-400 print:text-red-700">-${{ number_format(abs($m->amount), 2) }}</td>
-                                <td class="py-[1px] px-1 text-gray-600 dark:text-gray-400 print:text-gray-700">{{ $m->user?->name ?? 'Sis.' }}</td>
+                                <td class="py-[1px] px-1 text-gray-900 dark:text-white print:text-black">{{ $m['date']->format('d/m/Y') }}</td>
+                                <td class="py-[1px] px-1 text-gray-600 dark:text-gray-400 print:text-gray-700">{{ $m['time'] ?? '-' }}</td>
+                                <td class="py-[1px] px-1 text-gray-900 dark:text-white print:text-black">{{ $m['origin_label'] }}</td>
+                                <td class="py-[1px] px-1 text-gray-900 dark:text-white print:text-black">{{ $m['type']?->name ?? '-' }}</td>
+                                <td class="py-[1px] px-1 text-gray-900 dark:text-white print:text-black">{{ $m['description'] ?: '-' }}</td>
+                                <td class="py-[1px] px-1 text-right text-red-600 dark:text-red-400 print:text-red-700">-${{ number_format($m['amount'], 2) }}</td>
+                                <td class="py-[1px] px-1 text-gray-600 dark:text-gray-400 print:text-gray-700">{{ $m['user']?->name ?? 'Sis.' }}</td>
                             </tr>
                             @endforeach
                         </tbody>

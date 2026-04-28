@@ -17,7 +17,7 @@ class AuthController extends Controller
     public function showLogin()
     {
         if (Auth::check()) {
-            return redirect()->route('dashboard');
+            return redirect()->intended(Auth::user()->defaultDashboardRoute());
         }
 
         return view('auth.login');
@@ -52,7 +52,7 @@ class AuthController extends Controller
 
             ActivityLog::record('login', Auth::user(), Auth::user()->name, Auth::id());
 
-            return redirect()->intended(route('dashboard'));
+            return redirect()->intended(Auth::user()->defaultDashboardRoute());
         }
 
         // Si el usuario existe pero no está activo

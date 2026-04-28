@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ActivityLogController;
+use App\Http\Controllers\AdminDashboardController;
 use App\Http\Controllers\AgendaController;
 use App\Http\Controllers\WhatsAppController;
 use App\Http\Controllers\AppointmentController;
@@ -34,6 +35,9 @@ Route::middleware(['auth'])->group(function () {
     // Rutas del dashboard actualizadas para nuevas ubicaciones de vistas
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/dashboard/appointments', [DashboardController::class, 'appointments'])->name('dashboard.appointments');
+    Route::get('/dashboard/admin', [AdminDashboardController::class, 'index'])
+        ->middleware(['module:admin_dashboard'])
+        ->name('dashboard.admin');
 
     // Dashboard appointment status routes
     Route::post('/dashboard/appointments/{appointment}/mark-attended', [DashboardController::class, 'markAttended'])->name('dashboard.mark-attended');
@@ -156,6 +160,10 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/reports/cobros-pendientes/print',         [ReportController::class, 'printCobrosPendientes'])->name('reports.cobros-pendientes.print');
         Route::get('/reports/flujo-caja-mensual',              [ReportController::class, 'flujoCajaMensual'])->name('reports.flujo-caja-mensual');
         Route::get('/reports/flujo-caja-mensual/print',        [ReportController::class, 'printFlujoCajaMensual'])->name('reports.flujo-caja-mensual.print');
+
+        Route::get('/reports/cash-analysis',                   [ReportController::class, 'cashAnalysis'])->name('reports.cash-analysis');
+        Route::get('/reports/cash-analysis/export',            [ReportController::class, 'exportCashAnalysisCsv'])->name('reports.cash-analysis.export');
+        Route::get('/reports/cash-analysis/print',             [ReportController::class, 'printCashAnalysis'])->name('reports.cash-analysis.print');
     });
 
     // Rutas de Caja (módulo: cash)
@@ -163,9 +171,6 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/cash/daily', [App\Http\Controllers\CashController::class, 'dailyCash'])->name('cash.daily');
         Route::get('/cash/count', [App\Http\Controllers\CashController::class, 'cashCount'])->name('cash.count');
         Route::get('/cash/daily-report', [App\Http\Controllers\CashController::class, 'dailyReport'])->name('cash.daily-report');
-        Route::get('/cash/report', [App\Http\Controllers\CashController::class, 'cashReport'])->name('cash.report');
-        Route::get('/cash/report/export', [App\Http\Controllers\CashController::class, 'exportCashReportCsv'])->name('cash.report.export');
-        Route::get('/cash/report/print', [App\Http\Controllers\CashController::class, 'printCashReport'])->name('cash.report.print');
         Route::get('/cash/expense', [App\Http\Controllers\CashController::class, 'addExpense'])->name('cash.expense-form');
         Route::post('/cash/expense', [App\Http\Controllers\CashController::class, 'addExpense'])->name('cash.expense.store');
         Route::get('/cash/withdrawal', [App\Http\Controllers\CashController::class, 'withdrawalForm'])->name('cash.withdrawal-form');
@@ -209,6 +214,12 @@ Route::middleware(['auth'])->group(function () {
         // Recesos (Holidays) management
         Route::resource('recesos', App\Http\Controllers\RecessController::class)->except(['show', 'create', 'edit']);
         Route::patch('/recesos/{receso}/toggle-status', [App\Http\Controllers\RecessController::class, 'toggleStatus'])->name('recesos.toggle-status');
+    });
+
+    // Gastos externos (módulo: expenses)
+    Route::middleware(['module:expenses'])->group(function () {
+        Route::resource('expenses', App\Http\Controllers\ExpenseController::class)
+            ->except(['create', 'edit', 'show']);
     });
 
     // Rutas de Sistema (módulo: system)

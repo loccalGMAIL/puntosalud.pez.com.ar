@@ -18,9 +18,16 @@ class Profile extends Model
         'cash'          => 'Caja',
         'payments'      => 'Cobros',
         'reports'       => 'Reportes',
+        'expenses'      => 'Gastos Externos',
+        'admin_dashboard' => 'Dashboard Admin',
         'whatsapp'      => 'WhatsApp',
         'configuration' => 'Configuración',
         'system'        => 'Sistema',
+    ];
+
+    public const DASHBOARDS = [
+        'operative' => 'Operativo',
+        'admin' => 'Administrativo',
     ];
 
     /**
@@ -41,6 +48,7 @@ class Profile extends Model
     protected $fillable = [
         'name',
         'description',
+        'default_dashboard',
     ];
 
     /**
