@@ -7,6 +7,50 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [2.11.6] - 2026-04-27
+
+### ✨ Nuevo módulo Gastos Externos
+
+- **Tabla `expenses`** con fecha, tipo de movimiento, monto, medio de pago opcional, descripción, notas, comprobante adjunto y soft deletes. No afecta el balance de la caja diaria — son gastos administrativos (sueldos, impuestos, alquiler, servicios) registrados fuera del flujo operativo.
+- **Vista `/expenses`** con filtros por rango de fechas y tipo, listado responsive (tabla desktop + cards mobile), modal de creación/edición con upload de comprobante (JPG/PNG/PDF hasta 4 MB).
+- **Nuevos tipos de movimiento** (`salary`, `tax`, `external_rent`, `external_services`) excluidos del form de gastos por caja para no contaminar la operación diaria.
+- **Módulo `expenses`** en `Profile::MODULES` + middleware `module:expenses` en las rutas.
+- **Informe de Gastos** (`/reports/expenses`) ahora consolida gastos de caja + externos.
+
+### 📊 Dashboard Administrativo
+
+- **Nueva vista `/dashboard/admin`** (`AdminDashboardController`) con cards de "Resumen del mes" (Ingresos / Gastos / Neto), "Top 5 gastos del mes" y "Flujo últimos 6 meses". Estilo alineado con `cash/daily` (stat cards con círculo coloreado + Heroicon outline).
+- **Nuevo módulo `admin_dashboard`** en `Profile::MODULES` y middleware `module:admin_dashboard` en la ruta.
+- **Columna `default_dashboard`** en `profiles` (`operative` | `admin`). Cada perfil define cuál dashboard ve por defecto. Login y `/dashboard` redirigen automáticamente según el perfil del usuario.
+- Selector de dashboard default agregado al form de perfiles (`/profiles`).
+
+### 👥 Nuevo perfil "Administrativo"
+
+- Perfil con módulos `[reports, admin_dashboard, payments, cash]` y `default_dashboard = 'admin'`.
+- Pensado para personal administrativo/financiero sin acceso a agenda/turnos operativos.
+- Resto de perfiles reciben `default_dashboard` apropiado: `Administrador` y `Recepcionista Alto Nivel` operan según rol; `Acceso General` queda en `operative`.
+
+### ♻️ Reubicación "Análisis de Caja" → módulo Reportes
+
+- `/cash/report` → `/reports/cash-analysis` (idem `/export` y `/print`). Las 3 rutas pasaron del grupo `module:cash` al grupo `module:reports`.
+- Métodos `cashReport`/`printCashReport`/`exportCashReportCsv` movidos de `CashController` a `ReportController` (renombrados a `cashAnalysis`/`printCashAnalysis`/`exportCashAnalysisCsv` para no chocar con el método existente que sirve Movimientos de Caja).
+- Vistas movidas: `resources/views/cash/report{,-print}.blade.php` → `resources/views/reports/cash-analysis{,-print}.blade.php`.
+- **Resuelve**: perfiles con módulo `reports` pero sin `cash` (como el perfil `Administracion`) ya pueden acceder al reporte. El módulo `cash` queda exclusivamente para operación diaria.
+
+### 🗄️ Migraciones
+
+- `2026_04_27_120000_create_expenses_table.php` — tabla `expenses`.
+- `2026_04_27_130000_add_default_dashboard_to_profiles_table.php` — columna `default_dashboard` en `profiles`.
+
+### 🎨 Coherencia gráfica
+
+- Botones de acción del header del dashboard admin con Heroicon prefijo (documento, plus).
+- Empty state de Gastos Externos con Heroicon `w-12` + texto + link "Limpiar filtros" (patrón de `patients/index`).
+- Botón "Eliminar" del modal de gastos con tachito.
+- Filtros de Gastos Externos alineados con el patrón de `profesionales-consultas` (grid 3 cols + botón "Generar" en fila propia justificada a derecha).
+
+---
+
 ## [2.11.5] - 2026-04-27
 
 ### 💬 WhatsApp

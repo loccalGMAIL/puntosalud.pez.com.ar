@@ -187,6 +187,7 @@
                         <tr class="border-b border-gray-200 dark:border-gray-600">
                             <th class="text-left py-3 px-4 font-semibold text-gray-900 dark:text-white">Fecha</th>
                             <th class="text-left py-3 px-4 font-semibold text-gray-900 dark:text-white">Hora</th>
+                            <th class="text-left py-3 px-4 font-semibold text-gray-900 dark:text-white">Origen</th>
                             <th class="text-left py-3 px-4 font-semibold text-gray-900 dark:text-white">Tipo</th>
                             <th class="text-left py-3 px-4 font-semibold text-gray-900 dark:text-white">Descripción</th>
                             <th class="text-right py-3 px-4 font-semibold text-gray-900 dark:text-white">Monto</th>
@@ -197,14 +198,24 @@
                         @foreach($movements as $movement)
                         <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
                             <td class="py-3 px-4 text-sm text-gray-600 dark:text-gray-300">
-                                {{ $movement->created_at->format('d/m/Y') }}
+                                {{ $movement['date']->format('d/m/Y') }}
                             </td>
                             <td class="py-3 px-4 text-sm text-gray-600 dark:text-gray-300">
-                                {{ $movement->created_at->format('H:i') }}
+                                {{ $movement['time'] ?? '—' }}
                             </td>
                             <td class="py-3 px-4">
                                 @php
-                                    $typeColor = match($movement->movementType?->color) {
+                                    $originCls = $movement['origin'] === 'external'
+                                        ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300'
+                                        : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200';
+                                @endphp
+                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium {{ $originCls }}">
+                                    {{ $movement['origin_label'] }}
+                                </span>
+                            </td>
+                            <td class="py-3 px-4">
+                                @php
+                                    $typeColor = match($movement['type']?->color) {
                                         'green'  => 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
                                         'blue'   => 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
                                         'red'    => 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
@@ -217,17 +228,17 @@
                                     };
                                 @endphp
                                 <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium {{ $typeColor }}">
-                                    {{ $movement->movementType?->icon }} {{ $movement->movementType?->name ?? 'Desconocido' }}
+                                    {{ $movement['type']?->icon }} {{ $movement['type']?->name ?? 'Desconocido' }}
                                 </span>
                             </td>
                             <td class="py-3 px-4 text-sm text-gray-900 dark:text-white">
-                                {{ $movement->description ?: '-' }}
+                                {{ $movement['description'] ?: '-' }}
                             </td>
                             <td class="py-3 px-4 text-sm text-right font-medium text-red-600 dark:text-red-400">
-                                -${{ number_format(abs($movement->amount), 2) }}
+                                -${{ number_format($movement['amount'], 2) }}
                             </td>
                             <td class="py-3 px-4 text-sm text-gray-600 dark:text-gray-300">
-                                {{ $movement->user?->name ?? 'Sistema' }}
+                                {{ $movement['user']?->name ?? 'Sistema' }}
                             </td>
                         </tr>
                         @endforeach
@@ -253,9 +264,9 @@ function expensesReportForm() {
     return {
         loading: false,
         filters: {
-            date_from: '{{ $dateFrom }}',
-            date_to:   '{{ $dateTo }}',
-            movement_type_id: '{{ $movementTypeId ?? '' }}',
+            date_from: "{{ $dateFrom }}",
+            date_to:   "{{ $dateTo }}",
+            movement_type_id: "{{ $movementTypeId ?? '' }}",
         },
 
         generateReport() {

@@ -2,7 +2,7 @@
 
 [![Laravel](https://img.shields.io/badge/Laravel-12.x-red?style=flat\&logo=laravel)](https://laravel.com)
 [![PHP](https://img.shields.io/badge/PHP-8.2-blue?style=flat\&logo=php)](https://php.net)
-[![Version](https://img.shields.io/badge/Version-2.11.5-green?style=flat)](#changelog)
+[![Version](https://img.shields.io/badge/Version-2.11.6-green?style=flat)](#changelog)
 [![License](https://img.shields.io/badge/License-MIT-yellow?style=flat)](#license)
 
 Sistema integral de gestión médica para clínicas y consultorios, desarrollado con Laravel 12 y tecnologías modernas.
@@ -17,6 +17,14 @@ Sistema integral de gestión médica para clínicas y consultorios, desarrollado
 * [Contribución](#contribución)
 
 ## ✨ Características
+
+### 💼 Gastos Externos y Dashboard Admin (v2.11.6)
+
+* **Módulo Gastos Externos**: registro de sueldos, impuestos, alquiler y servicios fuera de la caja diaria, con comprobantes adjuntos y filtros por período/tipo. No afecta el balance operativo.
+* **Dashboard Administrativo** (`/dashboard/admin`): resumen financiero del mes (ingresos, gastos, neto), top 5 de gastos por tipo y flujo de los últimos 6 meses.
+* **Dashboard default por perfil**: cada perfil define si su usuario ve el dashboard operativo o el administrativo al loguearse.
+* **Perfil "Administrativo"**: nuevo perfil base con módulos `reports + admin_dashboard + payments + cash` orientado a personal financiero.
+* **Análisis de Caja reubicado**: el reporte por período se mueve de `/cash/report` a `/reports/cash-analysis`, accesible a cualquier perfil con módulo `reports`.
 
 ### 💬 Integración WhatsApp (v2.11.0)
 
@@ -172,6 +180,7 @@ php artisan config:clear
 
 ### 🔄 Últimas versiones
 
+* **v2.11.6** (2026-04-27) – 💼 Nuevo módulo Gastos Externos (sueldos, impuestos, alquiler, servicios) con comprobantes y reportes consolidados. 📊 Dashboard Administrativo con resumen financiero del mes, top de gastos y flujo a 6 meses. 👥 Nuevo perfil "Administrativo" + columna `default_dashboard` por perfil. ♻️ Análisis de Caja movido a `/reports/cash-analysis` (módulo `reports` en lugar de `cash`).
 * **v2.11.5** (2026-04-27) – 💬 WhatsApp: botón para forzar envío de recordatorio desde Dashboard + botón Compartir para enviar el PDF del listado diario al profesional por WhatsApp.
 * **v2.11.4** (2026-04-27) – ✨ UX: pacientes (teléfono/fecha de nacimiento opcionales), dashboard (notas inline expandibles), turnos (modal de info/auditoría), agenda (notes panel sin FOUC + selector de mes reubicado).
 * **v2.11.0** (2026-04-19) – 💬 WhatsApp: notificaciones al crear/cancelar turno, toggles independientes por tipo, vista Plantillas con acordeones y preview en tiempo real, historial con modal de detalle. 🐛 Fix toggle enabled AJAX, formErrors en patientModal de Agenda, reactividad opt-out en Pacientes.

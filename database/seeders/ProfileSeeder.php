@@ -23,6 +23,14 @@ class ProfileSeeder extends Seeder
             'reports',
         ];
 
+        $administrativoModules = [
+            'reports',
+            'admin_dashboard',
+            'payments',
+            'cash',
+            // opcional: profesionales / pacientes
+        ];
+
         // Perfil Administrador — acceso completo
         $admin = Profile::firstOrCreate(
             ['name' => 'Administrador'],
@@ -33,6 +41,9 @@ class ProfileSeeder extends Seeder
             ProfileModule::create(['profile_id' => $admin->id, 'module' => $module]);
         }
 
+        // Default dashboard
+        $admin->update(['default_dashboard' => 'admin']);
+
         // Perfil Acceso General — sin configuración ni sistema
         $general = Profile::firstOrCreate(
             ['name' => 'Acceso General'],
@@ -42,6 +53,18 @@ class ProfileSeeder extends Seeder
         foreach ($generalModules as $module) {
             ProfileModule::create(['profile_id' => $general->id, 'module' => $module]);
         }
+        $general->update(['default_dashboard' => 'operative']);
+
+        // Perfil Administrativo — vista financiera (sin agenda/turnos operativos)
+        $administrativo = Profile::firstOrCreate(
+            ['name' => 'Administrativo'],
+            ['description' => 'Acceso administrativo/financiero (dashboard, reportes, caja y cobros)']
+        );
+        $administrativo->modules()->delete();
+        foreach ($administrativoModules as $module) {
+            ProfileModule::create(['profile_id' => $administrativo->id, 'module' => $module]);
+        }
+        $administrativo->update(['default_dashboard' => 'admin']);
 
         // Perfil Recepcionista Alto Nivel — acceso puntual a Movimientos de Caja
         $recepcionista = Profile::firstOrCreate(
@@ -53,6 +76,7 @@ class ProfileSeeder extends Seeder
         foreach ($recepcionistaMods as $module) {
             ProfileModule::create(['profile_id' => $recepcionista->id, 'module' => $module]);
         }
+        $recepcionista->update(['default_dashboard' => 'operative']);
         $recepcionista->permissions()->delete();
         ProfilePermission::create([
             'profile_id' => $recepcionista->id,

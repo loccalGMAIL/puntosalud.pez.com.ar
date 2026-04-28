@@ -6,7 +6,7 @@
 @endphp
 
 @section('title', 'Análisis de Caja - ' . $dateFrom . ' al ' . $dateTo)
-@section('back-url', route('cash.report'))
+@section('back-url', route('reports.cash-analysis'))
 
 @section('content')
 <div class="p-6 print:p-1">

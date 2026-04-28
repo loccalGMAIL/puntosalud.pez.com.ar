@@ -28,6 +28,11 @@ class DashboardController extends Controller
 
     public function index()
     {
+        $user = Auth::user();
+        if ($user && $user->profile?->default_dashboard === 'admin' && $user->canAccessModule('admin_dashboard')) {
+            return redirect()->route('dashboard.admin');
+        }
+
         $today = Carbon::today();
 
         // Verificar estado de caja para recepcionistas

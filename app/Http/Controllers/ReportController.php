@@ -6,6 +6,7 @@ use App\Models\Appointment;
 use App\Models\CashMovement;
 use App\Models\MovementType;
 use App\Models\Patient;
+use App\Models\Expense;
 use App\Models\Professional;
 use App\Models\ProfessionalLiquidation;
 use App\Services\WhatsAppService;
@@ -765,24 +766,16 @@ class ReportController extends Controller
         $startDate = Carbon::parse($dateFrom)->startOfDay();
         $endDate   = Carbon::parse($dateTo)->endOfDay();
 
-        $query = CashMovement::with(['movementType', 'user'])
-            ->whereHas('movementType', fn($q) => $q->whereIn('category', ['expense_detail', 'withdrawal_detail']))
-            ->whereBetween('created_at', [$startDate, $endDate]);
+        $movements = $this->buildUnifiedExpenses($startDate, $endDate, $movementTypeId);
 
-        if ($movementTypeId) {
-            $query->where('movement_type_id', $movementTypeId);
-        }
-
-        $movements = $query->orderBy('created_at', 'desc')->get();
-
-        $totalAmount = $movements->sum(fn($m) => abs($m->amount));
+        $totalAmount = $movements->sum('amount');
         $totalCount  = $movements->count();
 
-        $byType = $movements->groupBy('movement_type_id')->map(fn($items) => [
-            'name'  => $items->first()->movementType->name,
-            'icon'  => $items->first()->movementType->icon,
+        $byType = $movements->groupBy(fn ($m) => $m['type']?->id)->map(fn ($items) => [
+            'name'  => $items->first()['type']?->name ?? '-',
+            'icon'  => $items->first()['type']?->icon ?? '📋',
             'count' => $items->count(),
-            'total' => $items->sum(fn($m) => abs($m->amount)),
+            'total' => $items->sum('amount'),
         ])->sortByDesc('total');
 
         $topType = $byType->first();
@@ -809,23 +802,15 @@ class ReportController extends Controller
         $startDate = Carbon::parse($dateFrom)->startOfDay();
         $endDate   = Carbon::parse($dateTo)->endOfDay();
 
-        $query = CashMovement::with(['movementType', 'user'])
-            ->whereHas('movementType', fn($q) => $q->whereIn('category', ['expense_detail', 'withdrawal_detail']))
-            ->whereBetween('created_at', [$startDate, $endDate]);
+        $movements = $this->buildUnifiedExpenses($startDate, $endDate, $movementTypeId);
 
-        if ($movementTypeId) {
-            $query->where('movement_type_id', $movementTypeId);
-        }
-
-        $movements = $query->orderBy('created_at', 'desc')->get();
-
-        $totalAmount = $movements->sum(fn($m) => abs($m->amount));
+        $totalAmount = $movements->sum('amount');
         $totalCount  = $movements->count();
 
-        $byType = $movements->groupBy('movement_type_id')->map(fn($items) => [
-            'name'  => $items->first()->movementType?->name ?? '-',
+        $byType = $movements->groupBy(fn ($m) => $m['type']?->id)->map(fn ($items) => [
+            'name'  => $items->first()['type']?->name ?? '-',
             'count' => $items->count(),
-            'total' => $items->sum(fn($m) => abs($m->amount)),
+            'total' => $items->sum('amount'),
         ])->sortByDesc('total');
 
         $filename = 'gastos_' . $dateFrom . '_' . $dateTo . '.csv';
@@ -859,18 +844,19 @@ class ReportController extends Controller
             fputcsv($f, [], ';');
 
             // Detalle
-            fputcsv($f, ['DETALLE DE GASTOS'], ';');
-            fputcsv($f, ['Fecha', 'Hora', 'Tipo de Gasto', 'Descripción', 'Monto', 'Registrado por'], ';');
-            foreach ($movements as $m) {
-                fputcsv($f, [
-                    $m->created_at->format('d/m/Y'),
-                    $m->created_at->format('H:i'),
-                    $m->movementType?->name ?? '-',
-                    $m->description ?? '',
-                    number_format(abs($m->amount), 2, ',', '.'),
-                    $m->user?->name ?? 'Sistema',
-                ], ';');
-            }
+             fputcsv($f, ['DETALLE DE GASTOS'], ';');
+             fputcsv($f, ['Fecha', 'Hora', 'Origen', 'Tipo de Gasto', 'Descripción', 'Monto', 'Registrado por'], ';');
+             foreach ($movements as $m) {
+                 fputcsv($f, [
+                     $m['date']->format('d/m/Y'),
+                     $m['time'] ?? '',
+                     $m['origin_label'],
+                     $m['type']?->name ?? '-',
+                     $m['description'] ?? '',
+                     number_format($m['amount'], 2, ',', '.'),
+                     $m['user']?->name ?? 'Sistema',
+                 ], ';');
+             }
 
             fclose($f);
         };
@@ -893,30 +879,72 @@ class ReportController extends Controller
         $startDate = Carbon::parse($dateFrom)->startOfDay();
         $endDate   = Carbon::parse($dateTo)->endOfDay();
 
-        $query = CashMovement::with(['movementType', 'user'])
-            ->whereHas('movementType', fn($q) => $q->whereIn('category', ['expense_detail', 'withdrawal_detail']))
-            ->whereBetween('created_at', [$startDate, $endDate]);
+        $movements = $this->buildUnifiedExpenses($startDate, $endDate, $movementTypeId);
 
-        if ($movementTypeId) {
-            $query->where('movement_type_id', $movementTypeId);
-        }
-
-        $movements = $query->orderBy('created_at', 'desc')->get();
-
-        $totalAmount = $movements->sum(fn($m) => abs($m->amount));
+        $totalAmount = $movements->sum('amount');
         $totalCount  = $movements->count();
         $avgAmount   = $totalCount > 0 ? $totalAmount / $totalCount : 0;
 
-        $byType = $movements->groupBy('movement_type_id')->map(fn($items) => [
-            'name'  => $items->first()->movementType->name,
-            'icon'  => $items->first()->movementType->icon,
+        $byType = $movements->groupBy(fn ($m) => $m['type']?->id)->map(fn ($items) => [
+            'name'  => $items->first()['type']?->name ?? '-',
+            'icon'  => $items->first()['type']?->icon ?? '📋',
             'count' => $items->count(),
-            'total' => $items->sum(fn($m) => abs($m->amount)),
+            'total' => $items->sum('amount'),
         ])->sortByDesc('total');
 
         return view('reports.expenses-print', compact(
             'movements', 'totalAmount', 'totalCount', 'avgAmount', 'byType', 'dateFrom', 'dateTo'
         ));
+    }
+
+    private function buildUnifiedExpenses(Carbon $startDate, Carbon $endDate, ?string $movementTypeId)
+    {
+        $cashQuery = CashMovement::with(['movementType', 'user'])
+            ->whereHas('movementType', fn ($q) => $q->whereIn('category', ['expense_detail', 'withdrawal_detail']))
+            ->whereBetween('created_at', [$startDate, $endDate]);
+
+        if ($movementTypeId) {
+            $cashQuery->where('movement_type_id', $movementTypeId);
+        }
+
+        $cash = $cashQuery->orderBy('created_at', 'desc')->get()->map(function ($m) {
+            return [
+                'sort_at' => $m->created_at,
+                'date' => $m->created_at,
+                'time' => $m->created_at->format('H:i'),
+                'type' => $m->movementType,
+                'amount' => abs($m->amount),
+                'description' => $m->description,
+                'user' => $m->user,
+                'origin' => 'cash',
+                'origin_label' => 'Caja',
+            ];
+        });
+
+        $externalQuery = Expense::with(['movementType', 'creator'])
+            ->whereBetween('expense_date', [$startDate->toDateString(), $endDate->toDateString()]);
+
+        if ($movementTypeId) {
+            $externalQuery->where('movement_type_id', $movementTypeId);
+        }
+
+        $external = $externalQuery->orderBy('expense_date', 'desc')->orderBy('id', 'desc')->get()->map(function ($e) {
+            $date = $e->expense_date instanceof Carbon ? $e->expense_date : Carbon::parse($e->expense_date);
+
+            return [
+                'sort_at' => $date->copy()->endOfDay(),
+                'date' => $date,
+                'time' => null,
+                'type' => $e->movementType,
+                'amount' => (float) $e->amount,
+                'description' => $e->description,
+                'user' => $e->creator,
+                'origin' => 'external',
+                'origin_label' => 'Externo',
+            ];
+        });
+
+        return $cash->concat($external)->sortByDesc('sort_at')->values();
     }
 
     // =========================================================================
@@ -1833,13 +1861,13 @@ class ReportController extends Controller
         $dateFrom = $request->get('date_from', now()->subMonths(5)->startOfMonth()->format('Y-m-d'));
         $dateTo   = $request->get('date_to', now()->format('Y-m-d'));
 
+        $start = Carbon::parse($dateFrom)->startOfDay();
+        $end = Carbon::parse($dateTo)->endOfDay();
+
         $rows = DB::table('cash_movements')
             ->join('movement_types', 'cash_movements.movement_type_id', '=', 'movement_types.id')
             ->whereNotIn('movement_types.code', ['cash_opening', 'cash_closing'])
-            ->whereBetween('cash_movements.created_at', [
-                Carbon::parse($dateFrom)->startOfDay(),
-                Carbon::parse($dateTo)->endOfDay(),
-            ])
+            ->whereBetween('cash_movements.created_at', [$start, $end])
             ->selectRaw("
                 DATE_FORMAT(cash_movements.created_at, '%Y-%m') as month,
                 SUM(CASE WHEN cash_movements.amount > 0 THEN cash_movements.amount ELSE 0 END) as income,
@@ -1849,19 +1877,54 @@ class ReportController extends Controller
             ->orderBy('month')
             ->get();
 
+        $externalRows = Expense::query()
+            ->whereBetween('expense_date', [$start->toDateString(), $end->toDateString()])
+            ->selectRaw("DATE_FORMAT(expense_date, '%Y-%m') as month, SUM(amount) as expenses")
+            ->groupBy('month')
+            ->orderBy('month')
+            ->get();
+
+        $cashMap = $rows->mapWithKeys(fn ($r) => [
+            $r->month => [
+                'income' => (float) $r->income,
+                'expenses' => (float) $r->expenses,
+            ],
+        ])->toArray();
+
+        $externalMap = $externalRows->mapWithKeys(fn ($r) => [
+            $r->month => (float) $r->expenses,
+        ])->toArray();
+
+        $normalized = collect();
+        $cursor = $start->copy()->startOfMonth();
+        $endCursor = $end->copy()->startOfMonth();
+        while ($cursor <= $endCursor) {
+            $key = $cursor->format('Y-m');
+            $income = $cashMap[$key]['income'] ?? 0.0;
+            $expenses = ($cashMap[$key]['expenses'] ?? 0.0) + ($externalMap[$key] ?? 0.0);
+
+            $normalized->push((object) [
+                'month' => $key,
+                'income' => $income,
+                'expenses' => $expenses,
+            ]);
+
+            $cursor->addMonth();
+        }
+
         $chartData = [
-            'labels'   => $rows->map(fn($r) => Carbon::createFromFormat('Y-m', $r->month)->isoFormat('MMM YY'))->values(),
+            'labels'   => $normalized->map(fn($r) => Carbon::createFromFormat('Y-m', $r->month)->isoFormat('MMM YY'))->values(),
             'datasets' => [
                 [
                     'label'           => 'Ingresos',
-                    'data'            => $rows->pluck('income')->values(),
+                    'data'            => $normalized->pluck('income')->values(),
                     'backgroundColor' => 'rgba(16,185,129,0.7)',
                     'borderColor'     => 'rgb(16,185,129)',
                     'borderWidth'     => 1,
                 ],
                 [
                     'label'           => 'Egresos',
-                    'data'            => $rows->pluck('expenses')->values(),
+                    'data'            => $normalized->pluck('expenses')->values(),
                     'backgroundColor' => 'rgba(239,68,68,0.7)',
                     'borderColor'     => 'rgb(239,68,68)',
                     'borderWidth'     => 1,
@@ -1869,7 +1932,7 @@ class ReportController extends Controller
             ],
         ];
 
-        $monthly = $rows->map(fn($r) => [
+        $monthly = $normalized->map(fn($r) => [
             'label'    => Carbon::createFromFormat('Y-m', $r->month)->isoFormat('MMMM YYYY'),
             'income'   => (float) $r->income,
             'expenses' => (float) $r->expenses,
@@ -2270,5 +2333,288 @@ class ReportController extends Controller
             'absent' => 'Ausente',
             default => 'Desconocido'
         };
+    }
+
+    /**
+     * Análisis de Caja por período (vista web)
+     */
+    public function cashAnalysis(Request $request)
+    {
+        $dateFrom = $request->get('date_from', now()->startOfMonth()->format('Y-m-d'));
+        $dateTo = $request->get('date_to', now()->format('Y-m-d'));
+        $groupBy = $request->get('group_by', 'day');
+
+        $startDate = Carbon::parse($dateFrom);
+        $endDate = Carbon::parse($dateTo);
+
+        $movements = CashMovement::with(['user', 'movementType'])
+            ->whereDate('created_at', '>=', $startDate)
+            ->whereDate('created_at', '<=', $endDate)
+            ->orderBy('created_at')
+            ->get();
+
+        $movementsForTotals = $movements->filter(function ($movement) {
+            return ! in_array($movement->movementType?->code, ['cash_opening', 'cash_closing']);
+        });
+
+        $reportData = $this->generateCashAnalysisData($movementsForTotals, $groupBy, $startDate, $endDate);
+
+        $summary = [
+            'total_inflows' => $movementsForTotals->where('amount', '>', 0)->sum('amount'),
+            'total_outflows' => abs($movementsForTotals->where('amount', '<', 0)->sum('amount')),
+            'net_amount' => $movementsForTotals->sum('amount'),
+            'movements_count' => $movementsForTotals->count(),
+            'period_days' => $startDate->diffInDays($endDate) + 1,
+        ];
+
+        $movementsByType = $movementsForTotals->groupBy(function ($movement) {
+            return $movement->movementType?->code ?? 'unknown';
+        })->map(function ($group, $typeCode) {
+            $firstMovement = $group->first();
+            return [
+                'type' => $typeCode,
+                'type_name' => $firstMovement->movementType?->name ?? ucfirst($typeCode),
+                'icon' => $firstMovement->movementType?->icon ?? '📋',
+                'inflows' => $group->where('amount', '>', 0)->sum('amount'),
+                'outflows' => abs($group->where('amount', '<', 0)->sum('amount')),
+                'count' => $group->count(),
+            ];
+        });
+
+        if ($request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'report_data' => $reportData,
+                'summary' => $summary,
+                'movements_by_type' => $movementsByType,
+            ]);
+        }
+
+        return view('reports.cash-analysis', compact('reportData', 'summary', 'movementsByType'));
+    }
+
+    /**
+     * Análisis de Caja — vista de impresión
+     */
+    public function printCashAnalysis(Request $request)
+    {
+        $dateFrom = $request->get('date_from', now()->startOfMonth()->format('Y-m-d'));
+        $dateTo = $request->get('date_to', now()->format('Y-m-d'));
+        $groupBy = $request->get('group_by', 'day');
+
+        $startDate = Carbon::parse($dateFrom);
+        $endDate = Carbon::parse($dateTo);
+
+        $movements = CashMovement::with(['user', 'movementType'])
+            ->whereDate('created_at', '>=', $startDate)
+            ->whereDate('created_at', '<=', $endDate)
+            ->orderBy('created_at')
+            ->get();
+
+        $movementsForTotals = $movements->filter(function ($movement) {
+            return ! in_array($movement->movementType?->code, ['cash_opening', 'cash_closing']);
+        });
+
+        $reportData = $this->generateCashAnalysisData($movementsForTotals, $groupBy, $startDate, $endDate);
+
+        $summary = [
+            'total_inflows' => $movementsForTotals->where('amount', '>', 0)->sum('amount'),
+            'total_outflows' => abs($movementsForTotals->where('amount', '<', 0)->sum('amount')),
+            'net_amount' => $movementsForTotals->sum('amount'),
+            'movements_count' => $movementsForTotals->count(),
+            'period_days' => $startDate->diffInDays($endDate) + 1,
+        ];
+
+        $movementsByType = $movementsForTotals->groupBy(function ($movement) {
+            return $movement->movementType?->code ?? 'unknown';
+        })->map(function ($group, $typeCode) {
+            $firstMovement = $group->first();
+            return [
+                'type' => $typeCode,
+                'type_name' => $firstMovement->movementType?->name ?? ucfirst($typeCode),
+                'icon' => $firstMovement->movementType?->icon ?? '📋',
+                'inflows' => $group->where('amount', '>', 0)->sum('amount'),
+                'outflows' => abs($group->where('amount', '<', 0)->sum('amount')),
+                'count' => $group->count(),
+            ];
+        });
+
+        return view('reports.cash-analysis-print', compact(
+            'reportData', 'summary', 'movementsByType', 'dateFrom', 'dateTo', 'groupBy'
+        ));
+    }
+
+    /**
+     * Análisis de Caja — exportación CSV
+     */
+    public function exportCashAnalysisCsv(Request $request)
+    {
+        $dateFrom = $request->get('date_from', now()->startOfMonth()->format('Y-m-d'));
+        $dateTo = $request->get('date_to', now()->format('Y-m-d'));
+        $groupBy = $request->get('group_by', 'day');
+
+        $startDate = Carbon::parse($dateFrom);
+        $endDate = Carbon::parse($dateTo);
+
+        $movements = CashMovement::with(['user', 'movementType'])
+            ->whereDate('created_at', '>=', $startDate)
+            ->whereDate('created_at', '<=', $endDate)
+            ->orderBy('created_at')
+            ->get();
+
+        $movementsForTotals = $movements->filter(function ($movement) {
+            return ! in_array($movement->movementType?->code, ['cash_opening', 'cash_closing']);
+        });
+
+        $reportData = $this->generateCashAnalysisData($movementsForTotals, $groupBy, $startDate, $endDate);
+
+        $summary = [
+            'total_inflows' => $movementsForTotals->where('amount', '>', 0)->sum('amount'),
+            'total_outflows' => abs($movementsForTotals->where('amount', '<', 0)->sum('amount')),
+            'net_amount' => $movementsForTotals->sum('amount'),
+            'movements_count' => $movementsForTotals->count(),
+            'period_days' => $startDate->diffInDays($endDate) + 1,
+        ];
+
+        $movementsByType = $movementsForTotals->groupBy(function ($movement) {
+            return $movement->movementType?->code ?? 'unknown';
+        })->map(function ($group, $typeCode) {
+            $firstMovement = $group->first();
+            return [
+                'type' => $typeCode,
+                'type_name' => $firstMovement->movementType?->name ?? ucfirst($typeCode),
+                'inflows' => $group->where('amount', '>', 0)->sum('amount'),
+                'outflows' => abs($group->where('amount', '<', 0)->sum('amount')),
+                'count' => $group->count(),
+            ];
+        });
+
+        $filename = 'reporte-caja-' . $dateFrom . '-a-' . $dateTo . '.csv';
+
+        $headers = [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => "attachment; filename=\"$filename\"",
+        ];
+
+        $callback = function () use ($summary, $reportData, $movementsByType, $dateFrom, $dateTo) {
+            $file = fopen('php://output', 'w');
+            fprintf($file, chr(0xEF) . chr(0xBB) . chr(0xBF));
+
+            fputcsv($file, ['REPORTE DE CAJA'], ';');
+            fputcsv($file, ["Periodo: $dateFrom al $dateTo"], ';');
+            fputcsv($file, [], ';');
+
+            fputcsv($file, ['RESUMEN'], ';');
+            fputcsv($file, ['Total Ingresos', number_format($summary['total_inflows'], 2, ',', '.')], ';');
+            fputcsv($file, ['Total Egresos', number_format($summary['total_outflows'], 2, ',', '.')], ';');
+            fputcsv($file, ['Resultado Neto', number_format($summary['net_amount'], 2, ',', '.')], ';');
+            fputcsv($file, ['Cantidad de Movimientos', $summary['movements_count']], ';');
+            fputcsv($file, ['Dias del Periodo', $summary['period_days']], ';');
+            fputcsv($file, [], ';');
+
+            fputcsv($file, ['DETALLE POR PERIODO'], ';');
+            fputcsv($file, ['Periodo', 'Ingresos', 'Egresos', 'Neto', 'Movimientos'], ';');
+            foreach ($reportData as $period) {
+                fputcsv($file, [
+                    $period['period_label'],
+                    number_format($period['inflows'], 2, ',', '.'),
+                    number_format($period['outflows'], 2, ',', '.'),
+                    number_format($period['net'], 2, ',', '.'),
+                    $period['count'],
+                ], ';');
+            }
+            fputcsv($file, [], ';');
+
+            fputcsv($file, ['ANALISIS POR TIPO DE MOVIMIENTO'], ';');
+            fputcsv($file, ['Tipo', 'Ingresos', 'Egresos', 'Cantidad'], ';');
+            foreach ($movementsByType as $type) {
+                fputcsv($file, [
+                    $type['type_name'],
+                    number_format($type['inflows'], 2, ',', '.'),
+                    number_format($type['outflows'], 2, ',', '.'),
+                    $type['count'],
+                ], ';');
+            }
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
+    /**
+     * Helper: agrupa movimientos por día/semana/mes para Análisis de Caja
+     */
+    private function generateCashAnalysisData($movements, $groupBy, $startDate, $endDate)
+    {
+        $data = collect();
+
+        switch ($groupBy) {
+            case 'day':
+                $period = $startDate->copy();
+                while ($period->lte($endDate)) {
+                    $dayMovements = $movements->filter(function ($movement) use ($period) {
+                        return Carbon::parse($movement->created_at)->isSameDay($period);
+                    });
+
+                    $data->push([
+                        'period' => $period->format('Y-m-d'),
+                        'period_label' => $period->format('d/m/Y'),
+                        'inflows' => $dayMovements->where('amount', '>', 0)->sum('amount'),
+                        'outflows' => abs($dayMovements->where('amount', '<', 0)->sum('amount')),
+                        'net' => $dayMovements->sum('amount'),
+                        'count' => $dayMovements->count(),
+                    ]);
+
+                    $period->addDay();
+                }
+                break;
+
+            case 'week':
+                $period = $startDate->copy()->startOfWeek();
+                while ($period->lte($endDate)) {
+                    $weekEnd = $period->copy()->endOfWeek();
+                    $weekMovements = $movements->filter(function ($movement) use ($period, $weekEnd) {
+                        $moveDate = Carbon::parse($movement->created_at);
+                        return $moveDate->between($period, $weekEnd);
+                    });
+
+                    $data->push([
+                        'period' => $period->format('Y-m-d'),
+                        'period_label' => 'Semana del ' . $period->format('d/m') . ' al ' . $weekEnd->format('d/m/Y'),
+                        'inflows' => $weekMovements->where('amount', '>', 0)->sum('amount'),
+                        'outflows' => abs($weekMovements->where('amount', '<', 0)->sum('amount')),
+                        'net' => $weekMovements->sum('amount'),
+                        'count' => $weekMovements->count(),
+                    ]);
+
+                    $period->addWeek();
+                }
+                break;
+
+            case 'month':
+                $period = $startDate->copy()->startOfMonth();
+                while ($period->lte($endDate)) {
+                    $monthEnd = $period->copy()->endOfMonth();
+                    $monthMovements = $movements->filter(function ($movement) use ($period, $monthEnd) {
+                        $moveDate = Carbon::parse($movement->created_at);
+                        return $moveDate->between($period, $monthEnd);
+                    });
+
+                    $data->push([
+                        'period' => $period->format('Y-m'),
+                        'period_label' => $period->format('F Y'),
+                        'inflows' => $monthMovements->where('amount', '>', 0)->sum('amount'),
+                        'outflows' => abs($monthMovements->where('amount', '<', 0)->sum('amount')),
+                        'net' => $monthMovements->sum('amount'),
+                        'count' => $monthMovements->count(),
+                    ]);
+
+                    $period->addMonth();
+                }
+                break;
+        }
+
+        return $data->reverse();
     }
 }

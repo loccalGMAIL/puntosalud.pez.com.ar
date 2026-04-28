@@ -119,6 +119,17 @@ class User extends Authenticatable
         return $this->canAccessModule('configuration');
     }
 
+    public function defaultDashboardRoute(): string
+    {
+        $pref = $this->profile?->default_dashboard;
+
+        if ($pref === 'admin' && $this->canAccessModule('admin_dashboard')) {
+            return route('dashboard.admin', [], false);
+        }
+
+        return route('dashboard', [], false);
+    }
+
     /**
      * Verificar si el usuario está activo
      */

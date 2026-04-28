@@ -22,9 +22,9 @@
             <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Análisis de Caja</h1>
             <p class="text-gray-600 dark:text-gray-400">Análisis detallado de movimientos por período</p>
         </div>
-        
+
         <div class="flex gap-3">
-            <button @click="exportReport('excel')" 
+            <button @click="exportReport('excel')"
                     class="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg shadow-sm transition-colors duration-200">
                 <svg class="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
@@ -47,21 +47,21 @@
         <form @submit.prevent="generateReport()" class="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Fecha Desde</label>
-                <input x-model="filters.date_from" 
-                       type="date" 
+                <input x-model="filters.date_from"
+                       type="date"
                        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
                        required>
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Fecha Hasta</label>
-                <input x-model="filters.date_to" 
-                       type="date" 
+                <input x-model="filters.date_to"
+                       type="date"
                        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
                        required>
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Agrupar Por</label>
-                <select x-model="filters.group_by" 
+                <select x-model="filters.group_by"
                         class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white">
                     <option value="day">Día</option>
                     <option value="week">Semana</option>
@@ -69,7 +69,7 @@
                 </select>
             </div>
             <div class="flex items-end gap-2">
-                <button type="submit" 
+                <button type="submit"
                         :disabled="loading"
                         class="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white text-sm font-medium rounded-lg transition-colors disabled:cursor-not-allowed">
                     <span x-show="!loading">Generar</span>
@@ -195,7 +195,7 @@
             <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                 Detalle del Período ({{ $reportData->count() }} períodos)
             </h2>
-            
+
             <div class="overflow-x-auto">
                 <table class="w-full">
                     <thead>
@@ -247,13 +247,13 @@ function cashReportForm() {
 
         async generateReport() {
             this.loading = true;
-            
+
             const params = new URLSearchParams();
             Object.entries(this.filters).forEach(([key, value]) => {
                 if (value) params.set(key, value);
             });
-            
-            window.location.href = `/cash/report?${params.toString()}`;
+
+            window.location.href = `/reports/cash-analysis?${params.toString()}`;
         },
 
         async exportReport(format) {
@@ -263,9 +263,9 @@ function cashReportForm() {
             });
 
             if (format === 'excel') {
-                window.location.href = `/cash/report/export?${params.toString()}`;
+                window.location.href = `/reports/cash-analysis/export?${params.toString()}`;
             } else if (format === 'print') {
-                window.open(`/cash/report/print?${params.toString()}`, '_blank');
+                window.open(`/reports/cash-analysis/print?${params.toString()}`, '_blank');
             }
         }
     }

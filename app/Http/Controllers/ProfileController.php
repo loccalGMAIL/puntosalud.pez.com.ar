@@ -37,6 +37,7 @@ class ProfileController extends Controller
         $validator = Validator::make($request->all(), [
             'name'          => ['required', 'string', 'max:255', 'unique:profiles'],
             'description'   => ['nullable', 'string', 'max:500'],
+            'default_dashboard' => ['nullable', 'string', 'in:' . implode(',', array_keys(Profile::DASHBOARDS))],
             'modules'       => ['nullable', 'array'],
             'modules.*'     => ['string', 'in:' . implode(',', array_keys(Profile::MODULES))],
             'permissions'   => ['nullable', 'array'],
@@ -50,6 +51,7 @@ class ProfileController extends Controller
         $profile = Profile::create([
             'name'        => $request->name,
             'description' => $request->description,
+            'default_dashboard' => $request->input('default_dashboard', 'operative'),
         ]);
 
         foreach ($request->input('modules', []) as $module) {
@@ -78,6 +80,7 @@ class ProfileController extends Controller
         $validator = Validator::make($request->all(), [
             'name'          => ['required', 'string', 'max:255', 'unique:profiles,name,' . $profile->id],
             'description'   => ['nullable', 'string', 'max:500'],
+            'default_dashboard' => ['nullable', 'string', 'in:' . implode(',', array_keys(Profile::DASHBOARDS))],
             'modules'       => ['nullable', 'array'],
             'modules.*'     => ['string', 'in:' . implode(',', array_keys(Profile::MODULES))],
             'permissions'   => ['nullable', 'array'],
@@ -91,6 +94,7 @@ class ProfileController extends Controller
         $profile->update([
             'name'        => $request->name,
             'description' => $request->description,
+            'default_dashboard' => $request->input('default_dashboard', $profile->default_dashboard ?? 'operative'),
         ]);
 
         // Reemplazar módulos

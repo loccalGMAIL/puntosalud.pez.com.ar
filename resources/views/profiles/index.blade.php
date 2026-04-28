@@ -90,7 +90,7 @@
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
                             @can('update', $profile)
-                            <button @click="openModal('edit', {{ $profile->id }}, '{{ addslashes($profile->name) }}', '{{ addslashes($profile->description ?? '') }}', {{ $profile->modules->pluck('module')->toJson() }}, {{ $profile->permissions->pluck('permission')->toJson() }})"
+                            <button @click="openModal('edit', {{ $profile->id }}, '{{ addslashes($profile->name) }}', '{{ addslashes($profile->description ?? '') }}', {{ $profile->modules->pluck('module')->toJson() }}, {{ $profile->permissions->pluck('permission')->toJson() }}, '{{ $profile->default_dashboard ?? 'operative' }}')"
                                     class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300">
                                 Editar
                             </button>
@@ -164,13 +164,25 @@
                                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500">
                         </div>
 
+                        <!-- Dashboard por defecto -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Dashboard por defecto</label>
+                            <select x-model="form.default_dashboard"
+                                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500">
+                                @foreach(\App\Models\Profile::DASHBOARDS as $key => $label)
+                                    <option value="{{ $key }}">{{ $label }}</option>
+                                @endforeach
+                            </select>
+                            <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">Define a que dashboard se redirige al iniciar sesion.</p>
+                        </div>
+
                         <!-- Módulos -->
                         <div>
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
                                 Módulos habilitados
                             </label>
-                            <div class="grid grid-cols-2 gap-2">
-                                @foreach($modules as $key => $label)
+                             <div class="grid grid-cols-2 gap-2">
+                                 @foreach($modules as $key => $label)
                                 <label class="flex items-center gap-2 p-2.5 rounded-lg border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors"
                                        :class="form.modules.includes('{{ $key }}') ? 'border-emerald-300 bg-emerald-50 dark:bg-emerald-900/20 dark:border-emerald-700' : ''">
                                     <input type="checkbox" value="{{ $key }}"
@@ -221,7 +233,7 @@
 </div>
 
 @push('scripts')
-<script>
+                    <script>
 function profilesApp() {
     return {
         showModal: false,
@@ -231,6 +243,7 @@ function profilesApp() {
         form: {
             name: '',
             description: '',
+            default_dashboard: 'operative',
             modules: [],
             permissions: [],
         },
@@ -246,13 +259,14 @@ function profilesApp() {
             this.formErrors = {};
         },
 
-        openModal(action, id = null, name = '', description = '', modules = [], permissions = []) {
+        openModal(action, id = null, name = '', description = '', modules = [], permissions = [], defaultDashboard = 'operative') {
             this.clearErrors();
             this.isEditing = action === 'edit';
             this.currentId = id;
             this.form = {
                 name: name,
                 description: description,
+                default_dashboard: defaultDashboard || 'operative',
                 modules: Array.isArray(modules) ? modules : [],
                 permissions: Array.isArray(permissions) ? permissions : [],
             };
@@ -277,6 +291,7 @@ function profilesApp() {
             if (this.isEditing) body.append('_method', 'PUT');
             body.append('name', this.form.name);
             body.append('description', this.form.description);
+            body.append('default_dashboard', this.form.default_dashboard || 'operative');
             this.form.modules.forEach(m => body.append('modules[]', m));
             this.form.permissions.forEach(p => body.append('permissions[]', p));
 
