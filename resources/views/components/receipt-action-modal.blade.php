@@ -138,14 +138,6 @@
         return { ok, success, data };
     };
 
-    window.shareIncomeReceiptByWhatsApp = async function (paymentId) {
-        const { ok, data } = await postJson(`/cash/income-receipt/${paymentId}/share-whatsapp`, {});
-        const success = !!(data && data.success);
-        const message = (data && data.message) ? data.message : (success ? 'Recibo enviado por WhatsApp.' : 'No se pudo enviar el recibo por WhatsApp.');
-        window.showToast(message, (ok && success) ? 'success' : 'error');
-        return { ok, success, data };
-    };
-
     document.addEventListener('keydown', function (e) {
         if (e.key === 'Escape' && modal && !modal.classList.contains('hidden')) {
             window.__closeReceiptActionModal?.('cancel');

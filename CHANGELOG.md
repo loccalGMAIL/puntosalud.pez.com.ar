@@ -11,10 +11,9 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ### 🧾 Recibos: modal unificado + WhatsApp
 
-- **Nuevo modal unificado de recibo** (Imprimir / WhatsApp) reutilizable en Dashboard y Caja.
-- **Compartir recibo de pago por WhatsApp**: nuevo endpoint `POST /payments/{payment}/share-whatsapp` que genera el PDF optimizado y lo envia por WhatsApp.
-- **Compartir recibo de ingreso manual por WhatsApp**: nuevo endpoint `POST /cash/income-receipt/{payment}/share-whatsapp`.
-- **PDF para WhatsApp**: nuevas vistas `receipts/whatsapp` y `receipts/income-whatsapp` en formato A5 vertical con logo embebido.
+- **Nuevo modal unificado de recibo** (Imprimir / WhatsApp) reutilizable en Dashboard.
+- **Compartir recibo de pago por WhatsApp**: nuevo endpoint `POST /payments/{payment}/share-whatsapp` que genera el PDF optimizado y lo envia por WhatsApp. Solo aplica a pagos de pacientes; los ingresos manuales mantienen el flujo de impresión.
+- **PDF para WhatsApp**: nueva vista `receipts/whatsapp` en formato A5 vertical con logo embebido.
 
 ### 💬 WhatsApp: historial mejorado y errores amigables
 

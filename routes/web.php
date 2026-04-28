@@ -179,7 +179,6 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/cash/manual-income', [App\Http\Controllers\CashController::class, 'manualIncomeForm'])->name('cash.manual-income-form');
         Route::post('/cash/manual-income', [App\Http\Controllers\CashController::class, 'manualIncomeForm'])->name('cash.manual-income.store');
         Route::get('/cash/income-receipt/{payment}', [App\Http\Controllers\CashController::class, 'printIncomeReceipt'])->name('cash.income-receipt');
-        Route::post('/cash/income-receipt/{payment}/share-whatsapp', [App\Http\Controllers\CashController::class, 'shareIncomeReceiptViaWhatsApp'])->name('cash.income-receipt.share-whatsapp');
         Route::get('/cash/movements/{cashMovement}', [App\Http\Controllers\CashController::class, 'getCashMovementDetails'])->name('cash.movement-details');
 
         // Cash opening/closing routes

@@ -379,18 +379,15 @@ function incomeForm() {
                     setTimeout(() => { window.location.href = result.redirect || '/login'; }, 1500);
                 } else if (response.ok && result.success) {
                     if (result.payment_id) {
-                        const action = await window.askReceiptAction({
-                            paymentId: result.payment_id,
-                            kind: 'manual_income',
-                            hasPatientPhone: false
-                        });
+                        const printReceipt = await SystemModal.confirm(
+                            'Imprimir recibo',
+                            '¿Desea imprimir el recibo ahora?',
+                            'Sí, imprimir',
+                            'No'
+                        );
 
-                        if (action === 'print') {
+                        if (printReceipt) {
                             window.open(`/cash/income-receipt/${result.payment_id}?print=1`, '_blank');
-                        }
-
-                        if (action === 'whatsapp') {
-                            await window.shareIncomeReceiptByWhatsApp(result.payment_id);
                         }
                     }
 

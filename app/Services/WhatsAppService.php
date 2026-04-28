@@ -424,10 +424,12 @@ class WhatsAppService
             return false;
         }
 
-        // Evitar duplicados por turno/tipo (antes lo garantizaba el unique index).
+        // Evitar duplicados solo si ya hay un envío exitoso o en curso para ese turno/tipo.
+        // Filas en estado 'failed' deben permitir reintentos (las hacía el unique index antes).
         $alreadyExists = WhatsAppMessage::query()
             ->where('appointment_id', $appointment->id)
             ->where('type', $type)
+            ->whereIn('status', ['sent', 'pending'])
             ->exists();
         if ($alreadyExists) {
             Log::info('WhatsApp skipped', ['reason' => 'already_exists', 'appointment_id' => $appointment->id, 'type' => $type]);
