@@ -26,7 +26,14 @@
       "Bash(php -r \"echo bin2hex\\(random_bytes\\(32\\)\\);\")",
       "Bash(git commit *)",
       "Bash(git push *)",
-      "Bash(git log *)"
+      "Bash(git log *)",
+      "Bash(git *)",
+      "Bash(php -l app/Http/Controllers/CashController.php)",
+      "Bash(./vendor/bin/pint *)",
+      "Bash(php -l app/Jobs/SendWhatsAppReminder.php)",
+      "Bash(php -l app/Console/Commands/SendWhatsAppReminders.php)",
+      "Bash(php -l app/Services/WhatsAppService.php)",
+      "Bash(php -l routes/web.php)"
     ],
     "deny": [],
     "ask": []
