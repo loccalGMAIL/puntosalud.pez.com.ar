@@ -2,7 +2,7 @@
 
 [![Laravel](https://img.shields.io/badge/Laravel-12.x-red?style=flat\&logo=laravel)](https://laravel.com)
 [![PHP](https://img.shields.io/badge/PHP-8.2-blue?style=flat\&logo=php)](https://php.net)
-[![Version](https://img.shields.io/badge/Version-2.11.7-green?style=flat)](#changelog)
+[![Version](https://img.shields.io/badge/Version-2.11.8-green?style=flat)](#changelog)
 [![License](https://img.shields.io/badge/License-MIT-yellow?style=flat)](#license)
 
 Sistema integral de gestión médica para clínicas y consultorios, desarrollado con Laravel 12 y tecnologías modernas.
@@ -17,6 +17,20 @@ Sistema integral de gestión médica para clínicas y consultorios, desarrollado
 * [Contribución](#contribución)
 
 ## ✨ Características
+
+### 💬 WhatsApp: Ventana de envío configurable (v2.11.8)
+
+* **Días habilitados**: nuevo selector Lu–Do en `/whatsapp/settings` para bloquear el envío de recordatorios automáticos en días específicos (típicamente domingos).
+* **Horario permitido**: hora mínima y máxima (la máxima es exclusiva); por defecto 09:00–21:00.
+* **Adelanto inteligente, sin pérdidas**: si el momento ideal de un recordatorio cae en un día/horario bloqueado, el envío se reprograma al **último minuto válido anterior** (en lugar de descartarse o "atrasarse"). Ej.: turno del lunes 9:00 con bloqueo del domingo → el aviso se envía el sábado a las 20:59.
+* **Sin disparos fuera de hora**: el comando `whatsapp:send-reminders` se autoinhibe si corre fuera de la ventana, evitando colas atrasadas.
+* **Implementación**: nuevo servicio `App\Services\WhatsAppDispatchWindow` (constante `ADVANCE_HORIZON_DAYS = 14` como horizonte máximo de adelanto).
+
+### 🧾 Cobros: Compartir recibo por WhatsApp desde el listado (v2.11.8)
+
+* **Nuevo botón "Compartir"** en `/payments` (mobile cards + tabla desktop) para reenviar el recibo PDF al paciente sin tener que abrir el detalle del pago.
+* **Visibilidad inteligente**: aparece solo en pagos de pacientes con teléfono cargado y WhatsApp habilitado; queda oculto en reembolsos e ingresos manuales.
+* Reusa el endpoint y el helper global ya existentes desde v2.11.7 — sin nuevas rutas ni cambios de backend.
 
 ### 🧾 Recibos + WhatsApp + UX de Cobro (v2.11.7)
 
@@ -188,6 +202,7 @@ php artisan config:clear
 
 ### 🔄 Últimas versiones
 
+* **v2.11.8** (2026-05-01) – 💬 WhatsApp: ventana de envío configurable de recordatorios (días Lu–Do + hora mín/máx). Si el momento ideal cae en día/horario bloqueado, el envío se adelanta al último minuto válido anterior (no se pierde). Nuevo servicio `WhatsAppDispatchWindow`. 🧾 Cobros: nuevo botón "Compartir recibo por WhatsApp" en el listado `/payments`.
 * **v2.11.7** (2026-04-28) – 🧾 Recibos: modal unificado (imprimir/WhatsApp) + envío de PDF por WhatsApp. 💬 WhatsApp: historial con buscador + soporte tipo `receipt` y mensajes de error amigables. 💳 Cobro: modal multi-forma reutilizado en vistas de dashboard.
 * **v2.11.6** (2026-04-27) – 💼 Nuevo módulo Gastos Externos (sueldos, impuestos, alquiler, servicios) con comprobantes y reportes consolidados. 📊 Dashboard Administrativo con resumen financiero del mes, top de gastos y flujo a 6 meses. 👥 Nuevo perfil "Administrativo" + columna `default_dashboard` por perfil. ♻️ Análisis de Caja movido a `/reports/cash-analysis` (módulo `reports` en lugar de `cash`).
 * **v2.11.5** (2026-04-27) – 💬 WhatsApp: botón para forzar envío de recordatorio desde Dashboard + botón Compartir para enviar el PDF del listado diario al profesional por WhatsApp.

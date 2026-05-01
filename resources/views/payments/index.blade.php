@@ -210,6 +210,11 @@
                     @php
                         $methodLabels = ['cash' => 'Efectivo', 'transfer' => 'Transferencia', 'debit_card' => 'Débito', 'credit_card' => 'Crédito', 'card' => 'Tarjeta'];
                         $displayDate = $payment->entry_type === 'payment' ? $payment->payment_date : $payment->created_at;
+                        $canShareWhatsApp = $payment->entry_type === 'payment'
+                            && $payment->payment_type !== 'refund'
+                            && $payment->patient
+                            && filled($payment->patient->phone)
+                            && setting('whatsapp.enabled', '0') === '1';
                     @endphp
                     <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 shadow-sm">
                         <div class="flex items-center justify-between mb-2">
@@ -241,6 +246,14 @@
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                     </svg>
                                 </a>
+                                @if($canShareWhatsApp)
+                                    <button type="button"
+                                            onclick="window.sharePaymentReceiptByWhatsApp({{ $payment->id }})"
+                                            class="p-2 text-green-600 hover:bg-green-50 dark:text-green-400 dark:hover:bg-green-900/20 rounded-lg"
+                                            title="Compartir recibo por WhatsApp">
+                                        <i class="fa-solid fa-share-nodes text-base leading-none"></i>
+                                    </button>
+                                @endif
                             @else
                                 <a href="{{ route('cash.income-receipt', $payment->id) }}?print=1" target="_blank" class="p-2 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg" title="Imprimir Recibo">
                                     <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
@@ -275,6 +288,13 @@
                         </thead>
                         <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-600">
                             @forelse($payments as $payment)
+                                @php
+                                    $canShareWhatsApp = $payment->entry_type === 'payment'
+                                        && $payment->payment_type !== 'refund'
+                                        && $payment->patient
+                                        && filled($payment->patient->phone)
+                                        && setting('whatsapp.enabled', '0') === '1';
+                                @endphp
                                 <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200 {{ $payment->entry_type === 'income' ? 'bg-green-50/50 dark:bg-green-900/10' : '' }}">
                                     <!-- Recibo -->
                                     <td class="px-3 py-2">
@@ -396,6 +416,16 @@
                                                         <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                                     </svg>
                                                 </a>
+
+                                                <!-- Compartir Recibo por WhatsApp -->
+                                                @if($canShareWhatsApp)
+                                                    <button type="button"
+                                                            onclick="window.sharePaymentReceiptByWhatsApp({{ $payment->id }})"
+                                                            class="p-1 text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300 hover:bg-green-50 dark:hover:bg-green-900/20 rounded transition-colors"
+                                                            title="Compartir recibo por WhatsApp">
+                                                        <i class="fa-solid fa-share-nodes text-sm leading-none"></i>
+                                                    </button>
+                                                @endif
 
                                                 <!-- Anular Pago -->
                                                 @if($payment->liquidation_status === 'pending' && $payment->payment_type !== 'refund' && !str_contains($payment->concept ?? '', '[ANULADO'))

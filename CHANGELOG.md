@@ -7,6 +7,42 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [2.11.8] - 2026-05-01
+
+### 💬 WhatsApp: Ventana de envío configurable
+
+- **Nuevos ajustes en `/whatsapp/settings`** (acordeón "Horarios y días de envío"):
+  - **Días habilitados**: checkboxes Lu–Do (`whatsapp.send_days`).
+  - **Hora mínima / máxima** del envío (`whatsapp.window_start`, `whatsapp.window_end`); la hora máxima es **exclusiva**. Defaults: Lu–Do, 09:00–21:00.
+  - Validación cruzada: `window_end > window_start` y al menos un día seleccionado.
+- **Adelanto inteligente sin pérdidas**: si el momento ideal de un recordatorio (`appointment_date - hours_before`) cae en un día/horario bloqueado, el envío se reprograma al **último minuto válido anterior** (`window_end - 1 minuto` del día permitido más cercano hacia atrás). Nunca se pospone más allá del ideal.
+  - Ej.: turno del lunes 9:00 con domingo bloqueado y ventana 09:00–21:00 → el aviso se dispara el sábado a las 20:59.
+- **Comando `whatsapp:send-reminders` autoinhibido fuera de ventana**: si corre fuera del horario/día permitido, retorna sin procesar (evita generar colas "atrasadas" cuando se reactiva la ventana).
+- **Horizonte de búsqueda extendido**: la consulta de turnos candidatos ahora considera hasta `ADVANCE_HORIZON_DAYS = 14` días en el futuro, para detectar turnos cuyo `dispatchTime` recalculado caiga "hoy".
+
+### 🧾 Cobros: Compartir recibo por WhatsApp desde el listado
+
+- **Nuevo botón "Compartir recibo por WhatsApp"** en la sección Cobros (`/payments`), tanto en cards mobile como en la tabla desktop. Permite reenviar el comprobante a pacientes que pidieron una copia días después del pago, sin tener que abrir el detalle.
+- **Visibilidad condicional** (no se muestra cuando no aplica):
+  - Solo pagos de pacientes (`entry_type === 'payment'`); ingresos manuales y reembolsos quedan excluidos.
+  - Solo si el paciente tiene teléfono cargado.
+  - Solo si WhatsApp está habilitado (`whatsapp.enabled = 1`).
+- **Reutiliza** el endpoint `POST /payments/{payment}/share-whatsapp` y el helper global `window.sharePaymentReceiptByWhatsApp()` introducidos en v2.11.7 — sin tocar backend, ruta ni vista de PDF.
+
+### 🆕 Servicio nuevo
+
+- `App\Services\WhatsAppDispatchWindow` — encapsula la lógica de ventana:
+  - `fromSettings()`: hidrata desde `setting()` con defaults.
+  - `isAllowedAt(Carbon)`: valida día + horario (end exclusivo).
+  - `computeDispatchTime(Carbon $idealTime)`: devuelve el momento efectivo de despacho (≤ `idealTime`).
+  - Constante `ADVANCE_HORIZON_DAYS = 14` como única fuente de verdad (loop interno + horizonte de consulta del comando).
+
+### 🔧 Refactor / Limpieza
+
+- `SendWhatsAppReminders`: se reemplaza la guard de "primer intento solo en ventana de 15 min" por `if (now() < dispatchTime) continue;`, alineado con la nueva lógica.
+
+---
+
 ## [2.11.7] - 2026-04-28
 
 ### 🧾 Recibos: modal unificado + WhatsApp

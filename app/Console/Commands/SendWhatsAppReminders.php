@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Models\Appointment;
 use App\Models\WhatsAppMessage;
+use App\Services\WhatsAppDispatchWindow;
 use App\Services\WhatsAppService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
@@ -38,9 +39,18 @@ class SendWhatsAppReminders extends Command
         $template = setting('whatsapp.template', '');
         $instance = setting('whatsapp.instance', '');
 
-        // Ventana de 15 minutos centrada en el momento exacto del recordatorio
-        $windowStart = now()->addHours($hoursBefore);
-        $windowEnd = $windowStart->copy()->addMinutes(15);
+        $dispatchWindow = WhatsAppDispatchWindow::fromSettings();
+
+        // Si el envío está fuera del rango permitido, no procesar nada (no generar "atrasos")
+        if (! $dispatchWindow->isAllowedAt(now())) {
+            $this->info('Fuera del horario/día permitido para envíos. Omitiendo.');
+
+            return self::SUCCESS;
+        }
+
+        // Límite superior: considerar turnos cuyo idealTime (appointment_date - hours_before) cae
+        // dentro del horizonte máximo de adelanto (por días bloqueados / fuera de horario).
+        $windowEnd = now()->addHours($hoursBefore)->addMinutes(15)->addDays(WhatsAppDispatchWindow::ADVANCE_HORIZON_DAYS);
 
         $appointments = Appointment::scheduled()
             ->where('appointment_date', '>', now())
@@ -64,11 +74,11 @@ class SendWhatsAppReminders extends Command
         $skipped = 0;
 
         foreach ($appointments as $appointment) {
-            $isFirstAttempt = (int) $appointment->reminder_failed_count === 0;
-            $inTargetWindow = $appointment->appointment_date->between($windowStart, $windowEnd);
+            $idealTime = $appointment->appointment_date->copy()->subHours($hoursBefore);
+            $dispatchTime = $dispatchWindow->computeDispatchTime($idealTime);
 
-            // Primer intento solo dentro de la ventana objetivo (no bombardear turnos lejanos)
-            if ($isFirstAttempt && ! $inTargetWindow) {
+            // Todavía no llegó el momento efectivo de despacho
+            if (now()->lt($dispatchTime)) {
                 continue;
             }
 
