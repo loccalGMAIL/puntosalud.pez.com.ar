@@ -139,11 +139,21 @@ class WhatsAppController extends Controller
      */
     public function settings(): View
     {
+        $defaultDaysJson = json_encode(['1', '2', '3', '4', '5', '6', '0']);
+        $sendDaysRaw = setting('whatsapp.send_days', $defaultDaysJson);
+        $sendDays = is_string($sendDaysRaw) ? json_decode($sendDaysRaw, true) : $sendDaysRaw;
+        if (! is_array($sendDays)) {
+            $sendDays = ['1', '2', '3', '4', '5', '6', '0'];
+        }
+
         $current = [
             'hours_before'       => setting('whatsapp.hours_before', '24'),
             'template'           => setting('whatsapp.template', ''),
             'template_on_create' => setting('whatsapp.template_on_create', ''),
             'template_on_cancel' => setting('whatsapp.template_on_cancel', ''),
+            'send_days'          => $sendDays,
+            'window_start'       => setting('whatsapp.window_start', '09:00'),
+            'window_end'         => setting('whatsapp.window_end', '21:00'),
         ];
 
         return view('whatsapp.settings', compact('current'));
@@ -159,19 +169,41 @@ class WhatsAppController extends Controller
             'template'           => 'nullable|string|max:1000',
             'template_on_create' => 'nullable|string|max:1000',
             'template_on_cancel' => 'nullable|string|max:1000',
+            'send_days'          => 'required|array|min:1',
+            'send_days.*'        => 'in:0,1,2,3,4,5,6',
+            'window_start'       => 'required|date_format:H:i',
+            'window_end'         => 'required|date_format:H:i',
         ], [
             'hours_before.required'  => 'Seleccioná con cuánta anticipación enviar el recordatorio.',
             'hours_before.in'        => 'El valor de anticipación no es válido.',
             'template.max'           => 'El mensaje de recordatorio no puede superar los 1000 caracteres.',
             'template_on_create.max' => 'El mensaje de confirmación no puede superar los 1000 caracteres.',
             'template_on_cancel.max' => 'El mensaje de cancelación no puede superar los 1000 caracteres.',
+            'send_days.required'      => 'Seleccioná al menos un día habilitado para el envío.',
+            'send_days.array'         => 'La selección de días no es válida.',
+            'send_days.min'           => 'Seleccioná al menos un día habilitado para el envío.',
+            'send_days.*.in'          => 'La selección de días no es válida.',
+            'window_start.required'   => 'Ingresá la hora mínima de envío.',
+            'window_start.date_format'=> 'La hora mínima debe tener el formato HH:MM.',
+            'window_end.required'     => 'Ingresá la hora máxima de envío.',
+            'window_end.date_format'  => 'La hora máxima debe tener el formato HH:MM.',
         ]);
+
+        // Validación cruzada: window_end > window_start
+        if (strcmp($validated['window_end'], $validated['window_start']) <= 0) {
+            return redirect()->back()
+                ->withInput()
+                ->withErrors(['window_end' => 'La hora máxima debe ser mayor a la hora mínima.']);
+        }
 
         $group = 'whatsapp';
         $this->settings->set('whatsapp.hours_before',       $group, $validated['hours_before']);
         $this->settings->set('whatsapp.template',           $group, $validated['template'] ?? '');
         $this->settings->set('whatsapp.template_on_create', $group, $validated['template_on_create'] ?? '');
         $this->settings->set('whatsapp.template_on_cancel', $group, $validated['template_on_cancel'] ?? '');
+        $this->settings->set('whatsapp.send_days',          $group, json_encode(array_values($validated['send_days'])));
+        $this->settings->set('whatsapp.window_start',       $group, $validated['window_start']);
+        $this->settings->set('whatsapp.window_end',         $group, $validated['window_end']);
 
         return redirect()->route('whatsapp.settings')
             ->with('success', 'Configuración del recordatorio guardada.');

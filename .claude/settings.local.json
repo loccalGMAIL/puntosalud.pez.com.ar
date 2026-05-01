@@ -33,7 +33,8 @@
       "Bash(php -l app/Jobs/SendWhatsAppReminder.php)",
       "Bash(php -l app/Console/Commands/SendWhatsAppReminders.php)",
       "Bash(php -l app/Services/WhatsAppService.php)",
-      "Bash(php -l routes/web.php)"
+      "Bash(php -l routes/web.php)",
+      "Bash(php -l app/Services/WhatsAppDispatchWindow.php)"
     ],
     "deny": [],
     "ask": []

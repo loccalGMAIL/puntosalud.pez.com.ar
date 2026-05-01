@@ -206,6 +206,85 @@
             </div>
         </div>
 
+        {{-- ── ACORDEÓN 4: Horarios y días de envío ─────────────────────────── --}}
+        <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
+
+            <button type="button" @click="toggle('schedule')"
+                    class="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-gray-50 dark:hover:bg-gray-700/40 transition-colors">
+                <div class="flex items-center gap-3">
+                    <span class="inline-flex items-center justify-center w-7 h-7 rounded-full bg-violet-100 dark:bg-violet-900/40 text-violet-600 dark:text-violet-400">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </span>
+                    <div>
+                        <p class="font-semibold text-gray-900 dark:text-white text-sm">Horarios y días de envío</p>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">Definí cuándo se permiten los recordatorios automáticos</p>
+                    </div>
+                </div>
+                <svg class="w-5 h-5 text-gray-400 transition-transform duration-200" :class="{ 'rotate-180': open === 'schedule' }"
+                     fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                </svg>
+            </button>
+
+            <div x-show="open !== 'schedule'" class="px-5 pb-4 border-t border-gray-100 dark:border-gray-700/50">
+                <p class="text-xs text-gray-400 dark:text-gray-500 mb-2 mt-3 uppercase tracking-wide font-medium">Resumen</p>
+                <p class="text-sm text-gray-700 dark:text-gray-300">
+                    Si un recordatorio cae fuera de estos días u horario, se enviará en el último momento válido anterior (no se pierde).
+                </p>
+            </div>
+
+            <div x-show="open === 'schedule'" x-transition:enter="transition ease-out duration-150" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" class="px-5 pb-5 border-t border-gray-200 dark:border-gray-700 space-y-5 pt-5">
+
+                <div>
+                    <p class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Días habilitados para enviar recordatorios</p>
+                    @php
+                        $selectedDays = old('send_days', $current['send_days'] ?? []);
+                        if (!is_array($selectedDays)) $selectedDays = [];
+                        $labels = [
+                            '1' => 'Lu',
+                            '2' => 'Ma',
+                            '3' => 'Mi',
+                            '4' => 'Ju',
+                            '5' => 'Vi',
+                            '6' => 'Sá',
+                            '0' => 'Do',
+                        ];
+                    @endphp
+                    <div class="flex flex-wrap gap-3">
+                        @foreach ($labels as $val => $label)
+                            <label class="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm text-gray-800 dark:text-gray-200">
+                                <input type="checkbox" name="send_days[]" value="{{ $val }}"
+                                       {{ in_array((string)$val, array_map('strval', $selectedDays), true) ? 'checked' : '' }}
+                                       class="rounded border-gray-300 dark:border-gray-600 text-emerald-600 focus:ring-emerald-500" />
+                                <span class="font-medium">{{ $label }}</span>
+                            </label>
+                        @endforeach
+                    </div>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                        Si un recordatorio cae en un día bloqueado, se adelantará al último horario válido del día habilitado anterior.
+                    </p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="window_start" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Hora mínima de envío</label>
+                        <input type="time" id="window_start" name="window_start"
+                               value="{{ old('window_start', $current['window_start'] ?? '09:00') }}"
+                               class="w-full md:w-72 px-3 py-2 text-sm bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-colors" />
+                    </div>
+                    <div>
+                        <label for="window_end" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Hora máxima de envío</label>
+                        <input type="time" id="window_end" name="window_end"
+                               value="{{ old('window_end', $current['window_end'] ?? '21:00') }}"
+                               class="w-full md:w-72 px-3 py-2 text-sm bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-colors" />
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">La hora máxima es exclusiva.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         {{-- Botón guardar --}}
         <div class="flex justify-end pt-2">
             <button type="submit"
@@ -213,7 +292,7 @@
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                Guardar plantillas
+                Guardar configuración
             </button>
         </div>
     </form>
