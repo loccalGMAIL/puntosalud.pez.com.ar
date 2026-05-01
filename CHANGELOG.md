@@ -20,6 +20,15 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 - **Comando `whatsapp:send-reminders` autoinhibido fuera de ventana**: si corre fuera del horario/día permitido, retorna sin procesar (evita generar colas "atrasadas" cuando se reactiva la ventana).
 - **Horizonte de búsqueda extendido**: la consulta de turnos candidatos ahora considera hasta `ADVANCE_HORIZON_DAYS = 14` días en el futuro, para detectar turnos cuyo `dispatchTime` recalculado caiga "hoy".
 
+### 🧾 Cobros: Compartir recibo por WhatsApp desde el listado
+
+- **Nuevo botón "Compartir recibo por WhatsApp"** en la sección Cobros (`/payments`), tanto en cards mobile como en la tabla desktop. Permite reenviar el comprobante a pacientes que pidieron una copia días después del pago, sin tener que abrir el detalle.
+- **Visibilidad condicional** (no se muestra cuando no aplica):
+  - Solo pagos de pacientes (`entry_type === 'payment'`); ingresos manuales y reembolsos quedan excluidos.
+  - Solo si el paciente tiene teléfono cargado.
+  - Solo si WhatsApp está habilitado (`whatsapp.enabled = 1`).
+- **Reutiliza** el endpoint `POST /payments/{payment}/share-whatsapp` y el helper global `window.sharePaymentReceiptByWhatsApp()` introducidos en v2.11.7 — sin tocar backend, ruta ni vista de PDF.
+
 ### 🆕 Servicio nuevo
 
 - `App\Services\WhatsAppDispatchWindow` — encapsula la lógica de ventana:

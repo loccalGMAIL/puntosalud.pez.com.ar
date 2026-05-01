@@ -26,6 +26,12 @@ Sistema integral de gestión médica para clínicas y consultorios, desarrollado
 * **Sin disparos fuera de hora**: el comando `whatsapp:send-reminders` se autoinhibe si corre fuera de la ventana, evitando colas atrasadas.
 * **Implementación**: nuevo servicio `App\Services\WhatsAppDispatchWindow` (constante `ADVANCE_HORIZON_DAYS = 14` como horizonte máximo de adelanto).
 
+### 🧾 Cobros: Compartir recibo por WhatsApp desde el listado (v2.11.8)
+
+* **Nuevo botón "Compartir"** en `/payments` (mobile cards + tabla desktop) para reenviar el recibo PDF al paciente sin tener que abrir el detalle del pago.
+* **Visibilidad inteligente**: aparece solo en pagos de pacientes con teléfono cargado y WhatsApp habilitado; queda oculto en reembolsos e ingresos manuales.
+* Reusa el endpoint y el helper global ya existentes desde v2.11.7 — sin nuevas rutas ni cambios de backend.
+
 ### 🧾 Recibos + WhatsApp + UX de Cobro (v2.11.7)
 
 * **Modal unificado de recibo**: luego de cobrar, permite elegir entre **Imprimir** o **Enviar por WhatsApp** (sin duplicar confirmaciones en cada vista).
@@ -196,7 +202,7 @@ php artisan config:clear
 
 ### 🔄 Últimas versiones
 
-* **v2.11.8** (2026-05-01) – 💬 WhatsApp: ventana de envío configurable de recordatorios (días Lu–Do + hora mín/máx). Si el momento ideal cae en día/horario bloqueado, el envío se adelanta al último minuto válido anterior (no se pierde). Nuevo servicio `WhatsAppDispatchWindow`.
+* **v2.11.8** (2026-05-01) – 💬 WhatsApp: ventana de envío configurable de recordatorios (días Lu–Do + hora mín/máx). Si el momento ideal cae en día/horario bloqueado, el envío se adelanta al último minuto válido anterior (no se pierde). Nuevo servicio `WhatsAppDispatchWindow`. 🧾 Cobros: nuevo botón "Compartir recibo por WhatsApp" en el listado `/payments`.
 * **v2.11.7** (2026-04-28) – 🧾 Recibos: modal unificado (imprimir/WhatsApp) + envío de PDF por WhatsApp. 💬 WhatsApp: historial con buscador + soporte tipo `receipt` y mensajes de error amigables. 💳 Cobro: modal multi-forma reutilizado en vistas de dashboard.
 * **v2.11.6** (2026-04-27) – 💼 Nuevo módulo Gastos Externos (sueldos, impuestos, alquiler, servicios) con comprobantes y reportes consolidados. 📊 Dashboard Administrativo con resumen financiero del mes, top de gastos y flujo a 6 meses. 👥 Nuevo perfil "Administrativo" + columna `default_dashboard` por perfil. ♻️ Análisis de Caja movido a `/reports/cash-analysis` (módulo `reports` en lugar de `cash`).
 * **v2.11.5** (2026-04-27) – 💬 WhatsApp: botón para forzar envío de recordatorio desde Dashboard + botón Compartir para enviar el PDF del listado diario al profesional por WhatsApp.
