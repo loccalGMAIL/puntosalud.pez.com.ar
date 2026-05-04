@@ -178,6 +178,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/cash/withdrawal', [App\Http\Controllers\CashController::class, 'withdrawalForm'])->name('cash.withdrawal.store');
         Route::get('/cash/manual-income', [App\Http\Controllers\CashController::class, 'manualIncomeForm'])->name('cash.manual-income-form');
         Route::post('/cash/manual-income', [App\Http\Controllers\CashController::class, 'manualIncomeForm'])->name('cash.manual-income.store');
+        Route::get('/cash/income/{payment}', [App\Http\Controllers\CashController::class, 'showIncome'])->name('cash.income.show');
         Route::get('/cash/income-receipt/{payment}', [App\Http\Controllers\CashController::class, 'printIncomeReceipt'])->name('cash.income-receipt');
         Route::get('/cash/movements/{cashMovement}', [App\Http\Controllers\CashController::class, 'getCashMovementDetails'])->name('cash.movement-details');
 

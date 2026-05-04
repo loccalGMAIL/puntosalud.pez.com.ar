@@ -24,15 +24,15 @@ class CashController extends Controller
 
         $initialBalance = $lastBalanceMovement ? $lastBalanceMovement->balance_after : 0;
 
-        $query = CashMovement::with(['user', 'movementType', 'reference' => function($morphTo) {
-                $morphTo->morphWith([
-                    Payment::class => ['paymentDetails']
-                ]);
-            }])
+        $query = CashMovement::with(['user', 'movementType', 'reference' => function ($morphTo) {
+            $morphTo->morphWith([
+                Payment::class => ['paymentDetails'],
+            ]);
+        }])
             ->whereDate('created_at', $selectedDate);
 
         if ($request->filled('type')) {
-            $query->whereHas('movementType', function($q) use ($request) {
+            $query->whereHas('movementType', function ($q) use ($request) {
                 $q->where('code', $request->type);
             });
         }
@@ -45,8 +45,8 @@ class CashController extends Controller
             ->get();
 
         // Calcular totales excluyendo apertura y cierre de caja
-        $movementsForTotals = $movements->filter(function($movement) {
-            return !in_array($movement->movementType?->code, ['cash_opening', 'cash_closing']);
+        $movementsForTotals = $movements->filter(function ($movement) {
+            return ! in_array($movement->movementType?->code, ['cash_opening', 'cash_closing']);
         });
         $inflows = $movementsForTotals->where('amount', '>', 0)->sum('amount');
         $outflows = $movementsForTotals->where('amount', '<', 0)->sum('amount');
@@ -73,14 +73,15 @@ class CashController extends Controller
 
         // Agrupar por tipo de movimiento excluyendo apertura y cierre
         $movementsByType = $movements
-            ->filter(function($movement) {
-                return !in_array($movement->movementType?->code, ['cash_opening', 'cash_closing']);
+            ->filter(function ($movement) {
+                return ! in_array($movement->movementType?->code, ['cash_opening', 'cash_closing']);
             })
-            ->groupBy(function($movement) {
+            ->groupBy(function ($movement) {
                 return $movement->movementType?->code ?? 'unknown';
             })
             ->map(function ($group, $typeCode) {
                 $firstMovement = $group->first();
+
                 return [
                     'type' => $typeCode,
                     'type_name' => $firstMovement->movementType?->name ?? ucfirst($typeCode),
@@ -143,7 +144,7 @@ class CashController extends Controller
             'amount' => 'required|numeric|min:0.01',
             'payment_method' => 'required|string|in:cash,transfer,debit_card,credit_card,qr',
             'description' => 'required|string|max:500',
-            'category' => 'required|string|in:' . implode(',', $validCodes),
+            'category' => 'required|string|in:'.implode(',', $validCodes),
             'receipt_file' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
             'notes' => 'nullable|string|max:500',
         ]);
@@ -327,7 +328,7 @@ class CashController extends Controller
 
             // Crear movimiento de apertura
             $cashMovement = CashMovement::create([
-                                'movement_type_id' => MovementType::getIdByCode('cash_opening'),
+                'movement_type_id' => MovementType::getIdByCode('cash_opening'),
                 'amount' => $openingAmount,
                 'description' => 'Apertura de caja - '.($validated['notes'] ?: 'Apertura del día'),
                 'reference_type' => null,
@@ -394,7 +395,7 @@ class CashController extends Controller
             // EXCLUIR profesionales cuyo monto total de turnos sea $0
             $professionalsWithAppointments = \App\Models\Professional::whereHas('appointments', function ($query) use ($closeDate) {
                 $query->whereDate('appointment_date', $closeDate)
-                      ->where('status', 'attended');
+                    ->where('status', 'attended');
             })->get();
 
             $professionalsNotLiquidated = $professionalsWithAppointments->filter(function ($professional) use ($closeDate) {
@@ -411,10 +412,10 @@ class CashController extends Controller
 
                 // Verificar si hay payment_details pendientes de liquidar
                 $hasPendingPayments = \App\Models\PaymentDetail::whereHas('payment.paymentAppointments.appointment', function ($query) use ($professional, $closeDate) {
-                        $query->where('professional_id', $professional->id)
-                              ->whereDate('appointment_date', $closeDate)
-                              ->where('status', 'attended');
-                    })
+                    $query->where('professional_id', $professional->id)
+                        ->whereDate('appointment_date', $closeDate)
+                        ->where('status', 'attended');
+                })
                     ->whereNull('liquidation_id')
                     ->exists();
 
@@ -428,7 +429,7 @@ class CashController extends Controller
 
                 return response()->json([
                     'success' => false,
-                    'message' => 'No se puede cerrar la caja. Los siguientes profesionales tienen turnos atendidos sin liquidar: ' . $professionalNames . '. Por favor, liquide a todos los profesionales antes de cerrar la caja.',
+                    'message' => 'No se puede cerrar la caja. Los siguientes profesionales tienen turnos atendidos sin liquidar: '.$professionalNames.'. Por favor, liquide a todos los profesionales antes de cerrar la caja.',
                     'professionals_not_liquidated' => $professionalsNotLiquidated->values(),
                 ], 400);
             }
@@ -505,9 +506,9 @@ class CashController extends Controller
 
         // Obtener todos los movimientos del día
         $movements = CashMovement::with(['user', 'movementType'])
-            ->with(['reference' => function($morphTo) {
+            ->with(['reference' => function ($morphTo) {
                 $morphTo->morphWith([
-                    Payment::class => ['paymentDetails']
+                    Payment::class => ['paymentDetails'],
                 ]);
             }])
             ->whereDate('created_at', $selectedDate)
@@ -515,15 +516,15 @@ class CashController extends Controller
             ->get();
 
         // Calcular totales (excluyendo apertura y cierre de caja)
-        $movementsForTotals = $movements->filter(function($movement) {
-            return !in_array($movement->movementType?->code, ['cash_opening', 'cash_closing']);
+        $movementsForTotals = $movements->filter(function ($movement) {
+            return ! in_array($movement->movementType?->code, ['cash_opening', 'cash_closing']);
         });
         $inflows = $movementsForTotals->where('amount', '>', 0)->sum('amount');
         $outflows = $movementsForTotals->where('amount', '<', 0)->sum('amount');
         $finalBalance = $initialBalance + $inflows + $outflows;
 
         // Obtener movimientos de apertura
-        $openingMovement = $movements->first(function($movement) {
+        $openingMovement = $movements->first(function ($movement) {
             return $movement->movementType?->code === 'cash_opening';
         });
 
@@ -543,14 +544,15 @@ class CashController extends Controller
 
         // Agrupar por tipo de movimiento (excluyendo apertura y cierre)
         $movementsByType = $movements
-            ->filter(function($movement) {
-                return !in_array($movement->movementType?->code, ['cash_opening', 'cash_closing']);
+            ->filter(function ($movement) {
+                return ! in_array($movement->movementType?->code, ['cash_opening', 'cash_closing']);
             })
-            ->groupBy(function($movement) {
+            ->groupBy(function ($movement) {
                 return $movement->movementType?->code ?? 'unknown';
             })
             ->map(function ($group, $typeCode) {
                 $firstMovement = $group->first();
+
                 return [
                     'type' => $typeCode,
                     'type_name' => $firstMovement->movementType?->name ?? ucfirst($typeCode),
@@ -596,19 +598,19 @@ class CashController extends Controller
         // Transformar resultados agrupando por profesional
         $professionalIncome = collect($paymentsByProfessionalAndMethod)
             ->groupBy('professional_id')
-            ->map(function($group) use ($activePaymentMethods) {
+            ->map(function ($group) {
                 $first = $group->first();
 
                 // Crear array con todos los métodos en 0
                 $paymentMethods = [];
-                foreach(['cash', 'transfer', 'debit_card', 'credit_card', 'qr'] as $method) {
+                foreach (['cash', 'transfer', 'debit_card', 'credit_card', 'qr'] as $method) {
                     $paymentMethods[$method] = 0;
                 }
 
                 // Sumar montos por método
                 $totalCollected = 0;
                 $totalAppointments = 0;
-                foreach($group as $row) {
+                foreach ($group as $row) {
                     $paymentMethods[$row->payment_method] = $row->total_amount;
                     $totalCollected += $row->total_amount;
                     $totalAppointments += $row->appointment_count;
@@ -621,7 +623,7 @@ class CashController extends Controller
 
                 return [
                     'professional_id' => $first->professional_id,
-                    'full_name' => "Dr. " . $first->profesional,
+                    'full_name' => 'Dr. '.$first->profesional,
                     'specialty' => $first->specialty ?? 'N/A',
                     'commission_percentage' => $commissionPercentage,
                     'total_collected' => $totalCollected,
@@ -642,7 +644,7 @@ class CashController extends Controller
         $zalazarCommission = $zalazarData ? $zalazarData['professional_amount'] : 0;
 
         // Obtener movimientos de "Pago de Saldos Dra. Zalazar"
-        $zalazarBalancePayments = $movements->filter(fn($m) => $m->movementType?->code === 'zalazar_balance_payment');
+        $zalazarBalancePayments = $movements->filter(fn ($m) => $m->movementType?->code === 'zalazar_balance_payment');
         $zalazarBalanceTotal = $zalazarBalancePayments->sum('amount');
 
         // Total de ingresos de Dra. Zalazar
@@ -660,7 +662,7 @@ class CashController extends Controller
         // Sumar liquidación de pacientes (desde $zalazarData)
         if ($zalazarData) {
             $commissionPercentage = $zalazarData['commission_percentage'] / 100;
-            foreach(['cash', 'transfer', 'debit_card', 'credit_card', 'qr'] as $method) {
+            foreach (['cash', 'transfer', 'debit_card', 'credit_card', 'qr'] as $method) {
                 $zalazarPaymentBreakdown[$method] = ($zalazarData[$method] ?? 0) * $commissionPercentage;
             }
         }
@@ -728,9 +730,9 @@ class CashController extends Controller
 
         // Obtener todos los movimientos del día
         $movements = CashMovement::with(['user', 'movementType'])
-            ->with(['reference' => function($morphTo) {
+            ->with(['reference' => function ($morphTo) {
                 $morphTo->morphWith([
-                    Payment::class => ['paymentDetails']
+                    Payment::class => ['paymentDetails'],
                 ]);
             }])
             ->whereDate('created_at', $selectedDate)
@@ -738,18 +740,18 @@ class CashController extends Controller
             ->get();
 
         // Calcular totales (excluyendo apertura y cierre de caja)
-        $movementsForTotals = $movements->filter(function($movement) {
-            return !in_array($movement->movementType?->code, ['cash_opening', 'cash_closing']);
+        $movementsForTotals = $movements->filter(function ($movement) {
+            return ! in_array($movement->movementType?->code, ['cash_opening', 'cash_closing']);
         });
         $inflows = $movementsForTotals->where('amount', '>', 0)->sum('amount');
         $outflows = $movementsForTotals->where('amount', '<', 0)->sum('amount');
         $finalBalance = $initialBalance + $inflows + $outflows;
 
         // Obtener movimientos de apertura y cierre
-        $openingMovement = $movements->first(function($movement) {
+        $openingMovement = $movements->first(function ($movement) {
             return $movement->movementType?->code === 'cash_opening';
         });
-        $closingMovement = $movements->first(function($movement) {
+        $closingMovement = $movements->first(function ($movement) {
             return $movement->movementType?->code === 'cash_closing';
         });
 
@@ -782,14 +784,15 @@ class CashController extends Controller
 
         // Agrupar por tipo de movimiento (excluyendo apertura y cierre)
         $movementsByType = $movements
-            ->filter(function($movement) {
-                return !in_array($movement->movementType?->code, ['cash_opening', 'cash_closing']);
+            ->filter(function ($movement) {
+                return ! in_array($movement->movementType?->code, ['cash_opening', 'cash_closing']);
             })
-            ->groupBy(function($movement) {
+            ->groupBy(function ($movement) {
                 return $movement->movementType?->code ?? 'unknown';
             })
             ->map(function ($group, $typeCode) {
                 $firstMovement = $group->first();
+
                 return [
                     'type' => $typeCode,
                     'type_name' => $firstMovement->movementType?->name ?? ucfirst($typeCode),
@@ -835,19 +838,19 @@ class CashController extends Controller
         // Transformar resultados agrupando por profesional
         $professionalIncome = collect($paymentsByProfessionalAndMethod)
             ->groupBy('professional_id')
-            ->map(function($group) use ($activePaymentMethods) {
+            ->map(function ($group) {
                 $first = $group->first();
 
                 // Crear array con todos los métodos en 0
                 $paymentMethods = [];
-                foreach(['cash', 'transfer', 'debit_card', 'credit_card', 'qr'] as $method) {
+                foreach (['cash', 'transfer', 'debit_card', 'credit_card', 'qr'] as $method) {
                     $paymentMethods[$method] = 0;
                 }
 
                 // Sumar montos por método
                 $totalCollected = 0;
                 $totalAppointments = 0;
-                foreach($group as $row) {
+                foreach ($group as $row) {
                     $paymentMethods[$row->payment_method] = $row->total_amount;
                     $totalCollected += $row->total_amount;
                     $totalAppointments += $row->appointment_count;
@@ -860,7 +863,7 @@ class CashController extends Controller
 
                 return [
                     'professional_id' => $first->professional_id,
-                    'full_name' => "Dr. " . $first->profesional,
+                    'full_name' => 'Dr. '.$first->profesional,
                     'specialty' => $first->specialty ?? 'N/A',
                     'commission_percentage' => $commissionPercentage,
                     'total_collected' => $totalCollected,
@@ -881,7 +884,7 @@ class CashController extends Controller
         $zalazarCommission = $zalazarData ? $zalazarData['professional_amount'] : 0;
 
         // Obtener movimientos de "Pago de Saldos Dra. Zalazar"
-        $zalazarBalancePayments = $movements->filter(fn($m) => $m->movementType?->code === 'zalazar_balance_payment');
+        $zalazarBalancePayments = $movements->filter(fn ($m) => $m->movementType?->code === 'zalazar_balance_payment');
         $zalazarBalanceTotal = $zalazarBalancePayments->sum('amount');
 
         // Total de ingresos de Dra. Zalazar (liquidación + pagos de saldos)
@@ -900,7 +903,7 @@ class CashController extends Controller
         // Sumar liquidación de pacientes (desde $zalazarData)
         if ($zalazarData) {
             $commissionPercentage = $zalazarData['commission_percentage'] / 100;
-            foreach(['cash', 'transfer', 'debit_card', 'credit_card', 'qr'] as $method) {
+            foreach (['cash', 'transfer', 'debit_card', 'credit_card', 'qr'] as $method) {
                 $zalazarPaymentBreakdown[$method] = ($zalazarData[$method] ?? 0) * $commissionPercentage;
             }
         }
@@ -962,7 +965,7 @@ class CashController extends Controller
         $validated = $request->validate([
             'amount' => 'required|numeric|min:0.01',
             'payment_method' => 'required|string|in:cash,transfer,debit_card,credit_card,qr',
-            'withdrawal_type' => 'required|string|in:' . implode(',', $validCodes),
+            'withdrawal_type' => 'required|string|in:'.implode(',', $validCodes),
             'description' => 'required|string|max:500',
             'recipient' => 'nullable|string|max:255',
             'notes' => 'nullable|string|max:500',
@@ -1102,7 +1105,7 @@ class CashController extends Controller
 
         $validated = $request->validate([
             'amount' => 'required|numeric|min:0.01',
-            'category' => 'required|string|in:' . implode(',', $validCodes),
+            'category' => 'required|string|in:'.implode(',', $validCodes),
             'payment_method' => 'required|string|in:cash,transfer,debit_card,credit_card,qr',
             'description' => 'required|string|max:500',
             'professional_id' => 'nullable|exists:professionals,id|required_if:category,professional_module_payment',
@@ -1140,7 +1143,7 @@ class CashController extends Controller
             if ($validated['category'] === 'professional_module_payment' && isset($validated['professional_id'])) {
                 $professional = \App\Models\Professional::find($validated['professional_id']);
                 if ($professional) {
-                    $description = "Pago Módulo - Dr. {$professional->first_name} {$professional->last_name} - " . $validated['description'];
+                    $description = "Pago Módulo - Dr. {$professional->first_name} {$professional->last_name} - ".$validated['description'];
                 }
             }
 
@@ -1217,9 +1220,20 @@ class CashController extends Controller
         }
     }
 
+    public function showIncome(Payment $payment)
+    {
+        if ($payment->payment_type !== 'manual_income') {
+            abort(404, 'Este no es un ingreso manual.');
+        }
+
+        $payment->load(['paymentDetails', 'createdBy']);
+
+        return view('cash.income-show', compact('payment'));
+    }
+
     public function printIncomeReceipt(Request $request, $paymentId)
     {
-        $payment = \App\Models\Payment::with(['createdBy'])
+        $payment = \App\Models\Payment::with(['createdBy', 'paymentDetails'])
             ->findOrFail($paymentId);
 
         // Verificar que sea un ingreso manual
@@ -1233,24 +1247,24 @@ class CashController extends Controller
     /**
      * Construir descripción del cierre de caja
      *
-     * @param array $validated
-     * @param Carbon $closingDateTime
-     * @param float $currentBalance
+     * @param  array  $validated
+     * @param  Carbon  $closingDateTime
+     * @param  float  $currentBalance
      * @return string
      */
     private function buildClosingDescription($validated, $closingDateTime, $currentBalance)
     {
-        $description = 'Cierre de caja del día ' . $closingDateTime->format('d/m/Y');
+        $description = 'Cierre de caja del día '.$closingDateTime->format('d/m/Y');
         $description .= ' - Efectivo contado: $'.number_format($validated['closing_amount'], 2);
         $description .= ' - Saldo retirado: $'.number_format($currentBalance, 2);
 
         // Si se cierra en un día diferente al de apertura, agregar nota de auditoría
         if ($closingDateTime->format('Y-m-d') !== now()->format('Y-m-d')) {
-            $description .= ' (cerrado el ' . now()->format('d/m/Y H:i') . ')';
+            $description .= ' (cerrado el '.now()->format('d/m/Y H:i').')';
         }
 
-        if (!empty($validated['notes'])) {
-            $description .= ' - ' . $validated['notes'];
+        if (! empty($validated['notes'])) {
+            $description .= ' - '.$validated['notes'];
         }
 
         return $description;

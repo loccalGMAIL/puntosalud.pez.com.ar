@@ -378,6 +378,8 @@ function incomeForm() {
                     window.showToast(result.message || 'Tu sesión ha expirado. Redirigiendo...', 'warning');
                     setTimeout(() => { window.location.href = result.redirect || '/login'; }, 1500);
                 } else if (response.ok && result.success) {
+                    this.loading = false;
+
                     if (result.payment_id) {
                         const printReceipt = await SystemModal.confirm(
                             'Imprimir recibo',
@@ -391,7 +393,7 @@ function incomeForm() {
                         }
                     }
 
-                    setTimeout(() => { window.location.href = '/cash/daily'; }, 500);
+                    window.location.href = '/cash/daily';
                 } else {
                     window.showToast(result.message || 'Error al registrar el ingreso', 'error');
                 }

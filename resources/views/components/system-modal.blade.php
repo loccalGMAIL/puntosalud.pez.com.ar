@@ -125,6 +125,7 @@ window.SystemModal = {
 
             // Event listener para el botón confirmar
             confirmBtn.onclick = () => {
+                this.currentCallback = null;
                 this.close();
                 resolve(true);
             };
@@ -160,6 +161,9 @@ window.SystemModal = {
             // Mostrar botón cancelar
             cancelBtn.style.display = 'block';
 
+            // Configurar callback
+            this.currentCallback = resolve;
+
             // Mostrar modal con animación
             modal.classList.remove('hidden');
             modal.classList.add('flex');
@@ -171,11 +175,13 @@ window.SystemModal = {
 
             // Event listeners
             confirmBtn.onclick = () => {
+                this.currentCallback = null;
                 this.close();
                 resolve(true);
             };
 
             cancelBtn.onclick = () => {
+                this.currentCallback = null;
                 this.close();
                 resolve(false);
             };
@@ -186,6 +192,13 @@ window.SystemModal = {
     close() {
         const modal = document.getElementById('systemModal');
         const content = document.getElementById('systemModalContent');
+
+        // Si hay una promesa pendiente (confirm/show), resolvemos en "false" al cerrar por X/Escape/click fuera.
+        if (this.currentCallback) {
+            const callback = this.currentCallback;
+            this.currentCallback = null;
+            callback(false);
+        }
 
         content.classList.remove('scale-100', 'opacity-100');
         content.classList.add('scale-95', 'opacity-0');
