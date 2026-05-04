@@ -8,6 +8,7 @@ use App\Services\WhatsAppDispatchWindow;
 use App\Services\WhatsAppService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class SendWhatsAppReminders extends Command
 {
@@ -138,22 +139,30 @@ class SendWhatsAppReminders extends Command
         $retried = 0;
 
         foreach ($retryCandidates as $candidate) {
-            $hasSentOrPending = WhatsAppMessage::where('appointment_id', $candidate->appointment_id)
-                ->where('type', $candidate->type)
-                ->whereIn('status', ['sent', 'pending'])
-                ->exists();
-            if ($hasSentOrPending) {
-                continue;
-            }
+            try {
+                $hasSentOrPending = WhatsAppMessage::where('appointment_id', $candidate->appointment_id)
+                    ->where('type', $candidate->type)
+                    ->whereIn('status', ['sent', 'pending'])
+                    ->exists();
+                if ($hasSentOrPending) {
+                    continue;
+                }
 
-            $appointment = Appointment::with(['patient', 'professional.specialty'])
-                ->find($candidate->appointment_id);
-            if (! $appointment) {
-                continue;
-            }
+                $appointment = Appointment::with(['patient', 'professional.specialty'])
+                    ->find($candidate->appointment_id);
+                if (! $appointment) {
+                    continue;
+                }
 
-            if ($whatsAppService->queueAppointmentMessage($appointment, $candidate->type)) {
-                $retried++;
+                if ($whatsAppService->queueAppointmentMessage($appointment, $candidate->type)) {
+                    $retried++;
+                }
+            } catch (\Throwable $e) {
+                Log::error('WhatsApp retry candidate failed', [
+                    'appointment_id' => $candidate->appointment_id,
+                    'type' => $candidate->type,
+                    'error' => $e->getMessage(),
+                ]);
             }
         }
 
