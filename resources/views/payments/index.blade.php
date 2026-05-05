@@ -208,7 +208,7 @@
             <div class="md:hidden space-y-3">
                 @forelse($payments as $payment)
                     @php
-                        $methodLabels = ['cash' => 'Efectivo', 'transfer' => 'Transferencia', 'debit_card' => 'Débito', 'credit_card' => 'Crédito', 'card' => 'Tarjeta'];
+                        $methodLabels = ['cash' => 'Efectivo', 'transfer' => 'Transferencia', 'debit_card' => 'Débito', 'credit_card' => 'Crédito', 'card' => 'Tarjeta', 'qr' => 'QR'];
                         $displayDate = $payment->entry_type === 'payment' ? $payment->payment_date : $payment->created_at;
                         $canShareWhatsApp = $payment->entry_type === 'payment'
                             && $payment->payment_type !== 'refund'
@@ -298,6 +298,7 @@
                                         && $payment->patient
                                         && filled($payment->patient->phone)
                                         && setting('whatsapp.enabled', '0') === '1';
+                                    $methodLabels = ['cash' => 'Efectivo', 'transfer' => 'Transferencia', 'debit_card' => 'Débito', 'credit_card' => 'Crédito', 'card' => 'Tarjeta', 'qr' => 'QR'];
                                 @endphp
                                 <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200 {{ $payment->entry_type === 'income' ? 'bg-green-50/50 dark:bg-green-900/10' : '' }}">
                                     <!-- Recibo -->
@@ -340,20 +341,7 @@
 
                                     <!-- Método -->
                                     <td class="px-3 py-2">
-                                        @if($payment->entry_type === 'payment')
-                                            @php
-                                                $methodLabels = [
-                                                    'cash' => 'Efectivo',
-                                                    'transfer' => 'Transferencia',
-                                                    'debit_card' => 'Débito',
-                                                    'credit_card' => 'Crédito',
-                                                    'card' => 'Tarjeta'
-                                                ];
-                                            @endphp
-                                            <span class="text-sm text-gray-900 dark:text-white">{{ $methodLabels[$payment->payment_method] ?? $payment->payment_method }}</span>
-                                        @else
-                                            <span class="text-sm text-gray-900 dark:text-white">{{ $methodLabels[$payment->payment_method] ?? $payment->payment_method }}</span>
-                                        @endif
+                                        <span class="text-sm text-gray-900 dark:text-white">{{ $methodLabels[$payment->payment_method] ?? $payment->payment_method }}</span>
                                     </td>
 
                                     <!-- Monto -->
