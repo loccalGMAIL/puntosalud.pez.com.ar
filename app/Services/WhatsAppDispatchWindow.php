@@ -14,6 +14,13 @@ class WhatsAppDispatchWindow
     public const ADVANCE_HORIZON_DAYS = 14;
 
     /**
+     * Margen respecto al cierre de ventana para garantizar que el scheduler
+     * (que corre cada 15 min) tenga al menos una corrida disponible antes
+     * de que la ventana se cierre.
+     */
+    public const SCHEDULER_SAFE_CUTOFF_MINUTES = 20;
+
+    /**
      * @param  array<int>  $sendDays  Carbon dayOfWeek: 0=domingo .. 6=sábado
      */
     public function __construct(
@@ -38,6 +45,11 @@ class WhatsAppDispatchWindow
             (string) setting('whatsapp.window_start', '09:00'),
             (string) setting('whatsapp.window_end', '21:00'),
         );
+    }
+
+    public function windowEnd(): string
+    {
+        return $this->windowEnd;
     }
 
     public function isAllowedAt(Carbon $moment): bool
@@ -73,21 +85,21 @@ class WhatsAppDispatchWindow
         // Día permitido pero fuera de horario
         if ($dayAllowed) {
             if ($idealTime->greaterThanOrEqualTo($end)) {
-                return $end->subMinute();
+                return $end->subMinutes(self::SCHEDULER_SAFE_CUTOFF_MINUTES);
             }
 
             if ($idealTime->lessThan($start)) {
                 $candidate = $idealTime->copy()->subDay();
 
-                return $this->previousAllowedDayEndMinusOneMinute($candidate);
+                return $this->previousAllowedDaySafeCutoff($candidate);
             }
         }
 
         // Día bloqueado: retroceder hasta el último día permitido
-        return $this->previousAllowedDayEndMinusOneMinute($idealTime);
+        return $this->previousAllowedDaySafeCutoff($idealTime);
     }
 
-    private function previousAllowedDayEndMinusOneMinute(Carbon $from): Carbon
+    private function previousAllowedDaySafeCutoff(Carbon $from): Carbon
     {
         $probe = $from->copy();
 
@@ -95,7 +107,7 @@ class WhatsAppDispatchWindow
             if (in_array($probe->dayOfWeek, $this->sendDays, true)) {
                 $end = $probe->copy()->setTimeFromTimeString($this->windowEnd);
 
-                return $end->subMinute();
+                return $end->subMinutes(self::SCHEDULER_SAFE_CUTOFF_MINUTES);
             }
 
             $probe->subDay();
