@@ -44,43 +44,55 @@
     <!-- Filtros del Reporte -->
     <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-6">
         <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Filtros del Reporte</h2>
-        <form @submit.prevent="generateReport()" class="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Fecha Desde</label>
-                <input x-model="filters.date_from"
-                       type="date"
-                       class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
-                       required>
+        <form @submit.prevent="generateReport()">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Fecha Desde</label>
+                    <input x-model="filters.date_from"
+                           type="date"
+                           class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                           required>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Fecha Hasta</label>
+                    <input x-model="filters.date_to"
+                           type="date"
+                           class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                           required>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Agrupar Por</label>
+                    <select x-model="filters.group_by"
+                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white">
+                        <option value="day">Día</option>
+                        <option value="week">Semana</option>
+                        <option value="month">Mes</option>
+                    </select>
+                </div>
+                <div class="flex items-end gap-2">
+                    <button type="submit"
+                            :disabled="loading"
+                            class="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white text-sm font-medium rounded-lg transition-colors disabled:cursor-not-allowed">
+                        <span x-show="!loading">Generar</span>
+                        <span x-show="loading" class="flex items-center gap-2">
+                            <svg class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            Cargando...
+                        </span>
+                    </button>
+                </div>
             </div>
-            <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Fecha Hasta</label>
-                <input x-model="filters.date_to"
-                       type="date"
-                       class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
-                       required>
-            </div>
-            <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Agrupar Por</label>
-                <select x-model="filters.group_by"
-                        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white">
-                    <option value="day">Día</option>
-                    <option value="week">Semana</option>
-                    <option value="month">Mes</option>
-                </select>
-            </div>
-            <div class="flex items-end gap-2">
-                <button type="submit"
-                        :disabled="loading"
-                        class="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white text-sm font-medium rounded-lg transition-colors disabled:cursor-not-allowed">
-                    <span x-show="!loading">Generar</span>
-                    <span x-show="loading" class="flex items-center gap-2">
-                        <svg class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
-                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        Cargando...
-                    </span>
-                </button>
+
+            <div class="flex items-center gap-3 mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
+                <label class="flex items-center gap-2 cursor-pointer select-none">
+                    <input type="checkbox"
+                           x-model="filters.include_external"
+                           class="w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500 dark:bg-gray-700">
+                    <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Incluir gastos externos</span>
+                </label>
+                <span class="text-xs text-gray-400 dark:text-gray-500">Agrega los gastos cargados fuera de caja al análisis</span>
             </div>
         </form>
     </div>
@@ -192,8 +204,11 @@
     @if(isset($reportData) && $reportData->count() > 0)
     <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
         <div class="p-6">
-            <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+            <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                 Detalle del Período ({{ $reportData->count() }} períodos)
+                @if(!empty($includeExternal))
+                <span class="text-xs font-normal bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 px-2 py-0.5 rounded-full">+ Gastos externos</span>
+                @endif
             </h2>
 
             <div class="overflow-x-auto">
@@ -242,7 +257,8 @@ function cashReportForm() {
         filters: {
             date_from: '{{ request("date_from", now()->startOfMonth()->format("Y-m-d")) }}',
             date_to: '{{ request("date_to", now()->format("Y-m-d")) }}',
-            group_by: '{{ request("group_by", "day") }}'
+            group_by: '{{ request("group_by", "day") }}',
+            include_external: {{ request('include_external') ? 'true' : 'false' }}
         },
 
         async generateReport() {

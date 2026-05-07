@@ -7,6 +7,47 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [2.11.10] - 2026-05-07
+
+### 💬 WhatsApp: recordatorios para turnos post-ventana del día siguiente (Pass 2)
+
+- **Nueva constante `SCHEDULER_SAFE_CUTOFF_MINUTES = 20`** en `WhatsAppDispatchWindow`: los tiempos de despacho calculados caen a `window_end − 20 min` (en lugar de `−1 min`), garantizando al menos una corrida confiable del scheduler de 15 min antes del cierre de ventana.
+- **Renombrado** `previousAllowedDayEndMinusOneMinute → previousAllowedDaySafeCutoff` y expuesto getter `windowEnd()` para uso en el comando.
+- **Pass 2 en `SendWhatsAppReminders`**: consulta explícitamente los turnos del **día siguiente** cuyo horario es `>= window_end` y los despacha **hoy** durante la ventana activa, independientemente del parámetro `hours_before`. Garantiza entrega para turnos de tarde/noche (18:00, 19:00, etc.) que de otro modo quedarían sin aviso o se enviarían demasiado cerca del turno.
+- **Método privado `sendReminderForAppointment()`** extraído para evitar duplicación de lógica entre Pass 1 y Pass 2.
+
+### 📊 Análisis de Caja: incluir gastos externos
+
+- **Nuevo checkbox "Incluir gastos externos"** debajo de los filtros del reporte `/reports/cash-analysis`, separado por un divisor. Por defecto desactivado — el comportamiento original no cambia.
+- **Badge informativo** `+ Gastos externos` en el título de "Detalle del Período" cuando el flag está activo.
+- El parámetro `include_external` viaja automáticamente a todas las acciones: generar reporte, exportar Excel/CSV e imprimir.
+- El CSV incluye una línea `"Incluye gastos externos"; "Sí"` en la sección Resumen cuando corresponde.
+- La vista de impresión muestra el indicador en el subtítulo del encabezado.
+- **Helper privado `buildExternalExpensesAsMovements()`** en `ReportController` convierte los registros `Expense` externos en objetos `stdClass` compatibles con `generateCashAnalysisData()`, usando `expense_date` como `created_at` y el monto como negativo (egreso).
+
+---
+
+## [2.11.9] - 2026-05-04
+
+### 🐛 Fix: índice único legacy bloqueaba reintentos de recordatorios WhatsApp
+
+- El índice `whatsapp_messages_appointment_type_unique` sobre `(appointment_id, type)` sobrevivió a una migración anterior que usaba `dropUnique` con array (genera un nombre distinto al nombre real). El retry de recordatorios de confirmación/cancelación chocaba con ese índice devolviendo 500 al scheduler de n8n.
+- **Nueva migración idempotente** que borra el índice por nombre literal.
+- **Try/catch** en el bloque de retry: un registro problemático ya no aborta toda la corrida.
+- **Nuevo comando** `php artisan whatsapp:reminders-status` para auditar mensajes pendientes (flags: `--limit`, `--all`, `--json`).
+
+### 🐛 Fix: SystemModal doble resolución de Promise + ingreso manual
+
+- `SystemModal.confirm()` ahora guarda `resolve` en `this.currentCallback`; `close()` resuelve con `false` si hay una Promise pendiente (cubre cierre con X, Escape o click fuera). `currentCallback` se limpia antes del cierre para evitar doble dispatch.
+- En el formulario de ingreso manual (`cash/manual-income-form`): `loading = false` se setea **antes** del `await SystemModal.confirm()` y la redirección a `/cash/daily` es directa (sin `setTimeout`).
+
+### 🐛 Fix: etiquetas de método de pago en listado de cobros
+
+- `$methodLabels` se define ahora dentro del `@php` del loop para estar disponible desde la primera fila (evitaba PHP warning cuando la primera fila era un ingreso manual y la variable aún no existía).
+- Agregada clave `'qr' => 'QR'` faltante en cards mobile y tabla desktop de `/payments`.
+
+---
+
 ## [2.11.8] - 2026-05-01
 
 ### 💬 WhatsApp: Ventana de envío configurable
