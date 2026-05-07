@@ -16,7 +16,7 @@
         <div class="p-2 border-b border-gray-200 dark:border-gray-700 print:border-gray-400 print:p-0.5">
             <x-report-print-header
                 title="Análisis de Caja"
-                subtitle="Período: {{ $dateFrom }} al {{ $dateTo }} · Agrupado {{ $groupLabel }}"
+                subtitle="Período: {{ $dateFrom }} al {{ $dateTo }} · Agrupado {{ $groupLabel }}{{ !empty($includeExternal) ? ' · Incluye gastos externos' : '' }}"
             />
         </div>
 

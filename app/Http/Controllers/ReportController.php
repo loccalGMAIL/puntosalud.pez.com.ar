@@ -2357,6 +2357,13 @@ class ReportController extends Controller
             return ! in_array($movement->movementType?->code, ['cash_opening', 'cash_closing']);
         });
 
+        $includeExternal = $request->boolean('include_external');
+        if ($includeExternal) {
+            $movementsForTotals = $movementsForTotals->concat(
+                $this->buildExternalExpensesAsMovements($startDate, $endDate)
+            );
+        }
+
         $reportData = $this->generateCashAnalysisData($movementsForTotals, $groupBy, $startDate, $endDate);
 
         $summary = [
@@ -2390,7 +2397,7 @@ class ReportController extends Controller
             ]);
         }
 
-        return view('reports.cash-analysis', compact('reportData', 'summary', 'movementsByType'));
+        return view('reports.cash-analysis', compact('reportData', 'summary', 'movementsByType', 'includeExternal'));
     }
 
     /**
@@ -2414,6 +2421,13 @@ class ReportController extends Controller
         $movementsForTotals = $movements->filter(function ($movement) {
             return ! in_array($movement->movementType?->code, ['cash_opening', 'cash_closing']);
         });
+
+        $includeExternal = $request->boolean('include_external');
+        if ($includeExternal) {
+            $movementsForTotals = $movementsForTotals->concat(
+                $this->buildExternalExpensesAsMovements($startDate, $endDate)
+            );
+        }
 
         $reportData = $this->generateCashAnalysisData($movementsForTotals, $groupBy, $startDate, $endDate);
 
@@ -2440,7 +2454,7 @@ class ReportController extends Controller
         });
 
         return view('reports.cash-analysis-print', compact(
-            'reportData', 'summary', 'movementsByType', 'dateFrom', 'dateTo', 'groupBy'
+            'reportData', 'summary', 'movementsByType', 'dateFrom', 'dateTo', 'groupBy', 'includeExternal'
         ));
     }
 
@@ -2465,6 +2479,13 @@ class ReportController extends Controller
         $movementsForTotals = $movements->filter(function ($movement) {
             return ! in_array($movement->movementType?->code, ['cash_opening', 'cash_closing']);
         });
+
+        $includeExternal = $request->boolean('include_external');
+        if ($includeExternal) {
+            $movementsForTotals = $movementsForTotals->concat(
+                $this->buildExternalExpensesAsMovements($startDate, $endDate)
+            );
+        }
 
         $reportData = $this->generateCashAnalysisData($movementsForTotals, $groupBy, $startDate, $endDate);
 
@@ -2496,7 +2517,7 @@ class ReportController extends Controller
             'Content-Disposition' => "attachment; filename=\"$filename\"",
         ];
 
-        $callback = function () use ($summary, $reportData, $movementsByType, $dateFrom, $dateTo) {
+        $callback = function () use ($summary, $reportData, $movementsByType, $dateFrom, $dateTo, $includeExternal) {
             $file = fopen('php://output', 'w');
             fprintf($file, chr(0xEF) . chr(0xBB) . chr(0xBF));
 
@@ -2510,6 +2531,9 @@ class ReportController extends Controller
             fputcsv($file, ['Resultado Neto', number_format($summary['net_amount'], 2, ',', '.')], ';');
             fputcsv($file, ['Cantidad de Movimientos', $summary['movements_count']], ';');
             fputcsv($file, ['Dias del Periodo', $summary['period_days']], ';');
+            if ($includeExternal) {
+                fputcsv($file, ['Incluye gastos externos', 'Sí'], ';');
+            }
             fputcsv($file, [], ';');
 
             fputcsv($file, ['DETALLE POR PERIODO'], ';');
@@ -2540,6 +2564,23 @@ class ReportController extends Controller
         };
 
         return response()->stream($callback, 200, $headers);
+    }
+
+    /**
+     * Helper: convierte Expense externos a objetos compatibles con generateCashAnalysisData
+     */
+    private function buildExternalExpensesAsMovements($startDate, $endDate): \Illuminate\Support\Collection
+    {
+        return \App\Models\Expense::with('movementType')
+            ->forDateRange($startDate, $endDate)
+            ->get()
+            ->map(function ($expense) {
+                $obj = new \stdClass();
+                $obj->created_at = \Carbon\Carbon::parse($expense->expense_date)->startOfDay();
+                $obj->amount = -abs((float) $expense->amount);
+                $obj->movementType = $expense->movementType;
+                return $obj;
+            });
     }
 
     /**

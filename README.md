@@ -2,7 +2,7 @@
 
 [![Laravel](https://img.shields.io/badge/Laravel-12.x-red?style=flat\&logo=laravel)](https://laravel.com)
 [![PHP](https://img.shields.io/badge/PHP-8.2-blue?style=flat\&logo=php)](https://php.net)
-[![Version](https://img.shields.io/badge/Version-2.11.8-green?style=flat)](#changelog)
+[![Version](https://img.shields.io/badge/Version-2.11.10-green?style=flat)](#changelog)
 [![License](https://img.shields.io/badge/License-MIT-yellow?style=flat)](#license)
 
 Sistema integral de gestión médica para clínicas y consultorios, desarrollado con Laravel 12 y tecnologías modernas.
@@ -17,6 +17,17 @@ Sistema integral de gestión médica para clínicas y consultorios, desarrollado
 * [Contribución](#contribución)
 
 ## ✨ Características
+
+### 📊 Análisis de Caja: incluir gastos externos (v2.11.10)
+
+* **Checkbox "Incluir gastos externos"** en los filtros del reporte `/reports/cash-analysis`. Por defecto desactivado — el comportamiento original no cambia.
+* Al activarlo, los gastos registrados fuera de la caja (sueldos, impuestos, alquiler, servicios) se incorporan al análisis por período, a los totales de egresos y al desglose por tipo de movimiento.
+* Badge visible `+ Gastos externos` en el título del detalle, y nota en el CSV exportado.
+
+### 💬 WhatsApp: recordatorios para turnos fuera de ventana (v2.11.10)
+
+* **Pass 2 en el comando `whatsapp:send-reminders`**: detecta turnos del día siguiente cuyo horario cae después del cierre de la ventana (`>= window_end`) y los despacha **hoy** durante la ventana activa. Garantiza cobertura para turnos de tarde/noche sin esperar al día del turno.
+* **Margen `SCHEDULER_SAFE_CUTOFF_MINUTES = 20`**: los tiempos de despacho calculados se ubican a 20 minutos antes del cierre de ventana, dando tiempo al scheduler para ejecutar al menos una corrida confiable.
 
 ### 💬 WhatsApp: Ventana de envío configurable (v2.11.8)
 
@@ -202,6 +213,8 @@ php artisan config:clear
 
 ### 🔄 Últimas versiones
 
+* **v2.11.10** (2026-05-07) – 📊 Análisis de Caja: toggle "Incluir gastos externos" en `/reports/cash-analysis` (desactivado por defecto; al activar, suma Expenses externos a totales, desglose por tipo, export y print). 💬 WhatsApp: Pass 2 en recordatorios — turnos del día siguiente fuera de ventana se despachan hoy. Nuevo margen `SCHEDULER_SAFE_CUTOFF_MINUTES = 20`.
+* **v2.11.9** (2026-05-04) – 🐛 Fix índice único legacy `whatsapp_messages_appointment_type_unique` que bloqueaba reintentos de recordatorios (migración idempotente + try/catch). Nuevo comando `whatsapp:reminders-status`. Fix SystemModal doble resolución de Promise + redirección directa en ingreso manual. Fix `$methodLabels` + clave `'qr'` en listado de cobros.
 * **v2.11.8** (2026-05-01) – 💬 WhatsApp: ventana de envío configurable de recordatorios (días Lu–Do + hora mín/máx). Si el momento ideal cae en día/horario bloqueado, el envío se adelanta al último minuto válido anterior (no se pierde). Nuevo servicio `WhatsAppDispatchWindow`. 🧾 Cobros: nuevo botón "Compartir recibo por WhatsApp" en el listado `/payments`.
 * **v2.11.7** (2026-04-28) – 🧾 Recibos: modal unificado (imprimir/WhatsApp) + envío de PDF por WhatsApp. 💬 WhatsApp: historial con buscador + soporte tipo `receipt` y mensajes de error amigables. 💳 Cobro: modal multi-forma reutilizado en vistas de dashboard.
 * **v2.11.6** (2026-04-27) – 💼 Nuevo módulo Gastos Externos (sueldos, impuestos, alquiler, servicios) con comprobantes y reportes consolidados. 📊 Dashboard Administrativo con resumen financiero del mes, top de gastos y flujo a 6 meses. 👥 Nuevo perfil "Administrativo" + columna `default_dashboard` por perfil. ♻️ Análisis de Caja movido a `/reports/cash-analysis` (módulo `reports` en lugar de `cash`).
