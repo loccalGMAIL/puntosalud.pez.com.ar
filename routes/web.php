@@ -154,6 +154,9 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/reports/pacientes/frecuencia/print',      [ReportController::class, 'printPacientesFrecuencia'])->name('reports.pacientes.frecuencia.print');
         Route::get('/reports/pacientes/nuevos-viejos',         [ReportController::class, 'pacientesNuevosViejos'])->name('reports.pacientes.nuevos-viejos');
         Route::get('/reports/pacientes/nuevos-viejos/print',   [ReportController::class, 'printPacientesNuevosViejos'])->name('reports.pacientes.nuevos-viejos.print');
+        Route::get('/reports/pacientes/consultorios',          [ReportController::class, 'pacientesConsultorios'])->name('reports.pacientes.consultorios');
+        Route::get('/reports/pacientes/consultorios/export',   [ReportController::class, 'exportPacientesConsultoriosCsv'])->name('reports.pacientes.consultorios.export');
+        Route::get('/reports/pacientes/consultorios/print',    [ReportController::class, 'printPacientesConsultorios'])->name('reports.pacientes.consultorios.print');
 
         Route::get('/reports/ingresos-obra-social',            [ReportController::class, 'ingresosObraSocial'])->name('reports.ingresos-obra-social');
         Route::get('/reports/ingresos-obra-social/print',      [ReportController::class, 'printIngresosObraSocial'])->name('reports.ingresos-obra-social.print');

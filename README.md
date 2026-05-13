@@ -2,7 +2,7 @@
 
 [![Laravel](https://img.shields.io/badge/Laravel-12.x-red?style=flat\&logo=laravel)](https://laravel.com)
 [![PHP](https://img.shields.io/badge/PHP-8.2-blue?style=flat\&logo=php)](https://php.net)
-[![Version](https://img.shields.io/badge/Version-2.11.10-green?style=flat)](#changelog)
+[![Version](https://img.shields.io/badge/Version-2.12.0-green?style=flat)](#changelog)
 [![License](https://img.shields.io/badge/License-MIT-yellow?style=flat)](#license)
 
 Sistema integral de gestión médica para clínicas y consultorios, desarrollado con Laravel 12 y tecnologías modernas.
@@ -17,6 +17,17 @@ Sistema integral de gestión médica para clínicas y consultorios, desarrollado
 * [Contribución](#contribución)
 
 ## ✨ Características
+
+### 📊 Reportes: Ocupación de Consultorios (v2.12.0)
+
+* **Nuevo reporte** en Reportes → Pacientes → Consultorios (`/reports/pacientes/consultorios`).
+* Por consultorio muestra: atendidos, ausentes, cancelados, pendientes, total y tasa de asistencia sobre completados.
+* KPI cards globales, barra de distribución por colores, fila de totales, exportación a CSV y vista de impresión.
+* Filtro por rango de fechas y por consultorio específico.
+
+### 🧭 Nav: scroll automático al ítem activo (v2.12.0)
+
+* El sidebar hace scroll automático al ítem activo al cargar la página, evitando que secciones al fondo de la lista queden fuera de pantalla.
 
 ### 📊 Análisis de Caja: incluir gastos externos (v2.11.10)
 
