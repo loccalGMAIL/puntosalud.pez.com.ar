@@ -2658,4 +2658,119 @@ class ReportController extends Controller
 
         return $data->reverse();
     }
+
+    // -------------------------------------------------------------------------
+    // Ocupación de consultorios
+    // -------------------------------------------------------------------------
+
+    private function buildConsultoriosStats(Request $request): array
+    {
+        $dateFrom   = $request->get('date_from', now()->startOfMonth()->format('Y-m-d'));
+        $dateTo     = $request->get('date_to', now()->format('Y-m-d'));
+        $officeId   = $request->get('office_id');
+
+        $startDate = Carbon::parse($dateFrom)->startOfDay();
+        $endDate   = Carbon::parse($dateTo)->endOfDay();
+
+        $query = Appointment::with('office')
+            ->whereBetween('appointment_date', [$startDate, $endDate])
+            ->whereNotNull('office_id');
+
+        if ($officeId) {
+            $query->where('office_id', $officeId);
+        }
+
+        $appointments = $query->get();
+
+        $stats = $appointments
+            ->groupBy('office_id')
+            ->map(function ($items) {
+                $office    = $items->first()->office;
+                $attended  = $items->where('status', 'attended')->count();
+                $absent    = $items->where('status', 'absent')->count();
+                $completed = $attended + $absent;
+                return [
+                    'office_name'      => $office ? $office->name : '(Sin consultorio)',
+                    'attended'         => $attended,
+                    'absent'           => $absent,
+                    'cancelled'        => $items->where('status', 'cancelled')->count(),
+                    'scheduled'        => $items->where('status', 'scheduled')->count(),
+                    'total'            => $items->count(),
+                    'attendance_rate'  => $completed > 0 ? round($attended / $completed * 100, 1) : null,
+                ];
+            })
+            ->sortByDesc('total')
+            ->values();
+
+        $globalTotal     = $appointments->count();
+        $globalAttended  = $appointments->where('status', 'attended')->count();
+        $globalAbsent    = $appointments->where('status', 'absent')->count();
+        $globalCompleted = $globalAttended + $globalAbsent;
+        $globalRate      = $globalCompleted > 0 ? round($globalAttended / $globalCompleted * 100, 1) : null;
+        $topOffice       = $stats->first()['office_name'] ?? '—';
+
+        $allOffices = \App\Models\Office::active()->orderBy('name')->get();
+
+        return compact(
+            'stats', 'dateFrom', 'dateTo', 'officeId',
+            'globalTotal', 'globalAttended', 'globalAbsent', 'globalRate',
+            'topOffice', 'allOffices'
+        );
+    }
+
+    public function pacientesConsultorios(Request $request)
+    {
+        return view('reports.consultorios-ocupacion', $this->buildConsultoriosStats($request));
+    }
+
+    public function printPacientesConsultorios(Request $request)
+    {
+        return view('reports.consultorios-ocupacion-print', $this->buildConsultoriosStats($request));
+    }
+
+    public function exportPacientesConsultoriosCsv(Request $request)
+    {
+        $data = $this->buildConsultoriosStats($request);
+        extract($data);
+
+        $filename = 'consultorios-ocupacion_' . $dateFrom . '_' . $dateTo . '.csv';
+
+        $callback = function () use ($stats, $dateFrom, $dateTo, $globalTotal, $globalAttended, $globalAbsent, $globalRate) {
+            $f = fopen('php://output', 'w');
+            fprintf($f, chr(0xEF) . chr(0xBB) . chr(0xBF));
+
+            fputcsv($f, ['OCUPACIÓN DE CONSULTORIOS'], ';');
+            fputcsv($f, ['Período:' , $dateFrom . ' al ' . $dateTo], ';');
+            fputcsv($f, [], ';');
+
+            fputcsv($f, ['RESUMEN'], ';');
+            fputcsv($f, ['Total Turnos',       $globalTotal], ';');
+            fputcsv($f, ['Atendidos',          $globalAttended], ';');
+            fputcsv($f, ['Ausentes',           $globalAbsent], ';');
+            fputcsv($f, ['Tasa de Asistencia', ($globalRate !== null ? number_format($globalRate, 1, ',', '.') . '%' : 'N/A')], ';');
+            fputcsv($f, [], ';');
+
+            fputcsv($f, ['DETALLE POR CONSULTORIO'], ';');
+            fputcsv($f, ['Consultorio', 'Atendidos', 'Ausentes', 'Cancelados', 'Pendientes', 'Total', 'Tasa Asistencia'], ';');
+
+            foreach ($stats as $s) {
+                fputcsv($f, [
+                    $s['office_name'],
+                    $s['attended'],
+                    $s['absent'],
+                    $s['cancelled'],
+                    $s['scheduled'],
+                    $s['total'],
+                    $s['attendance_rate'] !== null ? number_format($s['attendance_rate'], 1, ',', '.') . '%' : 'N/A',
+                ], ';');
+            }
+
+            fclose($f);
+        };
+
+        return response()->stream($callback, 200, [
+            'Content-Type'        => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => "attachment; filename=\"{$filename}\"",
+        ]);
+    }
 }

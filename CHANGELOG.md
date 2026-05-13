@@ -7,6 +7,25 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [2.12.0] - 2026-05-13
+
+### 📊 Reportes: Ocupación de Consultorios
+
+- **Nuevo reporte `/reports/pacientes/consultorios`** en la sección Pacientes del menú de reportes.
+- Muestra por consultorio: turnos atendidos, ausentes, cancelados, pendientes, total y tasa de asistencia (calculada sobre completados, excluyendo cancelados y pendientes).
+- **4 KPI cards** globales: consultorios con actividad, total de turnos, tasa de asistencia global y consultorio más ocupado del período.
+- **Filtros**: fecha desde/hasta y selector de consultorio (para drill-down sobre uno específico).
+- **Barra de distribución** por colores (verde/amarillo/rojo/azul) para visualizar la composición de cada consultorio de un vistazo.
+- **Fila de totales** en el pie de la tabla con sumatorias globales.
+- **Exportar a Excel (CSV)** con BOM UTF-8, separador `;`, secciones de resumen y detalle.
+- **Imprimir** con vista dedicada (`layouts.print`) y auto-disparo de `window.print()`.
+
+### 🧭 Nav: scroll automático al ítem activo
+
+- Al cargar cualquier página, el sidebar hace scroll automático hasta el ítem de menú activo (`scrollIntoView`). Evita que reportes y secciones al final de la lista queden fuera de la pantalla visible sin desplazamiento manual.
+
+---
+
 ## [2.11.10] - 2026-05-07
 
 ### 💬 WhatsApp: recordatorios para turnos post-ventana del día siguiente (Pass 2)

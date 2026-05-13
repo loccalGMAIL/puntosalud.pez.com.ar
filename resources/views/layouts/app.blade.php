@@ -165,6 +165,7 @@
                         ['title' => 'Retención',        'href' => '/reports/pacientes/retencion'],
                         ['title' => 'Frecuencia',       'href' => '/reports/pacientes/frecuencia'],
                         ['title' => 'Nuevos vs Viejos', 'href' => '/reports/pacientes/nuevos-viejos'],
+                        ['title' => 'Consultorios',     'href' => '/reports/pacientes/consultorios'],
                     ],
                 ];
             }
@@ -445,6 +446,15 @@
                 setInterval(refreshWhatsAppStatus, 30000);
             }
         })();
+    </script>
+
+    <script>
+        document.addEventListener('alpine:initialized', function () {
+            const activeLink = document.querySelector('nav a.bg-emerald-100');
+            if (activeLink) {
+                activeLink.scrollIntoView({ behavior: 'instant', block: 'nearest' });
+            }
+        });
     </script>
 </body>
 </html>
