@@ -18,7 +18,7 @@
         <div class="flex items-start justify-between gap-4">
             <div>
                 <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Pacientes – Consultorios</h1>
-                <p class="text-gray-600 dark:text-gray-400">Ocupación y asistencia por consultorio</p>
+                <p class="text-gray-600 dark:text-gray-400">Ocupación, asistencia y horas de uso por consultorio</p>
             </div>
             <div class="flex items-center gap-2">
                 <button @click="exportReport('excel')"
@@ -65,7 +65,7 @@
     </div>
 
     <!-- KPI Cards -->
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+    <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4">
             <p class="text-xs font-medium text-gray-500 dark:text-gray-400">Consultorios</p>
             <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ $stats->count() }}</p>
@@ -73,6 +73,10 @@
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4">
             <p class="text-xs font-medium text-gray-500 dark:text-gray-400">Total Turnos</p>
             <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ number_format($globalTotal) }}</p>
+        </div>
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-blue-200 dark:border-blue-700 p-4">
+            <p class="text-xs font-medium text-blue-600 dark:text-blue-400">Total Horas</p>
+            <p class="text-2xl font-bold text-blue-700 dark:text-blue-400">{{ number_format($globalHours, 1) }} h</p>
         </div>
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-emerald-200 dark:border-emerald-700 p-4">
             <p class="text-xs font-medium text-emerald-600 dark:text-emerald-400">Tasa de Asistencia</p>
@@ -88,8 +92,8 @@
         </div>
     </div>
 
-    <!-- Tabla -->
-    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+    <!-- Tabla principal -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 mb-6">
         @if($stats->count() > 0)
         <div class="overflow-x-auto">
             <table class="w-full">
@@ -101,6 +105,7 @@
                         <th class="text-center py-3 px-4 font-medium text-red-500 hidden md:table-cell">Cancelados</th>
                         <th class="text-center py-3 px-4 font-medium text-blue-500 hidden md:table-cell">Pendientes</th>
                         <th class="text-center py-3 px-4 font-medium">Total</th>
+                        <th class="text-center py-3 px-4 font-medium text-blue-600">Horas</th>
                         <th class="text-center py-3 px-4 font-medium">Tasa Asistencia</th>
                         <th class="text-left py-3 px-4 font-medium hidden lg:table-cell" style="min-width:130px">Distribución</th>
                     </tr>
@@ -120,6 +125,7 @@
                         <td class="py-3 px-4 text-sm text-center font-medium text-red-600 dark:text-red-400 hidden md:table-cell">{{ $s['cancelled'] }}</td>
                         <td class="py-3 px-4 text-sm text-center font-medium text-blue-600 dark:text-blue-400 hidden md:table-cell">{{ $s['scheduled'] }}</td>
                         <td class="py-3 px-4 text-sm text-center font-bold text-gray-900 dark:text-white">{{ $s['total'] }}</td>
+                        <td class="py-3 px-4 text-sm text-center font-medium text-blue-700 dark:text-blue-400">{{ number_format($s['total_hours'], 1) }} h</td>
                         <td class="py-3 px-4 text-sm text-center">
                             @if($s['attendance_rate'] !== null)
                                 <span class="font-bold {{ $s['attendance_rate'] >= 80 ? 'text-emerald-600 dark:text-emerald-400' : ($s['attendance_rate'] >= 60 ? 'text-yellow-600 dark:text-yellow-400' : 'text-red-600 dark:text-red-400') }}">
@@ -148,6 +154,7 @@
                         <td class="py-3 px-4 text-sm text-center font-bold text-red-600 dark:text-red-400 hidden md:table-cell">{{ $stats->sum('cancelled') }}</td>
                         <td class="py-3 px-4 text-sm text-center font-bold text-blue-600 dark:text-blue-400 hidden md:table-cell">{{ $stats->sum('scheduled') }}</td>
                         <td class="py-3 px-4 text-sm text-center font-bold text-gray-900 dark:text-white">{{ $globalTotal }}</td>
+                        <td class="py-3 px-4 text-sm text-center font-bold text-blue-700 dark:text-blue-400">{{ number_format($globalHours, 1) }} h</td>
                         <td class="py-3 px-4 text-sm text-center font-bold {{ $globalRate !== null && $globalRate >= 80 ? 'text-emerald-600 dark:text-emerald-400' : ($globalRate !== null && $globalRate >= 60 ? 'text-yellow-600 dark:text-yellow-400' : 'text-red-600 dark:text-red-400') }}">
                             {{ $globalRate !== null ? $globalRate . '%' : '—' }}
                         </td>
@@ -161,7 +168,55 @@
         @endif
     </div>
 
-    <p class="mt-3 text-xs text-gray-400 dark:text-gray-500">La tasa de asistencia se calcula sobre turnos completados (atendidos + ausentes). Turnos cancelados y pendientes no se incluyen en la tasa. Tasa ≥ 80% = alta; 60-79% = moderada; &lt; 60% = baja.</p>
+    <!-- Desglose por profesional (acordeón por consultorio) -->
+    @if($stats->count() > 0)
+    <div class="mb-4">
+        <h2 class="text-base font-semibold text-gray-700 dark:text-gray-300 mb-3">Horas por profesional</h2>
+        <div class="space-y-2">
+            @foreach($stats as $s)
+            <div x-data="{ open: {{ $officeId ? 'true' : 'false' }} }"
+                 class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+                <!-- Cabecera del acordeón -->
+                <button @click="open = !open"
+                        class="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg transition-colors">
+                    <div class="flex items-center gap-3">
+                        <span class="text-sm font-semibold text-gray-900 dark:text-white">{{ $s['office_name'] }}</span>
+                        <span class="text-xs text-blue-600 dark:text-blue-400 font-medium bg-blue-50 dark:bg-blue-900/30 px-2 py-0.5 rounded-full">
+                            {{ number_format($s['total_hours'], 1) }} h · {{ $s['total'] }} turnos
+                        </span>
+                    </div>
+                    <svg :class="{ 'rotate-90': open }" class="w-4 h-4 text-gray-400 transition-transform flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                    </svg>
+                </button>
+                <!-- Contenido del acordeón -->
+                <div x-show="open" x-cloak class="border-t border-gray-100 dark:border-gray-700">
+                    <table class="w-full">
+                        <thead>
+                            <tr class="text-xs text-gray-500 dark:text-gray-400 uppercase bg-gray-50 dark:bg-gray-700/50">
+                                <th class="text-left py-2 px-4 font-medium">Profesional</th>
+                                <th class="text-center py-2 px-4 font-medium">Turnos</th>
+                                <th class="text-center py-2 px-4 font-medium text-blue-600">Horas</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
+                            @foreach($s['by_professional'] as $p)
+                            <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                                <td class="py-2 px-4 text-sm text-gray-900 dark:text-white">{{ $p['name'] }}</td>
+                                <td class="py-2 px-4 text-sm text-center text-gray-600 dark:text-gray-400">{{ $p['total'] }}</td>
+                                <td class="py-2 px-4 text-sm text-center font-medium text-blue-700 dark:text-blue-400">{{ number_format($p['hours'], 1) }} h</td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            @endforeach
+        </div>
+    </div>
+    @endif
+
+    <p class="mt-3 text-xs text-gray-400 dark:text-gray-500">La tasa de asistencia se calcula sobre turnos completados (atendidos + ausentes). Las horas se calculan sumando la duración de todos los turnos del período. Tasa ≥ 80% = alta; 60-79% = moderada; &lt; 60% = baja.</p>
 </div>
 
 <script>

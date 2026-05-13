@@ -2,7 +2,7 @@
 
 [![Laravel](https://img.shields.io/badge/Laravel-12.x-red?style=flat\&logo=laravel)](https://laravel.com)
 [![PHP](https://img.shields.io/badge/PHP-8.2-blue?style=flat\&logo=php)](https://php.net)
-[![Version](https://img.shields.io/badge/Version-2.12.0-green?style=flat)](#changelog)
+[![Version](https://img.shields.io/badge/Version-2.12.1-green?style=flat)](#changelog)
 [![License](https://img.shields.io/badge/License-MIT-yellow?style=flat)](#license)
 
 Sistema integral de gestión médica para clínicas y consultorios, desarrollado con Laravel 12 y tecnologías modernas.
@@ -17,6 +17,12 @@ Sistema integral de gestión médica para clínicas y consultorios, desarrollado
 * [Contribución](#contribución)
 
 ## ✨ Características
+
+### 📊 Consultorios: horas de uso por profesional (v2.12.1)
+
+* **Columna "Horas"** en la tabla principal y KPI card "Total Horas" en el reporte de consultorios.
+* **Acordeón por consultorio** con desglose de horas y turnos por profesional. Arranca abierto al filtrar por un consultorio específico.
+* Export CSV y vista de impresión actualizados con la sección de horas por profesional.
 
 ### 📊 Reportes: Ocupación de Consultorios (v2.12.0)
 

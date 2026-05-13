@@ -7,6 +7,18 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [2.12.1] - 2026-05-13
+
+### 📊 Consultorios: horas de uso por profesional
+
+- **Columna "Horas"** en la tabla principal del reporte de consultorios, mostrando el total de horas de uso por consultorio en el período.
+- **KPI card "Total Horas"** global (5 cards en total), en azul.
+- **Acordeón por consultorio** debajo de la tabla: cada consultorio es expandible y muestra una tabla de profesionales con sus turnos y horas. Si se filtra por un consultorio específico, el acordeón arranca abierto. Header muestra nombre + horas totales + cantidad de turnos.
+- **Vista de impresión** actualizada: columna Horas en tabla principal + sección "Horas por profesional" con tabla por consultorio, siempre expandida.
+- **Export CSV** actualizado: columna Horas en el detalle por consultorio + nueva sección "DESGLOSE POR PROFESIONAL" (Consultorio / Profesional / Turnos / Horas).
+
+---
+
 ## [2.12.0] - 2026-05-13
 
 ### 📊 Reportes: Ocupación de Consultorios

@@ -2672,7 +2672,7 @@ class ReportController extends Controller
         $startDate = Carbon::parse($dateFrom)->startOfDay();
         $endDate   = Carbon::parse($dateTo)->endOfDay();
 
-        $query = Appointment::with('office')
+        $query = Appointment::with(['office', 'professional'])
             ->whereBetween('appointment_date', [$startDate, $endDate])
             ->whereNotNull('office_id');
 
@@ -2689,6 +2689,18 @@ class ReportController extends Controller
                 $attended  = $items->where('status', 'attended')->count();
                 $absent    = $items->where('status', 'absent')->count();
                 $completed = $attended + $absent;
+                $byProfessional = $items
+                    ->groupBy('professional_id')
+                    ->map(function ($pItems) {
+                        $pro = $pItems->first()->professional;
+                        return [
+                            'name'  => $pro ? $pro->full_name : '(Sin profesional)',
+                            'total' => $pItems->count(),
+                            'hours' => round($pItems->sum('duration') / 60, 1),
+                        ];
+                    })
+                    ->sortByDesc('hours')
+                    ->values();
                 return [
                     'office_name'      => $office ? $office->name : '(Sin consultorio)',
                     'attended'         => $attended,
@@ -2696,7 +2708,9 @@ class ReportController extends Controller
                     'cancelled'        => $items->where('status', 'cancelled')->count(),
                     'scheduled'        => $items->where('status', 'scheduled')->count(),
                     'total'            => $items->count(),
+                    'total_hours'      => round($items->sum('duration') / 60, 1),
                     'attendance_rate'  => $completed > 0 ? round($attended / $completed * 100, 1) : null,
+                    'by_professional'  => $byProfessional,
                 ];
             })
             ->sortByDesc('total')
@@ -2707,6 +2721,7 @@ class ReportController extends Controller
         $globalAbsent    = $appointments->where('status', 'absent')->count();
         $globalCompleted = $globalAttended + $globalAbsent;
         $globalRate      = $globalCompleted > 0 ? round($globalAttended / $globalCompleted * 100, 1) : null;
+        $globalHours     = round($appointments->sum('duration') / 60, 1);
         $topOffice       = $stats->first()['office_name'] ?? '—';
 
         $allOffices = \App\Models\Office::active()->orderBy('name')->get();
@@ -2714,7 +2729,7 @@ class ReportController extends Controller
         return compact(
             'stats', 'dateFrom', 'dateTo', 'officeId',
             'globalTotal', 'globalAttended', 'globalAbsent', 'globalRate',
-            'topOffice', 'allOffices'
+            'globalHours', 'topOffice', 'allOffices'
         );
     }
 
@@ -2735,23 +2750,24 @@ class ReportController extends Controller
 
         $filename = 'consultorios-ocupacion_' . $dateFrom . '_' . $dateTo . '.csv';
 
-        $callback = function () use ($stats, $dateFrom, $dateTo, $globalTotal, $globalAttended, $globalAbsent, $globalRate) {
+        $callback = function () use ($stats, $dateFrom, $dateTo, $globalTotal, $globalAttended, $globalAbsent, $globalRate, $globalHours) {
             $f = fopen('php://output', 'w');
             fprintf($f, chr(0xEF) . chr(0xBB) . chr(0xBF));
 
             fputcsv($f, ['OCUPACIÓN DE CONSULTORIOS'], ';');
-            fputcsv($f, ['Período:' , $dateFrom . ' al ' . $dateTo], ';');
+            fputcsv($f, ['Período:', $dateFrom . ' al ' . $dateTo], ';');
             fputcsv($f, [], ';');
 
             fputcsv($f, ['RESUMEN'], ';');
             fputcsv($f, ['Total Turnos',       $globalTotal], ';');
+            fputcsv($f, ['Total Horas',        number_format($globalHours, 1, ',', '.')], ';');
             fputcsv($f, ['Atendidos',          $globalAttended], ';');
             fputcsv($f, ['Ausentes',           $globalAbsent], ';');
-            fputcsv($f, ['Tasa de Asistencia', ($globalRate !== null ? number_format($globalRate, 1, ',', '.') . '%' : 'N/A')], ';');
+            fputcsv($f, ['Tasa de Asistencia', $globalRate !== null ? number_format($globalRate, 1, ',', '.') . '%' : 'N/A'], ';');
             fputcsv($f, [], ';');
 
             fputcsv($f, ['DETALLE POR CONSULTORIO'], ';');
-            fputcsv($f, ['Consultorio', 'Atendidos', 'Ausentes', 'Cancelados', 'Pendientes', 'Total', 'Tasa Asistencia'], ';');
+            fputcsv($f, ['Consultorio', 'Atendidos', 'Ausentes', 'Cancelados', 'Pendientes', 'Total', 'Horas', 'Tasa Asistencia'], ';');
 
             foreach ($stats as $s) {
                 fputcsv($f, [
@@ -2761,8 +2777,24 @@ class ReportController extends Controller
                     $s['cancelled'],
                     $s['scheduled'],
                     $s['total'],
+                    number_format($s['total_hours'], 1, ',', '.'),
                     $s['attendance_rate'] !== null ? number_format($s['attendance_rate'], 1, ',', '.') . '%' : 'N/A',
                 ], ';');
+            }
+
+            fputcsv($f, [], ';');
+            fputcsv($f, ['DESGLOSE POR PROFESIONAL'], ';');
+            fputcsv($f, ['Consultorio', 'Profesional', 'Turnos', 'Horas'], ';');
+
+            foreach ($stats as $s) {
+                foreach ($s['by_professional'] as $p) {
+                    fputcsv($f, [
+                        $s['office_name'],
+                        $p['name'],
+                        $p['total'],
+                        number_format($p['hours'], 1, ',', '.'),
+                    ], ';');
+                }
             }
 
             fclose($f);
