@@ -528,6 +528,30 @@ class PaymentController extends Controller
 
         // Log en historial (asociamos al primer turno del pago, si existe)
         $appointmentId = $payment->paymentAppointments->first()?->appointment_id;
+
+        // Protección contra envíos duplicados: si ya se envió o está pendiente un recibo
+        // para este turno en los últimos 60 segundos, no reenviar.
+        if ($appointmentId) {
+            $recentDuplicate = WhatsAppMessage::where('appointment_id', $appointmentId)
+                ->where('type', 'receipt')
+                ->whereIn('status', ['sent', 'pending'])
+                ->where('created_at', '>=', now()->subSeconds(60))
+                ->exists();
+
+            if ($recentDuplicate) {
+                Log::warning('shareReceiptViaWhatsApp: envío duplicado bloqueado', [
+                    'payment_id'     => $payment->id,
+                    'appointment_id' => $appointmentId,
+                    'phone'          => $phone,
+                ]);
+
+                return response()->json([
+                    'success' => false,
+                    'message' => 'El recibo ya fue enviado recientemente. Esperá unos segundos antes de reenviar.',
+                ], 422);
+            }
+        }
+
         $waMessage = null;
         if ($appointmentId && $payment->patient_id) {
             $waMessage = WhatsAppMessage::create([
@@ -540,6 +564,13 @@ class PaymentController extends Controller
                 'type'           => 'receipt',
             ]);
         }
+
+        Log::info('shareReceiptViaWhatsApp: enviando recibo', [
+            'payment_id'     => $payment->id,
+            'appointment_id' => $appointmentId,
+            'professional'   => $professionals->pluck('full_name'),
+            'phone'          => $phone,
+        ]);
 
         $result = $whatsApp->sendMediaFile($phone, $base64, $filename, $caption);
 
