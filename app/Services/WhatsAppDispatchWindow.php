@@ -89,9 +89,8 @@ class WhatsAppDispatchWindow
             }
 
             if ($idealTime->lessThan($start)) {
-                $candidate = $idealTime->copy()->subDay();
-
-                return $this->previousAllowedDaySafeCutoff($candidate);
+                // El ideal es antes de que abra la ventana: enviar al inicio de ventana del mismo día.
+                return $start;
             }
         }
 
