@@ -206,8 +206,9 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/feature',   [WhatsAppController::class, 'toggleFeature'])->name('feature.toggle');
         Route::get('/api',        [WhatsAppController::class, 'apiSettings'])->name('api');
         Route::post('/api',       [WhatsAppController::class, 'saveApiSettings'])->name('api.save');
-        Route::get('/messages',      [WhatsAppController::class, 'messages'])->name('messages');
-        Route::post('/test-message', [WhatsAppController::class, 'testMessage'])->name('test-message');
+        Route::get('/messages',         [WhatsAppController::class, 'messages'])->name('messages');
+        Route::get('/reminders-status', [WhatsAppController::class, 'remindersStatus'])->name('reminders-status');
+        Route::post('/test-message',    [WhatsAppController::class, 'testMessage'])->name('test-message');
     });
 
     // Rutas de Configuración (módulo: configuration)
