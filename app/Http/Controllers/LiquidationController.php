@@ -119,8 +119,7 @@ class LiquidationController extends Controller
 
             // Calcular la parte del centro sobre esos pagos directos
             // Si el profesional recibió $2000, debe pagar al centro (100% - commission_percentage)
-            $clinicPercentage = 100 - $professional->commission_percentage;
-            $clinicAmountFromDirect = $directPaymentsTotal * ($clinicPercentage / 100);
+            $clinicAmountFromDirect = $professional->getClinicAmount($directPaymentsTotal);
 
             // Obtener reintegros del día para este profesional (usando referencias polimórficas)
             $refunds = CashMovement::byType('expense')
@@ -246,7 +245,7 @@ class LiquidationController extends Controller
                 $appointment = $paymentAppointment->appointment;
                 $paymentDetailAmount = $paymentDetail->amount;
                 // Para pagos directos, calculamos la parte del centro (NO la comisión del profesional)
-                $clinicPart = $paymentDetailAmount * ($clinicPercentage / 100);
+                $clinicPart = $professional->getClinicAmount($paymentDetailAmount);
 
                 // Crear detalle de liquidación - nota: commission_amount es NEGATIVO porque el profesional debe pagarle al centro
                 LiquidationDetail::create([

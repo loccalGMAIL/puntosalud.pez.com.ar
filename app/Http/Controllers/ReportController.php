@@ -438,8 +438,7 @@ class ReportController extends Controller
                 $professionalCommission = $professional->calculateCommission($totalCollectedByCenter);
 
                 // Calcular parte del centro sobre pagos directos
-                $clinicPercentage = 100 - $professional->commission_percentage;
-                $clinicAmountFromDirect = $totalCollectedByProfessional * ($clinicPercentage / 100);
+                $clinicAmountFromDirect = $professional->getClinicAmount($totalCollectedByProfessional);
 
                 // Obtener reintegros del día para este profesional (usando referencias polimórficas)
                 $refunds = \App\Models\CashMovement::byType('expense')
@@ -628,8 +627,8 @@ class ReportController extends Controller
         $professionalCommission = $professional->calculateCommission($totalCollectedByCenter);
 
         // Calcular la parte del centro sobre los pagos directos al profesional
-        $clinicPercentage = 100 - $professional->commission_percentage;
-        $clinicAmountFromDirect = $totalCollectedByProfessional * ($clinicPercentage / 100);
+        $clinicPercentage = 100 - $professional->commission_percentage; // usado en totals para la vista
+        $clinicAmountFromDirect = $professional->getClinicAmount($totalCollectedByProfessional);
 
         // Obtener reintegros del día para este profesional (usando referencias polimórficas)
         $refunds = \App\Models\CashMovement::byType('expense')
