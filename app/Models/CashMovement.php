@@ -14,17 +14,17 @@ class CashMovement extends Model
     {
         $type = $this->movementType()->first();
         $typeName = $type ? $type->name : 'Movimiento';
-        $base = $typeName . ' #' . $this->id;
+        $base = $typeName.' #'.$this->id;
 
         if ($this->reference_type && str_ends_with($this->reference_type, 'Payment') && $this->reference_id) {
             $payment = \App\Models\Payment::find($this->reference_id);
             if ($payment?->receipt_number) {
-                return $base . ' - Recibo #' . $payment->receipt_number;
+                return $base.' - Recibo #'.$payment->receipt_number;
             }
         }
 
         if ($this->description) {
-            return $base . ': ' . \Illuminate\Support\Str::limit($this->description, 50);
+            return $base.': '.\Illuminate\Support\Str::limit($this->description, 50);
         }
 
         return $base;
@@ -69,7 +69,8 @@ class CashMovement extends Model
 
     /**
      * Filtrar por código de tipo de movimiento
-     * @param string $typeCode Código del tipo (ej: 'patient_payment', 'expense', etc.)
+     *
+     * @param  string  $typeCode  Código del tipo (ej: 'patient_payment', 'expense', etc.)
      */
     public function scopeByType($query, $typeCode)
     {
@@ -177,13 +178,22 @@ class CashMovement extends Model
     }
 
     /**
-     * Obtiene el balance actual de caja con lock pesimista para evitar condiciones de carrera
+     * Obtiene el balance de caja con lock pesimista para evitar condiciones de carrera
      *
-     * @return float El balance actual de caja
+     * @param  mixed  $asOfDate  Fecha límite opcional (inclusive). Si se pasa, devuelve el balance
+     *                           al último movimiento de esa fecha o anterior. Sin fecha, el actual.
+     * @return float El balance de caja
      */
-    public static function getCurrentBalanceWithLock()
+    public static function getCurrentBalanceWithLock($asOfDate = null)
     {
-        $lastMovement = static::orderBy('created_at', 'desc')
+        $query = static::query();
+
+        if ($asOfDate !== null) {
+            $query->whereDate('created_at', '<=', \Carbon\Carbon::parse($asOfDate));
+        }
+
+        $lastMovement = $query->orderBy('created_at', 'desc')
+            ->orderBy('id', 'desc')
             ->lockForUpdate()
             ->first();
 
@@ -198,6 +208,7 @@ class CashMovement extends Model
     public static function isCashOpenToday()
     {
         $status = static::getCashStatusForDate(now());
+
         return $status['is_open'];
     }
 }

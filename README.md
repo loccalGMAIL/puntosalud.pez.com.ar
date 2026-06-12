@@ -2,7 +2,7 @@
 
 [![Laravel](https://img.shields.io/badge/Laravel-12.x-red?style=flat\&logo=laravel)](https://laravel.com)
 [![PHP](https://img.shields.io/badge/PHP-8.2-blue?style=flat\&logo=php)](https://php.net)
-[![Version](https://img.shields.io/badge/Version-2.12.1-green?style=flat)](#changelog)
+[![Version](https://img.shields.io/badge/Version-2.12.3-green?style=flat)](#changelog)
 [![License](https://img.shields.io/badge/License-MIT-yellow?style=flat)](#license)
 
 Sistema integral de gestión médica para clínicas y consultorios, desarrollado con Laravel 12 y tecnologías modernas.
@@ -17,6 +17,14 @@ Sistema integral de gestión médica para clínicas y consultorios, desarrollado
 * [Contribución](#contribución)
 
 ## ✨ Características
+
+### 🔒 Hardening financiero + centralización de lógica (v2.12.3)
+
+* **Locks pesimistas** contra condiciones de carrera en liquidaciones y cierre de caja (doble cierre concurrente bloqueado); lectura de balance unificada en `CashMovement::getCurrentBalanceWithLock()`.
+* **Flag `collects_directly` en profesionales**: reemplaza el hardcode "ID=1" — el profesional que cobra directamente no genera salida de caja al liquidar. Configurable desde el modal de profesionales.
+* **Enums `AppointmentStatus` y `PaymentMethod`**: valores, reglas de validación y etiquetas en español centralizadas (elimina 10 reglas hardcodeadas y 5 mapas de etiquetas duplicados).
+* **Transiciones de estado de turnos validadas**: deshacer hacia "Programado" permitido, salvo turnos atendidos con pagos asociados (422 con mensaje claro).
+* **API key de WhatsApp encriptada** en la tabla `settings`, transparente para los consumidores y con migración suave de valores legacy.
 
 ### 📊 Consultorios: horas de uso por profesional (v2.12.1)
 
@@ -230,6 +238,9 @@ php artisan config:clear
 
 ### 🔄 Últimas versiones
 
+* **v2.12.3** (2026-06-12) – 🔒 Hardening financiero: locks pesimistas en liquidaciones y cierre de caja (doble cierre bloqueado), balance unificado en `getCurrentBalanceWithLock()`. 👩‍⚕️ Flag `collects_directly` reemplaza hardcode Dra. Zalazar ID=1 (configurable en modal de profesionales). 🧩 Enums `AppointmentStatus`/`PaymentMethod` centralizan validaciones y etiquetas. 🔁 Transiciones de estado de turnos validadas (`canTransitionTo`). 🔐 API key de WhatsApp encriptada en settings. 🐛 Fix migración `SHOW INDEX` que rompía la suite de tests en SQLite.
+* **v2.12.1** (2026-05-13) – 📊 Consultorios: horas de uso por profesional — columna "Horas" y KPI "Total Horas" en el reporte, acordeón por consultorio con desglose por profesional, export CSV e impresión actualizados.
+* **v2.12.0** (2026-05-13) – 📊 Nuevo reporte Ocupación de Consultorios (`/reports/pacientes/consultorios`): turnos y tasa de asistencia por consultorio, KPI cards, export CSV e impresión. 🧭 Sidebar con scroll automático al ítem de menú activo.
 * **v2.11.10** (2026-05-07) – 📊 Análisis de Caja: toggle "Incluir gastos externos" en `/reports/cash-analysis` (desactivado por defecto; al activar, suma Expenses externos a totales, desglose por tipo, export y print). 💬 WhatsApp: Pass 2 en recordatorios — turnos del día siguiente fuera de ventana se despachan hoy. Nuevo margen `SCHEDULER_SAFE_CUTOFF_MINUTES = 20`.
 * **v2.11.9** (2026-05-04) – 🐛 Fix índice único legacy `whatsapp_messages_appointment_type_unique` que bloqueaba reintentos de recordatorios (migración idempotente + try/catch). Nuevo comando `whatsapp:reminders-status`. Fix SystemModal doble resolución de Promise + redirección directa en ingreso manual. Fix `$methodLabels` + clave `'qr'` en listado de cobros.
 * **v2.11.8** (2026-05-01) – 💬 WhatsApp: ventana de envío configurable de recordatorios (días Lu–Do + hora mín/máx). Si el momento ideal cae en día/horario bloqueado, el envío se adelanta al último minuto válido anterior (no se pierde). Nuevo servicio `WhatsAppDispatchWindow`. 🧾 Cobros: nuevo botón "Compartir recibo por WhatsApp" en el listado `/payments`.

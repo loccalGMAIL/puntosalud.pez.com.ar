@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\AppointmentStatus;
 use App\Models\Appointment;
 use App\Models\CashMovement;
-use App\Models\MovementType;
-use App\Models\Patient;
 use App\Models\Expense;
+use App\Models\MovementType;
 use App\Models\Professional;
 use App\Models\ProfessionalLiquidation;
 use App\Services\WhatsAppService;
@@ -40,7 +40,7 @@ class ReportController extends Controller
             ->whereDate('created_at', $selectedDate);
 
         if ($request->filled('type')) {
-            $query->whereHas('movementType', function($q) use ($request) {
+            $query->whereHas('movementType', function ($q) use ($request) {
                 $q->where('code', $request->type);
             });
         }
@@ -53,8 +53,8 @@ class ReportController extends Controller
             ->get();
 
         // Calcular totales excluyendo apertura y cierre de caja
-        $movementsForTotals = $movements->filter(function($movement) {
-            return !in_array($movement->movementType?->code, ['cash_opening', 'cash_closing']);
+        $movementsForTotals = $movements->filter(function ($movement) {
+            return ! in_array($movement->movementType?->code, ['cash_opening', 'cash_closing']);
         });
         $inflows = $movementsForTotals->where('amount', '>', 0)->sum('amount');
         $outflows = $movementsForTotals->where('amount', '<', 0)->sum('amount');
@@ -81,14 +81,15 @@ class ReportController extends Controller
 
         // Agrupar por tipo de movimiento excluyendo apertura y cierre
         $movementsByType = $movements
-            ->filter(function($movement) {
-                return !in_array($movement->movementType?->code, ['cash_opening', 'cash_closing']);
+            ->filter(function ($movement) {
+                return ! in_array($movement->movementType?->code, ['cash_opening', 'cash_closing']);
             })
-            ->groupBy(function($movement) {
+            ->groupBy(function ($movement) {
                 return $movement->movementType?->code ?? 'unknown';
             })
             ->map(function ($group, $typeCode) {
                 $firstMovement = $group->first();
+
                 return [
                     'type' => $typeCode,
                     'type_name' => $firstMovement->movementType?->name ?? ucfirst($typeCode),
@@ -119,9 +120,9 @@ class ReportController extends Controller
 
         // Obtener movimientos con referencias para método de pago
         $movements = CashMovement::with(['user', 'movementType'])
-            ->with(['reference' => function($morphTo) {
+            ->with(['reference' => function ($morphTo) {
                 $morphTo->morphWith([
-                    \App\Models\Payment::class => ['paymentDetails']
+                    \App\Models\Payment::class => ['paymentDetails'],
                 ]);
             }])
             ->whereDate('created_at', $selectedDate)
@@ -129,8 +130,8 @@ class ReportController extends Controller
             ->get();
 
         // Calcular totales excluyendo apertura y cierre de caja
-        $movementsForTotals = $movements->filter(function($movement) {
-            return !in_array($movement->movementType?->code, ['cash_opening', 'cash_closing']);
+        $movementsForTotals = $movements->filter(function ($movement) {
+            return ! in_array($movement->movementType?->code, ['cash_opening', 'cash_closing']);
         });
         $inflows = $movementsForTotals->where('amount', '>', 0)->sum('amount');
         $outflows = $movementsForTotals->where('amount', '<', 0)->sum('amount');
@@ -205,7 +206,7 @@ class ReportController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'professional_id' => 'required|exists:professionals,id',
-            'date'            => 'required|date',
+            'date' => 'required|date',
         ]);
 
         if ($validator->fails()) {
@@ -247,7 +248,7 @@ class ReportController extends Controller
 
         $pdf = Pdf::loadView('agenda.daily-schedule-print', [
             'reportData' => $reportData,
-            'isPdf'      => true,
+            'isPdf' => true,
         ])
             ->setPaper('a4')
             ->setOption('isRemoteEnabled', false)
@@ -257,11 +258,11 @@ class ReportController extends Controller
 
         $safeName = Str::slug($professional->full_name, '_');
         if (empty($safeName)) {
-            $safeName = 'profesional_' . $professional->id;
+            $safeName = 'profesional_'.$professional->id;
         }
 
-        $filename = 'listado-' . $reportData['date']->format('Y-m-d') . '-' . $safeName . '.pdf';
-        $caption  = 'Listado de pacientes ' . $reportData['date']->format('d/m/Y');
+        $filename = 'listado-'.$reportData['date']->format('Y-m-d').'-'.$safeName.'.pdf';
+        $caption = 'Listado de pacientes '.$reportData['date']->format('d/m/Y');
 
         $result = $whatsApp->sendMediaFile($formatted, $base64, $filename, $caption);
 
@@ -295,7 +296,7 @@ class ReportController extends Controller
                     'estimated_amount' => $appointment->estimated_amount ?? 0,
                     'final_amount' => $appointment->final_amount,
                     'status' => $appointment->status,
-                    'status_label' => $this->getStatusLabel($appointment->status),
+                    'status_label' => AppointmentStatus::labelFor($appointment->status),
                     'is_paid' => $appointment->paymentAppointments()->exists(),
                     'payment_method' => $appointment->paymentAppointments->first()?->payment?->payment_method,
                     'notes' => $appointment->notes,
@@ -414,17 +415,17 @@ class ReportController extends Controller
                 $attendedAppointmentIds = $professional->appointments->pluck('id');
 
                 // Obtener payment_details recibidos por el centro (solo pendientes de liquidar)
-                $centroPaymentDetails = \App\Models\PaymentDetail::whereHas('payment.paymentAppointments', function($q) use ($attendedAppointmentIds) {
-                        $q->whereIn('appointment_id', $attendedAppointmentIds);
-                    })
+                $centroPaymentDetails = \App\Models\PaymentDetail::whereHas('payment.paymentAppointments', function ($q) use ($attendedAppointmentIds) {
+                    $q->whereIn('appointment_id', $attendedAppointmentIds);
+                })
                     ->where('received_by', 'centro')
                     ->whereNull('liquidation_id')
                     ->get();
 
                 // Obtener payment_details recibidos directamente por el profesional (solo pendientes de liquidar)
-                $professionalPaymentDetails = \App\Models\PaymentDetail::whereHas('payment.paymentAppointments', function($q) use ($attendedAppointmentIds) {
-                        $q->whereIn('appointment_id', $attendedAppointmentIds);
-                    })
+                $professionalPaymentDetails = \App\Models\PaymentDetail::whereHas('payment.paymentAppointments', function ($q) use ($attendedAppointmentIds) {
+                    $q->whereIn('appointment_id', $attendedAppointmentIds);
+                })
                     ->where('received_by', 'profesional')
                     ->whereNull('liquidation_id')
                     ->get();
@@ -437,8 +438,7 @@ class ReportController extends Controller
                 $professionalCommission = $professional->calculateCommission($totalCollectedByCenter);
 
                 // Calcular parte del centro sobre pagos directos
-                $clinicPercentage = 100 - $professional->commission_percentage;
-                $clinicAmountFromDirect = $totalCollectedByProfessional * ($clinicPercentage / 100);
+                $clinicAmountFromDirect = $professional->getClinicAmount($totalCollectedByProfessional);
 
                 // Obtener reintegros del día para este profesional (usando referencias polimórficas)
                 $refunds = \App\Models\CashMovement::byType('expense')
@@ -447,7 +447,7 @@ class ReportController extends Controller
                     ->whereDate('created_at', $selectedDate)
                     ->get();
 
-                $totalRefunds = $refunds->sum(function($refund) {
+                $totalRefunds = $refunds->sum(function ($refund) {
                     return abs($refund->amount); // Los gastos son negativos, convertir a positivo
                 });
 
@@ -549,7 +549,7 @@ class ReportController extends Controller
                         $isMultiplePayment = $paymentDetails->count() > 1;
 
                         // Obtener todos los métodos de pago
-                        $paymentMethodsArray = $paymentDetails->map(function($detail) {
+                        $paymentMethodsArray = $paymentDetails->map(function ($detail) {
                             return [
                                 'method' => $detail->payment_method,
                                 'amount' => $detail->amount,
@@ -605,16 +605,16 @@ class ReportController extends Controller
         $attendedAppointmentIds = $attendedAppointments->pluck('id');
 
         // Obtener payment_details recibidos por el CENTRO
-        $centroPaymentDetails = \App\Models\PaymentDetail::whereHas('payment.paymentAppointments', function($q) use ($attendedAppointmentIds) {
-                $q->whereIn('appointment_id', $attendedAppointmentIds);
-            })
+        $centroPaymentDetails = \App\Models\PaymentDetail::whereHas('payment.paymentAppointments', function ($q) use ($attendedAppointmentIds) {
+            $q->whereIn('appointment_id', $attendedAppointmentIds);
+        })
             ->where('received_by', 'centro')
             ->get();
 
         // Obtener payment_details recibidos DIRECTAMENTE por el profesional
-        $professionalPaymentDetails = \App\Models\PaymentDetail::whereHas('payment.paymentAppointments', function($q) use ($attendedAppointmentIds) {
-                $q->whereIn('appointment_id', $attendedAppointmentIds);
-            })
+        $professionalPaymentDetails = \App\Models\PaymentDetail::whereHas('payment.paymentAppointments', function ($q) use ($attendedAppointmentIds) {
+            $q->whereIn('appointment_id', $attendedAppointmentIds);
+        })
             ->where('received_by', 'profesional')
             ->get();
 
@@ -627,8 +627,8 @@ class ReportController extends Controller
         $professionalCommission = $professional->calculateCommission($totalCollectedByCenter);
 
         // Calcular la parte del centro sobre los pagos directos al profesional
-        $clinicPercentage = 100 - $professional->commission_percentage;
-        $clinicAmountFromDirect = $totalCollectedByProfessional * ($clinicPercentage / 100);
+        $clinicPercentage = 100 - $professional->commission_percentage; // usado en totals para la vista
+        $clinicAmountFromDirect = $professional->getClinicAmount($totalCollectedByProfessional);
 
         // Obtener reintegros del día para este profesional (usando referencias polimórficas)
         $refunds = \App\Models\CashMovement::byType('expense')
@@ -637,7 +637,7 @@ class ReportController extends Controller
             ->whereDate('created_at', $selectedDate)
             ->get();
 
-        $totalRefunds = $refunds->sum(function($refund) {
+        $totalRefunds = $refunds->sum(function ($refund) {
             return abs($refund->amount); // Los gastos son negativos, convertir a positivo
         });
 
@@ -662,7 +662,7 @@ class ReportController extends Controller
             ->whereDate('liquidation_date', $selectedDate)
             ->orderBy('created_at')
             ->get()
-            ->map(function ($liquidation, $index) use ($attendedAppointments, $selectedDate) {
+            ->map(function ($liquidation, $index) use ($attendedAppointments) {
                 // Obtener IDs de turnos de esta liquidación
                 $appointmentIds = $liquidation->details->pluck('appointment_id')->unique();
 
@@ -686,7 +686,7 @@ class ReportController extends Controller
             return $liq['appointments']->pluck('id');
         });
         $pendingAppointments = $attendedAppointments->filter(function ($apt) use ($liquidatedAppointmentIds) {
-            return !$liquidatedAppointmentIds->contains($apt['id']);
+            return ! $liquidatedAppointmentIds->contains($apt['id']);
         });
 
         $liquidationData = [
@@ -760,20 +760,20 @@ class ReportController extends Controller
     public function expensesReport(Request $request)
     {
         $dateFrom = $request->get('date_from', now()->startOfMonth()->format('Y-m-d'));
-        $dateTo   = $request->get('date_to', now()->format('Y-m-d'));
+        $dateTo = $request->get('date_to', now()->format('Y-m-d'));
         $movementTypeId = $request->get('movement_type_id');
 
         $startDate = Carbon::parse($dateFrom)->startOfDay();
-        $endDate   = Carbon::parse($dateTo)->endOfDay();
+        $endDate = Carbon::parse($dateTo)->endOfDay();
 
         $movements = $this->buildUnifiedExpenses($startDate, $endDate, $movementTypeId);
 
         $totalAmount = $movements->sum('amount');
-        $totalCount  = $movements->count();
+        $totalCount = $movements->count();
 
         $byType = $movements->groupBy(fn ($m) => $m['type']?->id)->map(fn ($items) => [
-            'name'  => $items->first()['type']?->name ?? '-',
-            'icon'  => $items->first()['type']?->icon ?? '📋',
+            'name' => $items->first()['type']?->name ?? '-',
+            'icon' => $items->first()['type']?->icon ?? '📋',
             'count' => $items->count(),
             'total' => $items->sum('amount'),
         ])->sortByDesc('total');
@@ -796,24 +796,24 @@ class ReportController extends Controller
     public function exportExpensesReportCsv(Request $request)
     {
         $dateFrom = $request->get('date_from', now()->startOfMonth()->format('Y-m-d'));
-        $dateTo   = $request->get('date_to', now()->format('Y-m-d'));
+        $dateTo = $request->get('date_to', now()->format('Y-m-d'));
         $movementTypeId = $request->get('movement_type_id');
 
         $startDate = Carbon::parse($dateFrom)->startOfDay();
-        $endDate   = Carbon::parse($dateTo)->endOfDay();
+        $endDate = Carbon::parse($dateTo)->endOfDay();
 
         $movements = $this->buildUnifiedExpenses($startDate, $endDate, $movementTypeId);
 
         $totalAmount = $movements->sum('amount');
-        $totalCount  = $movements->count();
+        $totalCount = $movements->count();
 
         $byType = $movements->groupBy(fn ($m) => $m['type']?->id)->map(fn ($items) => [
-            'name'  => $items->first()['type']?->name ?? '-',
+            'name' => $items->first()['type']?->name ?? '-',
             'count' => $items->count(),
             'total' => $items->sum('amount'),
         ])->sortByDesc('total');
 
-        $filename = 'gastos_' . $dateFrom . '_' . $dateTo . '.csv';
+        $filename = 'gastos_'.$dateFrom.'_'.$dateTo.'.csv';
 
         $callback = function () use ($movements, $byType, $totalAmount, $totalCount, $dateFrom, $dateTo) {
             $f = fopen('php://output', 'w');
@@ -844,25 +844,25 @@ class ReportController extends Controller
             fputcsv($f, [], ';');
 
             // Detalle
-             fputcsv($f, ['DETALLE DE GASTOS'], ';');
-             fputcsv($f, ['Fecha', 'Hora', 'Origen', 'Tipo de Gasto', 'Descripción', 'Monto', 'Registrado por'], ';');
-             foreach ($movements as $m) {
-                 fputcsv($f, [
-                     $m['date']->format('d/m/Y'),
-                     $m['time'] ?? '',
-                     $m['origin_label'],
-                     $m['type']?->name ?? '-',
-                     $m['description'] ?? '',
-                     number_format($m['amount'], 2, ',', '.'),
-                     $m['user']?->name ?? 'Sistema',
-                 ], ';');
-             }
+            fputcsv($f, ['DETALLE DE GASTOS'], ';');
+            fputcsv($f, ['Fecha', 'Hora', 'Origen', 'Tipo de Gasto', 'Descripción', 'Monto', 'Registrado por'], ';');
+            foreach ($movements as $m) {
+                fputcsv($f, [
+                    $m['date']->format('d/m/Y'),
+                    $m['time'] ?? '',
+                    $m['origin_label'],
+                    $m['type']?->name ?? '-',
+                    $m['description'] ?? '',
+                    number_format($m['amount'], 2, ',', '.'),
+                    $m['user']?->name ?? 'Sistema',
+                ], ';');
+            }
 
             fclose($f);
         };
 
         return response()->stream($callback, 200, [
-            'Content-Type'        => 'text/csv; charset=UTF-8',
+            'Content-Type' => 'text/csv; charset=UTF-8',
             'Content-Disposition' => "attachment; filename=\"{$filename}\"",
         ]);
     }
@@ -873,21 +873,21 @@ class ReportController extends Controller
     public function printExpensesReport(Request $request)
     {
         $dateFrom = $request->get('date_from', now()->startOfMonth()->format('Y-m-d'));
-        $dateTo   = $request->get('date_to', now()->format('Y-m-d'));
+        $dateTo = $request->get('date_to', now()->format('Y-m-d'));
         $movementTypeId = $request->get('movement_type_id');
 
         $startDate = Carbon::parse($dateFrom)->startOfDay();
-        $endDate   = Carbon::parse($dateTo)->endOfDay();
+        $endDate = Carbon::parse($dateTo)->endOfDay();
 
         $movements = $this->buildUnifiedExpenses($startDate, $endDate, $movementTypeId);
 
         $totalAmount = $movements->sum('amount');
-        $totalCount  = $movements->count();
-        $avgAmount   = $totalCount > 0 ? $totalAmount / $totalCount : 0;
+        $totalCount = $movements->count();
+        $avgAmount = $totalCount > 0 ? $totalAmount / $totalCount : 0;
 
         $byType = $movements->groupBy(fn ($m) => $m['type']?->id)->map(fn ($items) => [
-            'name'  => $items->first()['type']?->name ?? '-',
-            'icon'  => $items->first()['type']?->icon ?? '📋',
+            'name' => $items->first()['type']?->name ?? '-',
+            'icon' => $items->first()['type']?->icon ?? '📋',
             'count' => $items->count(),
             'total' => $items->sum('amount'),
         ])->sortByDesc('total');
@@ -957,9 +957,9 @@ class ReportController extends Controller
     public function liquidacionesHistoricas(Request $request)
     {
         $dateFrom = $request->get('date_from', now()->startOfMonth()->format('Y-m-d'));
-        $dateTo   = $request->get('date_to', now()->format('Y-m-d'));
+        $dateTo = $request->get('date_to', now()->format('Y-m-d'));
         $professionalId = $request->get('professional_id');
-        $paymentStatus  = $request->get('payment_status', 'all');
+        $paymentStatus = $request->get('payment_status', 'all');
 
         $query = ProfessionalLiquidation::with(['professional.specialty'])
             ->whereBetween('liquidation_date', [$dateFrom, $dateTo])
@@ -973,15 +973,15 @@ class ReportController extends Controller
         }
 
         $liquidations = $query->get();
-        $byMonth      = $liquidations->groupBy(fn($l) => $l->liquidation_date->format('Y-m'));
+        $byMonth = $liquidations->groupBy(fn ($l) => $l->liquidation_date->format('Y-m'));
 
         $totals = [
-            'total_collected'      => $liquidations->sum('total_collected'),
-            'professional_amount'  => $liquidations->sum('net_professional_amount'),
-            'clinic_amount'        => $liquidations->sum('clinic_amount'),
-            'count'                => $liquidations->count(),
-            'pending_count'        => $liquidations->where('payment_status', 'pending')->count(),
-            'paid_count'           => $liquidations->where('payment_status', 'paid')->count(),
+            'total_collected' => $liquidations->sum('total_collected'),
+            'professional_amount' => $liquidations->sum('net_professional_amount'),
+            'clinic_amount' => $liquidations->sum('clinic_amount'),
+            'count' => $liquidations->count(),
+            'pending_count' => $liquidations->where('payment_status', 'pending')->count(),
+            'paid_count' => $liquidations->where('payment_status', 'paid')->count(),
         ];
 
         $allProfessionals = Professional::active()->ordered()->get();
@@ -998,9 +998,9 @@ class ReportController extends Controller
     public function printLiquidacionesHistoricas(Request $request)
     {
         $dateFrom = $request->get('date_from', now()->startOfMonth()->format('Y-m-d'));
-        $dateTo   = $request->get('date_to', now()->format('Y-m-d'));
+        $dateTo = $request->get('date_to', now()->format('Y-m-d'));
         $professionalId = $request->get('professional_id');
-        $paymentStatus  = $request->get('payment_status', 'all');
+        $paymentStatus = $request->get('payment_status', 'all');
 
         $query = ProfessionalLiquidation::with(['professional.specialty'])
             ->whereBetween('liquidation_date', [$dateFrom, $dateTo])
@@ -1014,15 +1014,15 @@ class ReportController extends Controller
         }
 
         $liquidations = $query->get();
-        $byMonth      = $liquidations->groupBy(fn($l) => $l->liquidation_date->format('Y-m'));
+        $byMonth = $liquidations->groupBy(fn ($l) => $l->liquidation_date->format('Y-m'));
 
         $totals = [
-            'total_collected'      => $liquidations->sum('total_collected'),
-            'professional_amount'  => $liquidations->sum('net_professional_amount'),
-            'clinic_amount'        => $liquidations->sum('clinic_amount'),
-            'count'                => $liquidations->count(),
-            'pending_count'        => $liquidations->where('payment_status', 'pending')->count(),
-            'paid_count'           => $liquidations->where('payment_status', 'paid')->count(),
+            'total_collected' => $liquidations->sum('total_collected'),
+            'professional_amount' => $liquidations->sum('net_professional_amount'),
+            'clinic_amount' => $liquidations->sum('clinic_amount'),
+            'count' => $liquidations->count(),
+            'pending_count' => $liquidations->where('payment_status', 'pending')->count(),
+            'paid_count' => $liquidations->where('payment_status', 'paid')->count(),
         ];
 
         $professionalName = $professionalId
@@ -1041,33 +1041,32 @@ class ReportController extends Controller
     public function profesionalesIngresos(Request $request)
     {
         $dateFrom = $request->get('date_from', now()->startOfMonth()->format('Y-m-d'));
-        $dateTo   = $request->get('date_to', now()->format('Y-m-d'));
+        $dateTo = $request->get('date_to', now()->format('Y-m-d'));
         $professionalId = $request->get('professional_id');
 
         $startDate = Carbon::parse($dateFrom)->startOfDay();
-        $endDate   = Carbon::parse($dateTo)->endOfDay();
+        $endDate = Carbon::parse($dateTo)->endOfDay();
 
         $professionals = Professional::active()
-            ->with(['specialty', 'appointments' => fn($q) =>
-                $q->attended()->whereBetween('appointment_date', [$startDate, $endDate])
+            ->with(['specialty', 'appointments' => fn ($q) => $q->attended()->whereBetween('appointment_date', [$startDate, $endDate]),
             ])
             ->ordered()
-            ->when($professionalId, fn($q) => $q->where('id', $professionalId))
+            ->when($professionalId, fn ($q) => $q->where('id', $professionalId))
             ->get()
-            ->map(fn($p) => [
-                'id'           => $p->id,
-                'full_name'    => $p->full_name,
-                'specialty'    => $p->specialty?->name ?? '—',
+            ->map(fn ($p) => [
+                'id' => $p->id,
+                'full_name' => $p->full_name,
+                'specialty' => $p->specialty?->name ?? '—',
                 'appointments' => $p->appointments->count(),
                 'total_amount' => $p->appointments->sum('final_amount'),
-                'avg_amount'   => $p->appointments->count() > 0
+                'avg_amount' => $p->appointments->count() > 0
                     ? $p->appointments->avg('final_amount') : 0,
-                'by_month'     => $p->appointments
-                    ->groupBy(fn($a) => $a->appointment_date->format('Y-m'))
-                    ->map(fn($g) => ['count' => $g->count(), 'amount' => $g->sum('final_amount')])
+                'by_month' => $p->appointments
+                    ->groupBy(fn ($a) => $a->appointment_date->format('Y-m'))
+                    ->map(fn ($g) => ['count' => $g->count(), 'amount' => $g->sum('final_amount')])
                     ->sortKeys(),
             ])
-            ->filter(fn($p) => $p['appointments'] > 0)
+            ->filter(fn ($p) => $p['appointments'] > 0)
             ->sortByDesc('total_amount')
             ->values();
 
@@ -1075,7 +1074,7 @@ class ReportController extends Controller
         $grandCount = $professionals->sum('appointments');
 
         // Meses presentes en los datos
-        $months = $professionals->flatMap(fn($p) => array_keys($p['by_month']->toArray()))
+        $months = $professionals->flatMap(fn ($p) => array_keys($p['by_month']->toArray()))
             ->unique()->sort()->values();
 
         $allProfessionals = Professional::active()->ordered()->get();
@@ -1092,28 +1091,27 @@ class ReportController extends Controller
     public function printProfesionalesIngresos(Request $request)
     {
         $dateFrom = $request->get('date_from', now()->startOfMonth()->format('Y-m-d'));
-        $dateTo   = $request->get('date_to', now()->format('Y-m-d'));
+        $dateTo = $request->get('date_to', now()->format('Y-m-d'));
         $professionalId = $request->get('professional_id');
 
         $startDate = Carbon::parse($dateFrom)->startOfDay();
-        $endDate   = Carbon::parse($dateTo)->endOfDay();
+        $endDate = Carbon::parse($dateTo)->endOfDay();
 
         $professionals = Professional::active()
-            ->with(['specialty', 'appointments' => fn($q) =>
-                $q->attended()->whereBetween('appointment_date', [$startDate, $endDate])
+            ->with(['specialty', 'appointments' => fn ($q) => $q->attended()->whereBetween('appointment_date', [$startDate, $endDate]),
             ])
             ->ordered()
-            ->when($professionalId, fn($q) => $q->where('id', $professionalId))
+            ->when($professionalId, fn ($q) => $q->where('id', $professionalId))
             ->get()
-            ->map(fn($p) => [
-                'full_name'    => $p->full_name,
-                'specialty'    => $p->specialty?->name ?? '—',
+            ->map(fn ($p) => [
+                'full_name' => $p->full_name,
+                'specialty' => $p->specialty?->name ?? '—',
                 'appointments' => $p->appointments->count(),
                 'total_amount' => $p->appointments->sum('final_amount'),
-                'avg_amount'   => $p->appointments->count() > 0
+                'avg_amount' => $p->appointments->count() > 0
                     ? $p->appointments->avg('final_amount') : 0,
             ])
-            ->filter(fn($p) => $p['appointments'] > 0)
+            ->filter(fn ($p) => $p['appointments'] > 0)
             ->sortByDesc('total_amount')
             ->values();
 
@@ -1131,51 +1129,51 @@ class ReportController extends Controller
     public function profesionalesConsultas(Request $request)
     {
         $dateFrom = $request->get('date_from', now()->startOfMonth()->format('Y-m-d'));
-        $dateTo   = $request->get('date_to', now()->format('Y-m-d'));
+        $dateTo = $request->get('date_to', now()->format('Y-m-d'));
         $professionalId = $request->get('professional_id');
 
         $startDate = Carbon::parse($dateFrom)->startOfDay();
-        $endDate   = Carbon::parse($dateTo)->endOfDay();
+        $endDate = Carbon::parse($dateTo)->endOfDay();
 
         $professionals = Professional::active()
-            ->with(['specialty', 'appointments' => fn($q) =>
-                $q->whereBetween('appointment_date', [$startDate, $endDate])
-                  ->whereIn('status', ['attended', 'absent', 'cancelled', 'scheduled'])
+            ->with(['specialty', 'appointments' => fn ($q) => $q->whereBetween('appointment_date', [$startDate, $endDate])
+                ->whereIn('status', ['attended', 'absent', 'cancelled', 'scheduled']),
             ])
             ->ordered()
-            ->when($professionalId, fn($q) => $q->where('id', $professionalId))
+            ->when($professionalId, fn ($q) => $q->where('id', $professionalId))
             ->get()
             ->map(function ($p) {
-                $apps      = $p->appointments;
-                $total     = $apps->count();
-                $attended  = $apps->where('status', 'attended')->count();
-                $absent    = $apps->where('status', 'absent')->count();
+                $apps = $p->appointments;
+                $total = $apps->count();
+                $attended = $apps->where('status', 'attended')->count();
+                $absent = $apps->where('status', 'absent')->count();
                 $cancelled = $apps->where('status', 'cancelled')->count();
                 $scheduled = $apps->where('status', 'scheduled')->count();
                 $completed = $attended + $absent;
+
                 return [
-                    'full_name'       => $p->full_name,
-                    'specialty'       => $p->specialty?->name ?? '—',
-                    'total'           => $total,
-                    'attended'        => $attended,
-                    'absent'          => $absent,
-                    'cancelled'       => $cancelled,
-                    'scheduled'       => $scheduled,
+                    'full_name' => $p->full_name,
+                    'specialty' => $p->specialty?->name ?? '—',
+                    'total' => $total,
+                    'attended' => $attended,
+                    'absent' => $absent,
+                    'cancelled' => $cancelled,
+                    'scheduled' => $scheduled,
                     'attendance_rate' => $completed > 0 ? round(($attended / $completed) * 100, 1) : 0,
-                    'absence_rate'    => $completed > 0 ? round(($absent  / $completed) * 100, 1) : 0,
+                    'absence_rate' => $completed > 0 ? round(($absent / $completed) * 100, 1) : 0,
                 ];
             })
-            ->filter(fn($p) => $p['total'] > 0)
+            ->filter(fn ($p) => $p['total'] > 0)
             ->sortByDesc('total')
             ->values();
 
-        $globalTotal     = $professionals->sum('total');
-        $globalAttended  = $professionals->sum('attended');
-        $globalAbsent    = $professionals->sum('absent');
+        $globalTotal = $professionals->sum('total');
+        $globalAttended = $professionals->sum('attended');
+        $globalAbsent = $professionals->sum('absent');
         $globalCancelled = $professionals->sum('cancelled');
         $globalScheduled = $professionals->sum('scheduled');
         $globalCompleted = $globalAttended + $globalAbsent;
-        $globalRate      = $globalCompleted > 0 ? round(($globalAttended / $globalCompleted) * 100, 1) : 0;
+        $globalRate = $globalCompleted > 0 ? round(($globalAttended / $globalCompleted) * 100, 1) : 0;
 
         $allProfessionals = Professional::active()->ordered()->get();
 
@@ -1189,51 +1187,51 @@ class ReportController extends Controller
     public function printProfesionalesConsultas(Request $request)
     {
         $dateFrom = $request->get('date_from', now()->startOfMonth()->format('Y-m-d'));
-        $dateTo   = $request->get('date_to', now()->format('Y-m-d'));
+        $dateTo = $request->get('date_to', now()->format('Y-m-d'));
         $professionalId = $request->get('professional_id');
 
         $startDate = Carbon::parse($dateFrom)->startOfDay();
-        $endDate   = Carbon::parse($dateTo)->endOfDay();
+        $endDate = Carbon::parse($dateTo)->endOfDay();
 
         $professionals = Professional::active()
-            ->with(['specialty', 'appointments' => fn($q) =>
-                $q->whereBetween('appointment_date', [$startDate, $endDate])
-                  ->whereIn('status', ['attended', 'absent', 'cancelled', 'scheduled'])
+            ->with(['specialty', 'appointments' => fn ($q) => $q->whereBetween('appointment_date', [$startDate, $endDate])
+                ->whereIn('status', ['attended', 'absent', 'cancelled', 'scheduled']),
             ])
             ->ordered()
-            ->when($professionalId, fn($q) => $q->where('id', $professionalId))
+            ->when($professionalId, fn ($q) => $q->where('id', $professionalId))
             ->get()
             ->map(function ($p) {
-                $apps      = $p->appointments;
-                $total     = $apps->count();
-                $attended  = $apps->where('status', 'attended')->count();
-                $absent    = $apps->where('status', 'absent')->count();
+                $apps = $p->appointments;
+                $total = $apps->count();
+                $attended = $apps->where('status', 'attended')->count();
+                $absent = $apps->where('status', 'absent')->count();
                 $cancelled = $apps->where('status', 'cancelled')->count();
                 $scheduled = $apps->where('status', 'scheduled')->count();
                 $completed = $attended + $absent;
+
                 return [
-                    'full_name'       => $p->full_name,
-                    'specialty'       => $p->specialty?->name ?? '—',
-                    'total'           => $total,
-                    'attended'        => $attended,
-                    'absent'          => $absent,
-                    'cancelled'       => $cancelled,
-                    'scheduled'       => $scheduled,
+                    'full_name' => $p->full_name,
+                    'specialty' => $p->specialty?->name ?? '—',
+                    'total' => $total,
+                    'attended' => $attended,
+                    'absent' => $absent,
+                    'cancelled' => $cancelled,
+                    'scheduled' => $scheduled,
                     'attendance_rate' => $completed > 0 ? round(($attended / $completed) * 100, 1) : 0,
-                    'absence_rate'    => $completed > 0 ? round(($absent  / $completed) * 100, 1) : 0,
+                    'absence_rate' => $completed > 0 ? round(($absent / $completed) * 100, 1) : 0,
                 ];
             })
-            ->filter(fn($p) => $p['total'] > 0)
+            ->filter(fn ($p) => $p['total'] > 0)
             ->sortByDesc('total')
             ->values();
 
-        $globalTotal     = $professionals->sum('total');
-        $globalAttended  = $professionals->sum('attended');
-        $globalAbsent    = $professionals->sum('absent');
+        $globalTotal = $professionals->sum('total');
+        $globalAttended = $professionals->sum('attended');
+        $globalAbsent = $professionals->sum('absent');
         $globalCancelled = $professionals->sum('cancelled');
         $globalScheduled = $professionals->sum('scheduled');
         $globalCompleted = $globalAttended + $globalAbsent;
-        $globalRate      = $globalCompleted > 0 ? round(($globalAttended / $globalCompleted) * 100, 1) : 0;
+        $globalRate = $globalCompleted > 0 ? round(($globalAttended / $globalCompleted) * 100, 1) : 0;
 
         return view('reports.profesionales-consultas-print', compact(
             'professionals', 'globalTotal', 'globalAttended', 'globalAbsent',
@@ -1248,7 +1246,7 @@ class ReportController extends Controller
     public function profesionalesComisiones(Request $request)
     {
         $dateFrom = $request->get('date_from', now()->startOfMonth()->format('Y-m-d'));
-        $dateTo   = $request->get('date_to', now()->format('Y-m-d'));
+        $dateTo = $request->get('date_to', now()->format('Y-m-d'));
         $professionalId = $request->get('professional_id');
 
         $query = ProfessionalLiquidation::with(['professional.specialty'])
@@ -1263,19 +1261,20 @@ class ReportController extends Controller
         $byProfessional = $liquidations->groupBy('professional_id')
             ->map(function ($group) {
                 $pro = $group->first()->professional;
+
                 return [
-                    'full_name'           => $pro->full_name,
-                    'specialty'           => $pro->specialty?->name ?? '—',
-                    'commission_pct'      => $pro->commission_percentage,
-                    'total_collected'     => $group->sum('total_collected'),
+                    'full_name' => $pro->full_name,
+                    'specialty' => $pro->specialty?->name ?? '—',
+                    'commission_pct' => $pro->commission_percentage,
+                    'total_collected' => $group->sum('total_collected'),
                     'professional_amount' => $group->sum('net_professional_amount'),
-                    'clinic_amount'       => $group->sum('clinic_amount'),
-                    'liquidations_count'  => $group->count(),
-                    'by_month'            => $group->groupBy(fn($l) => $l->liquidation_date->format('Y-m'))
-                        ->map(fn($g) => [
-                            'total_collected'     => $g->sum('total_collected'),
+                    'clinic_amount' => $group->sum('clinic_amount'),
+                    'liquidations_count' => $group->count(),
+                    'by_month' => $group->groupBy(fn ($l) => $l->liquidation_date->format('Y-m'))
+                        ->map(fn ($g) => [
+                            'total_collected' => $g->sum('total_collected'),
                             'professional_amount' => $g->sum('net_professional_amount'),
-                            'clinic_amount'       => $g->sum('clinic_amount'),
+                            'clinic_amount' => $g->sum('clinic_amount'),
                         ])->sortKeys(),
                 ];
             })
@@ -1283,13 +1282,13 @@ class ReportController extends Controller
             ->values();
 
         $totals = [
-            'total_collected'     => $byProfessional->sum('total_collected'),
+            'total_collected' => $byProfessional->sum('total_collected'),
             'professional_amount' => $byProfessional->sum('professional_amount'),
-            'clinic_amount'       => $byProfessional->sum('clinic_amount'),
-            'liquidations_count'  => $byProfessional->sum('liquidations_count'),
+            'clinic_amount' => $byProfessional->sum('clinic_amount'),
+            'liquidations_count' => $byProfessional->sum('liquidations_count'),
         ];
 
-        $months = $liquidations->map(fn($l) => $l->liquidation_date->format('Y-m'))
+        $months = $liquidations->map(fn ($l) => $l->liquidation_date->format('Y-m'))
             ->unique()->sort()->values();
 
         $allProfessionals = Professional::active()->ordered()->get();
@@ -1306,7 +1305,7 @@ class ReportController extends Controller
     public function printProfesionalesComisiones(Request $request)
     {
         $dateFrom = $request->get('date_from', now()->startOfMonth()->format('Y-m-d'));
-        $dateTo   = $request->get('date_to', now()->format('Y-m-d'));
+        $dateTo = $request->get('date_to', now()->format('Y-m-d'));
         $professionalId = $request->get('professional_id');
 
         $query = ProfessionalLiquidation::with(['professional.specialty'])
@@ -1321,23 +1320,24 @@ class ReportController extends Controller
         $byProfessional = $liquidations->groupBy('professional_id')
             ->map(function ($group) {
                 $pro = $group->first()->professional;
+
                 return [
-                    'full_name'           => $pro->full_name,
-                    'specialty'           => $pro->specialty?->name ?? '—',
-                    'commission_pct'      => $pro->commission_percentage,
-                    'total_collected'     => $group->sum('total_collected'),
+                    'full_name' => $pro->full_name,
+                    'specialty' => $pro->specialty?->name ?? '—',
+                    'commission_pct' => $pro->commission_percentage,
+                    'total_collected' => $group->sum('total_collected'),
                     'professional_amount' => $group->sum('net_professional_amount'),
-                    'clinic_amount'       => $group->sum('clinic_amount'),
-                    'liquidations_count'  => $group->count(),
+                    'clinic_amount' => $group->sum('clinic_amount'),
+                    'liquidations_count' => $group->count(),
                 ];
             })
             ->sortByDesc('professional_amount')
             ->values();
 
         $totals = [
-            'total_collected'     => $byProfessional->sum('total_collected'),
+            'total_collected' => $byProfessional->sum('total_collected'),
             'professional_amount' => $byProfessional->sum('professional_amount'),
-            'clinic_amount'       => $byProfessional->sum('clinic_amount'),
+            'clinic_amount' => $byProfessional->sum('clinic_amount'),
         ];
 
         return view('reports.profesionales-comisiones-print', compact(
@@ -1351,10 +1351,10 @@ class ReportController extends Controller
     public function profesionalesComparativa(Request $request)
     {
         $dateFrom = $request->get('date_from', now()->startOfMonth()->format('Y-m-d'));
-        $dateTo   = $request->get('date_to', now()->format('Y-m-d'));
+        $dateTo = $request->get('date_to', now()->format('Y-m-d'));
 
         $startDate = Carbon::parse($dateFrom)->startOfDay();
-        $endDate   = Carbon::parse($dateTo)->endOfDay();
+        $endDate = Carbon::parse($dateTo)->endOfDay();
 
         // Counts por profesional y estado
         $appointmentStats = Appointment::whereBetween('appointment_date', [$startDate, $endDate])
@@ -1373,57 +1373,58 @@ class ReportController extends Controller
 
         $professionals = Professional::active()->with('specialty')->ordered()->get()
             ->map(function ($pro) use ($appointmentStats, $commissionStats) {
-                $stats   = $appointmentStats->get($pro->id, collect());
+                $stats = $appointmentStats->get($pro->id, collect());
                 $commRow = $commissionStats->get($pro->id);
-                $attended  = $stats->where('status', 'attended')->sum('cnt');
-                $absent    = $stats->where('status', 'absent')->sum('cnt');
+                $attended = $stats->where('status', 'attended')->sum('cnt');
+                $absent = $stats->where('status', 'absent')->sum('cnt');
                 $cancelled = $stats->where('status', 'cancelled')->sum('cnt');
                 $scheduled = $stats->where('status', 'scheduled')->sum('cnt');
                 $completed = $attended + $absent;
+
                 return [
-                    'full_name'        => $pro->full_name,
-                    'specialty'        => $pro->specialty?->name ?? '—',
-                    'commission_pct'   => $pro->commission_percentage,
-                    'appointments'     => $stats->sum('cnt'),
-                    'attended'         => $attended,
-                    'absent'           => $absent,
-                    'cancelled'        => $cancelled,
-                    'scheduled'        => $scheduled,
-                    'attendance_rate'  => $completed > 0 ? round(($attended / $completed) * 100, 1) : 0,
-                    'billed_total'     => $commRow?->billed_total ?? 0,
+                    'full_name' => $pro->full_name,
+                    'specialty' => $pro->specialty?->name ?? '—',
+                    'commission_pct' => $pro->commission_percentage,
+                    'appointments' => $stats->sum('cnt'),
+                    'attended' => $attended,
+                    'absent' => $absent,
+                    'cancelled' => $cancelled,
+                    'scheduled' => $scheduled,
+                    'attendance_rate' => $completed > 0 ? round(($attended / $completed) * 100, 1) : 0,
+                    'billed_total' => $commRow?->billed_total ?? 0,
                     'commission_total' => $commRow?->commission_total ?? 0,
-                    'clinic_total'     => $commRow?->clinic_total ?? 0,
+                    'clinic_total' => $commRow?->clinic_total ?? 0,
                 ];
             })
-            ->filter(fn($p) => $p['appointments'] > 0 || $p['billed_total'] > 0)
+            ->filter(fn ($p) => $p['appointments'] > 0 || $p['billed_total'] > 0)
             ->values();
 
         $chartData = [
-            'labels'   => $professionals->pluck('full_name')->values(),
+            'labels' => $professionals->pluck('full_name')->values(),
             'datasets' => [
                 [
-                    'label'           => 'Turnos Atendidos',
-                    'data'            => $professionals->pluck('attended')->values(),
+                    'label' => 'Turnos Atendidos',
+                    'data' => $professionals->pluck('attended')->values(),
                     'backgroundColor' => 'rgba(16,185,129,0.7)',
-                    'borderColor'     => 'rgb(16,185,129)',
-                    'borderWidth'     => 1,
-                    'yAxisID'         => 'y1',
+                    'borderColor' => 'rgb(16,185,129)',
+                    'borderWidth' => 1,
+                    'yAxisID' => 'y1',
                 ],
                 [
-                    'label'           => 'Facturado ($)',
-                    'data'            => $professionals->pluck('billed_total')->values(),
+                    'label' => 'Facturado ($)',
+                    'data' => $professionals->pluck('billed_total')->values(),
                     'backgroundColor' => 'rgba(59,130,246,0.7)',
-                    'borderColor'     => 'rgb(59,130,246)',
-                    'borderWidth'     => 1,
-                    'yAxisID'         => 'y',
+                    'borderColor' => 'rgb(59,130,246)',
+                    'borderWidth' => 1,
+                    'yAxisID' => 'y',
                 ],
                 [
-                    'label'           => 'Comisión ($)',
-                    'data'            => $professionals->pluck('commission_total')->values(),
+                    'label' => 'Comisión ($)',
+                    'data' => $professionals->pluck('commission_total')->values(),
                     'backgroundColor' => 'rgba(245,158,11,0.7)',
-                    'borderColor'     => 'rgb(245,158,11)',
-                    'borderWidth'     => 1,
-                    'yAxisID'         => 'y',
+                    'borderColor' => 'rgb(245,158,11)',
+                    'borderWidth' => 1,
+                    'yAxisID' => 'y',
                 ],
             ],
         ];
@@ -1439,10 +1440,10 @@ class ReportController extends Controller
     public function printProfesionalesComparativa(Request $request)
     {
         $dateFrom = $request->get('date_from', now()->startOfMonth()->format('Y-m-d'));
-        $dateTo   = $request->get('date_to', now()->format('Y-m-d'));
+        $dateTo = $request->get('date_to', now()->format('Y-m-d'));
 
         $startDate = Carbon::parse($dateFrom)->startOfDay();
-        $endDate   = Carbon::parse($dateTo)->endOfDay();
+        $endDate = Carbon::parse($dateTo)->endOfDay();
 
         $appointmentStats = Appointment::whereBetween('appointment_date', [$startDate, $endDate])
             ->whereIn('status', ['attended', 'absent', 'cancelled', 'scheduled'])
@@ -1459,25 +1460,26 @@ class ReportController extends Controller
 
         $professionals = Professional::active()->with('specialty')->ordered()->get()
             ->map(function ($pro) use ($appointmentStats, $commissionStats) {
-                $stats   = $appointmentStats->get($pro->id, collect());
+                $stats = $appointmentStats->get($pro->id, collect());
                 $commRow = $commissionStats->get($pro->id);
-                $attended  = $stats->where('status', 'attended')->sum('cnt');
-                $absent    = $stats->where('status', 'absent')->sum('cnt');
+                $attended = $stats->where('status', 'attended')->sum('cnt');
+                $absent = $stats->where('status', 'absent')->sum('cnt');
                 $completed = $attended + $absent;
+
                 return [
-                    'full_name'        => $pro->full_name,
-                    'specialty'        => $pro->specialty?->name ?? '—',
-                    'commission_pct'   => $pro->commission_percentage,
-                    'appointments'     => $stats->sum('cnt'),
-                    'attended'         => $attended,
-                    'absent'           => $absent,
-                    'attendance_rate'  => $completed > 0 ? round(($attended / $completed) * 100, 1) : 0,
-                    'billed_total'     => $commRow?->billed_total ?? 0,
+                    'full_name' => $pro->full_name,
+                    'specialty' => $pro->specialty?->name ?? '—',
+                    'commission_pct' => $pro->commission_percentage,
+                    'appointments' => $stats->sum('cnt'),
+                    'attended' => $attended,
+                    'absent' => $absent,
+                    'attendance_rate' => $completed > 0 ? round(($attended / $completed) * 100, 1) : 0,
+                    'billed_total' => $commRow?->billed_total ?? 0,
                     'commission_total' => $commRow?->commission_total ?? 0,
-                    'clinic_total'     => $commRow?->clinic_total ?? 0,
+                    'clinic_total' => $commRow?->clinic_total ?? 0,
                 ];
             })
-            ->filter(fn($p) => $p['appointments'] > 0 || $p['billed_total'] > 0)
+            ->filter(fn ($p) => $p['appointments'] > 0 || $p['billed_total'] > 0)
             ->values();
 
         return view('reports.profesionales-comparativa-print', compact(
@@ -1491,7 +1493,7 @@ class ReportController extends Controller
     public function pagosTendencia(Request $request)
     {
         $dateFrom = $request->get('date_from', now()->subMonths(5)->startOfMonth()->format('Y-m-d'));
-        $dateTo   = $request->get('date_to', now()->format('Y-m-d'));
+        $dateTo = $request->get('date_to', now()->format('Y-m-d'));
 
         $rows = DB::table('payment_details')
             ->join('payments', 'payment_details.payment_id', '=', 'payments.id')
@@ -1507,26 +1509,27 @@ class ReportController extends Controller
 
         $months = $rows->pluck('month')->unique()->sort()->values();
 
-        $cashData     = $months->mapWithKeys(fn($m) => [$m => 0.0])->toArray();
-        $transferData = $months->mapWithKeys(fn($m) => [$m => 0.0])->toArray();
-        $cardData     = $months->mapWithKeys(fn($m) => [$m => 0.0])->toArray();
-        $qrData       = $months->mapWithKeys(fn($m) => [$m => 0.0])->toArray();
+        $cashData = $months->mapWithKeys(fn ($m) => [$m => 0.0])->toArray();
+        $transferData = $months->mapWithKeys(fn ($m) => [$m => 0.0])->toArray();
+        $cardData = $months->mapWithKeys(fn ($m) => [$m => 0.0])->toArray();
+        $qrData = $months->mapWithKeys(fn ($m) => [$m => 0.0])->toArray();
 
         foreach ($rows as $row) {
-            if ($row->payment_method === 'cash')
+            if ($row->payment_method === 'cash') {
                 $cashData[$row->month] = (float) $row->total;
-            elseif ($row->payment_method === 'transfer')
+            } elseif ($row->payment_method === 'transfer') {
                 $transferData[$row->month] = (float) $row->total;
-            elseif (in_array($row->payment_method, ['debit_card', 'credit_card']))
+            } elseif (in_array($row->payment_method, ['debit_card', 'credit_card'])) {
                 $cardData[$row->month] += (float) $row->total;
-            elseif ($row->payment_method === 'qr')
+            } elseif ($row->payment_method === 'qr') {
                 $qrData[$row->month] = (float) $row->total;
+            }
         }
 
-        $labels = $months->map(fn($m) => Carbon::createFromFormat('Y-m', $m)->isoFormat('MMM YY'))->values();
+        $labels = $months->map(fn ($m) => Carbon::createFromFormat('Y-m', $m)->isoFormat('MMM YY'))->values();
 
         $chartData = [
-            'labels'   => $labels,
+            'labels' => $labels,
             'datasets' => [
                 ['label' => 'Efectivo',      'data' => array_values($cashData),     'backgroundColor' => 'rgba(16,185,129,0.7)',  'borderColor' => 'rgb(16,185,129)',  'borderWidth' => 1],
                 ['label' => 'Transferencia', 'data' => array_values($transferData), 'backgroundColor' => 'rgba(59,130,246,0.7)',  'borderColor' => 'rgb(59,130,246)',  'borderWidth' => 1],
@@ -1535,20 +1538,20 @@ class ReportController extends Controller
             ],
         ];
 
-        $monthlyTable = $months->map(fn($m) => [
-            'label'    => Carbon::createFromFormat('Y-m', $m)->isoFormat('MMMM YYYY'),
-            'cash'     => $cashData[$m],
+        $monthlyTable = $months->map(fn ($m) => [
+            'label' => Carbon::createFromFormat('Y-m', $m)->isoFormat('MMMM YYYY'),
+            'cash' => $cashData[$m],
             'transfer' => $transferData[$m],
-            'card'     => $cardData[$m],
-            'qr'       => $qrData[$m],
-            'total'    => $cashData[$m] + $transferData[$m] + $cardData[$m] + $qrData[$m],
+            'card' => $cardData[$m],
+            'qr' => $qrData[$m],
+            'total' => $cashData[$m] + $transferData[$m] + $cardData[$m] + $qrData[$m],
         ]);
 
         $totals = [
-            'cash'        => array_sum($cashData),
-            'transfer'    => array_sum($transferData),
-            'card'        => array_sum($cardData),
-            'qr'          => array_sum($qrData),
+            'cash' => array_sum($cashData),
+            'transfer' => array_sum($transferData),
+            'card' => array_sum($cardData),
+            'qr' => array_sum($qrData),
             'grand_total' => array_sum($cashData) + array_sum($transferData) + array_sum($cardData) + array_sum($qrData),
         ];
 
@@ -1563,15 +1566,15 @@ class ReportController extends Controller
     public function pacientesAusentismo(Request $request)
     {
         $dateFrom = $request->get('date_from', now()->startOfMonth()->format('Y-m-d'));
-        $dateTo   = $request->get('date_to', now()->format('Y-m-d'));
+        $dateTo = $request->get('date_to', now()->format('Y-m-d'));
         $professionalId = $request->get('professional_id');
 
         $startDate = Carbon::parse($dateFrom)->startOfDay();
-        $endDate   = Carbon::parse($dateTo)->endOfDay();
+        $endDate = Carbon::parse($dateTo)->endOfDay();
 
         $rows = Appointment::whereBetween('appointment_date', [$startDate, $endDate])
             ->whereIn('status', ['attended', 'absent'])
-            ->when($professionalId, fn($q) => $q->where('professional_id', $professionalId))
+            ->when($professionalId, fn ($q) => $q->where('professional_id', $professionalId))
             ->selectRaw('professional_id, status, COUNT(*) as cnt')
             ->groupBy('professional_id', 'status')
             ->with('professional.specialty')
@@ -1579,25 +1582,26 @@ class ReportController extends Controller
             ->groupBy('professional_id');
 
         $stats = $rows->map(function ($group) {
-            $attended    = $group->where('status', 'attended')->sum('cnt');
-            $absent      = $group->where('status', 'absent')->sum('cnt');
-            $total       = $attended + $absent;
-            $pro         = $group->first()->professional;
+            $attended = $group->where('status', 'attended')->sum('cnt');
+            $absent = $group->where('status', 'absent')->sum('cnt');
+            $total = $attended + $absent;
+            $pro = $group->first()->professional;
+
             return [
-                'full_name'    => $pro->full_name,
-                'specialty'    => $pro->specialty?->name ?? '—',
-                'attended'     => $attended,
-                'absent'       => $absent,
-                'total'        => $total,
+                'full_name' => $pro->full_name,
+                'specialty' => $pro->specialty?->name ?? '—',
+                'attended' => $attended,
+                'absent' => $absent,
+                'total' => $total,
                 'absence_rate' => $total > 0 ? round(($absent / $total) * 100, 1) : 0,
             ];
         })
-        ->sortByDesc('absence_rate')
-        ->values();
+            ->sortByDesc('absence_rate')
+            ->values();
 
         $globalAbsent = $stats->sum('absent');
-        $globalTotal  = $stats->sum('total');
-        $globalRate   = $globalTotal > 0 ? round(($globalAbsent / $globalTotal) * 100, 1) : 0;
+        $globalTotal = $stats->sum('total');
+        $globalRate = $globalTotal > 0 ? round(($globalAbsent / $globalTotal) * 100, 1) : 0;
 
         $allProfessionals = Professional::active()->ordered()->get();
 
@@ -1613,10 +1617,10 @@ class ReportController extends Controller
     public function pacientesRetencion(Request $request)
     {
         $dateFrom = $request->get('date_from', now()->startOfMonth()->format('Y-m-d'));
-        $dateTo   = $request->get('date_to', now()->format('Y-m-d'));
+        $dateTo = $request->get('date_to', now()->format('Y-m-d'));
 
         $startDate = Carbon::parse($dateFrom)->startOfDay();
-        $endDate   = Carbon::parse($dateTo)->endOfDay();
+        $endDate = Carbon::parse($dateTo)->endOfDay();
 
         $allInPeriod = Appointment::attended()
             ->whereBetween('appointment_date', [$startDate, $endDate])
@@ -1624,18 +1628,16 @@ class ReportController extends Controller
             ->groupBy('patient_id')
             ->get();
 
-        $totalUnique  = $allInPeriod->count();
-        $returning    = $allInPeriod->where('visits', '>', 1)->count();
-        $singleVisit  = $totalUnique - $returning;
+        $totalUnique = $allInPeriod->count();
+        $returning = $allInPeriod->where('visits', '>', 1)->count();
+        $singleVisit = $totalUnique - $returning;
         $retentionRate = $totalUnique > 0 ? round(($returning / $totalUnique) * 100, 1) : 0;
 
         // Nuevos: pacientes cuya primera cita atendida EVER cae en este período
         $newPatients = Appointment::attended()
             ->whereBetween('appointment_date', [$startDate, $endDate])
-            ->whereDoesntHave('patient', fn($q) =>
-                $q->whereHas('appointments', fn($a) =>
-                    $a->attended()->where('appointment_date', '<', $startDate)
-                )
+            ->whereDoesntHave('patient', fn ($q) => $q->whereHas('appointments', fn ($a) => $a->attended()->where('appointment_date', '<', $startDate)
+            )
             )
             ->distinct('patient_id')
             ->count('patient_id');
@@ -1644,7 +1646,7 @@ class ReportController extends Controller
 
         // Distribución de visitas
         $visitDistribution = $allInPeriod->groupBy('visits')
-            ->map(fn($g) => $g->count())
+            ->map(fn ($g) => $g->count())
             ->sortKeys();
 
         return view('reports.pacientes-retencion', compact(
@@ -1660,10 +1662,10 @@ class ReportController extends Controller
     public function pacientesFrecuencia(Request $request)
     {
         $dateFrom = $request->get('date_from', now()->subMonths(2)->startOfMonth()->format('Y-m-d'));
-        $dateTo   = $request->get('date_to', now()->format('Y-m-d'));
+        $dateTo = $request->get('date_to', now()->format('Y-m-d'));
 
         $startDate = Carbon::parse($dateFrom)->startOfDay();
-        $endDate   = Carbon::parse($dateTo)->endOfDay();
+        $endDate = Carbon::parse($dateTo)->endOfDay();
 
         $patientVisits = Appointment::attended()
             ->whereBetween('appointment_date', [$startDate, $endDate])
@@ -1675,9 +1677,11 @@ class ReportController extends Controller
 
         $intervals = [];
         foreach ($patientVisits as $visits) {
-            if ($visits->count() < 2) continue;
+            if ($visits->count() < 2) {
+                continue;
+            }
             $sorted = $visits->pluck('appointment_date')->sort()->values();
-            $diffs  = [];
+            $diffs = [];
             for ($i = 1; $i < $sorted->count(); $i++) {
                 $diffs[] = $sorted[$i]->diffInDays($sorted[$i - 1]);
             }
@@ -1686,16 +1690,22 @@ class ReportController extends Controller
 
         $buckets = ['1-7 días' => 0, '8-14 días' => 0, '15-30 días' => 0, '31-60 días' => 0, '> 60 días' => 0];
         foreach ($intervals as $avg) {
-            if ($avg <= 7)       $buckets['1-7 días']++;
-            elseif ($avg <= 14)  $buckets['8-14 días']++;
-            elseif ($avg <= 30)  $buckets['15-30 días']++;
-            elseif ($avg <= 60)  $buckets['31-60 días']++;
-            else                 $buckets['> 60 días']++;
+            if ($avg <= 7) {
+                $buckets['1-7 días']++;
+            } elseif ($avg <= 14) {
+                $buckets['8-14 días']++;
+            } elseif ($avg <= 30) {
+                $buckets['15-30 días']++;
+            } elseif ($avg <= 60) {
+                $buckets['31-60 días']++;
+            } else {
+                $buckets['> 60 días']++;
+            }
         }
 
-        $globalAvg        = count($intervals) > 0 ? round(array_sum($intervals) / count($intervals)) : null;
+        $globalAvg = count($intervals) > 0 ? round(array_sum($intervals) / count($intervals)) : null;
         $patientsWithMultiple = count($intervals);
-        $totalPatients    = $patientVisits->count();
+        $totalPatients = $patientVisits->count();
 
         return view('reports.pacientes-frecuencia', compact(
             'buckets', 'globalAvg', 'patientsWithMultiple', 'totalPatients',
@@ -1709,7 +1719,7 @@ class ReportController extends Controller
     public function pacientesNuevosViejos(Request $request)
     {
         $dateFrom = $request->get('date_from', now()->subMonths(5)->startOfMonth()->format('Y-m-d'));
-        $dateTo   = $request->get('date_to', now()->format('Y-m-d'));
+        $dateTo = $request->get('date_to', now()->format('Y-m-d'));
 
         // Obtener primera cita de cada paciente (ever)
         $firstVisits = Appointment::attended()
@@ -1719,11 +1729,11 @@ class ReportController extends Controller
 
         $months = collect();
         $current = Carbon::parse($dateFrom)->startOfMonth();
-        $end     = Carbon::parse($dateTo)->endOfMonth();
+        $end = Carbon::parse($dateTo)->endOfMonth();
 
         while ($current->lessThanOrEqualTo($end)) {
             $monthStart = $current->copy()->startOfMonth();
-            $monthEnd   = $current->copy()->endOfMonth();
+            $monthEnd = $current->copy()->endOfMonth();
 
             $patientsThisMonth = Appointment::attended()
                 ->whereBetween('appointment_date', [$monthStart->startOfDay(), $monthEnd->endOfDay()])
@@ -1731,47 +1741,47 @@ class ReportController extends Controller
                 ->pluck('patient_id');
 
             $newCount = $patientsThisMonth->filter(
-                fn($pid) => isset($firstVisits[$pid])
+                fn ($pid) => isset($firstVisits[$pid])
                     && Carbon::parse($firstVisits[$pid])->between($monthStart, $monthEnd)
             )->count();
 
             $returningCount = $patientsThisMonth->count() - $newCount;
 
             $months->push([
-                'label'     => $current->isoFormat('MMM YY'),
+                'label' => $current->isoFormat('MMM YY'),
                 'month_key' => $current->format('Y-m'),
-                'new'       => max(0, $newCount),
+                'new' => max(0, $newCount),
                 'returning' => max(0, $returningCount),
-                'total'     => $patientsThisMonth->count(),
+                'total' => $patientsThisMonth->count(),
             ]);
 
             $current->addMonth();
         }
 
         $chartData = [
-            'labels'   => $months->pluck('label')->values(),
+            'labels' => $months->pluck('label')->values(),
             'datasets' => [
                 [
-                    'label'           => 'Nuevos',
-                    'data'            => $months->pluck('new')->values(),
+                    'label' => 'Nuevos',
+                    'data' => $months->pluck('new')->values(),
                     'backgroundColor' => 'rgba(16,185,129,0.8)',
-                    'borderColor'     => 'rgb(16,185,129)',
-                    'borderWidth'     => 1,
+                    'borderColor' => 'rgb(16,185,129)',
+                    'borderWidth' => 1,
                 ],
                 [
-                    'label'           => 'Volvieron',
-                    'data'            => $months->pluck('returning')->values(),
+                    'label' => 'Volvieron',
+                    'data' => $months->pluck('returning')->values(),
                     'backgroundColor' => 'rgba(59,130,246,0.8)',
-                    'borderColor'     => 'rgb(59,130,246)',
-                    'borderWidth'     => 1,
+                    'borderColor' => 'rgb(59,130,246)',
+                    'borderWidth' => 1,
                 ],
             ],
         ];
 
         $totals = [
-            'new'       => $months->sum('new'),
+            'new' => $months->sum('new'),
             'returning' => $months->sum('returning'),
-            'total'     => $months->sum('total'),
+            'total' => $months->sum('total'),
         ];
 
         return view('reports.pacientes-nuevos-viejos', compact(
@@ -1785,10 +1795,10 @@ class ReportController extends Controller
     public function ingresosObraSocial(Request $request)
     {
         $dateFrom = $request->get('date_from', now()->startOfMonth()->format('Y-m-d'));
-        $dateTo   = $request->get('date_to', now()->format('Y-m-d'));
+        $dateTo = $request->get('date_to', now()->format('Y-m-d'));
 
         $startDate = Carbon::parse($dateFrom)->startOfDay();
-        $endDate   = Carbon::parse($dateTo)->endOfDay();
+        $endDate = Carbon::parse($dateTo)->endOfDay();
 
         $appointments = Appointment::attended()
             ->whereBetween('appointment_date', [$startDate, $endDate])
@@ -1796,18 +1806,18 @@ class ReportController extends Controller
             ->get();
 
         $byInsurance = $appointments
-            ->groupBy(fn($a) => strtolower(trim($a->patient?->health_insurance ?? '')) ?: 'sin obra social')
-            ->map(fn($g, $key) => [
-                'name'    => $g->first()->patient?->health_insurance ?: 'Sin obra social',
-                'count'   => $g->count(),
-                'amount'  => $g->sum('final_amount'),
-                'avg'     => $g->avg('final_amount'),
+            ->groupBy(fn ($a) => strtolower(trim($a->patient?->health_insurance ?? '')) ?: 'sin obra social')
+            ->map(fn ($g, $key) => [
+                'name' => $g->first()->patient?->health_insurance ?: 'Sin obra social',
+                'count' => $g->count(),
+                'amount' => $g->sum('final_amount'),
+                'avg' => $g->avg('final_amount'),
             ])
             ->sortByDesc('amount')
             ->values();
 
         $totals = [
-            'count'  => $appointments->count(),
+            'count' => $appointments->count(),
             'amount' => $appointments->sum('final_amount'),
         ];
 
@@ -1822,26 +1832,26 @@ class ReportController extends Controller
     public function cobrosPendientes(Request $request)
     {
         $dateFrom = $request->get('date_from', now()->subDays(30)->format('Y-m-d'));
-        $dateTo   = $request->get('date_to', now()->format('Y-m-d'));
+        $dateTo = $request->get('date_to', now()->format('Y-m-d'));
         $professionalId = $request->get('professional_id');
 
         $startDate = Carbon::parse($dateFrom)->startOfDay();
-        $endDate   = Carbon::parse($dateTo)->endOfDay();
+        $endDate = Carbon::parse($dateTo)->endOfDay();
 
         $pending = Appointment::unpaid()
             ->whereBetween('appointment_date', [$startDate, $endDate])
             ->with(['patient:id,first_name,last_name,phone', 'professional:id,first_name,last_name'])
-            ->when($professionalId, fn($q) => $q->where('professional_id', $professionalId))
+            ->when($professionalId, fn ($q) => $q->where('professional_id', $professionalId))
             ->orderBy('appointment_date', 'desc')
             ->get();
 
         $totals = [
-            'count'           => $pending->count(),
+            'count' => $pending->count(),
             'estimated_total' => $pending->sum('estimated_amount'),
         ];
 
         $byProfessional = $pending->groupBy('professional_id')
-            ->map(fn($g) => ['count' => $g->count(), 'amount' => $g->sum('estimated_amount')])
+            ->map(fn ($g) => ['count' => $g->count(), 'amount' => $g->sum('estimated_amount')])
             ->sortByDesc('count')
             ->values();
 
@@ -1859,7 +1869,7 @@ class ReportController extends Controller
     public function flujoCajaMensual(Request $request)
     {
         $dateFrom = $request->get('date_from', now()->subMonths(5)->startOfMonth()->format('Y-m-d'));
-        $dateTo   = $request->get('date_to', now()->format('Y-m-d'));
+        $dateTo = $request->get('date_to', now()->format('Y-m-d'));
 
         $start = Carbon::parse($dateFrom)->startOfDay();
         $end = Carbon::parse($dateTo)->endOfDay();
@@ -1913,36 +1923,36 @@ class ReportController extends Controller
         }
 
         $chartData = [
-            'labels'   => $normalized->map(fn($r) => Carbon::createFromFormat('Y-m', $r->month)->isoFormat('MMM YY'))->values(),
+            'labels' => $normalized->map(fn ($r) => Carbon::createFromFormat('Y-m', $r->month)->isoFormat('MMM YY'))->values(),
             'datasets' => [
                 [
-                    'label'           => 'Ingresos',
-                    'data'            => $normalized->pluck('income')->values(),
+                    'label' => 'Ingresos',
+                    'data' => $normalized->pluck('income')->values(),
                     'backgroundColor' => 'rgba(16,185,129,0.7)',
-                    'borderColor'     => 'rgb(16,185,129)',
-                    'borderWidth'     => 1,
+                    'borderColor' => 'rgb(16,185,129)',
+                    'borderWidth' => 1,
                 ],
                 [
-                    'label'           => 'Egresos',
-                    'data'            => $normalized->pluck('expenses')->values(),
+                    'label' => 'Egresos',
+                    'data' => $normalized->pluck('expenses')->values(),
                     'backgroundColor' => 'rgba(239,68,68,0.7)',
-                    'borderColor'     => 'rgb(239,68,68)',
-                    'borderWidth'     => 1,
+                    'borderColor' => 'rgb(239,68,68)',
+                    'borderWidth' => 1,
                 ],
             ],
         ];
 
-        $monthly = $normalized->map(fn($r) => [
-            'label'    => Carbon::createFromFormat('Y-m', $r->month)->isoFormat('MMMM YYYY'),
-            'income'   => (float) $r->income,
+        $monthly = $normalized->map(fn ($r) => [
+            'label' => Carbon::createFromFormat('Y-m', $r->month)->isoFormat('MMMM YYYY'),
+            'income' => (float) $r->income,
             'expenses' => (float) $r->expenses,
-            'balance'  => (float) $r->income - (float) $r->expenses,
+            'balance' => (float) $r->income - (float) $r->expenses,
         ]);
 
         $totals = [
-            'income'   => $monthly->sum('income'),
+            'income' => $monthly->sum('income'),
             'expenses' => $monthly->sum('expenses'),
-            'balance'  => $monthly->sum('balance'),
+            'balance' => $monthly->sum('balance'),
         ];
 
         return view('reports.flujo-caja-mensual', compact(
@@ -1956,7 +1966,7 @@ class ReportController extends Controller
     public function printPagosTendencia(Request $request)
     {
         $dateFrom = $request->get('date_from', now()->subMonths(5)->startOfMonth()->format('Y-m-d'));
-        $dateTo   = $request->get('date_to', now()->format('Y-m-d'));
+        $dateTo = $request->get('date_to', now()->format('Y-m-d'));
 
         $rows = DB::table('payment_details')
             ->join('payments', 'payment_details.payment_id', '=', 'payments.id')
@@ -1972,36 +1982,37 @@ class ReportController extends Controller
 
         $months = $rows->pluck('month')->unique()->sort()->values();
 
-        $cashData     = $months->mapWithKeys(fn($m) => [$m => 0.0])->toArray();
-        $transferData = $months->mapWithKeys(fn($m) => [$m => 0.0])->toArray();
-        $cardData     = $months->mapWithKeys(fn($m) => [$m => 0.0])->toArray();
-        $qrData       = $months->mapWithKeys(fn($m) => [$m => 0.0])->toArray();
+        $cashData = $months->mapWithKeys(fn ($m) => [$m => 0.0])->toArray();
+        $transferData = $months->mapWithKeys(fn ($m) => [$m => 0.0])->toArray();
+        $cardData = $months->mapWithKeys(fn ($m) => [$m => 0.0])->toArray();
+        $qrData = $months->mapWithKeys(fn ($m) => [$m => 0.0])->toArray();
 
         foreach ($rows as $row) {
-            if ($row->payment_method === 'cash')
+            if ($row->payment_method === 'cash') {
                 $cashData[$row->month] = (float) $row->total;
-            elseif ($row->payment_method === 'transfer')
+            } elseif ($row->payment_method === 'transfer') {
                 $transferData[$row->month] = (float) $row->total;
-            elseif (in_array($row->payment_method, ['debit_card', 'credit_card']))
+            } elseif (in_array($row->payment_method, ['debit_card', 'credit_card'])) {
                 $cardData[$row->month] += (float) $row->total;
-            elseif ($row->payment_method === 'qr')
+            } elseif ($row->payment_method === 'qr') {
                 $qrData[$row->month] = (float) $row->total;
+            }
         }
 
-        $monthlyTable = $months->map(fn($m) => [
-            'label'    => Carbon::createFromFormat('Y-m', $m)->isoFormat('MMMM YYYY'),
-            'cash'     => $cashData[$m],
+        $monthlyTable = $months->map(fn ($m) => [
+            'label' => Carbon::createFromFormat('Y-m', $m)->isoFormat('MMMM YYYY'),
+            'cash' => $cashData[$m],
             'transfer' => $transferData[$m],
-            'card'     => $cardData[$m],
-            'qr'       => $qrData[$m],
-            'total'    => $cashData[$m] + $transferData[$m] + $cardData[$m] + $qrData[$m],
+            'card' => $cardData[$m],
+            'qr' => $qrData[$m],
+            'total' => $cashData[$m] + $transferData[$m] + $cardData[$m] + $qrData[$m],
         ]);
 
         $totals = [
-            'cash'        => array_sum($cashData),
-            'transfer'    => array_sum($transferData),
-            'card'        => array_sum($cardData),
-            'qr'          => array_sum($qrData),
+            'cash' => array_sum($cashData),
+            'transfer' => array_sum($transferData),
+            'card' => array_sum($cardData),
+            'qr' => array_sum($qrData),
             'grand_total' => array_sum($cashData) + array_sum($transferData) + array_sum($cardData) + array_sum($qrData),
         ];
 
@@ -2016,15 +2027,15 @@ class ReportController extends Controller
     public function printPacientesAusentismo(Request $request)
     {
         $dateFrom = $request->get('date_from', now()->startOfMonth()->format('Y-m-d'));
-        $dateTo   = $request->get('date_to', now()->format('Y-m-d'));
+        $dateTo = $request->get('date_to', now()->format('Y-m-d'));
         $professionalId = $request->get('professional_id');
 
         $startDate = Carbon::parse($dateFrom)->startOfDay();
-        $endDate   = Carbon::parse($dateTo)->endOfDay();
+        $endDate = Carbon::parse($dateTo)->endOfDay();
 
         $rows = Appointment::whereBetween('appointment_date', [$startDate, $endDate])
             ->whereIn('status', ['attended', 'absent'])
-            ->when($professionalId, fn($q) => $q->where('professional_id', $professionalId))
+            ->when($professionalId, fn ($q) => $q->where('professional_id', $professionalId))
             ->selectRaw('professional_id, status, COUNT(*) as cnt')
             ->groupBy('professional_id', 'status')
             ->with('professional.specialty')
@@ -2032,25 +2043,26 @@ class ReportController extends Controller
             ->groupBy('professional_id');
 
         $stats = $rows->map(function ($group) {
-            $attended    = $group->where('status', 'attended')->sum('cnt');
-            $absent      = $group->where('status', 'absent')->sum('cnt');
-            $total       = $attended + $absent;
-            $pro         = $group->first()->professional;
+            $attended = $group->where('status', 'attended')->sum('cnt');
+            $absent = $group->where('status', 'absent')->sum('cnt');
+            $total = $attended + $absent;
+            $pro = $group->first()->professional;
+
             return [
-                'full_name'    => $pro->full_name,
-                'specialty'    => $pro->specialty?->name ?? '—',
-                'attended'     => $attended,
-                'absent'       => $absent,
-                'total'        => $total,
+                'full_name' => $pro->full_name,
+                'specialty' => $pro->specialty?->name ?? '—',
+                'attended' => $attended,
+                'absent' => $absent,
+                'total' => $total,
                 'absence_rate' => $total > 0 ? round(($absent / $total) * 100, 1) : 0,
             ];
         })
-        ->sortByDesc('absence_rate')
-        ->values();
+            ->sortByDesc('absence_rate')
+            ->values();
 
         $globalAbsent = $stats->sum('absent');
-        $globalTotal  = $stats->sum('total');
-        $globalRate   = $globalTotal > 0 ? round(($globalAbsent / $globalTotal) * 100, 1) : 0;
+        $globalTotal = $stats->sum('total');
+        $globalRate = $globalTotal > 0 ? round(($globalAbsent / $globalTotal) * 100, 1) : 0;
 
         return view('reports.pacientes-ausentismo-print', compact(
             'stats', 'globalAbsent', 'globalTotal', 'globalRate',
@@ -2064,10 +2076,10 @@ class ReportController extends Controller
     public function printPacientesRetencion(Request $request)
     {
         $dateFrom = $request->get('date_from', now()->startOfMonth()->format('Y-m-d'));
-        $dateTo   = $request->get('date_to', now()->format('Y-m-d'));
+        $dateTo = $request->get('date_to', now()->format('Y-m-d'));
 
         $startDate = Carbon::parse($dateFrom)->startOfDay();
-        $endDate   = Carbon::parse($dateTo)->endOfDay();
+        $endDate = Carbon::parse($dateTo)->endOfDay();
 
         $allInPeriod = Appointment::attended()
             ->whereBetween('appointment_date', [$startDate, $endDate])
@@ -2075,17 +2087,15 @@ class ReportController extends Controller
             ->groupBy('patient_id')
             ->get();
 
-        $totalUnique   = $allInPeriod->count();
-        $returning     = $allInPeriod->where('visits', '>', 1)->count();
-        $singleVisit   = $totalUnique - $returning;
+        $totalUnique = $allInPeriod->count();
+        $returning = $allInPeriod->where('visits', '>', 1)->count();
+        $singleVisit = $totalUnique - $returning;
         $retentionRate = $totalUnique > 0 ? round(($returning / $totalUnique) * 100, 1) : 0;
 
         $newPatients = Appointment::attended()
             ->whereBetween('appointment_date', [$startDate, $endDate])
-            ->whereDoesntHave('patient', fn($q) =>
-                $q->whereHas('appointments', fn($a) =>
-                    $a->attended()->where('appointment_date', '<', $startDate)
-                )
+            ->whereDoesntHave('patient', fn ($q) => $q->whereHas('appointments', fn ($a) => $a->attended()->where('appointment_date', '<', $startDate)
+            )
             )
             ->distinct('patient_id')
             ->count('patient_id');
@@ -2093,7 +2103,7 @@ class ReportController extends Controller
         $recurringPatients = $totalUnique - $newPatients;
 
         $visitDistribution = $allInPeriod->groupBy('visits')
-            ->map(fn($g) => $g->count())
+            ->map(fn ($g) => $g->count())
             ->sortKeys();
 
         return view('reports.pacientes-retencion-print', compact(
@@ -2109,10 +2119,10 @@ class ReportController extends Controller
     public function printPacientesFrecuencia(Request $request)
     {
         $dateFrom = $request->get('date_from', now()->subMonths(2)->startOfMonth()->format('Y-m-d'));
-        $dateTo   = $request->get('date_to', now()->format('Y-m-d'));
+        $dateTo = $request->get('date_to', now()->format('Y-m-d'));
 
         $startDate = Carbon::parse($dateFrom)->startOfDay();
-        $endDate   = Carbon::parse($dateTo)->endOfDay();
+        $endDate = Carbon::parse($dateTo)->endOfDay();
 
         $patientVisits = Appointment::attended()
             ->whereBetween('appointment_date', [$startDate, $endDate])
@@ -2124,9 +2134,11 @@ class ReportController extends Controller
 
         $intervals = [];
         foreach ($patientVisits as $visits) {
-            if ($visits->count() < 2) continue;
+            if ($visits->count() < 2) {
+                continue;
+            }
             $sorted = $visits->pluck('appointment_date')->sort()->values();
-            $diffs  = [];
+            $diffs = [];
             for ($i = 1; $i < $sorted->count(); $i++) {
                 $diffs[] = $sorted[$i]->diffInDays($sorted[$i - 1]);
             }
@@ -2135,16 +2147,22 @@ class ReportController extends Controller
 
         $buckets = ['1-7 días' => 0, '8-14 días' => 0, '15-30 días' => 0, '31-60 días' => 0, '> 60 días' => 0];
         foreach ($intervals as $avg) {
-            if ($avg <= 7)       $buckets['1-7 días']++;
-            elseif ($avg <= 14)  $buckets['8-14 días']++;
-            elseif ($avg <= 30)  $buckets['15-30 días']++;
-            elseif ($avg <= 60)  $buckets['31-60 días']++;
-            else                 $buckets['> 60 días']++;
+            if ($avg <= 7) {
+                $buckets['1-7 días']++;
+            } elseif ($avg <= 14) {
+                $buckets['8-14 días']++;
+            } elseif ($avg <= 30) {
+                $buckets['15-30 días']++;
+            } elseif ($avg <= 60) {
+                $buckets['31-60 días']++;
+            } else {
+                $buckets['> 60 días']++;
+            }
         }
 
-        $globalAvg            = count($intervals) > 0 ? round(array_sum($intervals) / count($intervals)) : null;
+        $globalAvg = count($intervals) > 0 ? round(array_sum($intervals) / count($intervals)) : null;
         $patientsWithMultiple = count($intervals);
-        $totalPatients        = $patientVisits->count();
+        $totalPatients = $patientVisits->count();
 
         return view('reports.pacientes-frecuencia-print', compact(
             'buckets', 'globalAvg', 'patientsWithMultiple', 'totalPatients',
@@ -2158,20 +2176,20 @@ class ReportController extends Controller
     public function printPacientesNuevosViejos(Request $request)
     {
         $dateFrom = $request->get('date_from', now()->subMonths(5)->startOfMonth()->format('Y-m-d'));
-        $dateTo   = $request->get('date_to', now()->format('Y-m-d'));
+        $dateTo = $request->get('date_to', now()->format('Y-m-d'));
 
         $firstVisits = Appointment::attended()
             ->selectRaw('patient_id, MIN(appointment_date) as first_visit')
             ->groupBy('patient_id')
             ->pluck('first_visit', 'patient_id');
 
-        $months  = collect();
+        $months = collect();
         $current = Carbon::parse($dateFrom)->startOfMonth();
-        $end     = Carbon::parse($dateTo)->endOfMonth();
+        $end = Carbon::parse($dateTo)->endOfMonth();
 
         while ($current->lessThanOrEqualTo($end)) {
             $monthStart = $current->copy()->startOfMonth();
-            $monthEnd   = $current->copy()->endOfMonth();
+            $monthEnd = $current->copy()->endOfMonth();
 
             $patientsThisMonth = Appointment::attended()
                 ->whereBetween('appointment_date', [$monthStart->startOfDay(), $monthEnd->endOfDay()])
@@ -2179,24 +2197,24 @@ class ReportController extends Controller
                 ->pluck('patient_id');
 
             $newCount = $patientsThisMonth->filter(
-                fn($pid) => isset($firstVisits[$pid])
+                fn ($pid) => isset($firstVisits[$pid])
                     && Carbon::parse($firstVisits[$pid])->between($monthStart, $monthEnd)
             )->count();
 
             $months->push([
-                'label'     => $current->isoFormat('MMMM YYYY'),
-                'new'       => max(0, $newCount),
+                'label' => $current->isoFormat('MMMM YYYY'),
+                'new' => max(0, $newCount),
                 'returning' => max(0, $patientsThisMonth->count() - $newCount),
-                'total'     => $patientsThisMonth->count(),
+                'total' => $patientsThisMonth->count(),
             ]);
 
             $current->addMonth();
         }
 
         $totals = [
-            'new'       => $months->sum('new'),
+            'new' => $months->sum('new'),
             'returning' => $months->sum('returning'),
-            'total'     => $months->sum('total'),
+            'total' => $months->sum('total'),
         ];
 
         return view('reports.pacientes-nuevos-viejos-print', compact(
@@ -2210,10 +2228,10 @@ class ReportController extends Controller
     public function printIngresosObraSocial(Request $request)
     {
         $dateFrom = $request->get('date_from', now()->startOfMonth()->format('Y-m-d'));
-        $dateTo   = $request->get('date_to', now()->format('Y-m-d'));
+        $dateTo = $request->get('date_to', now()->format('Y-m-d'));
 
         $startDate = Carbon::parse($dateFrom)->startOfDay();
-        $endDate   = Carbon::parse($dateTo)->endOfDay();
+        $endDate = Carbon::parse($dateTo)->endOfDay();
 
         $appointments = Appointment::attended()
             ->whereBetween('appointment_date', [$startDate, $endDate])
@@ -2221,18 +2239,18 @@ class ReportController extends Controller
             ->get();
 
         $byInsurance = $appointments
-            ->groupBy(fn($a) => strtolower(trim($a->patient?->health_insurance ?? '')) ?: 'sin obra social')
-            ->map(fn($g) => [
-                'name'   => $g->first()->patient?->health_insurance ?: 'Sin obra social',
-                'count'  => $g->count(),
+            ->groupBy(fn ($a) => strtolower(trim($a->patient?->health_insurance ?? '')) ?: 'sin obra social')
+            ->map(fn ($g) => [
+                'name' => $g->first()->patient?->health_insurance ?: 'Sin obra social',
+                'count' => $g->count(),
                 'amount' => $g->sum('final_amount'),
-                'avg'    => $g->avg('final_amount'),
+                'avg' => $g->avg('final_amount'),
             ])
             ->sortByDesc('amount')
             ->values();
 
         $totals = [
-            'count'  => $appointments->count(),
+            'count' => $appointments->count(),
             'amount' => $appointments->sum('final_amount'),
         ];
 
@@ -2247,28 +2265,28 @@ class ReportController extends Controller
     public function printCobrosPendientes(Request $request)
     {
         $dateFrom = $request->get('date_from', now()->subDays(30)->format('Y-m-d'));
-        $dateTo   = $request->get('date_to', now()->format('Y-m-d'));
+        $dateTo = $request->get('date_to', now()->format('Y-m-d'));
         $professionalId = $request->get('professional_id');
 
         $startDate = Carbon::parse($dateFrom)->startOfDay();
-        $endDate   = Carbon::parse($dateTo)->endOfDay();
+        $endDate = Carbon::parse($dateTo)->endOfDay();
 
         $pending = Appointment::unpaid()
             ->whereBetween('appointment_date', [$startDate, $endDate])
             ->with(['patient:id,first_name,last_name,phone', 'professional:id,first_name,last_name'])
-            ->when($professionalId, fn($q) => $q->where('professional_id', $professionalId))
+            ->when($professionalId, fn ($q) => $q->where('professional_id', $professionalId))
             ->orderBy('appointment_date', 'desc')
             ->get();
 
         $totals = [
-            'count'           => $pending->count(),
+            'count' => $pending->count(),
             'estimated_total' => $pending->sum('estimated_amount'),
         ];
 
         $byProfessional = $pending->groupBy('professional_id')
-            ->map(fn($g) => [
-                'name'   => $g->first()->professional?->full_name ?? '—',
-                'count'  => $g->count(),
+            ->map(fn ($g) => [
+                'name' => $g->first()->professional?->full_name ?? '—',
+                'count' => $g->count(),
                 'amount' => $g->sum('estimated_amount'),
             ])
             ->sortByDesc('count')
@@ -2285,7 +2303,7 @@ class ReportController extends Controller
     public function printFlujoCajaMensual(Request $request)
     {
         $dateFrom = $request->get('date_from', now()->subMonths(5)->startOfMonth()->format('Y-m-d'));
-        $dateTo   = $request->get('date_to', now()->format('Y-m-d'));
+        $dateTo = $request->get('date_to', now()->format('Y-m-d'));
 
         $rows = DB::table('cash_movements')
             ->join('movement_types', 'cash_movements.movement_type_id', '=', 'movement_types.id')
@@ -2303,36 +2321,22 @@ class ReportController extends Controller
             ->orderBy('month')
             ->get();
 
-        $monthly = $rows->map(fn($r) => [
-            'label'    => Carbon::createFromFormat('Y-m', $r->month)->isoFormat('MMMM YYYY'),
-            'income'   => (float) $r->income,
+        $monthly = $rows->map(fn ($r) => [
+            'label' => Carbon::createFromFormat('Y-m', $r->month)->isoFormat('MMMM YYYY'),
+            'income' => (float) $r->income,
             'expenses' => (float) $r->expenses,
-            'balance'  => (float) $r->income - (float) $r->expenses,
+            'balance' => (float) $r->income - (float) $r->expenses,
         ]);
 
         $totals = [
-            'income'   => $monthly->sum('income'),
+            'income' => $monthly->sum('income'),
             'expenses' => $monthly->sum('expenses'),
-            'balance'  => $monthly->sum('balance'),
+            'balance' => $monthly->sum('balance'),
         ];
 
         return view('reports.flujo-caja-mensual-print', compact(
             'monthly', 'totals', 'dateFrom', 'dateTo'
         ));
-    }
-
-    /**
-     * Etiquetas de estado de citas
-     */
-    private function getStatusLabel($status)
-    {
-        return match ($status) {
-            'attended' => 'Atendido',
-            'scheduled' => 'Programado',
-            'cancelled' => 'Cancelado',
-            'absent' => 'Ausente',
-            default => 'Desconocido'
-        };
     }
 
     /**
@@ -2378,6 +2382,7 @@ class ReportController extends Controller
             return $movement->movementType?->code ?? 'unknown';
         })->map(function ($group, $typeCode) {
             $firstMovement = $group->first();
+
             return [
                 'type' => $typeCode,
                 'type_name' => $firstMovement->movementType?->name ?? ucfirst($typeCode),
@@ -2443,6 +2448,7 @@ class ReportController extends Controller
             return $movement->movementType?->code ?? 'unknown';
         })->map(function ($group, $typeCode) {
             $firstMovement = $group->first();
+
             return [
                 'type' => $typeCode,
                 'type_name' => $firstMovement->movementType?->name ?? ucfirst($typeCode),
@@ -2501,6 +2507,7 @@ class ReportController extends Controller
             return $movement->movementType?->code ?? 'unknown';
         })->map(function ($group, $typeCode) {
             $firstMovement = $group->first();
+
             return [
                 'type' => $typeCode,
                 'type_name' => $firstMovement->movementType?->name ?? ucfirst($typeCode),
@@ -2510,7 +2517,7 @@ class ReportController extends Controller
             ];
         });
 
-        $filename = 'reporte-caja-' . $dateFrom . '-a-' . $dateTo . '.csv';
+        $filename = 'reporte-caja-'.$dateFrom.'-a-'.$dateTo.'.csv';
 
         $headers = [
             'Content-Type' => 'text/csv; charset=UTF-8',
@@ -2519,7 +2526,7 @@ class ReportController extends Controller
 
         $callback = function () use ($summary, $reportData, $movementsByType, $dateFrom, $dateTo, $includeExternal) {
             $file = fopen('php://output', 'w');
-            fprintf($file, chr(0xEF) . chr(0xBB) . chr(0xBF));
+            fprintf($file, chr(0xEF).chr(0xBB).chr(0xBF));
 
             fputcsv($file, ['REPORTE DE CAJA'], ';');
             fputcsv($file, ["Periodo: $dateFrom al $dateTo"], ';');
@@ -2575,10 +2582,11 @@ class ReportController extends Controller
             ->forDateRange($startDate, $endDate)
             ->get()
             ->map(function ($expense) {
-                $obj = new \stdClass();
+                $obj = new \stdClass;
                 $obj->created_at = \Carbon\Carbon::parse($expense->expense_date)->startOfDay();
                 $obj->amount = -abs((float) $expense->amount);
                 $obj->movementType = $expense->movementType;
+
                 return $obj;
             });
     }
@@ -2617,12 +2625,13 @@ class ReportController extends Controller
                     $weekEnd = $period->copy()->endOfWeek();
                     $weekMovements = $movements->filter(function ($movement) use ($period, $weekEnd) {
                         $moveDate = Carbon::parse($movement->created_at);
+
                         return $moveDate->between($period, $weekEnd);
                     });
 
                     $data->push([
                         'period' => $period->format('Y-m-d'),
-                        'period_label' => 'Semana del ' . $period->format('d/m') . ' al ' . $weekEnd->format('d/m/Y'),
+                        'period_label' => 'Semana del '.$period->format('d/m').' al '.$weekEnd->format('d/m/Y'),
                         'inflows' => $weekMovements->where('amount', '>', 0)->sum('amount'),
                         'outflows' => abs($weekMovements->where('amount', '<', 0)->sum('amount')),
                         'net' => $weekMovements->sum('amount'),
@@ -2639,6 +2648,7 @@ class ReportController extends Controller
                     $monthEnd = $period->copy()->endOfMonth();
                     $monthMovements = $movements->filter(function ($movement) use ($period, $monthEnd) {
                         $moveDate = Carbon::parse($movement->created_at);
+
                         return $moveDate->between($period, $monthEnd);
                     });
 
@@ -2665,12 +2675,12 @@ class ReportController extends Controller
 
     private function buildConsultoriosStats(Request $request): array
     {
-        $dateFrom   = $request->get('date_from', now()->startOfMonth()->format('Y-m-d'));
-        $dateTo     = $request->get('date_to', now()->format('Y-m-d'));
-        $officeId   = $request->get('office_id');
+        $dateFrom = $request->get('date_from', now()->startOfMonth()->format('Y-m-d'));
+        $dateTo = $request->get('date_to', now()->format('Y-m-d'));
+        $officeId = $request->get('office_id');
 
         $startDate = Carbon::parse($dateFrom)->startOfDay();
-        $endDate   = Carbon::parse($dateTo)->endOfDay();
+        $endDate = Carbon::parse($dateTo)->endOfDay();
 
         $query = Appointment::with(['office', 'professional'])
             ->whereBetween('appointment_date', [$startDate, $endDate])
@@ -2685,44 +2695,46 @@ class ReportController extends Controller
         $stats = $appointments
             ->groupBy('office_id')
             ->map(function ($items) {
-                $office    = $items->first()->office;
-                $attended  = $items->where('status', 'attended')->count();
-                $absent    = $items->where('status', 'absent')->count();
+                $office = $items->first()->office;
+                $attended = $items->where('status', 'attended')->count();
+                $absent = $items->where('status', 'absent')->count();
                 $completed = $attended + $absent;
                 $byProfessional = $items
                     ->groupBy('professional_id')
                     ->map(function ($pItems) {
                         $pro = $pItems->first()->professional;
+
                         return [
-                            'name'  => $pro ? $pro->full_name : '(Sin profesional)',
+                            'name' => $pro ? $pro->full_name : '(Sin profesional)',
                             'total' => $pItems->count(),
                             'hours' => round($pItems->sum('duration') / 60, 1),
                         ];
                     })
                     ->sortByDesc('hours')
                     ->values();
+
                 return [
-                    'office_name'      => $office ? $office->name : '(Sin consultorio)',
-                    'attended'         => $attended,
-                    'absent'           => $absent,
-                    'cancelled'        => $items->where('status', 'cancelled')->count(),
-                    'scheduled'        => $items->where('status', 'scheduled')->count(),
-                    'total'            => $items->count(),
-                    'total_hours'      => round($items->sum('duration') / 60, 1),
-                    'attendance_rate'  => $completed > 0 ? round($attended / $completed * 100, 1) : null,
-                    'by_professional'  => $byProfessional,
+                    'office_name' => $office ? $office->name : '(Sin consultorio)',
+                    'attended' => $attended,
+                    'absent' => $absent,
+                    'cancelled' => $items->where('status', 'cancelled')->count(),
+                    'scheduled' => $items->where('status', 'scheduled')->count(),
+                    'total' => $items->count(),
+                    'total_hours' => round($items->sum('duration') / 60, 1),
+                    'attendance_rate' => $completed > 0 ? round($attended / $completed * 100, 1) : null,
+                    'by_professional' => $byProfessional,
                 ];
             })
             ->sortByDesc('total')
             ->values();
 
-        $globalTotal     = $appointments->count();
-        $globalAttended  = $appointments->where('status', 'attended')->count();
-        $globalAbsent    = $appointments->where('status', 'absent')->count();
+        $globalTotal = $appointments->count();
+        $globalAttended = $appointments->where('status', 'attended')->count();
+        $globalAbsent = $appointments->where('status', 'absent')->count();
         $globalCompleted = $globalAttended + $globalAbsent;
-        $globalRate      = $globalCompleted > 0 ? round($globalAttended / $globalCompleted * 100, 1) : null;
-        $globalHours     = round($appointments->sum('duration') / 60, 1);
-        $topOffice       = $stats->first()['office_name'] ?? '—';
+        $globalRate = $globalCompleted > 0 ? round($globalAttended / $globalCompleted * 100, 1) : null;
+        $globalHours = round($appointments->sum('duration') / 60, 1);
+        $topOffice = $stats->first()['office_name'] ?? '—';
 
         $allOffices = \App\Models\Office::active()->orderBy('name')->get();
 
@@ -2748,14 +2760,14 @@ class ReportController extends Controller
         $data = $this->buildConsultoriosStats($request);
         extract($data);
 
-        $filename = 'consultorios-ocupacion_' . $dateFrom . '_' . $dateTo . '.csv';
+        $filename = 'consultorios-ocupacion_'.$dateFrom.'_'.$dateTo.'.csv';
 
         $callback = function () use ($stats, $dateFrom, $dateTo, $globalTotal, $globalAttended, $globalAbsent, $globalRate, $globalHours) {
             $f = fopen('php://output', 'w');
-            fprintf($f, chr(0xEF) . chr(0xBB) . chr(0xBF));
+            fprintf($f, chr(0xEF).chr(0xBB).chr(0xBF));
 
             fputcsv($f, ['OCUPACIÓN DE CONSULTORIOS'], ';');
-            fputcsv($f, ['Período:', $dateFrom . ' al ' . $dateTo], ';');
+            fputcsv($f, ['Período:', $dateFrom.' al '.$dateTo], ';');
             fputcsv($f, [], ';');
 
             fputcsv($f, ['RESUMEN'], ';');
@@ -2763,7 +2775,7 @@ class ReportController extends Controller
             fputcsv($f, ['Total Horas',        number_format($globalHours, 1, ',', '.')], ';');
             fputcsv($f, ['Atendidos',          $globalAttended], ';');
             fputcsv($f, ['Ausentes',           $globalAbsent], ';');
-            fputcsv($f, ['Tasa de Asistencia', $globalRate !== null ? number_format($globalRate, 1, ',', '.') . '%' : 'N/A'], ';');
+            fputcsv($f, ['Tasa de Asistencia', $globalRate !== null ? number_format($globalRate, 1, ',', '.').'%' : 'N/A'], ';');
             fputcsv($f, [], ';');
 
             fputcsv($f, ['DETALLE POR CONSULTORIO'], ';');
@@ -2778,7 +2790,7 @@ class ReportController extends Controller
                     $s['scheduled'],
                     $s['total'],
                     number_format($s['total_hours'], 1, ',', '.'),
-                    $s['attendance_rate'] !== null ? number_format($s['attendance_rate'], 1, ',', '.') . '%' : 'N/A',
+                    $s['attendance_rate'] !== null ? number_format($s['attendance_rate'], 1, ',', '.').'%' : 'N/A',
                 ], ';');
             }
 
@@ -2801,7 +2813,7 @@ class ReportController extends Controller
         };
 
         return response()->stream($callback, 200, [
-            'Content-Type'        => 'text/csv; charset=UTF-8',
+            'Content-Type' => 'text/csv; charset=UTF-8',
             'Content-Disposition' => "attachment; filename=\"{$filename}\"",
         ]);
     }

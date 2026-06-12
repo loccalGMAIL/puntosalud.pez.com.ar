@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\PaymentMethod;
 use App\Models\Appointment;
 use App\Models\CashMovement;
 use App\Models\Patient;
@@ -22,6 +23,7 @@ use Illuminate\Validation\Rule;
 class PaymentController extends Controller
 {
     protected $paymentAllocationService;
+
     protected $cashMovementService;
 
     public function __construct(PaymentAllocationService $paymentAllocationService, CashMovementService $cashMovementService)
@@ -37,14 +39,14 @@ class PaymentController extends Controller
         // Filtros
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->whereHas('patient', function ($subQ) use ($search) {
                     $subQ->where('first_name', 'like', "%{$search}%")
                         ->orWhere('last_name', 'like', "%{$search}%")
                         ->orWhere('dni', 'like', "%{$search}%");
                 })
-                ->orWhere('receipt_number', 'like', "%{$search}%")
-                ->orWhere('concept', 'like', "%{$search}%"); // Para buscar en ingresos manuales
+                    ->orWhere('receipt_number', 'like', "%{$search}%")
+                    ->orWhere('concept', 'like', "%{$search}%"); // Para buscar en ingresos manuales
             });
         }
 
@@ -54,7 +56,7 @@ class PaymentController extends Controller
 
         // Filtro por método de pago - Ahora debe buscar en payment_details
         if ($request->filled('payment_method')) {
-            $query->whereHas('paymentDetails', function($q) use ($request) {
+            $query->whereHas('paymentDetails', function ($q) use ($request) {
                 $q->where('payment_method', $request->payment_method);
             });
         }
@@ -135,7 +137,7 @@ class PaymentController extends Controller
         $validated = $request->validate([
             'patient_id' => 'required|exists:patients,id',
             'payment_type' => 'required|in:single,package,refund',
-            'payment_method' => 'required|in:cash,transfer,debit_card,credit_card,qr',
+            'payment_method' => 'required|'.PaymentMethod::rule(),
             'amount' => 'required|numeric|min:0',
             'concept' => 'nullable|string|max:500',
             'sessions_included' => 'required_if:payment_type,package|nullable|integer|min:1',
@@ -471,7 +473,7 @@ class PaymentController extends Controller
 
         // Obtener profesionales únicos asociados al pago
         $professionals = $payment->paymentAppointments
-            ->map(fn($pa) => $pa->appointment->professional)
+            ->map(fn ($pa) => $pa->appointment->professional)
             ->unique('id')
             ->values();
 
@@ -521,8 +523,8 @@ class PaymentController extends Controller
             ->setOption('chroot', public_path());
 
         $base64 = base64_encode($pdf->output());
-        $filename = 'Recibo-' . $payment->receipt_number . '.pdf';
-        $caption = 'Recibo de pago #' . $payment->receipt_number;
+        $filename = 'Recibo-'.$payment->receipt_number.'.pdf';
+        $caption = 'Recibo de pago #'.$payment->receipt_number;
 
         $phone = $recipient['phone'];
 
@@ -556,12 +558,12 @@ class PaymentController extends Controller
         if ($appointmentId && $payment->patient_id) {
             $waMessage = WhatsAppMessage::create([
                 'appointment_id' => $appointmentId,
-                'patient_id'     => $payment->patient_id,
-                'phone'          => $phone,
-                'message'        => $caption,
-                'status'         => 'pending',
-                'instance'       => setting('whatsapp.instance', ''),
-                'type'           => 'receipt',
+                'patient_id' => $payment->patient_id,
+                'phone' => $phone,
+                'message' => $caption,
+                'status' => 'pending',
+                'instance' => setting('whatsapp.instance', ''),
+                'type' => 'receipt',
             ]);
         }
 
@@ -576,6 +578,7 @@ class PaymentController extends Controller
 
         if (($result['success'] ?? false) === true) {
             $waMessage?->markSent();
+
             return response()->json([
                 'success' => true,
                 'message' => 'Recibo enviado por WhatsApp.',
@@ -584,10 +587,11 @@ class PaymentController extends Controller
 
         $friendly = match ($result['error'] ?? '') {
             'not_configured' => 'WhatsApp no está configurado correctamente.',
-            default          => 'No se pudo enviar el recibo. Intentá nuevamente.',
+            default => 'No se pudo enviar el recibo. Intentá nuevamente.',
         };
 
         $waMessage?->markFailed($friendly);
+
         return response()->json([
             'success' => false,
             'message' => $friendly,
@@ -612,7 +616,7 @@ class PaymentController extends Controller
             }
 
             // Verificar si ya fue anulado
-            $existingRefund = Payment::where('concept', 'LIKE', '%#' . $payment->receipt_number . '%')
+            $existingRefund = Payment::where('concept', 'LIKE', '%#'.$payment->receipt_number.'%')
                 ->where('payment_type', 'refund')
                 ->first();
 
@@ -635,8 +639,8 @@ class PaymentController extends Controller
             if ($payment->liquidation_status !== 'pending') {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Solo se pueden anular pagos que estén pendientes de liquidación. Este pago ya fue ' .
-                                ($payment->liquidation_status === 'liquidated' ? 'liquidado' : 'cancelado') . '.',
+                    'message' => 'Solo se pueden anular pagos que estén pendientes de liquidación. Este pago ya fue '.
+                                ($payment->liquidation_status === 'liquidated' ? 'liquidado' : 'cancelado').'.',
                 ], 400);
             }
 
@@ -650,7 +654,7 @@ class PaymentController extends Controller
                 'payment_type' => 'refund',
                 'total_amount' => $payment->total_amount, // El monto positivo, createCashMovement lo hace negativo
                 'is_advance_payment' => false,
-                'concept' => 'Anulación de pago - Recibo #' . $payment->receipt_number,
+                'concept' => 'Anulación de pago - Recibo #'.$payment->receipt_number,
                 'status' => 'confirmed',
                 'liquidation_status' => 'not_applicable', // Los refunds no se liquidan
                 'created_by' => Auth::id(),
@@ -663,7 +667,7 @@ class PaymentController extends Controller
                     'payment_method' => $detail->payment_method,
                     'amount' => $detail->amount,
                     'received_by' => $detail->received_by,
-                    'reference' => 'Anulación de ' . $detail->reference,
+                    'reference' => 'Anulación de '.$detail->reference,
                 ]);
             }
 
@@ -690,7 +694,7 @@ class PaymentController extends Controller
             // Marcar el pago original como anulado
             $payment->update([
                 'liquidation_status' => 'cancelled', // Cambiar a cancelado para que no quede pendiente de liquidación
-                'concept' => ($payment->concept ? $payment->concept . ' ' : '') . '[ANULADO - Ref: ' . $refund->receipt_number . ']',
+                'concept' => ($payment->concept ? $payment->concept.' ' : '').'[ANULADO - Ref: '.$refund->receipt_number.']',
             ]);
 
             DB::commit();
@@ -706,7 +710,7 @@ class PaymentController extends Controller
 
             return response()->json([
                 'success' => false,
-                'message' => 'Error al anular el pago: ' . $e->getMessage(),
+                'message' => 'Error al anular el pago: '.$e->getMessage(),
             ], 500);
         }
     }

@@ -9,6 +9,11 @@ return new class extends Migration
 {
     public function up(): void
     {
+        // SHOW INDEX es sintaxis MySQL; en SQLite (tests) el índice legacy nunca existió
+        if (DB::connection()->getDriverName() !== 'mysql') {
+            return;
+        }
+
         // El índice legacy se llama literalmente `whatsapp_messages_appointment_type_unique`
         // (sin `_id_`). La migración del 2026-04-28 intentó dropearlo con
         // `dropUnique(['appointment_id','type'])`, pero Laravel auto-genera

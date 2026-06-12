@@ -390,6 +390,7 @@ function professionalsPage() {
             specialty_id: '',
             commission_percentage: '',
             receives_transfers_directly: false,
+            collects_directly: false,
             notes: '',
             is_active: true,
             default_duration_minutes: 30
@@ -484,6 +485,7 @@ function professionalsPage() {
                 specialty_id: professional.specialty.id.toString(),
                 commission_percentage: professional.commission_percentage,
                 receives_transfers_directly: professional.receives_transfers_directly || false,
+                collects_directly: professional.collects_directly || false,
                 notes: professional.notes || '',
                 is_active: professional.is_active.toString(),
                 default_duration_minutes: professional.appointment_settings?.default_duration_minutes ?? 30
@@ -503,6 +505,7 @@ function professionalsPage() {
                 specialty_id: '',
                 commission_percentage: '',
                 receives_transfers_directly: false,
+                collects_directly: false,
                 notes: '',
                 is_active: 'true',
                 default_duration_minutes: 30
@@ -520,12 +523,12 @@ function professionalsPage() {
                 
                 const formData = new FormData();
                 Object.keys(this.form).forEach(key => {
-                    if (this.form[key] !== '' || key === 'is_active' || key === 'receives_transfers_directly') {
+                    if (this.form[key] !== '' || key === 'is_active' || key === 'receives_transfers_directly' || key === 'collects_directly') {
                         // Convertir is_active a 1 o 0 para Laravel
                         if (key === 'is_active') {
                             formData.append(key, this.form[key] === 'true' ? '1' : '0');
-                        } else if (key === 'receives_transfers_directly') {
-                            // Convertir receives_transfers_directly a 1 o 0 para Laravel
+                        } else if (key === 'receives_transfers_directly' || key === 'collects_directly') {
+                            // Convertir booleanos a 1 o 0 para Laravel
                             formData.append(key, this.form[key] ? '1' : '0');
                         } else {
                             formData.append(key, this.form[key]);

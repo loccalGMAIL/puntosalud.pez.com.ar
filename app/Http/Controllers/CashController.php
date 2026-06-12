@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\PaymentMethod;
 use App\Models\CashMovement;
 use App\Models\MovementType;
 use App\Models\Payment;
@@ -142,7 +143,7 @@ class CashController extends Controller
 
         $validated = $request->validate([
             'amount' => 'required|numeric|min:0.01',
-            'payment_method' => 'required|string|in:cash,transfer,debit_card,credit_card,qr',
+            'payment_method' => 'required|string|'.PaymentMethod::rule(),
             'description' => 'required|string|max:500',
             'category' => 'required|string|in:'.implode(',', $validCodes),
             'receipt_file' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
@@ -316,13 +317,7 @@ class CashController extends Controller
 
             // Obtener saldo anterior con lock pesimista
             $previousDay = $today->copy()->subDay();
-            $lastMovement = CashMovement::whereDate('created_at', '<=', $previousDay)
-                ->orderBy('created_at', 'desc')
-                ->orderBy('created_at', 'desc')
-                ->lockForUpdate()
-                ->first();
-
-            $previousBalance = $lastMovement ? $lastMovement->balance_after : 0;
+            $previousBalance = CashMovement::getCurrentBalanceWithLock($previousDay);
             $openingAmount = $validated['opening_amount'] ?? 0;
             $newBalance = $previousBalance + $openingAmount;
 
@@ -378,6 +373,7 @@ class CashController extends Controller
                         ->where('cm2.movement_type_id', $closingTypeId);
                 })
                 ->orderBy('created_at', 'desc')
+                ->lockForUpdate() // Evita doble cierre concurrente de la misma apertura
                 ->first();
 
             if (! $opening) {
@@ -435,13 +431,7 @@ class CashController extends Controller
             }
 
             // Obtener el saldo actual antes del cierre con lock pesimista
-            $lastMovement = CashMovement::whereDate('created_at', '<=', $closeDate)
-                ->orderBy('id', 'desc')
-                ->orderBy('created_at', 'desc')
-                ->lockForUpdate()
-                ->first();
-
-            $currentBalance = $lastMovement ? $lastMovement->balance_after : 0;
+            $currentBalance = CashMovement::getCurrentBalanceWithLock($closeDate);
 
             // Calcular la fecha/hora del cierre: mismo día de apertura a las 23:59:59
             $closingDateTime = Carbon::parse($openingDate)->setTime(23, 59, 59);
@@ -639,8 +629,9 @@ class CashController extends Controller
             })
             ->values();
 
-        // Calcular liquidación de Dra. Zalazar (professional_id = 1)
-        $zalazarData = $professionalIncome->firstWhere('professional_id', 1);
+        // Calcular liquidación del profesional que cobra directamente (collects_directly)
+        $directCollectorIds = \App\Models\Professional::where('collects_directly', true)->pluck('id');
+        $zalazarData = $professionalIncome->first(fn ($p) => $directCollectorIds->contains($p['professional_id']));
         $zalazarCommission = $zalazarData ? $zalazarData['professional_amount'] : 0;
 
         // Obtener movimientos de "Pago de Saldos Dra. Zalazar"
@@ -879,8 +870,9 @@ class CashController extends Controller
             })
             ->values();
 
-        // Calcular liquidación de Dra. Zalazar (professional_id = 1) para saldo final
-        $zalazarData = $professionalIncome->firstWhere('professional_id', 1);
+        // Calcular liquidación del profesional que cobra directamente (collects_directly) para saldo final
+        $directCollectorIds = \App\Models\Professional::where('collects_directly', true)->pluck('id');
+        $zalazarData = $professionalIncome->first(fn ($p) => $directCollectorIds->contains($p['professional_id']));
         $zalazarCommission = $zalazarData ? $zalazarData['professional_amount'] : 0;
 
         // Obtener movimientos de "Pago de Saldos Dra. Zalazar"
@@ -964,7 +956,7 @@ class CashController extends Controller
 
         $validated = $request->validate([
             'amount' => 'required|numeric|min:0.01',
-            'payment_method' => 'required|string|in:cash,transfer,debit_card,credit_card,qr',
+            'payment_method' => 'required|string|'.PaymentMethod::rule(),
             'withdrawal_type' => 'required|string|in:'.implode(',', $validCodes),
             'description' => 'required|string|max:500',
             'recipient' => 'nullable|string|max:255',
@@ -1106,7 +1098,7 @@ class CashController extends Controller
         $validated = $request->validate([
             'amount' => 'required|numeric|min:0.01',
             'category' => 'required|string|in:'.implode(',', $validCodes),
-            'payment_method' => 'required|string|in:cash,transfer,debit_card,credit_card,qr',
+            'payment_method' => 'required|string|'.PaymentMethod::rule(),
             'description' => 'required|string|max:500',
             'professional_id' => 'nullable|exists:professionals,id|required_if:category,professional_module_payment',
             'receipt_file' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',

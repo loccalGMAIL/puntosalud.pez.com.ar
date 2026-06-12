@@ -6,7 +6,6 @@ use App\Models\Appointment;
 use App\Models\CashMovement;
 use App\Models\LiquidationDetail;
 use App\Models\MovementType;
-use App\Models\Payment;
 use App\Models\Professional;
 use App\Models\ProfessionalLiquidation;
 use Carbon\Carbon;
@@ -30,8 +29,8 @@ class LiquidationController extends Controller
             $amount = $request->amount;
             $date = Carbon::parse($request->date);
 
-            // TEMPORAL: Excepción para Dra. Zalazar (ID=1) - Cobra directamente, no retira de caja
-            $isDraZalazar = $professional->id === 1;
+            // Profesional que cobra directamente: su liquidación no retira efectivo de caja
+            $collectsDirectly = $professional->collects_directly;
 
             // 1. Verificar que la caja esté abierta
             $cashStatus = CashMovement::getCashStatusForDate($date);
@@ -82,12 +81,12 @@ class LiquidationController extends Controller
             $attendedAppointmentIds = $attendedAppointments->pluck('id');
 
             // Obtener payment_details del centro pendientes de liquidación
-            $centroPaymentDetails = \App\Models\PaymentDetail::whereHas('payment.paymentAppointments', function($q) use ($attendedAppointmentIds) {
-                    $q->whereIn('appointment_id', $attendedAppointmentIds);
-                })
+            $centroPaymentDetails = \App\Models\PaymentDetail::whereHas('payment.paymentAppointments', function ($q) use ($attendedAppointmentIds) {
+                $q->whereIn('appointment_id', $attendedAppointmentIds);
+            })
                 ->where('received_by', 'centro')
                 ->whereNull('liquidation_id') // Solo no liquidados
-                ->with(['payment.paymentAppointments' => function($q) use ($attendedAppointmentIds) {
+                ->with(['payment.paymentAppointments' => function ($q) use ($attendedAppointmentIds) {
                     $q->whereIn('appointment_id', $attendedAppointmentIds);
                 }])
                 ->get();
@@ -98,12 +97,12 @@ class LiquidationController extends Controller
             $clinicAmount = $totalCollected - $professionalCommission;
 
             // NUEVO v2.6.0: Obtener payment_details recibidos DIRECTAMENTE por el profesional
-            $professionalPaymentDetails = \App\Models\PaymentDetail::whereHas('payment.paymentAppointments', function($q) use ($attendedAppointmentIds) {
-                    $q->whereIn('appointment_id', $attendedAppointmentIds);
-                })
+            $professionalPaymentDetails = \App\Models\PaymentDetail::whereHas('payment.paymentAppointments', function ($q) use ($attendedAppointmentIds) {
+                $q->whereIn('appointment_id', $attendedAppointmentIds);
+            })
                 ->where('received_by', 'profesional')
                 ->whereNull('liquidation_id') // Solo no liquidados
-                ->with(['payment.paymentAppointments' => function($q) use ($attendedAppointmentIds) {
+                ->with(['payment.paymentAppointments' => function ($q) use ($attendedAppointmentIds) {
                     $q->whereIn('appointment_id', $attendedAppointmentIds);
                 }])
                 ->get();
@@ -114,13 +113,12 @@ class LiquidationController extends Controller
             // 5. Validar que haya payment_details pendientes de liquidar
             if ($centroPaymentDetails->isEmpty() && $professionalPaymentDetails->isEmpty()) {
                 throw new \Exception("No hay turnos pendientes de liquidar para {$professional->full_name} en la fecha {$date->format('d/m/Y')}. ".
-                                   "Todos los pagos del día ya han sido liquidados.");
+                                   'Todos los pagos del día ya han sido liquidados.');
             }
 
             // Calcular la parte del centro sobre esos pagos directos
             // Si el profesional recibió $2000, debe pagar al centro (100% - commission_percentage)
-            $clinicPercentage = 100 - $professional->commission_percentage;
-            $clinicAmountFromDirect = $directPaymentsTotal * ($clinicPercentage / 100);
+            $clinicAmountFromDirect = $professional->getClinicAmount($directPaymentsTotal);
 
             // Obtener reintegros del día para este profesional (usando referencias polimórficas)
             $refunds = CashMovement::byType('expense')
@@ -129,7 +127,7 @@ class LiquidationController extends Controller
                 ->whereDate('created_at', $date)
                 ->get();
 
-            $totalRefunds = $refunds->sum(function($refund) {
+            $totalRefunds = $refunds->sum(function ($refund) {
                 return abs($refund->amount); // Los gastos son negativos, convertir a positivo
             });
 
@@ -160,8 +158,8 @@ class LiquidationController extends Controller
                 ->whereDate('liquidation_date', $date)
                 ->count() + 1;
 
-            // 8. Verificar que hay suficiente efectivo en caja (excepto Dra. Zalazar)
-            if (!$isDraZalazar) {
+            // 8. Verificar que hay suficiente efectivo en caja (excepto profesionales que cobran directamente)
+            if (! $collectsDirectly) {
                 $currentBalance = $this->getCurrentCashBalance($date);
                 if ($currentBalance < $amount) {
                     throw new \Exception('Saldo insuficiente en caja. Disponible: $'.number_format($currentBalance, 2));
@@ -189,8 +187,8 @@ class LiquidationController extends Controller
                 'paid_at' => now(),
                 'paid_by' => auth()->id(),
                 'notes' => "Liquidación #{$liquidationNumber} del día {$date->format('d/m/Y')}".
-                          ($totalRefunds > 0 ? " - Reintegros descontados: \${$totalRefunds}" : "").
-                          ($isDraZalazar ? " - PAGO DIRECTO: Profesional cobra directamente, no retira de caja" : ""),
+                          ($totalRefunds > 0 ? " - Reintegros descontados: \${$totalRefunds}" : '').
+                          ($collectsDirectly ? ' - PAGO DIRECTO: Profesional cobra directamente, no retira de caja' : ''),
             ]);
 
             // 10. Crear detalles en liquidation_details
@@ -203,7 +201,7 @@ class LiquidationController extends Controller
                     ->whereIn('appointment_id', $attendedAppointmentIds)
                     ->first();
 
-                if (!$paymentAppointment) {
+                if (! $paymentAppointment) {
                     continue; // Saltar si no hay relación (no debería pasar)
                 }
 
@@ -239,14 +237,14 @@ class LiquidationController extends Controller
                     ->whereIn('appointment_id', $attendedAppointmentIds)
                     ->first();
 
-                if (!$paymentAppointment) {
+                if (! $paymentAppointment) {
                     continue; // Saltar si no hay relación (no debería pasar)
                 }
 
                 $appointment = $paymentAppointment->appointment;
                 $paymentDetailAmount = $paymentDetail->amount;
                 // Para pagos directos, calculamos la parte del centro (NO la comisión del profesional)
-                $clinicPart = $paymentDetailAmount * ($clinicPercentage / 100);
+                $clinicPart = $professional->getClinicAmount($paymentDetailAmount);
 
                 // Crear detalle de liquidación - nota: commission_amount es NEGATIVO porque el profesional debe pagarle al centro
                 LiquidationDetail::create([
@@ -270,10 +268,11 @@ class LiquidationController extends Controller
             }
 
             // 11. Actualizar liquidation_status en payments (solo si todos sus payment_details están liquidados)
-            if (!empty($paymentIds)) {
+            if (! empty($paymentIds)) {
                 $uniquePaymentIds = array_unique($paymentIds);
                 foreach ($uniquePaymentIds as $paymentId) {
-                    $payment = \App\Models\Payment::find($paymentId);
+                    // Lock pesimista: evita que dos liquidaciones simultáneas pisen el estado del pago
+                    $payment = \App\Models\Payment::lockForUpdate()->find($paymentId);
                     // Verificar si todos los payment_details del pago están liquidados
                     $pendingDetails = $payment->paymentDetails()->whereNull('liquidation_id')->count();
                     if ($pendingDetails === 0) {
@@ -287,10 +286,10 @@ class LiquidationController extends Controller
 
             // 12. Crear movimiento de caja por pago al profesional
             // Solo si:
-            // - NO es Dra. Zalazar (ella cobra directamente, no retira de caja)
+            // - NO cobra directamente (quien cobra directo no retira de caja)
             // - El monto es POSITIVO (centro debe al profesional)
             // Si el monto es negativo, el profesional debe al centro → no hay salida de caja
-            $shouldCreateCashMovement = !$isDraZalazar && $netProfessionalAmount > 0;
+            $shouldCreateCashMovement = ! $collectsDirectly && $netProfessionalAmount > 0;
 
             if ($shouldCreateCashMovement) {
                 CashMovement::create([
@@ -340,22 +339,8 @@ class LiquidationController extends Controller
 
     private function getCurrentCashBalance($date)
     {
-        // Obtener el balance actual de caja con lock pesimista
-        $lastMovement = CashMovement::whereDate('created_at', $date)
-            ->orderBy('created_at', 'desc')
-            ->lockForUpdate()
-            ->first();
-
-        if (! $lastMovement) {
-            // Si no hay movimientos hoy, buscar el último balance con lock
-            $lastMovement = CashMovement::where('created_at', '<', $date->startOfDay())
-                ->orderBy('created_at', 'desc')
-                ->orderBy('created_at', 'desc')
-                ->lockForUpdate()
-                ->first();
-        }
-
-        return $lastMovement ? $lastMovement->balance_after : 0;
+        // Balance al último movimiento de la fecha (o anterior si no hay), con lock pesimista
+        return CashMovement::getCurrentBalanceWithLock($date);
     }
 
     /**
@@ -363,13 +348,6 @@ class LiquidationController extends Controller
      */
     private function getPaymentMethodLabel(string $paymentMethod): string
     {
-        return match($paymentMethod) {
-            'cash' => 'Efectivo',
-            'transfer' => 'Transferencia',
-            'debit_card' => 'Débito',
-            'credit_card' => 'Crédito',
-            'other' => 'Otro',
-            default => ucfirst($paymentMethod)
-        };
+        return \App\Enums\PaymentMethod::labelFor($paymentMethod);
     }
 }

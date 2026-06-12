@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\AppointmentStatus;
+use App\Enums\PaymentMethod;
 use App\Models\Appointment;
 use App\Models\CashMovement;
 use App\Models\Payment;
@@ -18,6 +20,7 @@ use Illuminate\Support\Facades\DB;
 class DashboardController extends Controller
 {
     protected $paymentAllocationService;
+
     protected $cashMovementService;
 
     public function __construct(PaymentAllocationService $paymentAllocationService, CashMovementService $cashMovementService)
@@ -62,11 +65,11 @@ class DashboardController extends Controller
 
             // Separar ingresos y egresos (excluyendo apertura y cierre)
             $incomeTotal = $movements
-                ->filter(fn($m) => $m->amount > 0 && !in_array($m->movementType?->code, ['cash_opening', 'cash_closing']))
+                ->filter(fn ($m) => $m->amount > 0 && ! in_array($m->movementType?->code, ['cash_opening', 'cash_closing']))
                 ->sum('amount');
 
             $expenseTotal = abs($movements
-                ->filter(fn($m) => $m->amount < 0 && !in_array($m->movementType?->code, ['cash_opening', 'cash_closing']))
+                ->filter(fn ($m) => $m->amount < 0 && ! in_array($m->movementType?->code, ['cash_opening', 'cash_closing']))
                 ->sum('amount'));
 
             $unclosedDaySummary = [
@@ -171,13 +174,13 @@ class DashboardController extends Controller
                     'hora' => $appointment->appointment_date->format('H:i'),
                     'monto' => $appointment->final_amount ?? $appointment->estimated_amount ?? 0,
                     'status' => $appointment->status,
-                    'statusLabel' => $this->getStatusLabel($appointment->status),
+                    'statusLabel' => AppointmentStatus::labelFor($appointment->status),
                     'isPaid' => $hasPaidAppointments,
                     'isUrgency' => $appointment->is_urgency,
                     'isBetweenTurn' => $appointment->is_between_turn,
                     'notes' => $appointment->notes,
                     'canMarkAttended' => $appointment->status === 'scheduled',
-                    'canMarkCompleted' => $appointment->status === 'attended' && !$hasPaidAppointments,
+                    'canMarkCompleted' => $appointment->status === 'attended' && ! $hasPaidAppointments,
                 ];
             });
 
@@ -220,7 +223,7 @@ class DashboardController extends Controller
             'cashStatus' => $cashStatus,
         ];
 
-    return view('dashboard.dashboard', compact('dashboardData'));
+        return view('dashboard.dashboard', compact('dashboardData'));
     }
 
     public function appointments()
@@ -248,7 +251,7 @@ class DashboardController extends Controller
                     'hora' => $appointment->appointment_date->format('H:i'),
                     'monto' => $appointment->final_amount ?? $appointment->estimated_amount ?? 0,
                     'status' => $appointment->status,
-                    'statusLabel' => $this->getStatusLabel($appointment->status),
+                    'statusLabel' => AppointmentStatus::labelFor($appointment->status),
                     'isPaid' => $isPaid,
                     'paymentId' => $paymentId,
                     'isUrgency' => $appointment->is_urgency,
@@ -264,7 +267,7 @@ class DashboardController extends Controller
             'fecha' => $today->format('d/m/Y'),
         ];
 
-    return view('dashboard.dashboard-appointments', compact('data'));
+        return view('dashboard.dashboard-appointments', compact('data'));
     }
 
     public function markAttended(Request $request, Appointment $appointment)
@@ -323,19 +326,19 @@ class DashboardController extends Controller
         // Validación condicional basada en el monto
         $rules = [
             'final_amount' => 'required|numeric|min:0',
-            'payment_method' => 'required|in:cash,transfer,debit_card,credit_card,qr',
+            'payment_method' => 'required|'.PaymentMethod::rule(),
             'concept' => 'nullable|string|max:500',
         ];
 
         // Si el monto es mayor a 0, requerir payment_details
         if ($request->input('final_amount') > 0) {
             $rules['payment_details'] = 'required|array|min:1';
-            $rules['payment_details.*.payment_method'] = 'required|in:cash,transfer,debit_card,credit_card,qr';
+            $rules['payment_details.*.payment_method'] = 'required|'.PaymentMethod::rule();
             $rules['payment_details.*.amount'] = 'required|numeric|min:0';
         } else {
             // Si el monto es 0, payment_details es opcional
             $rules['payment_details'] = 'nullable|array';
-            $rules['payment_details.*.payment_method'] = 'nullable|in:cash,transfer,debit_card,credit_card,qr';
+            $rules['payment_details.*.payment_method'] = 'nullable|'.PaymentMethod::rule();
             $rules['payment_details.*.amount'] = 'nullable|numeric|min:0';
         }
 
@@ -524,8 +527,8 @@ class DashboardController extends Controller
         if (! ($recipient['ok'] ?? false)) {
             \Log::info('WhatsApp manual send blocked', [
                 'appointment_id' => $appointment->id,
-                'patient_id'     => $appointment->patient_id,
-                'error_code'     => $recipient['error_code'] ?? null,
+                'patient_id' => $appointment->patient_id,
+                'error_code' => $recipient['error_code'] ?? null,
             ]);
 
             return response()->json([
@@ -542,22 +545,11 @@ class DashboardController extends Controller
         );
     }
 
-    private function getStatusLabel($status)
-    {
-        return match ($status) {
-            'attended' => 'Atendido',
-            'scheduled' => 'Programado',
-            'cancelled' => 'Cancelado',
-            'absent' => 'Ausente',
-            default => 'Desconocido'
-        };
-    }
-
     /**
      * Determina quién recibe el pago según el método de pago y la configuración del profesional
      *
-     * @param string $paymentMethod Método de pago (cash, transfer, debit_card, credit_card, other)
-     * @param \App\Models\Professional $professional Profesional del turno
+     * @param  string  $paymentMethod  Método de pago (cash, transfer, debit_card, credit_card, other)
+     * @param  \App\Models\Professional  $professional  Profesional del turno
      * @return string 'centro' o 'profesional'
      */
     private function determineReceivedBy(string $paymentMethod, $professional): string

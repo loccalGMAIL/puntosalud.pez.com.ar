@@ -12,16 +12,17 @@ class Appointment extends Model
 
     public function activityDescription(): string
     {
-        $base = 'Turno #' . $this->id . ' - ' . ($this->patient->full_name ?? 'Sin paciente');
+        $base = 'Turno #'.$this->id.' - '.($this->patient->full_name ?? 'Sin paciente');
 
         if ($this->wasChanged('status')) {
             $labels = [
                 'scheduled' => 'Programado',
-                'attended'  => 'Atendido',
-                'absent'    => 'Ausente',
+                'attended' => 'Atendido',
+                'absent' => 'Ausente',
                 'cancelled' => 'Cancelado',
             ];
-            return $base . ' → ' . ($labels[$this->status] ?? $this->status);
+
+            return $base.' → '.($labels[$this->status] ?? $this->status);
         }
 
         return $base;
@@ -213,6 +214,28 @@ class Appointment extends Model
     {
         return in_array($this->status, ['scheduled']) &&
                $this->appointment_date->isFuture();
+    }
+
+    /**
+     * Valida transiciones de estado del turno.
+     *
+     * - scheduled → attended / absent / cancelled (flujo normal)
+     * - attended → scheduled solo si no tiene pagos asociados (deshacer error de marcado)
+     * - absent / cancelled → scheduled (deshacer / reactivar)
+     * - Mismo estado siempre permitido (no-op)
+     */
+    public function canTransitionTo(string $newStatus): bool
+    {
+        if ($newStatus === $this->status) {
+            return true;
+        }
+
+        return match ($this->status) {
+            'scheduled' => in_array($newStatus, ['attended', 'absent', 'cancelled']),
+            'attended' => $newStatus === 'scheduled' && ! $this->paymentAppointments()->exists(),
+            'absent', 'cancelled' => $newStatus === 'scheduled',
+            default => false,
+        };
     }
 
     public function conflictsWith($startTime, $endTime)

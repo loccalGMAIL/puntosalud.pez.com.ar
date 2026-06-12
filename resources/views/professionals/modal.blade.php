@@ -213,6 +213,21 @@
                                         </div>
                                     </label>
                                 </div>
+                                <div class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3 mt-2">
+                                    <label class="flex items-start gap-3 cursor-pointer">
+                                        <input type="checkbox"
+                                               x-model="form.collects_directly"
+                                               class="mt-0.5 h-4 w-4 text-emerald-600 focus:ring-emerald-500 border-gray-300 rounded">
+                                        <div class="flex-1">
+                                            <div class="text-sm font-medium text-gray-900 dark:text-white">
+                                                Cobra directamente (no retira de caja)
+                                            </div>
+                                            <div class="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                                                Al liquidar, no se genera salida de efectivo de caja: el profesional cobra sus honorarios directamente.
+                                            </div>
+                                        </div>
+                                    </label>
+                                </div>
                             </div>
                         </div>
                     </div>

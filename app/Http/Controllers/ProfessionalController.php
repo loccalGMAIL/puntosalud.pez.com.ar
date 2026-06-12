@@ -99,6 +99,7 @@ class ProfessionalController extends Controller
                 'specialty_id' => 'required|exists:specialties,id',
                 'commission_percentage' => 'required|numeric|min:0|max:100',
                 'receives_transfers_directly' => 'boolean',
+                'collects_directly' => 'boolean',
                 'notes' => 'nullable|string|max:1000',
                 'default_duration_minutes' => 'nullable|integer|in:5,10,15,20,25,30,40,45,50,60,90,120',
             ], [
@@ -114,8 +115,9 @@ class ProfessionalController extends Controller
             $validated['dni'] = $this->formatDni($validated['dni']);
             $validated['is_active'] = true; // Por defecto activo
 
-            // Convertir receives_transfers_directly a booleano (por defecto false si no se envía)
+            // Convertir flags a booleano (por defecto false si no se envían)
             $validated['receives_transfers_directly'] = $request->boolean('receives_transfers_directly');
+            $validated['collects_directly'] = $request->boolean('collects_directly');
 
             $defaultDuration = (int) ($validated['default_duration_minutes'] ?? 30);
             unset($validated['default_duration_minutes']);
@@ -214,6 +216,7 @@ class ProfessionalController extends Controller
                 'specialty_id' => 'required|exists:specialties,id',
                 'commission_percentage' => 'required|numeric|min:0|max:100',
                 'receives_transfers_directly' => 'boolean',
+                'collects_directly' => 'boolean',
                 'notes' => 'nullable|string|max:1000',
                 'is_active' => 'required|in:0,1',
                 'default_duration_minutes' => 'nullable|integer|in:5,10,15,20,25,30,40,45,50,60,90,120',
@@ -232,8 +235,9 @@ class ProfessionalController extends Controller
             // Convertir is_active a booleano
             $validated['is_active'] = $validated['is_active'] === '1';
 
-            // Convertir receives_transfers_directly a booleano
+            // Convertir flags a booleano
             $validated['receives_transfers_directly'] = $request->boolean('receives_transfers_directly');
+            $validated['collects_directly'] = $request->boolean('collects_directly');
 
             $defaultDuration = (int) ($validated['default_duration_minutes'] ?? 30);
             unset($validated['default_duration_minutes']);

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\PaymentMethod;
 use App\Models\Expense;
 use App\Models\MovementType;
 use Illuminate\Http\JsonResponse;
@@ -60,7 +61,7 @@ class ExpenseController extends Controller
             'expense_date' => 'required|date|before_or_equal:today',
             'movement_type_id' => 'required|exists:movement_types,id',
             'amount' => 'required|numeric|min:0.01',
-            'payment_method' => 'nullable|string|in:cash,transfer,debit_card,credit_card,qr',
+            'payment_method' => 'nullable|string|'.PaymentMethod::rule(),
             'description' => 'required|string|max:500',
             'notes' => 'nullable|string',
             'receipt_file' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:4096',
@@ -96,7 +97,7 @@ class ExpenseController extends Controller
             'expense_date' => 'required|date|before_or_equal:today',
             'movement_type_id' => 'required|exists:movement_types,id',
             'amount' => 'required|numeric|min:0.01',
-            'payment_method' => 'nullable|string|in:cash,transfer,debit_card,credit_card,qr',
+            'payment_method' => 'nullable|string|'.PaymentMethod::rule(),
             'description' => 'required|string|max:500',
             'notes' => 'nullable|string',
             'receipt_file' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:4096',

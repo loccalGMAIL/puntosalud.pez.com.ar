@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class PaymentDetail extends Model
 {
     use HasFactory;
+
     protected $fillable = [
         'payment_id',
         'payment_method',
@@ -111,14 +112,7 @@ class PaymentDetail extends Model
      */
     public function getPaymentMethodNameAttribute(): string
     {
-        return match($this->payment_method) {
-            'cash' => 'Efectivo',
-            'transfer' => 'Transferencia',
-            'debit_card' => 'Tarjeta de Débito',
-            'credit_card' => 'Tarjeta de Crédito',
-            'other' => 'Otro',
-            default => 'Desconocido',
-        };
+        return \App\Enums\PaymentMethod::labelFor($this->payment_method);
     }
 
     /**
@@ -126,7 +120,7 @@ class PaymentDetail extends Model
      */
     public function getReceivedByNameAttribute(): string
     {
-        return match($this->received_by) {
+        return match ($this->received_by) {
             'centro' => 'Centro',
             'profesional' => 'Profesional',
             default => 'Desconocido',

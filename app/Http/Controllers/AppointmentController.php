@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\AppointmentStatus;
+use App\Enums\PaymentMethod;
 use App\Models\ActivityLog;
 use App\Models\Appointment;
 use App\Models\CashMovement;
@@ -125,13 +127,13 @@ class AppointmentController extends Controller
                 'office_id' => 'nullable|exists:offices,id',
                 'notes' => 'nullable|string|max:500',
                 'estimated_amount' => 'nullable|numeric|min:0',
-                'status' => 'nullable|in:scheduled,attended,cancelled,absent',
+                'status' => 'nullable|'.AppointmentStatus::rule(),
                 'is_between_turn' => 'nullable',
                 // Campos de pago
                 'pay_now' => 'nullable|in:true,false,1,0,"true","false","1","0"',
                 'payment_type' => 'nullable|in:single,package',
                 'payment_amount' => 'nullable|numeric|min:0',
-                'payment_method' => 'nullable|in:cash,transfer,debit_card,credit_card,qr',
+                'payment_method' => 'nullable|'.PaymentMethod::rule(),
                 'payment_concept' => 'nullable|string|max:500',
                 // Campos de paquete
                 'package_sessions' => 'nullable|integer|min:2|max:20',
@@ -357,7 +359,27 @@ class AppointmentController extends Controller
     {
         // Si es solo cambio de estado
         if ($request->has('status') && ! $request->has('professional_id')) {
+            $request->validate(['status' => 'required|'.AppointmentStatus::rule()]);
+
             $previousStatus = $appointment->status;
+
+            // Validar que la transición de estado sea lógica
+            if ($request->status !== $previousStatus && ! $appointment->canTransitionTo($request->status)) {
+                $reason = ($previousStatus === 'attended' && $appointment->paymentAppointments()->exists())
+                    ? 'El turno ya tiene pagos asociados. Anule el pago antes de modificar el estado.'
+                    : 'No se puede cambiar el estado de "'.AppointmentStatus::labelFor($previousStatus).'" a "'.AppointmentStatus::labelFor($request->status).'".';
+
+                if ($request->ajax()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Error de validación',
+                        'errors' => ['status' => [$reason]],
+                    ], 422);
+                }
+
+                return redirect()->back()->withErrors(['status' => $reason]);
+            }
+
             $updateData = ['status' => $request->status];
 
             if ($request->status === 'attended' && ! $appointment->final_amount) {
@@ -394,7 +416,7 @@ class AppointmentController extends Controller
                 'office_id' => 'nullable|exists:offices,id',
                 'notes' => 'nullable|string|max:500',
                 'estimated_amount' => 'nullable|numeric|min:0',
-                'status' => 'required|in:scheduled,attended,cancelled,absent',
+                'status' => 'required|'.AppointmentStatus::rule(),
                 'is_between_turn' => 'nullable|boolean',
             ]);
 
@@ -407,6 +429,23 @@ class AppointmentController extends Controller
             }
             if (empty($validated['estimated_amount'])) {
                 $validated['estimated_amount'] = null;
+            }
+
+            // Validar que la transición de estado sea lógica
+            if ($validated['status'] !== $appointment->status && ! $appointment->canTransitionTo($validated['status'])) {
+                $reason = ($appointment->status === 'attended' && $appointment->paymentAppointments()->exists())
+                    ? 'El turno ya tiene pagos asociados. Anule el pago antes de modificar el estado.'
+                    : 'No se puede cambiar el estado de "'.AppointmentStatus::labelFor($appointment->status).'" a "'.AppointmentStatus::labelFor($validated['status']).'".';
+
+                if ($request->ajax()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Error de validación',
+                        'errors' => ['status' => [$reason]],
+                    ], 422);
+                }
+
+                return redirect()->back()->withErrors(['status' => $reason]);
             }
 
             $appointmentDateTime = Carbon::parse($validated['appointment_date'].' '.$validated['appointment_time']);
