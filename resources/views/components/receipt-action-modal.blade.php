@@ -106,7 +106,18 @@
         show();
 
         return await new Promise((resolve) => {
+            let resolved = false;
             window.__closeReceiptActionModal = function (action) {
+                if (resolved) return;
+                resolved = true;
+                window.__closeReceiptActionModal = null;
+
+                // Deshabilitar el botón WhatsApp inmediatamente para evitar doble envío
+                if (action === 'whatsapp' && btnWhatsApp) {
+                    btnWhatsApp.disabled = true;
+                    btnWhatsApp.textContent = 'Enviando...';
+                }
+
                 hide();
                 resolve(action || 'cancel');
             };

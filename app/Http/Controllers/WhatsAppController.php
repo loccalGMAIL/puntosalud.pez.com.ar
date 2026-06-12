@@ -2,12 +2,17 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Appointment;
+use App\Models\Professional;
 use App\Models\WhatsAppMessage;
 use App\Services\SettingService;
+use App\Services\WhatsAppDispatchWindow;
 use App\Services\WhatsAppService;
+use Carbon\CarbonInterface;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class WhatsAppController extends Controller
@@ -274,6 +279,78 @@ class WhatsAppController extends Controller
             'success' => $ok,
             'message' => $ok ? 'Mensaje enviado correctamente.' : 'No se pudo enviar el mensaje. Intentá nuevamente.',
         ]);
+    }
+
+    /**
+     * GET /whatsapp/reminders-status
+     */
+    public function remindersStatus(Request $request): View
+    {
+        $hoursBefore    = (int) setting('whatsapp.hours_before', 24);
+        $dispatchWindow = WhatsAppDispatchWindow::fromSettings();
+
+        $horizon = now()
+            ->addHours($hoursBefore)
+            ->addMinutes(15)
+            ->addDays(WhatsAppDispatchWindow::ADVANCE_HORIZON_DAYS);
+
+        $query = Appointment::scheduled()
+            ->where('appointment_date', '>', now())
+            ->where('appointment_date', '<=', $horizon)
+            ->whereHas('patient', fn ($q) => $q->whereNotNull('phone')->where('phone', '!=', ''))
+            ->whereDoesntHave('whatsappMessages', fn ($q) => $q->where('type', 'reminder')->whereIn('status', ['sent', 'pending']))
+            ->withCount([
+                'whatsappMessages as reminder_failed_count' => fn ($q) => $q->where('type', 'reminder')->where('status', 'failed'),
+            ])
+            ->whereNotExists(function ($q) {
+                $q->select(DB::raw(1))
+                    ->from('whatsapp_opt_outs')
+                    ->whereColumn('whatsapp_opt_outs.patient_id', 'appointments.patient_id')
+                    ->whereColumn('whatsapp_opt_outs.professional_id', 'appointments.professional_id');
+            })
+            ->with(['patient:id,first_name,last_name,phone', 'professional:id,first_name,last_name'])
+            ->orderBy('appointment_date');
+
+        if ($request->filled('professional_id')) {
+            $query->where('professional_id', $request->integer('professional_id'));
+        }
+
+        if ($request->filled('date_from')) {
+            $query->whereDate('appointment_date', '>=', $request->date_from);
+        }
+
+        if ($request->filled('date_to')) {
+            $query->whereDate('appointment_date', '<=', $request->date_to);
+        }
+
+        $paginated = $query->paginate(25)->withQueryString();
+
+        $now = now();
+
+        $paginated->getCollection()->transform(function ($appointment) use ($hoursBefore, $dispatchWindow, $now) {
+            $ideal    = $appointment->appointment_date->copy()->subHours($hoursBefore);
+            $dispatch = $dispatchWindow->computeDispatchTime($ideal);
+            $excluded = $appointment->reminder_failed_count >= 3;
+
+            $appointment->ideal_time      = $ideal;
+            $appointment->dispatch_time   = $dispatch;
+            $appointment->dispatch_status = match (true) {
+                $excluded                              => 'excluded',
+                $now->greaterThanOrEqualTo($dispatch)  => 'overdue',
+                default                                => 'queued',
+            };
+            $appointment->dispatch_label = match ($appointment->dispatch_status) {
+                'excluded' => 'Excluido (3 fallos)',
+                'overdue'  => 'Atrasado',
+                default    => $dispatch->diffForHumans($now, ['parts' => 2, 'syntax' => CarbonInterface::DIFF_ABSOLUTE]),
+            };
+
+            return $appointment;
+        });
+
+        $professionals = Professional::orderBy('last_name')->orderBy('first_name')->get(['id', 'first_name', 'last_name']);
+
+        return view('whatsapp.reminders-status', compact('paginated', 'professionals', 'hoursBefore'));
     }
 
     /**

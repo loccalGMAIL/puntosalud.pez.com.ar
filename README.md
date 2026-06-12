@@ -26,6 +26,12 @@ Sistema integral de gestión médica para clínicas y consultorios, desarrollado
 * **Transiciones de estado de turnos validadas**: deshacer hacia "Programado" permitido, salvo turnos atendidos con pagos asociados (422 con mensaje claro).
 * **API key de WhatsApp encriptada** en la tabla `settings`, transparente para los consumidores y con migración suave de valores legacy.
 
+### 📊 Consultorios: horas de uso por profesional (v2.12.1)
+
+* **Columna "Horas"** en la tabla principal y KPI card "Total Horas" en el reporte de consultorios.
+* **Acordeón por consultorio** con desglose de horas y turnos por profesional. Arranca abierto al filtrar por un consultorio específico.
+* Export CSV y vista de impresión actualizados con la sección de horas por profesional.
+
 ### 📊 Reportes: Ocupación de Consultorios (v2.12.0)
 
 * **Nuevo reporte** en Reportes → Pacientes → Consultorios (`/reports/pacientes/consultorios`).
@@ -233,6 +239,7 @@ php artisan config:clear
 ### 🔄 Últimas versiones
 
 * **v2.12.3** (2026-06-12) – 🔒 Hardening financiero: locks pesimistas en liquidaciones y cierre de caja (doble cierre bloqueado), balance unificado en `getCurrentBalanceWithLock()`. 👩‍⚕️ Flag `collects_directly` reemplaza hardcode Dra. Zalazar ID=1 (configurable en modal de profesionales). 🧩 Enums `AppointmentStatus`/`PaymentMethod` centralizan validaciones y etiquetas. 🔁 Transiciones de estado de turnos validadas (`canTransitionTo`). 🔐 API key de WhatsApp encriptada en settings. 🐛 Fix migración `SHOW INDEX` que rompía la suite de tests en SQLite.
+* **v2.12.1** (2026-05-13) – 📊 Consultorios: horas de uso por profesional — columna "Horas" y KPI "Total Horas" en el reporte, acordeón por consultorio con desglose por profesional, export CSV e impresión actualizados.
 * **v2.12.0** (2026-05-13) – 📊 Nuevo reporte Ocupación de Consultorios (`/reports/pacientes/consultorios`): turnos y tasa de asistencia por consultorio, KPI cards, export CSV e impresión. 🧭 Sidebar con scroll automático al ítem de menú activo.
 * **v2.11.10** (2026-05-07) – 📊 Análisis de Caja: toggle "Incluir gastos externos" en `/reports/cash-analysis` (desactivado por defecto; al activar, suma Expenses externos a totales, desglose por tipo, export y print). 💬 WhatsApp: Pass 2 en recordatorios — turnos del día siguiente fuera de ventana se despachan hoy. Nuevo margen `SCHEDULER_SAFE_CUTOFF_MINUTES = 20`.
 * **v2.11.9** (2026-05-04) – 🐛 Fix índice único legacy `whatsapp_messages_appointment_type_unique` que bloqueaba reintentos de recordatorios (migración idempotente + try/catch). Nuevo comando `whatsapp:reminders-status`. Fix SystemModal doble resolución de Promise + redirección directa en ingreso manual. Fix `$methodLabels` + clave `'qr'` en listado de cobros.
