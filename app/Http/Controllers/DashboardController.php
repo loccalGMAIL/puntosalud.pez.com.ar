@@ -20,6 +20,7 @@ use Illuminate\Support\Facades\DB;
 class DashboardController extends Controller
 {
     protected $paymentAllocationService;
+
     protected $cashMovementService;
 
     public function __construct(PaymentAllocationService $paymentAllocationService, CashMovementService $cashMovementService)
@@ -64,11 +65,11 @@ class DashboardController extends Controller
 
             // Separar ingresos y egresos (excluyendo apertura y cierre)
             $incomeTotal = $movements
-                ->filter(fn($m) => $m->amount > 0 && !in_array($m->movementType?->code, ['cash_opening', 'cash_closing']))
+                ->filter(fn ($m) => $m->amount > 0 && ! in_array($m->movementType?->code, ['cash_opening', 'cash_closing']))
                 ->sum('amount');
 
             $expenseTotal = abs($movements
-                ->filter(fn($m) => $m->amount < 0 && !in_array($m->movementType?->code, ['cash_opening', 'cash_closing']))
+                ->filter(fn ($m) => $m->amount < 0 && ! in_array($m->movementType?->code, ['cash_opening', 'cash_closing']))
                 ->sum('amount'));
 
             $unclosedDaySummary = [
@@ -179,7 +180,7 @@ class DashboardController extends Controller
                     'isBetweenTurn' => $appointment->is_between_turn,
                     'notes' => $appointment->notes,
                     'canMarkAttended' => $appointment->status === 'scheduled',
-                    'canMarkCompleted' => $appointment->status === 'attended' && !$hasPaidAppointments,
+                    'canMarkCompleted' => $appointment->status === 'attended' && ! $hasPaidAppointments,
                 ];
             });
 
@@ -222,7 +223,7 @@ class DashboardController extends Controller
             'cashStatus' => $cashStatus,
         ];
 
-    return view('dashboard.dashboard', compact('dashboardData'));
+        return view('dashboard.dashboard', compact('dashboardData'));
     }
 
     public function appointments()
@@ -266,7 +267,7 @@ class DashboardController extends Controller
             'fecha' => $today->format('d/m/Y'),
         ];
 
-    return view('dashboard.dashboard-appointments', compact('data'));
+        return view('dashboard.dashboard-appointments', compact('data'));
     }
 
     public function markAttended(Request $request, Appointment $appointment)
@@ -526,8 +527,8 @@ class DashboardController extends Controller
         if (! ($recipient['ok'] ?? false)) {
             \Log::info('WhatsApp manual send blocked', [
                 'appointment_id' => $appointment->id,
-                'patient_id'     => $appointment->patient_id,
-                'error_code'     => $recipient['error_code'] ?? null,
+                'patient_id' => $appointment->patient_id,
+                'error_code' => $recipient['error_code'] ?? null,
             ]);
 
             return response()->json([
@@ -547,8 +548,8 @@ class DashboardController extends Controller
     /**
      * Determina quién recibe el pago según el método de pago y la configuración del profesional
      *
-     * @param string $paymentMethod Método de pago (cash, transfer, debit_card, credit_card, other)
-     * @param \App\Models\Professional $professional Profesional del turno
+     * @param  string  $paymentMethod  Método de pago (cash, transfer, debit_card, credit_card, other)
+     * @param  \App\Models\Professional  $professional  Profesional del turno
      * @return string 'centro' o 'profesional'
      */
     private function determineReceivedBy(string $paymentMethod, $professional): string

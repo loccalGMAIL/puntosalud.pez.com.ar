@@ -12,16 +12,17 @@ class Appointment extends Model
 
     public function activityDescription(): string
     {
-        $base = 'Turno #' . $this->id . ' - ' . ($this->patient->full_name ?? 'Sin paciente');
+        $base = 'Turno #'.$this->id.' - '.($this->patient->full_name ?? 'Sin paciente');
 
         if ($this->wasChanged('status')) {
             $labels = [
                 'scheduled' => 'Programado',
-                'attended'  => 'Atendido',
-                'absent'    => 'Ausente',
+                'attended' => 'Atendido',
+                'absent' => 'Ausente',
                 'cancelled' => 'Cancelado',
             ];
-            return $base . ' → ' . ($labels[$this->status] ?? $this->status);
+
+            return $base.' → '.($labels[$this->status] ?? $this->status);
         }
 
         return $base;

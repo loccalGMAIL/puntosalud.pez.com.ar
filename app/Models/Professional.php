@@ -12,7 +12,7 @@ class Professional extends Model
 
     public function activityDescription(): string
     {
-        return $this->last_name . ', ' . $this->first_name;
+        return $this->last_name.', '.$this->first_name;
     }
 
     protected $fillable = [

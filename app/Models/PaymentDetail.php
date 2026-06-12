@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class PaymentDetail extends Model
 {
     use HasFactory;
+
     protected $fillable = [
         'payment_id',
         'payment_method',
@@ -119,7 +120,7 @@ class PaymentDetail extends Model
      */
     public function getReceivedByNameAttribute(): string
     {
-        return match($this->received_by) {
+        return match ($this->received_by) {
             'centro' => 'Centro',
             'profesional' => 'Profesional',
             default => 'Desconocido',
