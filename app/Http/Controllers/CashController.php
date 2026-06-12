@@ -628,8 +628,9 @@ class CashController extends Controller
             })
             ->values();
 
-        // Calcular liquidación de Dra. Zalazar (professional_id = 1)
-        $zalazarData = $professionalIncome->firstWhere('professional_id', 1);
+        // Calcular liquidación del profesional que cobra directamente (collects_directly)
+        $directCollectorIds = \App\Models\Professional::where('collects_directly', true)->pluck('id');
+        $zalazarData = $professionalIncome->first(fn ($p) => $directCollectorIds->contains($p['professional_id']));
         $zalazarCommission = $zalazarData ? $zalazarData['professional_amount'] : 0;
 
         // Obtener movimientos de "Pago de Saldos Dra. Zalazar"
@@ -868,8 +869,9 @@ class CashController extends Controller
             })
             ->values();
 
-        // Calcular liquidación de Dra. Zalazar (professional_id = 1) para saldo final
-        $zalazarData = $professionalIncome->firstWhere('professional_id', 1);
+        // Calcular liquidación del profesional que cobra directamente (collects_directly) para saldo final
+        $directCollectorIds = \App\Models\Professional::where('collects_directly', true)->pluck('id');
+        $zalazarData = $professionalIncome->first(fn ($p) => $directCollectorIds->contains($p['professional_id']));
         $zalazarCommission = $zalazarData ? $zalazarData['professional_amount'] : 0;
 
         // Obtener movimientos de "Pago de Saldos Dra. Zalazar"

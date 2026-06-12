@@ -26,6 +26,7 @@ class Professional extends Model
         'birthday',
         'commission_percentage',
         'receives_transfers_directly',
+        'collects_directly',
         'notes',
         'is_active',
     ];
@@ -34,6 +35,7 @@ class Professional extends Model
         'birthday' => 'date:Y-m-d',
         'commission_percentage' => 'decimal:2',
         'receives_transfers_directly' => 'boolean',
+        'collects_directly' => 'boolean',
         'is_active' => 'boolean',
     ];
 

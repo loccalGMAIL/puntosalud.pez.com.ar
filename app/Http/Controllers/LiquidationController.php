@@ -30,8 +30,8 @@ class LiquidationController extends Controller
             $amount = $request->amount;
             $date = Carbon::parse($request->date);
 
-            // TEMPORAL: Excepción para Dra. Zalazar (ID=1) - Cobra directamente, no retira de caja
-            $isDraZalazar = $professional->id === 1;
+            // Profesional que cobra directamente: su liquidación no retira efectivo de caja
+            $collectsDirectly = $professional->collects_directly;
 
             // 1. Verificar que la caja esté abierta
             $cashStatus = CashMovement::getCashStatusForDate($date);
@@ -160,8 +160,8 @@ class LiquidationController extends Controller
                 ->whereDate('liquidation_date', $date)
                 ->count() + 1;
 
-            // 8. Verificar que hay suficiente efectivo en caja (excepto Dra. Zalazar)
-            if (!$isDraZalazar) {
+            // 8. Verificar que hay suficiente efectivo en caja (excepto profesionales que cobran directamente)
+            if (!$collectsDirectly) {
                 $currentBalance = $this->getCurrentCashBalance($date);
                 if ($currentBalance < $amount) {
                     throw new \Exception('Saldo insuficiente en caja. Disponible: $'.number_format($currentBalance, 2));
@@ -190,7 +190,7 @@ class LiquidationController extends Controller
                 'paid_by' => auth()->id(),
                 'notes' => "Liquidación #{$liquidationNumber} del día {$date->format('d/m/Y')}".
                           ($totalRefunds > 0 ? " - Reintegros descontados: \${$totalRefunds}" : "").
-                          ($isDraZalazar ? " - PAGO DIRECTO: Profesional cobra directamente, no retira de caja" : ""),
+                          ($collectsDirectly ? " - PAGO DIRECTO: Profesional cobra directamente, no retira de caja" : ""),
             ]);
 
             // 10. Crear detalles en liquidation_details
@@ -288,10 +288,10 @@ class LiquidationController extends Controller
 
             // 12. Crear movimiento de caja por pago al profesional
             // Solo si:
-            // - NO es Dra. Zalazar (ella cobra directamente, no retira de caja)
+            // - NO cobra directamente (quien cobra directo no retira de caja)
             // - El monto es POSITIVO (centro debe al profesional)
             // Si el monto es negativo, el profesional debe al centro → no hay salida de caja
-            $shouldCreateCashMovement = !$isDraZalazar && $netProfessionalAmount > 0;
+            $shouldCreateCashMovement = !$collectsDirectly && $netProfessionalAmount > 0;
 
             if ($shouldCreateCashMovement) {
                 CashMovement::create([
