@@ -7,6 +7,49 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [2.12.3] - 2026-06-12
+
+### 🔒 Caja/Liquidaciones: hardening contra condiciones de carrera
+
+- **Locks pesimistas** en operaciones financieras concurrentes:
+  - `Payment::lockForUpdate()` en el loop que marca pagos como liquidados (dos liquidaciones simultáneas podían pisar `liquidation_status`).
+  - `lockForUpdate()` en la búsqueda de apertura de `closeCash()` — impide el doble cierre concurrente de la misma apertura.
+- **`CashMovement::getCurrentBalanceWithLock()` ahora acepta fecha opcional** y es la única fuente de lectura de balance: reemplaza las 3 variantes manuales que existían en `LiquidationController::getCurrentCashBalance()`, `openCash()` y `closeCash()`, con orden determinístico (`created_at`, `id`).
+
+### 👩‍⚕️ Profesionales: flag `collects_directly` (reemplaza hardcode Dra. Zalazar ID=1)
+
+- **Nueva columna booleana `collects_directly`** en `professionals`: el profesional cobra sus honorarios directamente y su liquidación **no genera salida de efectivo de caja** (tampoco exige saldo disponible).
+- La migración marca automáticamente al profesional ID 1 para preservar el comportamiento previo del hardcode `$isDraZalazar`.
+- `LiquidationController` y los reportes de caja (diario y arqueo) usan el flag en lugar de `professional_id === 1`.
+- **Checkbox "Cobra directamente (no retira de caja)"** en el modal de profesionales, junto al de transferencias directas.
+
+### 🧩 Enums: AppointmentStatus y PaymentMethod
+
+- **Nuevos enums PHP 8.2** `App\Enums\AppointmentStatus` y `App\Enums\PaymentMethod` con `values()`, `rule()` (regla de validación Laravel) y `label()`/`labelFor()` (etiquetas en español).
+- Reemplazan las reglas `in:cash,transfer,...` / `in:scheduled,attended,...` hardcodeadas en 10 validaciones de Dashboard, Cash, Payment, Expense y Appointment controllers.
+- Eliminan los `getStatusLabel()` duplicados en `DashboardController` y `ReportController`.
+- Los 3 mapas de etiquetas de métodos de pago (`LiquidationController`, `CashMovementService`, `PaymentDetail`) delegan en el enum — corrige además el caso `qr` faltante en dos de ellos.
+
+### 🔁 Turnos: validación de transiciones de estado
+
+- **Nuevo `Appointment::canTransitionTo()`**: `scheduled → attended/absent/cancelled` (flujo normal); deshacer hacia `scheduled` permitido desde `absent`/`cancelled`, y desde `attended` **solo si el turno no tiene pagos asociados** (integridad financiera).
+- Aplicado en los dos caminos de `AppointmentController::update()` (edición completa y cambio rápido de estado). El cambio rápido además no validaba el valor de `status` — ahora usa la regla del enum.
+- Transiciones inválidas devuelven **422 con mensaje en español** explicando el motivo.
+
+### 🔐 Settings: API key de WhatsApp encriptada
+
+- `SettingService` encripta/desencripta de forma **transparente** las keys listadas en `ENCRYPTED_KEYS` (hoy: `whatsapp.api_key`). Sin cambios para los consumidores (`setting()`, `WhatsAppService`, `WhatsAppController`).
+- **Migración suave**: los valores legacy en texto plano se siguen leyendo y quedan encriptados en el próximo guardado.
+
+### ♻️ Refactor / Limpieza
+
+- Cálculo de la parte del centro (`100 − commission_percentage`) centralizado en `Professional::getClinicAmount()` — elimina la fórmula replicada 4 veces en `LiquidationController` y `ReportController`.
+- **Fix suite de tests**: la migración `drop_legacy_appointment_type_unique` usaba `SHOW INDEX` (sintaxis MySQL) sin guard de driver y rompía todos los tests con `RefreshDatabase` sobre SQLite. Ahora solo corre en MySQL.
+
+> ⚠️ **Deploy**: la migración de `collects_directly` activa el flag para el profesional ID 1. Verificar en producción que la Dra. Zalazar sigue siendo ese registro antes de migrar.
+
+---
+
 ## [2.12.0] - 2026-05-13
 
 ### 📊 Reportes: Ocupación de Consultorios
