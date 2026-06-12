@@ -359,7 +359,27 @@ class AppointmentController extends Controller
     {
         // Si es solo cambio de estado
         if ($request->has('status') && ! $request->has('professional_id')) {
+            $request->validate(['status' => 'required|'.AppointmentStatus::rule()]);
+
             $previousStatus = $appointment->status;
+
+            // Validar que la transición de estado sea lógica
+            if ($request->status !== $previousStatus && ! $appointment->canTransitionTo($request->status)) {
+                $reason = ($previousStatus === 'attended' && $appointment->paymentAppointments()->exists())
+                    ? 'El turno ya tiene pagos asociados. Anule el pago antes de modificar el estado.'
+                    : 'No se puede cambiar el estado de "'.AppointmentStatus::labelFor($previousStatus).'" a "'.AppointmentStatus::labelFor($request->status).'".';
+
+                if ($request->ajax()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Error de validación',
+                        'errors' => ['status' => [$reason]],
+                    ], 422);
+                }
+
+                return redirect()->back()->withErrors(['status' => $reason]);
+            }
+
             $updateData = ['status' => $request->status];
 
             if ($request->status === 'attended' && ! $appointment->final_amount) {
@@ -409,6 +429,23 @@ class AppointmentController extends Controller
             }
             if (empty($validated['estimated_amount'])) {
                 $validated['estimated_amount'] = null;
+            }
+
+            // Validar que la transición de estado sea lógica
+            if ($validated['status'] !== $appointment->status && ! $appointment->canTransitionTo($validated['status'])) {
+                $reason = ($appointment->status === 'attended' && $appointment->paymentAppointments()->exists())
+                    ? 'El turno ya tiene pagos asociados. Anule el pago antes de modificar el estado.'
+                    : 'No se puede cambiar el estado de "'.AppointmentStatus::labelFor($appointment->status).'" a "'.AppointmentStatus::labelFor($validated['status']).'".';
+
+                if ($request->ajax()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Error de validación',
+                        'errors' => ['status' => [$reason]],
+                    ], 422);
+                }
+
+                return redirect()->back()->withErrors(['status' => $reason]);
             }
 
             $appointmentDateTime = Carbon::parse($validated['appointment_date'].' '.$validated['appointment_time']);

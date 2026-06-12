@@ -215,6 +215,28 @@ class Appointment extends Model
                $this->appointment_date->isFuture();
     }
 
+    /**
+     * Valida transiciones de estado del turno.
+     *
+     * - scheduled → attended / absent / cancelled (flujo normal)
+     * - attended → scheduled solo si no tiene pagos asociados (deshacer error de marcado)
+     * - absent / cancelled → scheduled (deshacer / reactivar)
+     * - Mismo estado siempre permitido (no-op)
+     */
+    public function canTransitionTo(string $newStatus): bool
+    {
+        if ($newStatus === $this->status) {
+            return true;
+        }
+
+        return match ($this->status) {
+            'scheduled' => in_array($newStatus, ['attended', 'absent', 'cancelled']),
+            'attended' => $newStatus === 'scheduled' && ! $this->paymentAppointments()->exists(),
+            'absent', 'cancelled' => $newStatus === 'scheduled',
+            default => false,
+        };
+    }
+
     public function conflictsWith($startTime, $endTime)
     {
         $appointmentEnd = $this->end_time;
