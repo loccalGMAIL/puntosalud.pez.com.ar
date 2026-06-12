@@ -273,7 +273,8 @@ class LiquidationController extends Controller
             if (!empty($paymentIds)) {
                 $uniquePaymentIds = array_unique($paymentIds);
                 foreach ($uniquePaymentIds as $paymentId) {
-                    $payment = \App\Models\Payment::find($paymentId);
+                    // Lock pesimista: evita que dos liquidaciones simultáneas pisen el estado del pago
+                    $payment = \App\Models\Payment::lockForUpdate()->find($paymentId);
                     // Verificar si todos los payment_details del pago están liquidados
                     $pendingDetails = $payment->paymentDetails()->whereNull('liquidation_id')->count();
                     if ($pendingDetails === 0) {
@@ -340,22 +341,8 @@ class LiquidationController extends Controller
 
     private function getCurrentCashBalance($date)
     {
-        // Obtener el balance actual de caja con lock pesimista
-        $lastMovement = CashMovement::whereDate('created_at', $date)
-            ->orderBy('created_at', 'desc')
-            ->lockForUpdate()
-            ->first();
-
-        if (! $lastMovement) {
-            // Si no hay movimientos hoy, buscar el último balance con lock
-            $lastMovement = CashMovement::where('created_at', '<', $date->startOfDay())
-                ->orderBy('created_at', 'desc')
-                ->orderBy('created_at', 'desc')
-                ->lockForUpdate()
-                ->first();
-        }
-
-        return $lastMovement ? $lastMovement->balance_after : 0;
+        // Balance al último movimiento de la fecha (o anterior si no hay), con lock pesimista
+        return CashMovement::getCurrentBalanceWithLock($date);
     }
 
     /**

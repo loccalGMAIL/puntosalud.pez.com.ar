@@ -316,13 +316,7 @@ class CashController extends Controller
 
             // Obtener saldo anterior con lock pesimista
             $previousDay = $today->copy()->subDay();
-            $lastMovement = CashMovement::whereDate('created_at', '<=', $previousDay)
-                ->orderBy('created_at', 'desc')
-                ->orderBy('created_at', 'desc')
-                ->lockForUpdate()
-                ->first();
-
-            $previousBalance = $lastMovement ? $lastMovement->balance_after : 0;
+            $previousBalance = CashMovement::getCurrentBalanceWithLock($previousDay);
             $openingAmount = $validated['opening_amount'] ?? 0;
             $newBalance = $previousBalance + $openingAmount;
 
@@ -378,6 +372,7 @@ class CashController extends Controller
                         ->where('cm2.movement_type_id', $closingTypeId);
                 })
                 ->orderBy('created_at', 'desc')
+                ->lockForUpdate() // Evita doble cierre concurrente de la misma apertura
                 ->first();
 
             if (! $opening) {
@@ -435,13 +430,7 @@ class CashController extends Controller
             }
 
             // Obtener el saldo actual antes del cierre con lock pesimista
-            $lastMovement = CashMovement::whereDate('created_at', '<=', $closeDate)
-                ->orderBy('id', 'desc')
-                ->orderBy('created_at', 'desc')
-                ->lockForUpdate()
-                ->first();
-
-            $currentBalance = $lastMovement ? $lastMovement->balance_after : 0;
+            $currentBalance = CashMovement::getCurrentBalanceWithLock($closeDate);
 
             // Calcular la fecha/hora del cierre: mismo día de apertura a las 23:59:59
             $closingDateTime = Carbon::parse($openingDate)->setTime(23, 59, 59);

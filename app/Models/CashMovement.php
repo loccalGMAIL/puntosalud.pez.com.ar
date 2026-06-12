@@ -177,13 +177,22 @@ class CashMovement extends Model
     }
 
     /**
-     * Obtiene el balance actual de caja con lock pesimista para evitar condiciones de carrera
+     * Obtiene el balance de caja con lock pesimista para evitar condiciones de carrera
      *
-     * @return float El balance actual de caja
+     * @param  mixed  $asOfDate  Fecha límite opcional (inclusive). Si se pasa, devuelve el balance
+     *                           al último movimiento de esa fecha o anterior. Sin fecha, el actual.
+     * @return float El balance de caja
      */
-    public static function getCurrentBalanceWithLock()
+    public static function getCurrentBalanceWithLock($asOfDate = null)
     {
-        $lastMovement = static::orderBy('created_at', 'desc')
+        $query = static::query();
+
+        if ($asOfDate !== null) {
+            $query->whereDate('created_at', '<=', \Carbon\Carbon::parse($asOfDate));
+        }
+
+        $lastMovement = $query->orderBy('created_at', 'desc')
+            ->orderBy('id', 'desc')
             ->lockForUpdate()
             ->first();
 
