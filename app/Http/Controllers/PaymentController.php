@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\PaymentMethod;
 use App\Models\Appointment;
 use App\Models\CashMovement;
 use App\Models\Patient;
@@ -135,7 +136,7 @@ class PaymentController extends Controller
         $validated = $request->validate([
             'patient_id' => 'required|exists:patients,id',
             'payment_type' => 'required|in:single,package,refund',
-            'payment_method' => 'required|in:cash,transfer,debit_card,credit_card,qr',
+            'payment_method' => 'required|'.PaymentMethod::rule(),
             'amount' => 'required|numeric|min:0',
             'concept' => 'nullable|string|max:500',
             'sessions_included' => 'required_if:payment_type,package|nullable|integer|min:1',

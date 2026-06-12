@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\AppointmentStatus;
 use App\Models\Appointment;
 use App\Models\CashMovement;
 use App\Models\MovementType;
@@ -295,7 +296,7 @@ class ReportController extends Controller
                     'estimated_amount' => $appointment->estimated_amount ?? 0,
                     'final_amount' => $appointment->final_amount,
                     'status' => $appointment->status,
-                    'status_label' => $this->getStatusLabel($appointment->status),
+                    'status_label' => AppointmentStatus::labelFor($appointment->status),
                     'is_paid' => $appointment->paymentAppointments()->exists(),
                     'payment_method' => $appointment->paymentAppointments->first()?->payment?->payment_method,
                     'notes' => $appointment->notes,
@@ -2319,20 +2320,6 @@ class ReportController extends Controller
         return view('reports.flujo-caja-mensual-print', compact(
             'monthly', 'totals', 'dateFrom', 'dateTo'
         ));
-    }
-
-    /**
-     * Etiquetas de estado de citas
-     */
-    private function getStatusLabel($status)
-    {
-        return match ($status) {
-            'attended' => 'Atendido',
-            'scheduled' => 'Programado',
-            'cancelled' => 'Cancelado',
-            'absent' => 'Ausente',
-            default => 'Desconocido'
-        };
     }
 
     /**

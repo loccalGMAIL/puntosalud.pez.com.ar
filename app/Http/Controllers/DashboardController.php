@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\AppointmentStatus;
+use App\Enums\PaymentMethod;
 use App\Models\Appointment;
 use App\Models\CashMovement;
 use App\Models\Payment;
@@ -171,7 +173,7 @@ class DashboardController extends Controller
                     'hora' => $appointment->appointment_date->format('H:i'),
                     'monto' => $appointment->final_amount ?? $appointment->estimated_amount ?? 0,
                     'status' => $appointment->status,
-                    'statusLabel' => $this->getStatusLabel($appointment->status),
+                    'statusLabel' => AppointmentStatus::labelFor($appointment->status),
                     'isPaid' => $hasPaidAppointments,
                     'isUrgency' => $appointment->is_urgency,
                     'isBetweenTurn' => $appointment->is_between_turn,
@@ -248,7 +250,7 @@ class DashboardController extends Controller
                     'hora' => $appointment->appointment_date->format('H:i'),
                     'monto' => $appointment->final_amount ?? $appointment->estimated_amount ?? 0,
                     'status' => $appointment->status,
-                    'statusLabel' => $this->getStatusLabel($appointment->status),
+                    'statusLabel' => AppointmentStatus::labelFor($appointment->status),
                     'isPaid' => $isPaid,
                     'paymentId' => $paymentId,
                     'isUrgency' => $appointment->is_urgency,
@@ -323,19 +325,19 @@ class DashboardController extends Controller
         // Validación condicional basada en el monto
         $rules = [
             'final_amount' => 'required|numeric|min:0',
-            'payment_method' => 'required|in:cash,transfer,debit_card,credit_card,qr',
+            'payment_method' => 'required|'.PaymentMethod::rule(),
             'concept' => 'nullable|string|max:500',
         ];
 
         // Si el monto es mayor a 0, requerir payment_details
         if ($request->input('final_amount') > 0) {
             $rules['payment_details'] = 'required|array|min:1';
-            $rules['payment_details.*.payment_method'] = 'required|in:cash,transfer,debit_card,credit_card,qr';
+            $rules['payment_details.*.payment_method'] = 'required|'.PaymentMethod::rule();
             $rules['payment_details.*.amount'] = 'required|numeric|min:0';
         } else {
             // Si el monto es 0, payment_details es opcional
             $rules['payment_details'] = 'nullable|array';
-            $rules['payment_details.*.payment_method'] = 'nullable|in:cash,transfer,debit_card,credit_card,qr';
+            $rules['payment_details.*.payment_method'] = 'nullable|'.PaymentMethod::rule();
             $rules['payment_details.*.amount'] = 'nullable|numeric|min:0';
         }
 
@@ -540,17 +542,6 @@ class DashboardController extends Controller
             $result,
             ($result['success'] ?? false) ? 200 : 422
         );
-    }
-
-    private function getStatusLabel($status)
-    {
-        return match ($status) {
-            'attended' => 'Atendido',
-            'scheduled' => 'Programado',
-            'cancelled' => 'Cancelado',
-            'absent' => 'Ausente',
-            default => 'Desconocido'
-        };
     }
 
     /**

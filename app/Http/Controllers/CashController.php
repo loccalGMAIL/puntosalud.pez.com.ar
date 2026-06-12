@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\PaymentMethod;
 use App\Models\CashMovement;
 use App\Models\MovementType;
 use App\Models\Payment;
@@ -142,7 +143,7 @@ class CashController extends Controller
 
         $validated = $request->validate([
             'amount' => 'required|numeric|min:0.01',
-            'payment_method' => 'required|string|in:cash,transfer,debit_card,credit_card,qr',
+            'payment_method' => 'required|string|'.PaymentMethod::rule(),
             'description' => 'required|string|max:500',
             'category' => 'required|string|in:'.implode(',', $validCodes),
             'receipt_file' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
@@ -955,7 +956,7 @@ class CashController extends Controller
 
         $validated = $request->validate([
             'amount' => 'required|numeric|min:0.01',
-            'payment_method' => 'required|string|in:cash,transfer,debit_card,credit_card,qr',
+            'payment_method' => 'required|string|'.PaymentMethod::rule(),
             'withdrawal_type' => 'required|string|in:'.implode(',', $validCodes),
             'description' => 'required|string|max:500',
             'recipient' => 'nullable|string|max:255',
@@ -1097,7 +1098,7 @@ class CashController extends Controller
         $validated = $request->validate([
             'amount' => 'required|numeric|min:0.01',
             'category' => 'required|string|in:'.implode(',', $validCodes),
-            'payment_method' => 'required|string|in:cash,transfer,debit_card,credit_card,qr',
+            'payment_method' => 'required|string|'.PaymentMethod::rule(),
             'description' => 'required|string|max:500',
             'professional_id' => 'nullable|exists:professionals,id|required_if:category,professional_module_payment',
             'receipt_file' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',

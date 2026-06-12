@@ -350,13 +350,6 @@ class LiquidationController extends Controller
      */
     private function getPaymentMethodLabel(string $paymentMethod): string
     {
-        return match($paymentMethod) {
-            'cash' => 'Efectivo',
-            'transfer' => 'Transferencia',
-            'debit_card' => 'Débito',
-            'credit_card' => 'Crédito',
-            'other' => 'Otro',
-            default => ucfirst($paymentMethod)
-        };
+        return \App\Enums\PaymentMethod::labelFor($paymentMethod);
     }
 }

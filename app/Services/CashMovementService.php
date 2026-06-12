@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\PaymentMethod;
 use App\Models\CashMovement;
 use App\Models\MovementType;
 use App\Models\Payment;
@@ -79,14 +80,7 @@ class CashMovementService
 
     private function getPaymentMethodLabel(string $paymentMethod): string
     {
-        return match ($paymentMethod) {
-            'cash' => 'Efectivo',
-            'transfer' => 'Transferencia',
-            'debit_card' => 'Débito',
-            'credit_card' => 'Crédito',
-            'qr' => 'QR',
-            default => ucfirst($paymentMethod),
-        };
+        return PaymentMethod::labelFor($paymentMethod);
     }
 
     private function defaultDescriptionForPayment(Payment $payment): string
