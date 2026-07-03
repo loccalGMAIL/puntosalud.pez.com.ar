@@ -421,8 +421,10 @@
             }
 
             // WhatsApp: evitar llamada remota en servidor; actualizar por polling
+            // Solo si la función está habilitada — deshabilitada no hay nada que consultar
             const waDot = document.getElementById('wa-connection-dot');
-            if (waDot) {
+            const waEnabled = {{ setting('whatsapp.enabled', '0') === '1' ? 'true' : 'false' }};
+            if (waDot && waEnabled) {
                 const url = "{{ route('whatsapp.status') }}";
 
                 async function refreshWhatsAppStatus() {

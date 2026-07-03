@@ -111,6 +111,7 @@ class WhatsAppService
 
         try {
             $response = Http::withHeaders($this->headers())
+                ->connectTimeout(3)
                 ->timeout(10)
                 ->get("{$this->baseUrl()}/instance/connectionState/{$this->instance()}");
 
