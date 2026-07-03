@@ -27,7 +27,9 @@ class WhatsAppController extends Controller
      */
     public function index(): View
     {
-        $state        = $this->whatsApp->connectionState();
+        $state        = $this->whatsApp->isEnabled()
+            ? $this->whatsApp->connectionState()
+            : ['state' => 'disabled'];
         $isConnected  = ($state['state'] ?? '') === 'open';
         $isConfigured = $this->whatsApp->isConfigured();
         $features     = [
@@ -44,6 +46,10 @@ class WhatsAppController extends Controller
      */
     public function qrCode(Request $request): JsonResponse
     {
+        if (! $this->whatsApp->isEnabled()) {
+            return response()->json(['connected' => false, 'qr' => null, 'state' => 'disabled']);
+        }
+
         // Verificar estado primero — si ya está conectado no llamar a getQrCode()
         // (llamar a /instance/connect en una instancia activa puede interferir)
         $connState = $this->whatsApp->connectionState();
@@ -81,6 +87,15 @@ class WhatsAppController extends Controller
      */
     public function connectionStatus(): JsonResponse
     {
+        // Con WhatsApp deshabilitado no se consulta la API externa: cada poll
+        // del layout quedaba esperando el timeout HTTP y acaparaba workers PHP
+        if (! $this->whatsApp->isEnabled()) {
+            return response()->json([
+                'connected' => false,
+                'state'     => 'disabled',
+            ]);
+        }
+
         $state = $this->whatsApp->connectionState();
         return response()->json([
             'connected' => ($state['state'] ?? '') === 'open',
