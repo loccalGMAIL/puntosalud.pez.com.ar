@@ -7,6 +7,25 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [2.12.4] - 2026-07-03
+
+### 🚑 Fix: cuelgues intermitentes del sitio con WhatsApp deshabilitado
+
+**Síntoma**: cuelgues generalizados del sitio para todos los usuarios, en momentos aleatorios, iniciados tras deshabilitar WhatsApp y dar de baja la instancia de Evolution API.
+
+**Causa**: el layout hace polling de `/whatsapp/status` cada 30 segundos desde cada pestaña abierta, y el endpoint consultaba la Evolution API verificando solo `isConfigured()` (URL/key/instancia cargadas), **sin chequear el toggle `whatsapp.enabled`**. Con la instancia dada de baja, cada poll retenía un worker PHP hasta 10 segundos esperando el timeout HTTP; con varias pestañas abiertas los workers del hosting se agotaban y el sitio entero dejaba de responder.
+
+**Cambios**:
+
+- `connectionStatus()` y `qrCode()` responden `state: disabled` de inmediato, **sin llamada HTTP**, cuando `whatsapp.enabled = 0`.
+- La página `/whatsapp` tampoco consulta `connectionState()` con la función deshabilitada.
+- El layout **no inicia el polling** del indicador de conexión si la función está apagada.
+- `connectTimeout(3)` en `connectionState()`: aun habilitada, una API caída cuelga como máximo 3 segundos (antes: hasta 10s solo para conectar).
+
+> 💡 **Mitigación sin deploy**: borrar la URL de la API en `/whatsapp/api` también corta todas las llamadas salientes (deja `isConfigured()` en falso).
+
+---
+
 ## [2.12.3] - 2026-06-12
 
 ### 🔒 Caja/Liquidaciones: hardening contra condiciones de carrera
