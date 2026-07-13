@@ -176,12 +176,10 @@
                                     {{ $block['start']->format('H:i') }}
                                 </td>
                                 <td class="py-[1px] px-1 text-gray-400 dark:text-gray-500 print:text-gray-500" style="background-color: #f9fafb;" colspan="2">
-                                    <span class="inline-block px-1 py-0.5 rounded text-[8px] font-bold uppercase bg-gray-200 text-gray-500 print:bg-gray-200 print:text-gray-600 pdf-badge pdf-badge--available">
-                                        {{ $block['label'] }}
-                                    </span>
-                                    <span class="text-[9px]">({{ $block['start']->format('H:i') }} - {{ $block['end']->format('H:i') }})</span>
+                                    &nbsp;<br>
+                                    <span class="text-[9px]">&nbsp;</span>
                                 </td>
-                                <td class="py-[1px] px-1 text-[9px] text-gray-400 dark:text-gray-500 print:text-gray-500" style="background-color: #f9fafb;">-</td>
+                                <td class="py-[1px] px-1 text-[9px] text-gray-400 dark:text-gray-500 print:text-gray-500" style="background-color: #f9fafb;">&nbsp;</td>
                             </tr>
                             @endif
                             @endforeach

@@ -7,6 +7,17 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [2.12.5] - 2026-07-13
+
+### 🗓️ Agenda: módulos disponibles en la planilla impresa
+
+- La planilla diaria impresa/PDF de turnos ahora intercala, junto a los turnos tomados, los espacios libres según el módulo típico configurado para el profesional (`AppointmentSetting.default_duration_minutes`). Un turno más corto que el módulo ocupa el módulo completo (se compensa el sobrante); los huecos entre bloques de horario partido (ej. almuerzo) no se muestran como disponibles.
+- El listado pasa a ordenarse cronológicamente en vez de forzar las urgencias al principio, que ahora se marcan con una insignia (🚨) en su horario real.
+- Los renglones de módulos libres se imprimen **en blanco** (sin leyenda "DISPONIBLE", sin horario y sin "-" en Observaciones) y con la misma altura que los renglones con datos, para poder completarse a mano.
+- La vista en pantalla (no impresión) no cambia.
+
+---
+
 ## [2.12.4] - 2026-07-03
 
 ### 🚑 Fix: cuelgues intermitentes del sitio con WhatsApp deshabilitado
