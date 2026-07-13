@@ -19,6 +19,7 @@
     .pdf-badge--attended { background: #d1fae5; color: #065f46; }
     .pdf-badge--cancelled { background: #fee2e2; color: #991b1b; }
     .pdf-badge--absent { background: #e5e7eb; color: #374151; }
+    .pdf-badge--available { background: #e5e7eb; color: #6b7280; }
 </style>
 @endif
 @endpush
@@ -116,7 +117,7 @@
             @endif
 
             <!-- Tabla de Turnos -->
-            @if($reportData['appointments']->count() > 0)
+            @if($reportData['schedule_blocks']->count() > 0)
             <div class="mb-2 print:mb-0.5">
                 <h5 class="report-section-title">Turnos del Día ({{ $reportData['appointments']->count() }})</h5>
                 <div class="overflow-x-auto">
@@ -130,16 +131,24 @@
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-200 dark:divide-gray-700 print:divide-gray-400">
-                            @foreach($reportData['appointments'] as $appointment)
+                            @foreach($reportData['schedule_blocks'] as $block)
+                            @if($block['type'] === 'occupied')
                             <tr>
-                                <td class="py-[1px] px-1 text-center font-bold text-gray-900 dark:text-white print:text-black">{{ $appointment['time'] }}</td>
+                                <td class="py-[1px] px-1 text-center font-bold text-gray-900 dark:text-white print:text-black">
+                                    @if($block['is_urgency'])
+                                        <span title="Urgencia">🚨</span>
+                                    @elseif($block['is_between_turn'])
+                                        <span title="EntreTurno">⏱️</span>
+                                    @endif
+                                    {{ $block['time'] }}
+                                </td>
                                 <td class="py-[1px] px-1">
-                                    <span class="font-semibold text-gray-900 dark:text-white print:text-black">{{ $appointment['patient_name'] }}</span>
+                                    <span class="font-semibold text-gray-900 dark:text-white print:text-black">{{ $block['patient_name'] }}</span>
                                     <br>
                                     <span class="text-[9px] text-gray-500 dark:text-gray-400 print:text-gray-600">
-                                        DNI: {{ $appointment['patient_dni'] }}
-                                        @if($appointment['patient_insurance'])
-                                            | {{ $appointment['patient_insurance'] }}
+                                        DNI: {{ $block['patient_dni'] }}
+                                        @if($block['patient_insurance'])
+                                            | {{ $block['patient_insurance'] }}
                                         @endif
                                     </span>
                                 </td>
@@ -151,16 +160,30 @@
                                             'cancelled' => 'bg-red-100 text-red-800 print:bg-red-50 print:text-red-900',
                                             'absent'    => 'bg-gray-100 text-gray-700 print:bg-gray-50 print:text-gray-800',
                                         ];
-                                        $cls = $statusClasses[$appointment['status']] ?? 'bg-gray-100 text-gray-700';
+                                        $cls = $statusClasses[$block['status']] ?? 'bg-gray-100 text-gray-700';
                                     @endphp
-                                    <span class="inline-block px-1 py-0.5 rounded text-[8px] font-bold uppercase {{ $cls }} pdf-badge pdf-badge--{{ $appointment['status'] }}">
-                                        {{ $appointment['status_label'] }}
+                                    <span class="inline-block px-1 py-0.5 rounded text-[8px] font-bold uppercase {{ $cls }} pdf-badge pdf-badge--{{ $block['status'] }}">
+                                        {{ $block['status_label'] }}
                                     </span>
                                 </td>
                                 <td class="py-[1px] px-1 text-[9px] text-gray-700 dark:text-gray-300 print:text-gray-700">
-                                    {{ $appointment['notes'] ?: '-' }}
+                                    {{ $block['notes'] ?: '-' }}
                                 </td>
                             </tr>
+                            @else
+                            <tr style="background-color: #f9fafb;">
+                                <td class="py-[1px] px-1 text-center font-bold text-gray-400 dark:text-gray-500 print:text-gray-500" style="background-color: #f9fafb;">
+                                    {{ $block['start']->format('H:i') }}
+                                </td>
+                                <td class="py-[1px] px-1 text-gray-400 dark:text-gray-500 print:text-gray-500" style="background-color: #f9fafb;" colspan="2">
+                                    <span class="inline-block px-1 py-0.5 rounded text-[8px] font-bold uppercase bg-gray-200 text-gray-500 print:bg-gray-200 print:text-gray-600 pdf-badge pdf-badge--available">
+                                        {{ $block['label'] }}
+                                    </span>
+                                    <span class="text-[9px]">({{ $block['start']->format('H:i') }} - {{ $block['end']->format('H:i') }})</span>
+                                </td>
+                                <td class="py-[1px] px-1 text-[9px] text-gray-400 dark:text-gray-500 print:text-gray-500" style="background-color: #f9fafb;">-</td>
+                            </tr>
+                            @endif
                             @endforeach
                         </tbody>
                     </table>
