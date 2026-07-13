@@ -9,11 +9,13 @@ use App\Models\Expense;
 use App\Models\MovementType;
 use App\Models\Professional;
 use App\Models\ProfessionalLiquidation;
+use App\Models\ScheduleException;
 use App\Services\WhatsAppService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
@@ -278,33 +280,15 @@ class ReportController extends Controller
     {
         $professional = Professional::with('specialty')->findOrFail($professionalId);
 
-        $appointments = Appointment::with(['office', 'patient', 'paymentAppointments.payment'])
+        $appointmentModels = Appointment::with(['office', 'patient', 'paymentAppointments.payment'])
             ->where('professional_id', $professionalId)
             ->forDate($selectedDate)
             ->where('status', '!=', 'cancelled')
             ->orderBy('appointment_date')
-            ->get()
-            ->map(function ($appointment) {
-                return [
-                    'id' => $appointment->id,
-                    'time' => $appointment->appointment_date->format('H:i'),
-                    'patient_name' => $appointment->patient->full_name,
-                    'patient_phone' => $appointment->patient->phone,
-                    'patient_email' => $appointment->patient->email,
-                    'patient_dni' => $appointment->patient->dni,
-                    'patient_insurance' => $appointment->patient->insurance_company,
-                    'estimated_amount' => $appointment->estimated_amount ?? 0,
-                    'final_amount' => $appointment->final_amount,
-                    'status' => $appointment->status,
-                    'status_label' => AppointmentStatus::labelFor($appointment->status),
-                    'is_paid' => $appointment->paymentAppointments()->exists(),
-                    'payment_method' => $appointment->paymentAppointments->first()?->payment?->payment_method,
-                    'notes' => $appointment->notes,
-                    'office' => $appointment->office?->name ?? 'No asignado',
-                    'is_urgency' => $appointment->is_urgency,
-                    'is_between_turn' => $appointment->is_between_turn,
-                ];
-            })
+            ->get();
+
+        $appointments = $appointmentModels
+            ->map(fn ($appointment) => $this->mapAppointmentRow($appointment))
             ->sortByDesc('is_urgency')
             ->values();
 
@@ -323,10 +307,126 @@ class ReportController extends Controller
             'professional' => $professional,
             'date' => $selectedDate,
             'appointments' => $appointments,
+            'schedule_blocks' => $this->buildScheduleBlocks($professional, $selectedDate, $appointmentModels),
             'stats' => $stats,
             'generated_at' => now(),
             'generated_by' => Auth::user()?->name ?? 'Sistema',
         ];
+    }
+
+    private function mapAppointmentRow(Appointment $appointment): array
+    {
+        return [
+            'id' => $appointment->id,
+            'time' => $appointment->appointment_date->format('H:i'),
+            'patient_name' => $appointment->patient->full_name,
+            'patient_phone' => $appointment->patient->phone,
+            'patient_email' => $appointment->patient->email,
+            'patient_dni' => $appointment->patient->dni,
+            'patient_insurance' => $appointment->patient->insurance_company,
+            'estimated_amount' => $appointment->estimated_amount ?? 0,
+            'final_amount' => $appointment->final_amount,
+            'status' => $appointment->status,
+            'status_label' => AppointmentStatus::labelFor($appointment->status),
+            'is_paid' => $appointment->paymentAppointments()->exists(),
+            'payment_method' => $appointment->paymentAppointments->first()?->payment?->payment_method,
+            'notes' => $appointment->notes,
+            'office' => $appointment->office?->name ?? 'No asignado',
+            'is_urgency' => $appointment->is_urgency,
+            'is_between_turn' => $appointment->is_between_turn,
+        ];
+    }
+
+    /**
+     * Construye la grilla de módulos del día (turnos ocupados + espacios libres),
+     * respetando el módulo típico configurado para el profesional. Un turno más
+     * corto que el módulo típico "compensa" el sobrante: el módulo completo queda
+     * ocupado y no se ofrece el resto como libre.
+     */
+    private function buildScheduleBlocks(Professional $professional, Carbon $selectedDate, Collection $appointments): Collection
+    {
+        $isHoliday = ScheduleException::holidays()
+            ->active()
+            ->where('exception_date', $selectedDate->toDateString())
+            ->exists();
+
+        $duration = max((int) ($professional->appointmentSettings?->default_duration_minutes ?? 30), 10);
+
+        $schedules = $isHoliday
+            ? collect()
+            : $professional->getScheduleForDay($selectedDate->dayOfWeekIso)
+                ->sortBy(fn ($schedule) => $schedule->getRawOriginal('start_time'))
+                ->values();
+
+        $consumedIds = [];
+        $blocks = collect();
+
+        foreach ($schedules as $schedule) {
+            [$startH, $startM] = explode(':', Carbon::parse($schedule->getRawOriginal('start_time'))->format('H:i'));
+            [$endH, $endM] = explode(':', Carbon::parse($schedule->getRawOriginal('end_time'))->format('H:i'));
+            $blockStart = $selectedDate->copy()->setTime((int) $startH, (int) $startM);
+            $blockEnd = $selectedDate->copy()->setTime((int) $endH, (int) $endM);
+
+            $cursor = $blockStart->copy();
+
+            while ($cursor->lt($blockEnd)) {
+                $nextGrid = $cursor->copy()->addMinutes($duration)->min($blockEnd);
+
+                $appointment = $appointments->first(function ($candidate) use ($cursor, $nextGrid, $consumedIds) {
+                    if (in_array($candidate->id, $consumedIds, true)) {
+                        return false;
+                    }
+
+                    $appointmentStart = Carbon::parse($candidate->appointment_date);
+                    // Se usa un mínimo de 1 minuto para que un turno de urgencia (duration=0)
+                    // que cae justo en un límite de módulo igual sea detectado en ese módulo.
+                    $appointmentEnd = $appointmentStart->copy()->addMinutes(max($candidate->duration, 1));
+
+                    return $cursor->lt($appointmentEnd) && $nextGrid->gt($appointmentStart);
+                });
+
+                if ($appointment) {
+                    $blocks->push(array_merge($this->mapAppointmentRow($appointment), [
+                        'type' => 'occupied',
+                        'start' => Carbon::parse($appointment->appointment_date),
+                    ]));
+
+                    // Redondear hacia arriba al próximo límite de módulo: el módulo donde
+                    // empieza el turno queda ocupado completo (aunque el turno dure menos,
+                    // "se compensa el sobrante"), y si el turno se extiende más, se ocupan
+                    // también los módulos siguientes que abarque.
+                    $appointmentStart = Carbon::parse($appointment->appointment_date);
+                    $appointmentEnd = $appointmentStart->copy()->addMinutes($appointment->duration);
+                    $effectiveStart = $appointmentStart->max($blockStart);
+
+                    $moduleStartOffset = (int) (floor($blockStart->diffInMinutes($effectiveStart) / $duration) * $duration);
+                    $naiveEndOffset = $blockStart->diffInMinutes($appointmentEnd);
+                    $roundedEndOffset = max($moduleStartOffset + $duration, (int) (ceil($naiveEndOffset / $duration) * $duration));
+
+                    $cursor = $blockStart->copy()->addMinutes($roundedEndOffset);
+                    $consumedIds[] = $appointment->id;
+                } else {
+                    $blocks->push([
+                        'type' => 'available',
+                        'start' => $cursor->copy(),
+                        'end' => $nextGrid->copy(),
+                        'label' => 'Disponible',
+                    ]);
+                    $cursor = $nextGrid;
+                }
+            }
+        }
+
+        $appointments
+            ->reject(fn ($appointment) => in_array($appointment->id, $consumedIds, true))
+            ->each(function ($appointment) use ($blocks) {
+                $blocks->push(array_merge($this->mapAppointmentRow($appointment), [
+                    'type' => 'occupied',
+                    'start' => Carbon::parse($appointment->appointment_date),
+                ]));
+            });
+
+        return $blocks->sortBy('start')->values();
     }
 
     /**
