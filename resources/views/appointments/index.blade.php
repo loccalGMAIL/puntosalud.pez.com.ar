@@ -982,25 +982,16 @@ function appointmentsPage() {
             this.refreshData();
         },
         
-        // Refleja Appointment::canTransitionTo() del backend (sin el chequeo de pagos,
-        // que solo puede validarse en el servidor)
+        // Refleja Appointment::canTransitionTo() del backend: cualquier cambio
+        // de estado permitido mientras el turno no tenga cobros asociados
         canTransitionTo(appointment, newStatus) {
             if (newStatus === appointment.status) return true;
-            switch (appointment.status) {
-                case 'scheduled':
-                    return ['attended', 'absent', 'cancelled'].includes(newStatus);
-                case 'attended':
-                case 'absent':
-                case 'cancelled':
-                    return newStatus === 'scheduled';
-                default:
-                    return false;
-            }
+            return !(appointment.payment_appointments?.length > 0);
         },
 
         statusOptionTitle(appointment, newStatus) {
             if (this.canTransitionTo(appointment, newStatus)) return '';
-            return 'Primero vuelva el turno a "Programado"';
+            return 'El turno tiene pagos asociados. Anule el pago antes de modificar el estado.';
         },
 
         async changeStatus(appointment, newStatus) {
@@ -1014,7 +1005,7 @@ function appointmentsPage() {
             if (newStatus === appointment.status) return;
 
             if (!this.canTransitionTo(appointment, newStatus)) {
-                this.showNotification(`No se puede cambiar el estado a "${statusMessages[newStatus]}". Primero vuelva el turno a "Programado".`, 'error');
+                this.showNotification('El turno tiene pagos asociados. Anule el pago antes de modificar el estado.', 'error');
                 return;
             }
 

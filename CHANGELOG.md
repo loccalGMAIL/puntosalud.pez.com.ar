@@ -13,12 +13,13 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 **Síntoma reportado**: al querer pasar un turno de "Atendido" a "Cancelado" desde el listado de Turnos, aparecía un genérico "Error de validación" (HTTP 422) sin explicación.
 
-**Causa**: no era un bug sino la regla de negocio de transiciones de estado (`Appointment::canTransitionTo()`): un turno "Atendido" solo puede volver a "Programado" (y solo si no tiene pagos asociados). El problema era que la UI ofrecía igual la opción prohibida y el mensaje de error no explicaba el motivo.
+**Causa**: no era un bug sino la regla de transiciones de estado (`Appointment::canTransitionTo()`) introducida en v2.12.3, que solo permitía volver a "Programado" desde los estados finales. La UI ofrecía igual la opción prohibida y el mensaje de error no explicaba el motivo.
 
-**Cambios** (se mantiene la regla de negocio):
+**Cambios**:
 
-- Los menús de cambio de estado del listado de Turnos (desktop y mobile) ahora **deshabilitan las transiciones no permitidas**, con tooltip explicativo ("Primero vuelva el turno a \"Programado\"").
-- El error 422 ahora muestra el **motivo real** (antes: "Error de validación" genérico), y el backend agrega la indicación del camino válido cuando corresponde.
+- **Nueva regla de transiciones**: se puede cambiar un turno a **cualquier estado** mientras **no tenga cobros asociados**. Un turno con pago vinculado no cambia de estado hasta anular el pago (integridad financiera, igual que antes).
+- Los menús de cambio de estado del listado de Turnos (desktop y mobile) **deshabilitan las opciones** en turnos con pagos asociados, con tooltip explicativo.
+- El error 422 ahora muestra el **motivo real** (antes: "Error de validación" genérico).
 - **Fix**: el modal de edición de Turnos tiraba `durationOptions is not defined` en consola y el selector de duración quedaba vacío; la página de Turnos ahora define las opciones de duración que el modal compartido necesita.
 - **Fix**: con pocas filas en la tabla, el menú de cambio de estado quedaba recortado dentro del contenedor de la tabla; ahora se posiciona flotante (`position: fixed`) por fuera del contenedor y se abre hacia arriba si no hay lugar debajo.
 

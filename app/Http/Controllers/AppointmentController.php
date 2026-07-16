@@ -365,14 +365,9 @@ class AppointmentController extends Controller
 
             // Validar que la transición de estado sea lógica
             if ($request->status !== $previousStatus && ! $appointment->canTransitionTo($request->status)) {
-                if ($previousStatus === 'attended' && $appointment->paymentAppointments()->exists()) {
-                    $reason = 'El turno ya tiene pagos asociados. Anule el pago antes de modificar el estado.';
-                } else {
-                    $reason = 'No se puede cambiar el estado de "'.AppointmentStatus::labelFor($previousStatus).'" a "'.AppointmentStatus::labelFor($request->status).'".';
-                    if ($previousStatus !== 'scheduled' && $request->status !== 'scheduled') {
-                        $reason .= ' Primero vuelva el turno a "Programado".';
-                    }
-                }
+                $reason = $appointment->paymentAppointments()->exists()
+                    ? 'El turno ya tiene pagos asociados. Anule el pago antes de modificar el estado.'
+                    : 'No se puede cambiar el estado de "'.AppointmentStatus::labelFor($previousStatus).'" a "'.AppointmentStatus::labelFor($request->status).'".';
 
                 if ($request->ajax()) {
                     return response()->json([
@@ -438,14 +433,9 @@ class AppointmentController extends Controller
 
             // Validar que la transición de estado sea lógica
             if ($validated['status'] !== $appointment->status && ! $appointment->canTransitionTo($validated['status'])) {
-                if ($appointment->status === 'attended' && $appointment->paymentAppointments()->exists()) {
-                    $reason = 'El turno ya tiene pagos asociados. Anule el pago antes de modificar el estado.';
-                } else {
-                    $reason = 'No se puede cambiar el estado de "'.AppointmentStatus::labelFor($appointment->status).'" a "'.AppointmentStatus::labelFor($validated['status']).'".';
-                    if ($appointment->status !== 'scheduled' && $validated['status'] !== 'scheduled') {
-                        $reason .= ' Primero vuelva el turno a "Programado".';
-                    }
-                }
+                $reason = $appointment->paymentAppointments()->exists()
+                    ? 'El turno ya tiene pagos asociados. Anule el pago antes de modificar el estado.'
+                    : 'No se puede cambiar el estado de "'.AppointmentStatus::labelFor($appointment->status).'" a "'.AppointmentStatus::labelFor($validated['status']).'".';
 
                 if ($request->ajax()) {
                     return response()->json([
