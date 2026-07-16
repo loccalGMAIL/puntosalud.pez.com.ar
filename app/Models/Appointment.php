@@ -219,10 +219,10 @@ class Appointment extends Model
     /**
      * Valida transiciones de estado del turno.
      *
-     * - scheduled → attended / absent / cancelled (flujo normal)
-     * - attended → scheduled solo si no tiene pagos asociados (deshacer error de marcado)
-     * - absent / cancelled → scheduled (deshacer / reactivar)
-     * - Mismo estado siempre permitido (no-op)
+     * - Cualquier cambio de estado permitido mientras el turno no tenga
+     *   cobros asociados (integridad financiera)
+     * - Con pagos asociados solo se permite el mismo estado (no-op);
+     *   hay que anular el pago antes de modificar el estado
      */
     public function canTransitionTo(string $newStatus): bool
     {
@@ -230,12 +230,7 @@ class Appointment extends Model
             return true;
         }
 
-        return match ($this->status) {
-            'scheduled' => in_array($newStatus, ['attended', 'absent', 'cancelled']),
-            'attended' => $newStatus === 'scheduled' && ! $this->paymentAppointments()->exists(),
-            'absent', 'cancelled' => $newStatus === 'scheduled',
-            default => false,
-        };
+        return ! $this->paymentAppointments()->exists();
     }
 
     public function conflictsWith($startTime, $endTime)

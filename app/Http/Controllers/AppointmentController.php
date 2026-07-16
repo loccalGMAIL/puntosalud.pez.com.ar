@@ -365,7 +365,7 @@ class AppointmentController extends Controller
 
             // Validar que la transición de estado sea lógica
             if ($request->status !== $previousStatus && ! $appointment->canTransitionTo($request->status)) {
-                $reason = ($previousStatus === 'attended' && $appointment->paymentAppointments()->exists())
+                $reason = $appointment->paymentAppointments()->exists()
                     ? 'El turno ya tiene pagos asociados. Anule el pago antes de modificar el estado.'
                     : 'No se puede cambiar el estado de "'.AppointmentStatus::labelFor($previousStatus).'" a "'.AppointmentStatus::labelFor($request->status).'".';
 
@@ -433,7 +433,7 @@ class AppointmentController extends Controller
 
             // Validar que la transición de estado sea lógica
             if ($validated['status'] !== $appointment->status && ! $appointment->canTransitionTo($validated['status'])) {
-                $reason = ($appointment->status === 'attended' && $appointment->paymentAppointments()->exists())
+                $reason = $appointment->paymentAppointments()->exists()
                     ? 'El turno ya tiene pagos asociados. Anule el pago antes de modificar el estado.'
                     : 'No se puede cambiar el estado de "'.AppointmentStatus::labelFor($appointment->status).'" a "'.AppointmentStatus::labelFor($validated['status']).'".';
 

@@ -285,10 +285,26 @@
                                         </svg>
                                     </button>
                                     <div x-show="open" x-transition class="absolute right-0 z-50 mt-1 w-40 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg" style="display:none">
-                                        <button @click="changeStatus(appointment, 'scheduled'); open = false" class="block w-full text-left px-3 py-2 text-xs text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30">Programado</button>
-                                        <button @click="changeStatus(appointment, 'attended'); open = false" class="block w-full text-left px-3 py-2 text-xs text-green-600 hover:bg-green-50 dark:hover:bg-green-900/30">Atendido</button>
-                                        <button @click="changeStatus(appointment, 'absent'); open = false" class="block w-full text-left px-3 py-2 text-xs text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/30">Ausente</button>
-                                        <button @click="changeStatus(appointment, 'cancelled'); open = false" class="block w-full text-left px-3 py-2 text-xs text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-b-lg">Cancelado</button>
+                                        <button @click="changeStatus(appointment, 'scheduled'); open = false"
+                                                :disabled="!canTransitionTo(appointment, 'scheduled')"
+                                                :class="!canTransitionTo(appointment, 'scheduled') ? 'opacity-40 cursor-not-allowed' : ''"
+                                                :title="statusOptionTitle(appointment, 'scheduled')"
+                                                class="block w-full text-left px-3 py-2 text-xs text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30">Programado</button>
+                                        <button @click="changeStatus(appointment, 'attended'); open = false"
+                                                :disabled="!canTransitionTo(appointment, 'attended')"
+                                                :class="!canTransitionTo(appointment, 'attended') ? 'opacity-40 cursor-not-allowed' : ''"
+                                                :title="statusOptionTitle(appointment, 'attended')"
+                                                class="block w-full text-left px-3 py-2 text-xs text-green-600 hover:bg-green-50 dark:hover:bg-green-900/30">Atendido</button>
+                                        <button @click="changeStatus(appointment, 'absent'); open = false"
+                                                :disabled="!canTransitionTo(appointment, 'absent')"
+                                                :class="!canTransitionTo(appointment, 'absent') ? 'opacity-40 cursor-not-allowed' : ''"
+                                                :title="statusOptionTitle(appointment, 'absent')"
+                                                class="block w-full text-left px-3 py-2 text-xs text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/30">Ausente</button>
+                                        <button @click="changeStatus(appointment, 'cancelled'); open = false"
+                                                :disabled="!canTransitionTo(appointment, 'cancelled')"
+                                                :class="!canTransitionTo(appointment, 'cancelled') ? 'opacity-40 cursor-not-allowed' : ''"
+                                                :title="statusOptionTitle(appointment, 'cancelled')"
+                                                class="block w-full text-left px-3 py-2 text-xs text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-b-lg">Cancelado</button>
                                     </div>
                                 </div>
                             </div>
@@ -431,9 +447,27 @@
                                         </button>
 
                                         <!-- Dropdown de estados -->
-                                        <div class="relative" x-data="{ statusDropdownOpen: false }" @click.away="statusDropdownOpen = false">
+                                        <div class="relative"
+                                             x-data="{
+                                                 statusDropdownOpen: false,
+                                                 menuStyle: {},
+                                                 toggleMenu(event) {
+                                                     if (this.statusDropdownOpen) { this.statusDropdownOpen = false; return; }
+                                                     const rect = event.currentTarget.getBoundingClientRect();
+                                                     const menuHeight = 170;
+                                                     const right = (window.innerWidth - rect.right) + 'px';
+                                                     const openUp = rect.bottom + menuHeight + 8 > window.innerHeight;
+                                                     this.menuStyle = openUp
+                                                         ? { right: right, bottom: (window.innerHeight - rect.top + 4) + 'px' }
+                                                         : { right: right, top: (rect.bottom + 4) + 'px' };
+                                                     this.statusDropdownOpen = true;
+                                                 }
+                                             }"
+                                             @click.away="statusDropdownOpen = false"
+                                             @scroll.window.capture="statusDropdownOpen = false"
+                                             @resize.window="statusDropdownOpen = false">
                                             <!-- Botón de estado -->
-                                            <button @click="statusDropdownOpen = !statusDropdownOpen"
+                                            <button @click="toggleMenu($event)"
                                                     class="p-1 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors"
                                                     title="Cambiar estado">
                                                 <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
@@ -441,20 +475,23 @@
                                                 </svg>
                                             </button>
 
-                                            <!-- Dropdown menu -->
-                                            <div x-show="statusDropdownOpen" 
+                                            <!-- Dropdown menu (position:fixed para no quedar recortado por el overflow de la tabla) -->
+                                            <div x-show="statusDropdownOpen"
                                                  x-transition:enter="transition ease-out duration-100"
                                                  x-transition:enter-start="transform opacity-0 scale-95"
                                                  x-transition:enter-end="transform opacity-100 scale-100"
                                                  x-transition:leave="transition ease-in duration-75"
                                                  x-transition:leave-start="transform opacity-100 scale-100"
                                                  x-transition:leave-end="transform opacity-0 scale-95"
-                                                 class="absolute right-0 z-50 mt-2 w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg"
+                                                 :style="menuStyle"
+                                                 class="fixed z-50 w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg"
                                                  style="display: none;">
                                                 
                                                 <!-- Programado -->
-                                                <button @click="changeStatus(appointment, 'scheduled'); statusDropdownOpen = false" 
-                                                        :class="appointment.status === 'scheduled' ? 'bg-blue-50 dark:bg-blue-900/30' : ''"
+                                                <button @click="changeStatus(appointment, 'scheduled'); statusDropdownOpen = false"
+                                                        :disabled="!canTransitionTo(appointment, 'scheduled')"
+                                                        :title="statusOptionTitle(appointment, 'scheduled')"
+                                                        :class="[appointment.status === 'scheduled' ? 'bg-blue-50 dark:bg-blue-900/30' : '', !canTransitionTo(appointment, 'scheduled') ? 'opacity-40 cursor-not-allowed' : '']"
                                                         class="flex items-center w-full px-4 py-2 text-sm text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors">
                                                     <svg class="w-4 h-4 mr-3" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                                                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -468,8 +505,10 @@
                                                 </button>
 
                                                 <!-- Atendido -->
-                                                <button @click="changeStatus(appointment, 'attended'); statusDropdownOpen = false" 
-                                                        :class="appointment.status === 'attended' ? 'bg-green-50 dark:bg-green-900/30' : ''"
+                                                <button @click="changeStatus(appointment, 'attended'); statusDropdownOpen = false"
+                                                        :disabled="!canTransitionTo(appointment, 'attended')"
+                                                        :title="statusOptionTitle(appointment, 'attended')"
+                                                        :class="[appointment.status === 'attended' ? 'bg-green-50 dark:bg-green-900/30' : '', !canTransitionTo(appointment, 'attended') ? 'opacity-40 cursor-not-allowed' : '']"
                                                         class="flex items-center w-full px-4 py-2 text-sm text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/30 transition-colors">
                                                     <svg class="w-4 h-4 mr-3" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                                                         <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -483,8 +522,10 @@
                                                 </button>
 
                                                 <!-- Ausente -->
-                                                <button @click="changeStatus(appointment, 'absent'); statusDropdownOpen = false" 
-                                                        :class="appointment.status === 'absent' ? 'bg-orange-50 dark:bg-orange-900/30' : ''"
+                                                <button @click="changeStatus(appointment, 'absent'); statusDropdownOpen = false"
+                                                        :disabled="!canTransitionTo(appointment, 'absent')"
+                                                        :title="statusOptionTitle(appointment, 'absent')"
+                                                        :class="[appointment.status === 'absent' ? 'bg-orange-50 dark:bg-orange-900/30' : '', !canTransitionTo(appointment, 'absent') ? 'opacity-40 cursor-not-allowed' : '']"
                                                         class="flex items-center w-full px-4 py-2 text-sm text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/30 transition-colors">
                                                     <svg class="w-4 h-4 mr-3" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                                                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
@@ -498,8 +539,10 @@
                                                 </button>
 
                                                 <!-- Cancelado -->
-                                                <button @click="changeStatus(appointment, 'cancelled'); statusDropdownOpen = false" 
-                                                        :class="appointment.status === 'cancelled' ? 'bg-red-50 dark:bg-red-900/30' : ''"
+                                                <button @click="changeStatus(appointment, 'cancelled'); statusDropdownOpen = false"
+                                                        :disabled="!canTransitionTo(appointment, 'cancelled')"
+                                                        :title="statusOptionTitle(appointment, 'cancelled')"
+                                                        :class="[appointment.status === 'cancelled' ? 'bg-red-50 dark:bg-red-900/30' : '', !canTransitionTo(appointment, 'cancelled') ? 'opacity-40 cursor-not-allowed' : '']"
                                                         class="flex items-center w-full px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors rounded-b-lg">
                                                     <svg class="w-4 h-4 mr-3" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                                                         <path stroke-linecap="round" stroke-linejoin="round" d="M9.75 9.75l4.5 4.5m0-4.5l-4.5 4.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -626,6 +669,27 @@ function appointmentsPage() {
         infoAuditLoading: false,
         infoAuditError: '',
         infoAudit: null,
+
+        // Opciones de duración para el modal compartido (appointments.modal)
+        durationOptions: [
+            { value: 5,   label: '5 minutos' },
+            { value: 10,  label: '10 minutos' },
+            { value: 15,  label: '15 minutos' },
+            { value: 20,  label: '20 minutos' },
+            { value: 25,  label: '25 minutos' },
+            { value: 30,  label: '30 minutos' },
+            { value: 40,  label: '40 minutos' },
+            { value: 45,  label: '45 minutos' },
+            { value: 50,  label: '50 minutos' },
+            { value: 60,  label: '1 hora' },
+            { value: 90,  label: '1 hora 30 minutos' },
+            { value: 120, label: '2 horas' },
+        ],
+
+        // En Turnos no hay contexto de agenda diaria: sin restricción de duración
+        get nextAppointmentConstraint() {
+            return null;
+        },
         
         init() {
             console.log('AppointmentsPage initialized');
@@ -918,6 +982,18 @@ function appointmentsPage() {
             this.refreshData();
         },
         
+        // Refleja Appointment::canTransitionTo() del backend: cualquier cambio
+        // de estado permitido mientras el turno no tenga cobros asociados
+        canTransitionTo(appointment, newStatus) {
+            if (newStatus === appointment.status) return true;
+            return !(appointment.payment_appointments?.length > 0);
+        },
+
+        statusOptionTitle(appointment, newStatus) {
+            if (this.canTransitionTo(appointment, newStatus)) return '';
+            return 'El turno tiene pagos asociados. Anule el pago antes de modificar el estado.';
+        },
+
         async changeStatus(appointment, newStatus) {
             const statusMessages = {
                 scheduled: 'Programado',
@@ -925,6 +1001,13 @@ function appointmentsPage() {
                 cancelled: 'Cancelado',
                 absent: 'Ausente'
             };
+
+            if (newStatus === appointment.status) return;
+
+            if (!this.canTransitionTo(appointment, newStatus)) {
+                this.showNotification('El turno tiene pagos asociados. Anule el pago antes de modificar el estado.', 'error');
+                return;
+            }
 
             if (!confirm(`¿Cambiar estado del turno a "${statusMessages[newStatus]}"?`)) return;
             
@@ -948,7 +1031,8 @@ function appointmentsPage() {
                     this.refreshData();
                     this.showNotification(result.message, 'success');
                 } else {
-                    this.showNotification(result.message || 'Error al actualizar el estado', 'error');
+                    const msg = result.errors?.status?.[0] || result.message || 'Error al actualizar el estado';
+                    this.showNotification(msg, 'error');
                 }
             } catch (error) {
                 this.showNotification('Error al actualizar el estado', 'error');

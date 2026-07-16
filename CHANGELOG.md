@@ -7,6 +7,24 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [2.12.6] - 2026-07-16
+
+### 🩹 Turnos: cambio de estado más claro + fixes del listado
+
+**Síntoma reportado**: al querer pasar un turno de "Atendido" a "Cancelado" desde el listado de Turnos, aparecía un genérico "Error de validación" (HTTP 422) sin explicación.
+
+**Causa**: no era un bug sino la regla de transiciones de estado (`Appointment::canTransitionTo()`) introducida en v2.12.3, que solo permitía volver a "Programado" desde los estados finales. La UI ofrecía igual la opción prohibida y el mensaje de error no explicaba el motivo.
+
+**Cambios**:
+
+- **Nueva regla de transiciones**: se puede cambiar un turno a **cualquier estado** mientras **no tenga cobros asociados**. Un turno con pago vinculado no cambia de estado hasta anular el pago (integridad financiera, igual que antes).
+- Los menús de cambio de estado del listado de Turnos (desktop y mobile) **deshabilitan las opciones** en turnos con pagos asociados, con tooltip explicativo.
+- El error 422 ahora muestra el **motivo real** (antes: "Error de validación" genérico).
+- **Fix**: el modal de edición de Turnos tiraba `durationOptions is not defined` en consola y el selector de duración quedaba vacío; la página de Turnos ahora define las opciones de duración que el modal compartido necesita.
+- **Fix**: con pocas filas en la tabla, el menú de cambio de estado quedaba recortado dentro del contenedor de la tabla; ahora se posiciona flotante (`position: fixed`) por fuera del contenedor y se abre hacia arriba si no hay lugar debajo.
+
+---
+
 ## [2.12.5] - 2026-07-13
 
 ### 🗓️ Agenda: módulos disponibles en la planilla impresa
