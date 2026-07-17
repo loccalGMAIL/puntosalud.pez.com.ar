@@ -14,12 +14,13 @@ class ProfessionalLiquidation extends Model
     {
         $professional = $this->professional()->first();
         $profName = $professional
-            ? $professional->last_name . ', ' . $professional->first_name
-            : 'Prof. #' . $this->professional_id;
+            ? $professional->last_name.', '.$professional->first_name
+            : 'Prof. #'.$this->professional_id;
         $date = $this->liquidation_date
             ? $this->liquidation_date->format('d/m/Y')
             : '';
-        return 'Liquidación #' . $this->id . ' - ' . $profName . ($date ? ' (' . $date . ')' : '');
+
+        return 'Liquidación #'.$this->id.' - '.$profName.($date ? ' ('.$date.')' : '');
     }
 
     protected $fillable = [
@@ -35,6 +36,7 @@ class ProfessionalLiquidation extends Model
         'clinic_amount',
         'clinic_amount_from_direct',
         'net_professional_amount',
+        'clinic_settlement_status',
         'payment_status',
         'payment_method',
         'paid_at',

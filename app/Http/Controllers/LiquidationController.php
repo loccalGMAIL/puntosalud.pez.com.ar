@@ -182,6 +182,9 @@ class LiquidationController extends Controller
                 'clinic_amount' => $clinicAmount,
                 'clinic_amount_from_direct' => $clinicAmountFromDirect,
                 'net_professional_amount' => $netProfessionalAmount,
+                // Si el neto es negativo, el profesional debe entregar al centro: queda
+                // 'pending' hasta que se registre ese ingreso. Si no, no requiere entrega.
+                'clinic_settlement_status' => $netProfessionalAmount < 0 ? 'pending' : 'not_required',
                 'payment_status' => 'paid', // Se marca como pagado inmediatamente
                 'payment_method' => 'cash',
                 'paid_at' => now(),

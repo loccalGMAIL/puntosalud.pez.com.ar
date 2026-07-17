@@ -430,6 +430,39 @@ class CashController extends Controller
                 ], 400);
             }
 
+            // Verificar que no queden liquidaciones con entrega al centro pendiente.
+            // Ocurre cuando el neto es negativo (el profesional debe entregar al centro su
+            // parte) y ese ingreso todavía no se registró (ventana perdida / cerrada / no
+            // confirmada). No se puede cerrar la caja hasta registrarlo.
+            $pendingClinicSettlements = \App\Models\ProfessionalLiquidation::with('professional')
+                ->whereDate('liquidation_date', $closeDate)
+                ->where('net_professional_amount', '<', 0)
+                ->where('clinic_settlement_status', 'pending')
+                ->get()
+                ->map(function ($liquidation) {
+                    return [
+                        'liquidation_id' => $liquidation->id,
+                        'professional_id' => $liquidation->professional_id,
+                        'professional_name' => $liquidation->professional
+                            ? $liquidation->professional->full_name
+                            : 'Profesional #'.$liquidation->professional_id,
+                        'amount' => abs((float) $liquidation->net_professional_amount),
+                        'date' => $liquidation->liquidation_date->format('Y-m-d'),
+                    ];
+                });
+
+            if ($pendingClinicSettlements->isNotEmpty()) {
+                $settlementNames = $pendingClinicSettlements
+                    ->map(fn ($s) => 'Dr. '.$s['professional_name'].' ($'.number_format($s['amount'], 0, ',', '.').')')
+                    ->join(', ');
+
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No se puede cerrar la caja. Falta registrar la entrega al centro de las siguientes liquidaciones (el profesional cobró directo y debe entregar su parte al centro): '.$settlementNames.'. Genere ese ingreso antes de cerrar la caja.',
+                    'pending_clinic_settlements' => $pendingClinicSettlements->values(),
+                ], 400);
+            }
+
             // Obtener el saldo actual antes del cierre con lock pesimista
             $currentBalance = CashMovement::getCurrentBalanceWithLock($closeDate);
 
@@ -1103,6 +1136,7 @@ class CashController extends Controller
             'professional_id' => 'nullable|exists:professionals,id|required_if:category,professional_module_payment',
             'receipt_file' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
             'notes' => 'nullable|string|max:500',
+            'liquidation_id' => 'nullable|exists:professional_liquidations,id',
         ]);
 
         try {
@@ -1179,6 +1213,14 @@ class CashController extends Controller
                 'balance_after' => $newBalance,
                 'user_id' => auth()->id(),
             ]);
+
+            // Si este ingreso corresponde a la entrega al centro de una liquidación negativa,
+            // marcarla como saldada para desbloquear el cierre de caja.
+            if (! empty($validated['liquidation_id'])) {
+                \App\Models\ProfessionalLiquidation::where('id', $validated['liquidation_id'])
+                    ->where('clinic_settlement_status', 'pending')
+                    ->update(['clinic_settlement_status' => 'settled']);
+            }
 
             DB::commit();
 

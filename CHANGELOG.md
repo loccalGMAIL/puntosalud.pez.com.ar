@@ -7,6 +7,23 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [2.12.7] - 2026-07-16
+
+### 💰 Liquidaciones: la entrega al centro ya no puede quedar sin registrar
+
+**Síntoma reportado**: se liquidó a una profesional que cobra directo por transferencia (le corresponde **entregar al centro** su parte de la clínica) pero **no aparecieron los carteles para generar ese pago**, la liquidación quedó finalizada y **el ingreso de la entrega nunca se registró** → la caja quedó descuadrada por ese monto.
+
+**Causa**: la liquidación se finalizaba (`payment_status = paid`) de forma **independiente** de registrar la entrega al centro. Cuando el monto neto es negativo (la profesional debe al centro), el único disparador para registrar la entrega era un paso **del lado del cliente, opcional y salteable**: un modal que redirige al formulario de ingreso manual que el usuario debía enviar. Si esa ventana se perdía/cerraba o no se confirmaba, la liquidación quedaba cerrada sin su entrega y **nada lo detectaba** (el cierre de caja solo controlaba pagos sin liquidar, no entregas faltantes).
+
+**Cambios**:
+
+- **Nuevo estado `clinic_settlement_status`** en las liquidaciones (`not_required` | `pending` | `settled`): las liquidaciones con neto negativo nacen `pending` y pasan a `settled` al registrarse la entrega al centro.
+- **El cierre de caja se bloquea** si hay liquidaciones con entrega al centro pendiente, con un **cartel que explica el motivo** y lista los pendientes, y un botón **"Generar entrega al centro"** que redirige al formulario de ingreso precargado.
+- Se mantiene el flujo/redirect existente para generar la entrega; ahora el ingreso queda **vinculado a la liquidación** (`liquidation_id`) para cerrar el ciclo automáticamente.
+- **Nota operativa**: los casos históricos previos a esta versión quedan como `not_required` para no bloquear la caja abierta; deben conciliarse manualmente si corresponde.
+
+---
+
 ## [2.12.6] - 2026-07-16
 
 ### 🩹 Turnos: cambio de estado más claro + fixes del listado

@@ -195,6 +195,10 @@ function cashCloseModal(theoreticalBalance, incomeTotal, expenseTotal, closeDate
                     setTimeout(() => {
                         window.location.href = result.redirect_url;
                     }, 500);
+                } else if (result.pending_clinic_settlements && result.pending_clinic_settlements.length > 0) {
+                    // Cierre bloqueado: hay liquidaciones negativas con la entrega al centro
+                    // sin registrar. Explicar el motivo y ofrecer generar ese ingreso.
+                    this.handlePendingClinicSettlements(result.pending_clinic_settlements);
                 } else {
                     this.showNotification(result.message, 'error');
                 }
@@ -218,6 +222,46 @@ function cashCloseModal(theoreticalBalance, incomeTotal, expenseTotal, closeDate
 
         showNotification(message, type = 'info') {
             window.showToast(message, type);
+        },
+
+        handlePendingClinicSettlements(pendings) {
+            this.loading = false;
+
+            // Cerrar el modal de cierre de caja para que el cartel no quede por debajo
+            this.closeModal();
+
+            const lista = pendings
+                .map(p => `• Dr. ${p.professional_name}: $${Number(p.amount).toLocaleString('es-AR')}`)
+                .join('\n');
+
+            const message = 'No se puede cerrar la caja todavía.\n\n' +
+                'Las siguientes liquidaciones quedaron con la entrega al centro SIN registrar ' +
+                '(el profesional cobró directo por transferencia y debe entregar su parte al centro):\n\n' +
+                lista + '\n\n' +
+                'Debe registrar ese ingreso antes de cerrar la caja. Será redirigido al ' +
+                'formulario de ingreso para generar la entrega del primer pendiente.';
+
+            const first = pendings[0];
+            const doRedirect = () => {
+                const url = new URL('{{ route('cash.manual-income-form') }}', window.location.origin);
+                url.searchParams.set('amount', first.amount);
+                url.searchParams.set('category', 'professional_module_payment');
+                url.searchParams.set('payment_method', 'cash');
+                url.searchParams.set('professional_id', first.professional_id);
+                url.searchParams.set('description', encodeURIComponent(`Liquidación Dr. ${first.professional_name} - ${first.date}`));
+                url.searchParams.set('notes', encodeURIComponent('El profesional entrega al centro'));
+                url.searchParams.set('from_liquidation', '1');
+                url.searchParams.set('liquidation_id', first.liquidation_id);
+                window.location.href = url.toString();
+            };
+
+            if (typeof SystemModal !== 'undefined') {
+                SystemModal.show('warning', 'Falta registrar entrega al centro', message, 'Generar entrega al centro')
+                    .then(doRedirect);
+            } else {
+                window.showToast(message, 'warning');
+                setTimeout(doRedirect, 1500);
+            }
         }
     }
 }
