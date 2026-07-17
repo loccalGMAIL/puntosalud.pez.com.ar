@@ -253,7 +253,8 @@ function incomeForm() {
             payment_method: 'cash',
             professional_id: '',
             description: '',
-            notes: ''
+            notes: '',
+            liquidation_id: ''
         },
 
         categories: @json($incomeCategories),
@@ -266,6 +267,7 @@ function incomeForm() {
             if (urlParams.has('category')) this.form.category = urlParams.get('category');
             if (urlParams.has('payment_method')) this.form.payment_method = urlParams.get('payment_method');
             if (urlParams.has('professional_id')) this.form.professional_id = urlParams.get('professional_id');
+            if (urlParams.has('liquidation_id')) this.form.liquidation_id = urlParams.get('liquidation_id');
             if (urlParams.has('description')) this.form.description = decodeURIComponent(urlParams.get('description'));
             if (urlParams.has('notes')) {
                 this.form.notes = decodeURIComponent(urlParams.get('notes'));
@@ -358,6 +360,10 @@ function incomeForm() {
 
                 if (this.form.professional_id) {
                     formData.append('professional_id', this.form.professional_id);
+                }
+
+                if (this.form.liquidation_id) {
+                    formData.append('liquidation_id', this.form.liquidation_id);
                 }
 
                 if (this.selectedFile) {

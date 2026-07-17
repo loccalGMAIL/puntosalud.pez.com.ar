@@ -315,6 +315,10 @@ async function liquidarProfesional(professionalId, professionalName, amount, dat
                 url.searchParams.set('description', description);
                 url.searchParams.set('notes', notes);
                 url.searchParams.set('from_liquidation', '1');
+                // Vincular el ingreso a la liquidación para marcarla como saldada
+                if (result.data.liquidation_id) {
+                    url.searchParams.set('liquidation_id', result.data.liquidation_id);
+                }
 
                 window.location.href = url.toString();
             });
