@@ -38,7 +38,12 @@ class ReportController extends Controller
 
         $initialBalance = $lastBalanceMovement ? $lastBalanceMovement->balance_after : 0;
 
-        $query = CashMovement::with(['user', 'movementType'])
+        $query = CashMovement::with(['user', 'movementType', 'reference' => function ($morphTo) {
+            $morphTo->morphWith([
+                \App\Models\Payment::class => ['patient', 'paymentDetails', 'paymentAppointments.appointment.professional'],
+                ProfessionalLiquidation::class => ['professional'],
+            ]);
+        }])
             ->whereDate('created_at', $selectedDate);
 
         if ($request->filled('type')) {
@@ -124,7 +129,8 @@ class ReportController extends Controller
         $movements = CashMovement::with(['user', 'movementType'])
             ->with(['reference' => function ($morphTo) {
                 $morphTo->morphWith([
-                    \App\Models\Payment::class => ['paymentDetails'],
+                    \App\Models\Payment::class => ['patient', 'paymentDetails', 'paymentAppointments.appointment.professional'],
+                    ProfessionalLiquidation::class => ['professional'],
                 ]);
             }])
             ->whereDate('created_at', $selectedDate)

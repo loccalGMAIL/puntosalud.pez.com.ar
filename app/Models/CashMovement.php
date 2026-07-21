@@ -143,6 +143,95 @@ class CashMovement extends Model
         return $this->movementType?->code === 'cash_closing';
     }
 
+    // Presentación del concepto (para las vistas de caja y reportes)
+
+    /**
+     * Título principal del concepto, sin el tipo de movimiento ni el medio de pago.
+     * - Pago/reembolso de paciente => nombre del paciente.
+     * - Liquidación profesional     => nombre del profesional.
+     * - Gastos/retiros/ingresos/apertura/cierre => la descripción tal cual.
+     */
+    public function conceptTitle(): string
+    {
+        $ref = $this->reference;
+
+        if ($ref instanceof Payment) {
+            return $ref->patient?->full_name ?? $this->description;
+        }
+
+        if ($ref instanceof ProfessionalLiquidation) {
+            return $ref->professional?->full_name ?? $this->description;
+        }
+
+        return $this->description;
+    }
+
+    /**
+     * Nombre del profesional asociado al movimiento, para mostrar como sub-línea.
+     * Devuelve null cuando no aplica (o cuando el profesional ya es el título).
+     */
+    public function conceptProfessionalName(): ?string
+    {
+        $ref = $this->reference;
+
+        if ($ref instanceof Payment) {
+            if ($ref->payment_type === 'refund') {
+                return null;
+            }
+
+            $names = $ref->paymentAppointments
+                ->map(fn ($pa) => $pa->appointment?->professional?->full_name)
+                ->filter()
+                ->unique()
+                ->values();
+
+            return $names->isNotEmpty() ? $names->join(', ') : null;
+        }
+
+        if ($ref instanceof Professional) {
+            return $ref->full_name;
+        }
+
+        return null;
+    }
+
+    /**
+     * Datos extra para movimientos de reembolso/reintegro a paciente:
+     * número de recibo original y #id del movimiento de caja que se anula.
+     * Devuelve null si el movimiento no es un reembolso.
+     */
+    public function refundInfo(): ?array
+    {
+        $ref = $this->reference;
+
+        if (! $ref instanceof Payment || $ref->payment_type !== 'refund') {
+            return null;
+        }
+
+        $receipt = null;
+        if (preg_match('/#(\d+)/', (string) $ref->concept, $matches)) {
+            $receipt = $matches[1];
+        }
+
+        $originalMovementId = null;
+        if ($receipt !== null) {
+            $originalPayment = Payment::where('receipt_number', $receipt)->first();
+
+            if ($originalPayment) {
+                $originalMovementId = static::where('reference_type', Payment::class)
+                    ->where('reference_id', $originalPayment->id)
+                    ->where('amount', '>', 0)
+                    ->orderBy('id')
+                    ->value('id');
+            }
+        }
+
+        return [
+            'receipt' => $receipt,
+            'original_movement_id' => $originalMovementId,
+        ];
+    }
+
     public static function getCashStatusForDate($date)
     {
         $opening = static::forDate($date)->openingMovements()->first();

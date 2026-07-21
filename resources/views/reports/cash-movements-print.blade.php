@@ -61,7 +61,7 @@
                                 <th class="text-left py-[2px] px-1 font-semibold text-gray-900 dark:text-white print:text-black" style="width:6%">Hora</th>
                                 <th class="text-left py-[2px] px-1 font-semibold text-gray-900 dark:text-white print:text-black" style="width:15%">Tipo</th>
                                 <th class="text-left py-[2px] px-1 font-semibold text-gray-900 dark:text-white print:text-black" style="width:10%">Usuario</th>
-                                <th class="text-left py-[2px] px-1 font-semibold text-gray-900 dark:text-white print:text-black" style="width:32%">Concepto</th>
+                                <th class="text-left py-[2px] px-1 font-semibold text-gray-900 dark:text-white print:text-black" style="width:32%">Detalle</th>
                                 <th class="text-left py-[2px] px-1 font-semibold text-gray-900 dark:text-white print:text-black" style="width:12%">Método</th>
                                 <th class="text-right py-[2px] px-1 font-semibold text-gray-900 dark:text-white print:text-black" style="width:10%">Monto</th>
                                 <th class="text-right py-[2px] px-1 font-semibold text-gray-900 dark:text-white print:text-black" style="width:10%">Saldo</th>
@@ -77,16 +77,7 @@
                                 </td>
                                 <td class="py-[1px] px-1 text-gray-700 dark:text-gray-300 print:text-gray-700">{{ $movement->user?->name ?? 'Sistema' }}</td>
                                 <td class="py-[1px] px-1 text-gray-900 dark:text-white print:text-black">
-                                    @if($movement->movementType?->code === 'professional_payment' && $movement->reference_type === 'App\\Models\\Professional' && $movement->reference_id)
-                                        @php $professional = \App\Models\Professional::find($movement->reference_id); @endphp
-                                        @if($professional)
-                                            {{ $movement->description }} - Dr. {{ $professional->first_name }} {{ $professional->last_name }}
-                                        @else
-                                            {{ $movement->description }}
-                                        @endif
-                                    @else
-                                        {{ $movement->description }}
-                                    @endif
+                                    @include('cash.partials.movement-concept', ['movement' => $movement, 'print' => true])
                                 </td>
                                 <td class="py-[1px] px-1 text-gray-700 dark:text-gray-300 print:text-gray-700">
                                     @if($movement->reference_type === 'App\\Models\\Payment' && $movement->reference)

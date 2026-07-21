@@ -7,6 +7,23 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [2.12.8] - 2026-07-21
+
+### 🧾 Caja: la columna de movimientos ahora muestra "Detalle" más claro
+
+**Contexto**: al controlar el cierre de un día contra la planilla física, la columna de los movimientos (en **Caja del día** y en **Reportes de caja**) repetía datos que ya estaban en otras columnas (el tipo de movimiento y el medio de pago) y no dejaba ver de un vistazo a qué profesional/turno correspondía cada cobro.
+
+**Cambios**:
+
+- La columna **"Concepto" pasa a llamarse "Detalle"** en la Caja del día, el Reporte de caja y su versión imprimible.
+- El detalle **ya no repite el tipo de movimiento** (ej. "Pago de consulta") ni el **medio de pago** (ej. "- Efectivo"): eso ya se muestra en las columnas **Tipo** y **Método**. Ahora el título es directamente el **nombre del paciente** (o del **profesional** en las liquidaciones).
+- Se agrega, como sub-línea, el **profesional** al que corresponde cada pago de paciente.
+- Los **reembolsos/reintegros** muestran, además del **número de recibo original**, el **nombre del paciente** y el **#id del movimiento de caja que anulan** (para rastrear qué cobro se revirtió).
+- **Fix**: en las liquidaciones (`professional_payment`) el nombre del profesional **nunca se mostraba** porque el código buscaba `reference_type = Professional` cuando en realidad es `ProfessionalLiquidation`. Ahora aparece correctamente.
+- Es un cambio **solo de presentación**: no se modifican datos ya guardados. El renderizado se centralizó en un partial compartido (`cash/partials/movement-concept.blade.php`) reutilizado por las tres vistas.
+
+---
+
 ## [2.12.7] - 2026-07-16
 
 ### 💰 Liquidaciones: la entrega al centro ya no puede quedar sin registrar
