@@ -6,6 +6,7 @@ use App\Enums\PaymentMethod;
 use App\Models\CashMovement;
 use App\Models\MovementType;
 use App\Models\Payment;
+use App\Models\ProfessionalLiquidation;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -27,7 +28,8 @@ class CashController extends Controller
 
         $query = CashMovement::with(['user', 'movementType', 'reference' => function ($morphTo) {
             $morphTo->morphWith([
-                Payment::class => ['paymentDetails'],
+                Payment::class => ['patient', 'paymentDetails', 'paymentAppointments.appointment.professional'],
+                ProfessionalLiquidation::class => ['professional'],
             ]);
         }])
             ->whereDate('created_at', $selectedDate);
