@@ -1120,7 +1120,35 @@ class CashController extends Controller
                 ->orderBy('first_name')
                 ->get();
 
-            return view('cash.manual-income-form', compact('incomeCategories', 'professionals'));
+            // Entregas al centro pendientes (liquidaciones con neto negativo sin saldar).
+            // Se usan para advertir de forma NO bloqueante al registrar un "Pago Módulo":
+            // si el monto no coincide con lo pendiente, o si el profesional elegido no tiene
+            // deuda pero otro sí. Agrupadas por profesional.
+            $pendingSettlements = \App\Models\ProfessionalLiquidation::with('professional')
+                ->where('clinic_settlement_status', 'pending')
+                ->where('net_professional_amount', '<', 0)
+                ->orderBy('liquidation_date', 'desc')
+                ->get()
+                ->groupBy('professional_id')
+                ->map(function ($group) {
+                    $professional = $group->first()->professional;
+
+                    return [
+                        'professional_id' => (int) $group->first()->professional_id,
+                        'professional_name' => $professional
+                            ? $professional->full_name
+                            : 'Profesional #'.$group->first()->professional_id,
+                        'total' => round($group->sum(fn ($l) => abs((float) $l->net_professional_amount)), 2),
+                        'liquidations' => $group->map(fn ($l) => [
+                            'id' => $l->id,
+                            'amount' => round(abs((float) $l->net_professional_amount), 2),
+                            'date' => $l->liquidation_date->format('d/m/Y'),
+                        ])->values(),
+                    ];
+                })
+                ->values();
+
+            return view('cash.manual-income-form', compact('incomeCategories', 'professionals', 'pendingSettlements'));
         }
 
         // Validación dinámica: obtener códigos válidos desde BD (solo categoría income_detail)
@@ -1218,10 +1246,60 @@ class CashController extends Controller
 
             // Si este ingreso corresponde a la entrega al centro de una liquidación negativa,
             // marcarla como saldada para desbloquear el cierre de caja.
+            // - Si viene un liquidation_id explícito, se salda esa liquidación.
+            // - Si es un "Pago Módulo" con profesional, se detecta automáticamente la entrega
+            //   pendiente cuando el monto coincide (exacto). Si no coincide, NO se salda nada:
+            //   la caja seguirá bloqueando hasta que se registre el monto correcto.
+            $settledLiquidations = [];
+
             if (! empty($validated['liquidation_id'])) {
-                \App\Models\ProfessionalLiquidation::where('id', $validated['liquidation_id'])
+                $liquidation = \App\Models\ProfessionalLiquidation::where('id', $validated['liquidation_id'])
                     ->where('clinic_settlement_status', 'pending')
-                    ->update(['clinic_settlement_status' => 'settled']);
+                    ->lockForUpdate()
+                    ->first();
+
+                if ($liquidation) {
+                    $liquidation->update(['clinic_settlement_status' => 'settled']);
+                    $settledLiquidations[] = [
+                        'id' => $liquidation->id,
+                        'amount' => abs((float) $liquidation->net_professional_amount),
+                    ];
+                }
+            } elseif ($validated['category'] === 'professional_module_payment' && ! empty($validated['professional_id'])) {
+                $pending = \App\Models\ProfessionalLiquidation::where('professional_id', $validated['professional_id'])
+                    ->where('clinic_settlement_status', 'pending')
+                    ->where('net_professional_amount', '<', 0)
+                    ->lockForUpdate()
+                    ->get();
+
+                if ($pending->isNotEmpty()) {
+                    $amount = round((float) $validated['amount'], 2);
+
+                    // 1) Coincidencia exacta con una entrega puntual
+                    $match = $pending->first(fn ($l) => abs(abs((float) $l->net_professional_amount) - $amount) < 0.01);
+
+                    if ($match) {
+                        $match->update(['clinic_settlement_status' => 'settled']);
+                        $settledLiquidations[] = [
+                            'id' => $match->id,
+                            'amount' => abs((float) $match->net_professional_amount),
+                        ];
+                    } elseif ($pending->count() > 1) {
+                        // 2) Coincidencia con el total de varias entregas pendientes
+                        $totalPending = round($pending->sum(fn ($l) => abs((float) $l->net_professional_amount)), 2);
+
+                        if (abs($totalPending - $amount) < 0.01) {
+                            foreach ($pending as $l) {
+                                $l->update(['clinic_settlement_status' => 'settled']);
+                                $settledLiquidations[] = [
+                                    'id' => $l->id,
+                                    'amount' => abs((float) $l->net_professional_amount),
+                                ];
+                            }
+                        }
+                    }
+                    // Si el monto no coincide, no se salda: el aviso ya se mostró antes de enviar.
+                }
             }
 
             DB::commit();
@@ -1234,6 +1312,7 @@ class CashController extends Controller
                     'receipt_number' => $payment->receipt_number,
                     'cash_movement_id' => $cashMovement->id,
                     'new_balance' => $newBalance,
+                    'settled_liquidations' => $settledLiquidations,
                 ]);
             }
 

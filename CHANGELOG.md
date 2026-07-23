@@ -7,6 +7,26 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [2.12.9] - 2026-07-23
+
+### 💰 Pago Módulo: detecta y salda la entrega al centro pendiente
+
+**Síntoma reportado**: una liquidación con neto negativo (el profesional cobró directo y debe **entregar su parte al centro**) quedó bloqueando el cierre de caja. En la práctica la entrega **sí se había registrado** como un "Pago Módulo profesional" manual, pero al cargarse **sin vincular la liquidación**, el estado `clinic_settlement_status` quedó en `pending` y la caja no dejaba cerrar (caso real: Dr. Durany, liquidación con entrega de $10.500 que ya estaba en caja).
+
+**Causa**: el único punto que marcaba la entrega como `settled` era el ingreso manual **cuando traía un `liquidation_id` explícito**. Si el operario registraba el Pago Módulo a mano (sin ese vínculo), nada conciliaba la liquidación pendiente.
+
+**Cambios**:
+
+- Al registrar un **Pago Módulo profesional**, el sistema busca las **entregas al centro pendientes** de ese profesional y, **si el monto coincide** (una entrega puntual o el total de varias), **la salda automáticamente** (`pending → settled`) y lo confirma con un aviso. Se mantiene el flujo previo cuando el ingreso ya viene vinculado a una liquidación.
+- **Advertencias no bloqueantes** en el formulario, pensadas para lugares con conexión inestable (todo se calcula al abrir la pantalla, sin llamadas extra):
+  - Si el **monto no coincide** con lo que el profesional adeuda al centro (ej. se ingresa $5.000 y el pendiente es $6.000).
+  - Si se elige un **profesional sin deuda** mientras **otro** tiene una entrega pendiente.
+  - Si el monto coincide, **no se muestra ningún mensaje**.
+- Nunca es restrictivo: este tipo de ingreso también lo usan profesionales que solo utilizan el consultorio y no registran pacientes, así que el registro siempre se permite.
+- **Nota**: los casos históricos ya trabados (liquidaciones `pending` de días previos) se concilian registrando el Pago Módulo por el monto exacto, o marcándolos `settled` por SQL.
+
+---
+
 ## [2.12.8] - 2026-07-21
 
 ### 🧾 Caja: la columna de movimientos ahora muestra "Detalle" más claro
