@@ -118,6 +118,23 @@
                             </div>
                         @endif
                     </div>
+
+                    <!-- Aviso NO bloqueante: entregas al centro pendientes -->
+                    <template x-if="form.category === 'professional_module_payment' && settlementWarnings().length > 0">
+                        <div class="md:col-span-2 space-y-2">
+                            <template x-for="(w, idx) in settlementWarnings()" :key="idx">
+                                <div class="flex items-start gap-2 px-3 py-2 rounded-lg text-sm"
+                                     :class="w.type === 'warn'
+                                        ? 'bg-yellow-50 border border-yellow-200 text-yellow-800'
+                                        : 'bg-blue-50 border border-blue-200 text-blue-800'">
+                                    <svg class="w-4 h-4 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+                                    </svg>
+                                    <span x-text="w.message"></span>
+                                </div>
+                            </template>
+                        </div>
+                    </template>
                 </div>
             </div>
         </div>
@@ -259,6 +276,7 @@ function incomeForm() {
 
         categories: @json($incomeCategories),
         hasProfessionals: {{ count($professionals) > 0 ? 'true' : 'false' }},
+        pendingSettlements: @json($pendingSettlements),
 
         init() {
             const urlParams = new URLSearchParams(window.location.search);
@@ -334,6 +352,62 @@ function incomeForm() {
             }).format(num);
         },
 
+        money(num) {
+            return new Intl.NumberFormat('es-AR', {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 2
+            }).format(num || 0);
+        },
+
+        // Advertencias NO bloqueantes al registrar un "Pago Módulo": ayudan a detectar
+        // que el monto no coincide con la entrega al centro pendiente, o que se eligió
+        // un profesional sin deuda mientras otro sí la tiene. Nunca impiden registrar.
+        settlementWarnings() {
+            if (this.form.category !== 'professional_module_payment') return [];
+
+            const warnings = [];
+            const profId = this.form.professional_id ? String(this.form.professional_id) : '';
+            const amount = parseFloat(this.form.amount) || 0;
+            const selected = this.pendingSettlements.find(p => String(p.professional_id) === profId);
+            const others = this.pendingSettlements.filter(p => String(p.professional_id) !== profId);
+
+            if (selected) {
+                const matchesSingle = selected.liquidations.some(l => Math.abs(l.amount - amount) < 0.01);
+                const matchesTotal = Math.abs(selected.total - amount) < 0.01;
+
+                // Solo advertimos si el monto NO coincide (ni con una entrega puntual ni con el total).
+                if (amount > 0 && !matchesSingle && !matchesTotal) {
+                    if (amount > selected.total) {
+                        warnings.push({
+                            type: 'warn',
+                            message: `${selected.professional_name} tiene una entrega pendiente de $${this.money(selected.total)}, pero estás registrando $${this.money(amount)} (supera lo adeudado).`
+                        });
+                    } else {
+                        warnings.push({
+                            type: 'warn',
+                            message: `${selected.professional_name} tiene una entrega pendiente de $${this.money(selected.total)}, pero estás registrando $${this.money(amount)}. Quedará un saldo sin saldar y la caja seguirá bloqueada.`
+                        });
+                    }
+                }
+            } else if (profId && others.length > 0) {
+                // Profesional elegido sin deuda, pero hay otras entregas pendientes.
+                const list = others.map(p => `${p.professional_name} ($${this.money(p.total)})`).join(', ');
+                warnings.push({
+                    type: 'info',
+                    message: `El profesional seleccionado no tiene entregas pendientes. Hay entregas al centro pendientes de: ${list}.`
+                });
+            } else if (!profId && amount > 0 && this.pendingSettlements.length > 0) {
+                // Aún no eligió profesional, pero existen entregas pendientes.
+                const list = this.pendingSettlements.map(p => `${p.professional_name} ($${this.money(p.total)})`).join(', ');
+                warnings.push({
+                    type: 'info',
+                    message: `Hay entregas al centro pendientes: ${list}.`
+                });
+            }
+
+            return warnings;
+        },
+
         isFormValid() {
             const baseValid = this.form.amount &&
                    this.form.category &&
@@ -385,6 +459,15 @@ function incomeForm() {
                     setTimeout(() => { window.location.href = result.redirect || '/login'; }, 1500);
                 } else if (response.ok && result.success) {
                     this.loading = false;
+
+                    if (result.settled_liquidations && result.settled_liquidations.length > 0) {
+                        await SystemModal.show(
+                            'success',
+                            'Entrega al centro saldada',
+                            'Se registró el ingreso y se marcó como saldada la entrega pendiente del profesional. La caja ya no quedará bloqueada por esta liquidación.',
+                            'Entendido'
+                        );
+                    }
 
                     if (result.payment_id) {
                         const printReceipt = await SystemModal.confirm(
