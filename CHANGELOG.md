@@ -7,6 +7,20 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [2.12.10] - 2026-07-27
+
+### 🗓️ Listado Diario: los espacios libres no coincidían con la agenda
+
+**Síntoma reportado**: en la agenda de la Dra. Rossi del 28/07, la pantalla mostraba turnos libres a las 14:40, 17:20, 18:00 y 18:40, pero al imprimir/exportar el "Listado Diario" esos espacios no aparecían, o aparecían con un horario distinto (17:40 y 18:20 en vez de los correctos).
+
+**Causa**: el cálculo de los módulos libres del reporte alineaba la grilla tomando como referencia el horario de inicio de la jornada del profesional (ej. 09:00), en vez de un punto fijo (medianoche) como hace la agenda interactiva. Cuando ese horario de inicio no es múltiplo exacto de la duración del módulo (jornada arranca 09:00 con módulos de 40 min), la grilla se desalinea progresivamente respecto a los horarios reales en que se agendan los turnos (en punto, ej. 10:00, 10:40), perdiendo espacios libres completos o mostrándolos con el horario equivocado.
+
+**Cambios**:
+
+- Se cambia el punto de referencia de la grilla de módulos del reporte de "inicio de jornada" a "medianoche", igual que usa la agenda interactiva, para que el Listado Diario impreso/PDF siempre coincida con lo que se ve en pantalla.
+
+---
+
 ## [2.12.9] - 2026-07-23
 
 ### 💰 Pago Módulo: detecta y salda la entrega al centro pendiente
