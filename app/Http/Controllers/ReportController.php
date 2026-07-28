@@ -364,6 +364,14 @@ class ReportController extends Controller
                 ->sortBy(fn ($schedule) => $schedule->getRawOriginal('start_time'))
                 ->values();
 
+        // Ancla de referencia para alinear los módulos de la grilla: debe ser un punto
+        // fijo (medianoche) e igual para toda la jornada, no el horario de inicio del
+        // profesional. Si se usara el inicio de jornada como ancla, y este no coincide
+        // con un múltiplo exacto del módulo (ej. jornada arranca 09:00 con módulos de
+        // 40 min), los turnos reales (agendados en horas "redondas" como 10:00, 10:40)
+        // quedan desalineados de la grilla y se pierden o desplazan los espacios libres.
+        $dayStart = $selectedDate->copy()->startOfDay();
+
         $consumedIds = [];
         $blocks = collect();
 
@@ -405,11 +413,11 @@ class ReportController extends Controller
                     $appointmentEnd = $appointmentStart->copy()->addMinutes($appointment->duration);
                     $effectiveStart = $appointmentStart->max($blockStart);
 
-                    $moduleStartOffset = (int) (floor($blockStart->diffInMinutes($effectiveStart) / $duration) * $duration);
-                    $naiveEndOffset = $blockStart->diffInMinutes($appointmentEnd);
+                    $moduleStartOffset = (int) (floor($dayStart->diffInMinutes($effectiveStart) / $duration) * $duration);
+                    $naiveEndOffset = $dayStart->diffInMinutes($appointmentEnd);
                     $roundedEndOffset = max($moduleStartOffset + $duration, (int) (ceil($naiveEndOffset / $duration) * $duration));
 
-                    $cursor = $blockStart->copy()->addMinutes($roundedEndOffset);
+                    $cursor = $dayStart->copy()->addMinutes($roundedEndOffset);
                     $consumedIds[] = $appointment->id;
                 } else {
                     $blocks->push([
