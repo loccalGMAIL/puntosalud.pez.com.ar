@@ -7,6 +7,17 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [2.12.11] - 2026-08-05
+
+### 🏥 Profesionales: Consultorio predeterminado
+
+**Cambios**:
+
+- Cada profesional puede tener asignado un **consultorio predeterminado** (opcional, no obligatorio) desde el formulario de Profesionales.
+- Al crear o editar un turno y seleccionar un profesional, el **consultorio se autocompleta** con su predeterminado si el campo todavía está vacío (no pisa una elección manual ya hecha). Aplica también al turno de urgencia ("entre turno").
+
+---
+
 ## [2.12.10] - 2026-07-27
 
 ### 🗓️ Listado Diario: los espacios libres no coincidían con la agenda

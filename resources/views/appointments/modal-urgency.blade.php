@@ -31,6 +31,7 @@
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Profesional *</label>
                 <select id="urgency-professional-select"
                         x-model="urgencyForm.professional_id"
+                        @change="const selectedProfessional = professionals.find(p => p.id == urgencyForm.professional_id); if (selectedProfessional && selectedProfessional.default_office && !urgencyForm.office_id) { urgencyForm.office_id = selectedProfessional.default_office.id.toString(); }"
                         class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500 dark:bg-gray-700 dark:text-white"
                         required>
                     <option value="">Seleccionar profesional...</option>

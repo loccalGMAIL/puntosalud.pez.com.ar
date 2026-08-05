@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\AppointmentSetting;
+use App\Models\Office;
 use App\Models\Professional;
 use App\Models\Specialty;
 use Illuminate\Http\Request;
@@ -14,7 +15,7 @@ class ProfessionalController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Professional::with(['specialty', 'appointmentSettings'])
+        $query = Professional::with(['specialty', 'appointmentSettings', 'defaultOffice'])
             ->orderBy('last_name')
             ->orderBy('first_name');
 
@@ -45,6 +46,7 @@ class ProfessionalController extends Controller
 
         $professionals = $query->paginate(15)->withQueryString();
         $specialties = Specialty::orderBy('name')->get();
+        $offices = Office::active()->orderBy('name')->get();
 
         // Estadísticas
         $allProfessionals = Professional::all();
@@ -69,7 +71,7 @@ class ProfessionalController extends Controller
             ]);
         }
 
-        return view('professionals.index', compact('professionals', 'specialties', 'stats'));
+        return view('professionals.index', compact('professionals', 'specialties', 'offices', 'stats'));
     }
 
     /**
@@ -97,6 +99,7 @@ class ProfessionalController extends Controller
                 'dni' => ['required', 'string', 'max:20', 'unique:professionals', 'regex:/^[0-9.]+$/'],
                 'license_number' => 'nullable|string|max:255',
                 'specialty_id' => 'required|exists:specialties,id',
+                'default_office_id' => 'nullable|exists:offices,id',
                 'commission_percentage' => 'required|numeric|min:0|max:100',
                 'receives_transfers_directly' => 'boolean',
                 'collects_directly' => 'boolean',
@@ -214,6 +217,7 @@ class ProfessionalController extends Controller
                 'dni' => ['required', 'string', 'max:20', 'unique:professionals,dni,'.$professional->id, 'regex:/^[0-9.]+$/'],
                 'license_number' => 'nullable|string|max:255',
                 'specialty_id' => 'required|exists:specialties,id',
+                'default_office_id' => 'nullable|exists:offices,id',
                 'commission_percentage' => 'required|numeric|min:0|max:100',
                 'receives_transfers_directly' => 'boolean',
                 'collects_directly' => 'boolean',

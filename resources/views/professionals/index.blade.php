@@ -356,6 +356,7 @@ function professionalsPage() {
         // Data inicial
         professionals: @json($professionals->items()),
         specialties: @json($specialties),
+        offices: @json($offices),
         stats: @json($stats),
         
         // Estados del modal
@@ -488,7 +489,8 @@ function professionalsPage() {
                 collects_directly: professional.collects_directly || false,
                 notes: professional.notes || '',
                 is_active: professional.is_active.toString(),
-                default_duration_minutes: professional.appointment_settings?.default_duration_minutes ?? 30
+                default_duration_minutes: professional.appointment_settings?.default_duration_minutes ?? 30,
+                default_office_id: professional.default_office_id ?? ''
             };
             this.modalOpen = true;
         },
@@ -508,7 +510,8 @@ function professionalsPage() {
                 collects_directly: false,
                 notes: '',
                 is_active: 'true',
-                default_duration_minutes: 30
+                default_duration_minutes: 30,
+                default_office_id: ''
             };
         },
         

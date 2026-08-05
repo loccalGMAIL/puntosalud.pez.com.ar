@@ -19,6 +19,7 @@ class Professional extends Model
         'first_name',
         'last_name',
         'specialty_id',
+        'default_office_id',
         'dni',
         'license_number',
         'phone',
@@ -45,6 +46,11 @@ class Professional extends Model
     public function specialty()
     {
         return $this->belongsTo(Specialty::class);
+    }
+
+    public function defaultOffice()
+    {
+        return $this->belongsTo(Office::class, 'default_office_id');
     }
 
     public function appointments()
