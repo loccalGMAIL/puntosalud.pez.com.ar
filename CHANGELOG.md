@@ -7,7 +7,7 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
-## [2.13.0] - 2026-08-05
+## [2.12.11] - 2026-08-05
 
 ### 🏥 Profesionales: Consultorio predeterminado
 
