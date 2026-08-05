@@ -88,7 +88,7 @@ class AppointmentController extends Controller
         $appointments = $query->orderBy('appointment_date', 'asc')->paginate(20)->withQueryString();
 
         // Datos para filtros y formularios
-        $professionals = Professional::where('is_active', true)->with('specialty')->orderBy('last_name')->get();
+        $professionals = Professional::where('is_active', true)->with(['specialty', 'defaultOffice'])->orderBy('last_name')->get();
         $patients = Patient::where('activo', true)->orderBy('last_name')->orderBy('first_name')->get();
         $offices = Office::where('is_active', true)->orderBy('name')->get();
 

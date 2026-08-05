@@ -42,7 +42,7 @@
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Profesional *</label>
                 <select id="professional-select"
                         x-model="form.professional_id"
-                        @change="clearError('professional_id')"
+                        @change="clearError('professional_id'); const selectedProfessional = professionals.find(p => p.id == form.professional_id); if (selectedProfessional && selectedProfessional.default_office && !form.office_id) { form.office_id = selectedProfessional.default_office.id.toString(); }"
                         :class="hasError('professional_id') ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 dark:border-gray-600 focus:ring-emerald-500 focus:border-emerald-500'"
                         class="w-full px-3 py-2 border rounded-md shadow-sm dark:bg-gray-700 dark:text-white"
                         required>

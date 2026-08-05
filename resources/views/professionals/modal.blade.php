@@ -174,7 +174,7 @@
                     <!-- Configuración -->
                     <div>
                         <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Configuración</h3>
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-start">
                             <!-- Duración por defecto -->
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Duración de turno por defecto</label>
@@ -193,6 +193,19 @@
                                     <option value="120">120 min</option>
                                 </select>
                                 <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Tamaño de los bloques en la agenda</p>
+                            </div>
+
+                            <!-- Consultorio predeterminado -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Consultorio predeterminado</label>
+                                <select x-model="form.default_office_id" name="default_office_id"
+                                        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500 dark:bg-gray-700 dark:text-white">
+                                    <option value="">Sin consultorio predeterminado</option>
+                                    <template x-for="office in offices" :key="office.id">
+                                        <option :value="office.id" x-text="office.name"></option>
+                                    </template>
+                                </select>
+                                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Se autoselecciona al crear turnos (opcional)</p>
                             </div>
 
                             <!-- Recibe transferencias directamente -->
