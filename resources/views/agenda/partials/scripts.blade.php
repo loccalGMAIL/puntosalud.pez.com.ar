@@ -125,6 +125,7 @@ document.addEventListener('alpine:init', () => {
             }
             if (professionalId) {
                 this.form.professional_id = professionalId.toString();
+                this.applyDefaultOffice(professionalId);
             }
 
             this.modalOpen = true;
@@ -135,10 +136,21 @@ document.addEventListener('alpine:init', () => {
             this.resetForm();
             this.clearAllErrors();
             if (date) this.form.appointment_date = date;
-            if (professionalId) this.form.professional_id = professionalId.toString();
+            if (professionalId) {
+                this.form.professional_id = professionalId.toString();
+                this.applyDefaultOffice(professionalId);
+            }
             if (time) this.form.appointment_time = time;
             if (duration) this.form.duration = duration;
             this.modalOpen = true;
+        },
+
+        // Autocompletar consultorio predeterminado del profesional (si el campo está vacío)
+        applyDefaultOffice(professionalId) {
+            const professional = this.professionals.find(p => p.id == professionalId);
+            if (professional && professional.default_office && !this.form.office_id) {
+                this.form.office_id = professional.default_office.id.toString();
+            }
         },
 
         resetForm() {
@@ -655,6 +667,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 const alpineComponent = Alpine.$data(document.querySelector('[x-data="appointmentModal()"]'));
                 if (alpineComponent) {
                     alpineComponent.form.professional_id = selectedValue;
+                    // Autocompletar consultorio predeterminado del profesional (si el campo está vacío)
+                    const selectedProfessional = alpineComponent.professionals.find(p => p.id == selectedValue);
+                    if (selectedProfessional && selectedProfessional.default_office && !alpineComponent.form.office_id) {
+                        alpineComponent.form.office_id = selectedProfessional.default_office.id.toString();
+                    }
                 }
             });
 

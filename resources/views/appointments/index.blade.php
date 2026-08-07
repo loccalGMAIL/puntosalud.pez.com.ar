@@ -1276,6 +1276,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 const alpineComponent = Alpine.$data(document.querySelector('[x-data="appointmentsPage()"]'));
                 if (alpineComponent) {
                     alpineComponent.form.professional_id = selectedValue;
+                    // Autocompletar consultorio predeterminado del profesional (si el campo está vacío)
+                    const selectedProfessional = alpineComponent.professionals.find(p => p.id == selectedValue);
+                    if (selectedProfessional && selectedProfessional.default_office && !alpineComponent.form.office_id) {
+                        alpineComponent.form.office_id = selectedProfessional.default_office.id.toString();
+                    }
                 }
             });
 
