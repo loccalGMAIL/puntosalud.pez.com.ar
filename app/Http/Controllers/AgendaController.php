@@ -33,7 +33,7 @@ class AgendaController extends Controller
         $startOfCalendar = $date->copy()->startOfWeek();
         $endOfCalendar = $date->copy()->endOfMonth()->endOfWeek();
 
-        $professionals = Professional::active()->with('specialty')->ordered()->get();
+        $professionals = Professional::active()->with(['specialty', 'defaultOffice'])->ordered()->get();
         $patients = Patient::where('activo', true)->orderBy('last_name')->orderBy('first_name')->get();
         $offices = Office::where('is_active', true)->orderBy('name')->get();
 

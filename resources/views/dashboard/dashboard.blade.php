@@ -380,6 +380,11 @@ function urgencyModalDashboard() {
 
                             urgencyProfessionalSelect.on('change', function(e) {
                                 self.urgencyForm.professional_id = $(this).val();
+                                // Autocompletar consultorio predeterminado del profesional (si el campo está vacío)
+                                const selectedProfessional = self.professionals.find(p => p.id == self.urgencyForm.professional_id);
+                                if (selectedProfessional && selectedProfessional.default_office && !self.urgencyForm.office_id) {
+                                    self.urgencyForm.office_id = selectedProfessional.default_office.id.toString();
+                                }
                             });
 
                             urgencyProfessionalSelect.on('select2:open', function() {
