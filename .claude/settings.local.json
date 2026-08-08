@@ -35,7 +35,13 @@
       "Bash(php -l app/Services/WhatsAppService.php)",
       "Bash(php -l routes/web.php)",
       "Bash(php -l app/Services/WhatsAppDispatchWindow.php)",
-      "Bash(php -r 'echo '\\\\''Compile test: '\\\\''; $bladeCompiler = require '\\\\''vendor/autoload.php'\\\\''; require '\\\\''bootstrap/app.php'\\\\''; echo '\\\\''OK'\\\\'';')"
+      "Bash(php -r 'echo '\\\\''Compile test: '\\\\''; $bladeCompiler = require '\\\\''vendor/autoload.php'\\\\''; require '\\\\''bootstrap/app.php'\\\\''; echo '\\\\''OK'\\\\'';')",
+      "Bash(mysql -u root -N -e \"SELECT id, first_name, last_name, receives_transfers_directly FROM puntosalud2.professionals WHERE last_name LIKE '%Torletti%' OR first_name LIKE '%Torletti%';\")",
+      "Bash(php artisan *)",
+      "Bash(php artisan tinker '--execute= *)",
+      "Bash(tasklist)",
+      "Bash(net start *)",
+      "Bash(where.exe mysqld *)"
     ],
     "deny": [],
     "ask": []

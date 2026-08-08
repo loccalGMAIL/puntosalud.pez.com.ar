@@ -7,6 +7,23 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [2.12.12] - 2026-08-08
+
+### 💰 Liquidaciones: entrega al centro no redirigía y podía duplicarse
+
+**Síntoma reportado**: al liquidar un profesional con neto negativo (debe entregar dinero al centro), el sistema a veces no redirigía al formulario de ingreso manual. Cuando sí se llegaba y se registraba el ingreso, el modal "¿Desea imprimir el comprobante?" desaparecía solo, la pantalla quedaba igual, y al presionar "Registrar Ingreso" de nuevo se generaba **otro** ingreso duplicado — pudiendo repetirse varias veces y descuadrando la caja.
+
+**Causa**: el modal global `SystemModal` reutiliza un único elemento del DOM para todo el sitio. Al encadenar dos modales seguidos (como ocurre tras registrar el ingreso: "Entrega saldada" y luego "¿Imprimir recibo?"), el temporizador de cierre del primer modal quedaba pendiente y, a los 300ms, ocultaba por error el segundo modal recién abierto sin que el usuario hubiera respondido. Su promesa nunca se resolvía, por lo que la redirección posterior nunca se ejecutaba y el botón de envío, que ya se había rehabilitado, quedaba disponible para un doble envío. El backend, además, no impedía crear un segundo movimiento de caja para una liquidación que ya había sido saldada.
+
+**Cambios**:
+
+- `SystemModal` ahora cancela cualquier temporizador de cierre pendiente de una invocación anterior antes de mostrar un nuevo modal, evitando que un modal recién abierto se oculte solo.
+- La redirección al formulario de ingreso manual tras una liquidación con neto negativo ahora tiene el mismo respaldo por `setTimeout` que ya tenía el caso de monto positivo, por si el modal no resuelve su promesa.
+- El botón "Registrar Ingreso" permanece deshabilitado durante todo el flujo de confirmación (modales + redirección), no solo hasta la respuesta del servidor.
+- El backend ahora rechaza con un mensaje claro (sin crear registros) un reenvío del mismo `liquidation_id` cuando la entrega ya fue registrada, como defensa adicional ante doble click, reintento de red o doble pestaña.
+
+---
+
 ## [2.12.11] - 2026-08-05
 
 ### 🏥 Profesionales: Consultorio predeterminado

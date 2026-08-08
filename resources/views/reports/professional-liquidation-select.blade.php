@@ -322,6 +322,22 @@ async function liquidarProfesional(professionalId, professionalName, amount, dat
 
                 window.location.href = url.toString();
             });
+
+            // Backup: redirigir de todas formas si el modal no resuelve su promesa.
+            setTimeout(() => {
+                const url = new URL('{{ route("cash.manual-income-form") }}', window.location.origin);
+                url.searchParams.set('amount', absAmount);
+                url.searchParams.set('category', 'professional_module_payment');
+                url.searchParams.set('payment_method', 'cash');
+                url.searchParams.set('professional_id', professionalId);
+                url.searchParams.set('description', description);
+                url.searchParams.set('notes', notes);
+                url.searchParams.set('from_liquidation', '1');
+                if (result.data.liquidation_id) {
+                    url.searchParams.set('liquidation_id', result.data.liquidation_id);
+                }
+                window.location.href = url.toString();
+            }, 3000);
         } else {
             // Monto positivo o cero: recargar normalmente
             SystemModal.show(
