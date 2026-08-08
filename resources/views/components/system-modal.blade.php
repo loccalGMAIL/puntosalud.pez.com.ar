@@ -46,6 +46,7 @@
 // Sistema de Modal Global
 window.SystemModal = {
     currentCallback: null,
+    hideTimeoutId: null,
 
     // Configuraciones de tipos de modal
     types: {
@@ -85,6 +86,10 @@ window.SystemModal = {
 
     // Mostrar modal de información/éxito/error
     show(type, title, message, confirmText = 'Aceptar', showCancel = false) {
+        // Invalidar cualquier ocultamiento pendiente de una invocación anterior
+        // (evita que un modal recién abierto se oculte solo por un timer heredado).
+        clearTimeout(this.hideTimeoutId);
+
         return new Promise((resolve) => {
             const modal = document.getElementById('systemModal');
             const content = document.getElementById('systemModalContent');
@@ -134,6 +139,10 @@ window.SystemModal = {
 
     // Mostrar modal de confirmación
     confirm(title, message, confirmText = 'Confirmar', cancelText = 'Cancelar') {
+        // Invalidar cualquier ocultamiento pendiente de una invocación anterior
+        // (evita que un modal recién abierto se oculte solo por un timer heredado).
+        clearTimeout(this.hideTimeoutId);
+
         return new Promise((resolve) => {
             const modal = document.getElementById('systemModal');
             const content = document.getElementById('systemModalContent');
@@ -203,7 +212,8 @@ window.SystemModal = {
         content.classList.remove('scale-100', 'opacity-100');
         content.classList.add('scale-95', 'opacity-0');
 
-        setTimeout(() => {
+        clearTimeout(this.hideTimeoutId);
+        this.hideTimeoutId = setTimeout(() => {
             modal.classList.add('hidden');
             modal.classList.remove('flex');
         }, 300);

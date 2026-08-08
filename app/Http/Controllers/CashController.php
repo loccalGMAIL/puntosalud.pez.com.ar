@@ -1180,6 +1180,27 @@ class CashController extends Controller
                 ], 400);
             }
 
+            // Si el ingreso viene vinculado a una liquidación (entrega al centro de un neto
+            // negativo), verificar ANTES de crear nada que siga pendiente. Si ya fue saldada
+            // por un envío anterior (doble click, reintento, dos pestañas), no crear un
+            // Payment/CashMovement duplicado.
+            $liquidation = null;
+            if (! empty($validated['liquidation_id'])) {
+                $liquidation = \App\Models\ProfessionalLiquidation::where('id', $validated['liquidation_id'])
+                    ->where('clinic_settlement_status', 'pending')
+                    ->lockForUpdate()
+                    ->first();
+
+                if (! $liquidation) {
+                    DB::rollBack();
+
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Esta entrega ya fue registrada anteriormente.',
+                    ], 409);
+                }
+            }
+
             $receiptPath = null;
             if ($request->hasFile('receipt_file')) {
                 $receiptPath = $request->file('receipt_file')->store('receipts', 'public');
@@ -1252,19 +1273,12 @@ class CashController extends Controller
             //   la caja seguirá bloqueando hasta que se registre el monto correcto.
             $settledLiquidations = [];
 
-            if (! empty($validated['liquidation_id'])) {
-                $liquidation = \App\Models\ProfessionalLiquidation::where('id', $validated['liquidation_id'])
-                    ->where('clinic_settlement_status', 'pending')
-                    ->lockForUpdate()
-                    ->first();
-
-                if ($liquidation) {
-                    $liquidation->update(['clinic_settlement_status' => 'settled']);
-                    $settledLiquidations[] = [
-                        'id' => $liquidation->id,
-                        'amount' => abs((float) $liquidation->net_professional_amount),
-                    ];
-                }
+            if ($liquidation) {
+                $liquidation->update(['clinic_settlement_status' => 'settled']);
+                $settledLiquidations[] = [
+                    'id' => $liquidation->id,
+                    'amount' => abs((float) $liquidation->net_professional_amount),
+                ];
             } elseif ($validated['category'] === 'professional_module_payment' && ! empty($validated['professional_id'])) {
                 $pending = \App\Models\ProfessionalLiquidation::where('professional_id', $validated['professional_id'])
                     ->where('clinic_settlement_status', 'pending')

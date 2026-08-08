@@ -458,8 +458,8 @@ function incomeForm() {
                     window.showToast(result.message || 'Tu sesión ha expirado. Redirigiendo...', 'warning');
                     setTimeout(() => { window.location.href = result.redirect || '/login'; }, 1500);
                 } else if (response.ok && result.success) {
-                    this.loading = false;
-
+                    // No reactivamos el botón aquí: debe seguir deshabilitado mientras
+                    // se muestran los modales y hasta redirigir, para evitar un doble envío.
                     if (result.settled_liquidations && result.settled_liquidations.length > 0) {
                         await SystemModal.show(
                             'success',
