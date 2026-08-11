@@ -2471,16 +2471,12 @@ class ReportController extends Controller
             ->orderBy('created_at')
             ->get();
 
-        $movementsForTotals = $movements->filter(function ($movement) {
-            return ! in_array($movement->movementType?->code, ['cash_opening', 'cash_closing']);
-        });
+        $includeExternal = $request->boolean('include_external', true);
+        $includeCompensations = $request->boolean('include_compensations');
 
-        $includeExternal = $request->boolean('include_external');
-        if ($includeExternal) {
-            $movementsForTotals = $movementsForTotals->concat(
-                $this->buildExternalExpensesAsMovements($startDate, $endDate)
-            );
-        }
+        $movementsForTotals = $this->buildCashAnalysisMovements(
+            $movements, $startDate, $endDate, $includeExternal, $includeCompensations
+        );
 
         $reportData = $this->generateCashAnalysisData($movementsForTotals, $groupBy, $startDate, $endDate);
 
@@ -2516,7 +2512,7 @@ class ReportController extends Controller
             ]);
         }
 
-        return view('reports.cash-analysis', compact('reportData', 'summary', 'movementsByType', 'includeExternal'));
+        return view('reports.cash-analysis', compact('reportData', 'summary', 'movementsByType', 'includeExternal', 'includeCompensations'));
     }
 
     /**
@@ -2537,16 +2533,12 @@ class ReportController extends Controller
             ->orderBy('created_at')
             ->get();
 
-        $movementsForTotals = $movements->filter(function ($movement) {
-            return ! in_array($movement->movementType?->code, ['cash_opening', 'cash_closing']);
-        });
+        $includeExternal = $request->boolean('include_external', true);
+        $includeCompensations = $request->boolean('include_compensations');
 
-        $includeExternal = $request->boolean('include_external');
-        if ($includeExternal) {
-            $movementsForTotals = $movementsForTotals->concat(
-                $this->buildExternalExpensesAsMovements($startDate, $endDate)
-            );
-        }
+        $movementsForTotals = $this->buildCashAnalysisMovements(
+            $movements, $startDate, $endDate, $includeExternal, $includeCompensations
+        );
 
         $reportData = $this->generateCashAnalysisData($movementsForTotals, $groupBy, $startDate, $endDate);
 
@@ -2574,7 +2566,7 @@ class ReportController extends Controller
         });
 
         return view('reports.cash-analysis-print', compact(
-            'reportData', 'summary', 'movementsByType', 'dateFrom', 'dateTo', 'groupBy', 'includeExternal'
+            'reportData', 'summary', 'movementsByType', 'dateFrom', 'dateTo', 'groupBy', 'includeExternal', 'includeCompensations'
         ));
     }
 
@@ -2596,16 +2588,12 @@ class ReportController extends Controller
             ->orderBy('created_at')
             ->get();
 
-        $movementsForTotals = $movements->filter(function ($movement) {
-            return ! in_array($movement->movementType?->code, ['cash_opening', 'cash_closing']);
-        });
+        $includeExternal = $request->boolean('include_external', true);
+        $includeCompensations = $request->boolean('include_compensations');
 
-        $includeExternal = $request->boolean('include_external');
-        if ($includeExternal) {
-            $movementsForTotals = $movementsForTotals->concat(
-                $this->buildExternalExpensesAsMovements($startDate, $endDate)
-            );
-        }
+        $movementsForTotals = $this->buildCashAnalysisMovements(
+            $movements, $startDate, $endDate, $includeExternal, $includeCompensations
+        );
 
         $reportData = $this->generateCashAnalysisData($movementsForTotals, $groupBy, $startDate, $endDate);
 
@@ -2638,7 +2626,7 @@ class ReportController extends Controller
             'Content-Disposition' => "attachment; filename=\"$filename\"",
         ];
 
-        $callback = function () use ($summary, $reportData, $movementsByType, $dateFrom, $dateTo, $includeExternal) {
+        $callback = function () use ($summary, $reportData, $movementsByType, $dateFrom, $dateTo, $includeExternal, $includeCompensations) {
             $file = fopen('php://output', 'w');
             fprintf($file, chr(0xEF).chr(0xBB).chr(0xBF));
 
@@ -2652,9 +2640,8 @@ class ReportController extends Controller
             fputcsv($file, ['Resultado Neto', number_format($summary['net_amount'], 2, ',', '.')], ';');
             fputcsv($file, ['Cantidad de Movimientos', $summary['movements_count']], ';');
             fputcsv($file, ['Dias del Periodo', $summary['period_days']], ';');
-            if ($includeExternal) {
-                fputcsv($file, ['Incluye gastos externos', 'Sí'], ';');
-            }
+            fputcsv($file, ['Incluye gastos externos', $includeExternal ? 'Sí' : 'No'], ';');
+            fputcsv($file, ['Incluye compensaciones de caja', $includeCompensations ? 'Sí' : 'No'], ';');
             fputcsv($file, [], ';');
 
             fputcsv($file, ['DETALLE POR PERIODO'], ';');
@@ -2685,6 +2672,38 @@ class ReportController extends Controller
         };
 
         return response()->stream($callback, 200, $headers);
+    }
+
+    /**
+     * Helper: aplica los filtros del Análisis de Caja según los flags del request.
+     * Excluye siempre apertura/cierre de caja; excluye las compensaciones de caja
+     * (ingresos que solo entran para financiar un gasto) salvo que se pidan
+     * explícitamente; suma los gastos externos si corresponde.
+     */
+    private function buildCashAnalysisMovements(
+        \Illuminate\Support\Collection $movements,
+        $startDate,
+        $endDate,
+        bool $includeExternal,
+        bool $includeCompensations
+    ): \Illuminate\Support\Collection {
+        $excludedCodes = ['cash_opening', 'cash_closing'];
+
+        if (! $includeCompensations) {
+            $excludedCodes[] = 'compensacion_caja';
+        }
+
+        $filtered = $movements->filter(function ($movement) use ($excludedCodes) {
+            return ! in_array($movement->movementType?->code, $excludedCodes);
+        });
+
+        if ($includeExternal) {
+            $filtered = $filtered->concat(
+                $this->buildExternalExpensesAsMovements($startDate, $endDate)
+            );
+        }
+
+        return $filtered;
     }
 
     /**

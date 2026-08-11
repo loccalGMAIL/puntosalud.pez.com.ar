@@ -41,7 +41,8 @@
       "Bash(php artisan tinker '--execute= *)",
       "Bash(tasklist)",
       "Bash(net start *)",
-      "Bash(where.exe mysqld *)"
+      "Bash(where.exe mysqld *)",
+      "Bash(awk 'NR==511,NR==511{}1' app/Http/Controllers/ReportController.php)"
     ],
     "deny": [],
     "ask": []
