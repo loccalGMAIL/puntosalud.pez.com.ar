@@ -85,14 +85,19 @@
                 </div>
             </div>
 
-            <div class="flex items-center gap-3 mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
+            <div class="flex flex-wrap items-center gap-x-6 gap-y-2 mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
                 <label class="flex items-center gap-2 cursor-pointer select-none">
                     <input type="checkbox"
                            x-model="filters.include_external"
                            class="w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500 dark:bg-gray-700">
                     <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Incluir gastos externos</span>
                 </label>
-                <span class="text-xs text-gray-400 dark:text-gray-500">Agrega los gastos cargados fuera de caja al análisis</span>
+                <label class="flex items-center gap-2 cursor-pointer select-none">
+                    <input type="checkbox"
+                           x-model="filters.include_compensations"
+                           class="w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500 dark:bg-gray-700">
+                    <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Incluir compensaciones de caja</span>
+                </label>
             </div>
         </form>
     </div>
@@ -206,8 +211,11 @@
         <div class="p-6">
             <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                 Detalle del Período ({{ $reportData->count() }} períodos)
-                @if(!empty($includeExternal))
-                <span class="text-xs font-normal bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 px-2 py-0.5 rounded-full">+ Gastos externos</span>
+                @if(empty($includeExternal))
+                <span class="text-xs font-normal bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-2 py-0.5 rounded-full">Sin gastos externos</span>
+                @endif
+                @if(!empty($includeCompensations))
+                <span class="text-xs font-normal bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 px-2 py-0.5 rounded-full">+ Compensaciones</span>
                 @endif
             </h2>
 
@@ -258,25 +266,34 @@ function cashReportForm() {
             date_from: '{{ request("date_from", now()->startOfMonth()->format("Y-m-d")) }}',
             date_to: '{{ request("date_to", now()->format("Y-m-d")) }}',
             group_by: '{{ request("group_by", "day") }}',
-            include_external: {{ request('include_external') ? 'true' : 'false' }}
+            include_external: {{ request()->boolean('include_external', true) ? 'true' : 'false' }},
+            include_compensations: {{ request()->boolean('include_compensations') ? 'true' : 'false' }}
+        },
+
+        // Los booleanos se envían siempre (0 o 1): un check activo por defecto
+        // no se podría apagar si se omitiera el parámetro al estar destildado.
+        buildParams() {
+            const params = new URLSearchParams();
+            Object.entries(this.filters).forEach(([key, value]) => {
+                if (typeof value === 'boolean') {
+                    params.set(key, value ? '1' : '0');
+                } else if (value) {
+                    params.set(key, value);
+                }
+            });
+            return params;
         },
 
         async generateReport() {
             this.loading = true;
 
-            const params = new URLSearchParams();
-            Object.entries(this.filters).forEach(([key, value]) => {
-                if (value) params.set(key, value);
-            });
+            const params = this.buildParams();
 
             window.location.href = `/reports/cash-analysis?${params.toString()}`;
         },
 
         async exportReport(format) {
-            const params = new URLSearchParams();
-            Object.entries(this.filters).forEach(([key, value]) => {
-                if (value) params.set(key, value);
-            });
+            const params = this.buildParams();
 
             if (format === 'excel') {
                 window.location.href = `/reports/cash-analysis/export?${params.toString()}`;

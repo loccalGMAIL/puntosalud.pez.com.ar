@@ -7,6 +7,22 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [2.12.13] - 2026-08-11
+
+### 📊 Análisis de Caja: las compensaciones ya no inflan los ingresos
+
+**Síntoma reportado**: el reporte de Análisis de Caja mostraba ingresos más altos de lo real porque contaba como ingreso los movimientos de **Compensación de Caja** — plata que entra únicamente para poder pagar un gasto que supera el disponible en caja, no facturación del centro.
+
+**Cambios**:
+
+- Los movimientos con tipo **Compensación de Caja** quedan **excluidos por defecto** del Análisis de Caja: no suman al total de ingresos, ni al neto, ni al detalle por período, ni al desglose por tipo de movimiento. Aplica igual en la vista web, la impresión y la exportación a Excel.
+- Se agregó el check **"Incluir compensaciones de caja"** (destildado por defecto) para volver a verlas incluidas cuando haga falta. Al activarlo se muestra el indicador "+ Compensaciones".
+- El gasto que la compensación financia sigue contabilizándose como egreso, por lo que el resultado neto del período puede ser menor al que mostraba antes.
+- El check **"Incluir gastos externos"** ahora viene **preseleccionado**, y se quitó el texto explicativo que lo acompañaba. Cuando se lo destilda, el reporte lo indica con la leyenda "Sin gastos externos".
+- La exportación a Excel deja constancia del estado de ambos filtros (Sí/No) en el bloque de resumen.
+
+---
+
 ## [2.12.12] - 2026-08-08
 
 ### 💰 Liquidaciones: entrega al centro no redirigía y podía duplicarse
