@@ -7,6 +7,23 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [2.12.14] - 2026-08-27
+
+### 🏥 Agenda: el consultorio del turno vuelve a mostrarse (y deja de borrarse)
+
+**Síntoma reportado**: al abrir un turno desde la **Agenda**, el campo Consultorio aparecía en "Sin consultorio" aunque el turno tuviera uno asignado. Como el dato no se veía, parecía que "no quedaba asentado" al crear el turno. Peor todavía: al guardar ese turno desde la Agenda —aunque sólo se cambiara la hora o una nota— el consultorio guardado se **borraba**.
+
+**Causa**: la Agenda no cargaba la relación `office` de los turnos, así que el modal recibía el turno sin consultorio y enviaba el campo vacío al guardar, lo que lo dejaba en nulo. En la pantalla de Turnos no pasaba porque ahí la relación sí se cargaba.
+
+**Cambios**:
+
+- La Agenda ahora carga el consultorio junto con el turno: al abrirlo, el select viene con el consultorio correcto preseleccionado y guardar ya no lo borra.
+- Al actualizar un turno, el consultorio **sólo se modifica si el formulario lo envía**. Un request que omite el campo ya no puede borrar el consultorio guardado. Elegir "Sin consultorio" a propósito sigue funcionando igual.
+- Nuevo comando `php artisan appointments:backfill-consultorio` para completar los turnos a los que ya se les había borrado el consultorio, usando el consultorio predeterminado del profesional. Admite `--from`, `--to`, `--dry-run` y `--force`, y pide confirmación mostrando el detalle. **Es una inferencia, no una restauración**: el valor original no quedó registrado en ningún lado, así que un turno que se dio en otro consultorio puede quedar mal asignado y eso afecta al reporte de ocupación de consultorios. Conviene revisar el `--dry-run` antes de ejecutarlo.
+- Se corrigió además la consulta de "profesionales más frecuentes" de la Agenda, que usaba una cláusula `HAVING` no portable.
+
+---
+
 ## [2.12.13] - 2026-08-11
 
 ### 📊 Análisis de Caja: las compensaciones ya no inflan los ingresos

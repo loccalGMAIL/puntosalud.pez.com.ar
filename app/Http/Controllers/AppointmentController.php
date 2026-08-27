@@ -420,10 +420,13 @@ class AppointmentController extends Controller
                 'is_between_turn' => 'nullable|boolean',
             ]);
 
-            // Limpiar campos opcionales vacíos
-            if (empty($validated['office_id'])) {
-                $validated['office_id'] = null;
-            }
+            // Limpiar campos opcionales vacíos.
+            // El consultorio sólo se pisa si el formulario lo envió: vacío es la opción
+            // legítima "Sin consultorio", pero un request que omite el campo no debe
+            // borrar el consultorio ya guardado.
+            $validated['office_id'] = $request->has('office_id')
+                ? ($validated['office_id'] ?: null)
+                : $appointment->office_id;
             if (empty($validated['notes'])) {
                 $validated['notes'] = null;
             }
