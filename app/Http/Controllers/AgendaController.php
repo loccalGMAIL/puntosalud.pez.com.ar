@@ -43,7 +43,9 @@ class AgendaController extends Controller
             ->withCount(['appointments' => function ($query) {
                 $query->whereIn('status', ['scheduled', 'attended']);
             }])
-            ->having('appointments_count', '>', 0)
+            ->whereHas('appointments', function ($query) {
+                $query->whereIn('status', ['scheduled', 'attended']);
+            })
             ->orderBy('appointments_count', 'desc')
             ->take(6)
             ->get();
@@ -56,7 +58,7 @@ class AgendaController extends Controller
         if ($selectedProfessional) {
             $professionalDefaultDuration = AppointmentSetting::where('professional_id', $selectedProfessional)
                 ->value('default_duration_minutes') ?? 30;
-            $appointments = Appointment::with(['patient', 'professional'])
+            $appointments = Appointment::with(['patient', 'professional', 'office'])
                 ->forProfessional($selectedProfessional)
                 ->whereBetween('appointment_date', [$startOfCalendar, $endOfCalendar])
                 ->whereNotIn('status', ['cancelled'])
