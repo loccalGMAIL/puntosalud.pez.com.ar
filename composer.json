@@ -67,7 +67,8 @@
         "test": [
             "@php artisan config:clear --ansi",
             "@php artisan test"
-        ]
+        ],
+        "analyse": "phpstan analyse --memory-limit=1G"
     },
     "extra": {
         "laravel": {

@@ -38,7 +38,10 @@ Los tests usan SQLite en memoria (`:memory:`). No requieren base de datos real.
 ./vendor/bin/pint              # Formatea todo el proyecto (Laravel Pint)
 ./vendor/bin/pint --test       # Verifica sin modificar (modo dry-run)
 ./vendor/bin/pint app/         # Solo el directorio app/
+composer analyse               # Análisis estático (Larastan/PHPStan nivel 5 sobre app/)
 ```
+
+Los errores históricos están en `phpstan-baseline.neon`. Los errores nuevos se corrigen, no se agregan a la baseline. Las relaciones Eloquent llevan tipo de retorno y `@return BelongsTo<Modelo, $this>` (o el tipo que corresponda).
 
 ### Base de datos
 ```bash

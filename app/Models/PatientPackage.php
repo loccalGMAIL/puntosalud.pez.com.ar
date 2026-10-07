@@ -177,7 +177,7 @@ class PatientPackage extends Model
             return null;
         }
 
-        return now()->diffInDays($this->expires_at, false);
+        return (int) now()->diffInDays($this->expires_at, false);
     }
 
     /**

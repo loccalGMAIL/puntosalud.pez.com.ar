@@ -17,6 +17,7 @@ PuntoSalud2 is a Laravel 12 healthcare management application for medical appoin
 ### Testing & Quality
 - `composer test` or `php artisan test` - Run PHPUnit tests
 - `./vendor/bin/pint` - Run Laravel Pint (code formatter)
+- `composer analyse` - Run Larastan/PHPStan (level 5, `app/`). Known legacy errors live in `phpstan-baseline.neon`; fix new errors instead of adding them to the baseline
 - `php artisan config:clear` - Clear configuration cache
 
 ### Database
