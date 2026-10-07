@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Traits\LogsActivity;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Patient extends Model
 {
@@ -43,18 +44,22 @@ class Patient extends Model
 
     /**
      * Relaciones
+     *
+     * @return HasMany<Appointment, $this>
      */
-    public function appointments()
+    public function appointments(): HasMany
     {
         return $this->hasMany(Appointment::class);
     }
 
-    public function payments()
+    /** @return HasMany<Payment, $this> */
+    public function payments(): HasMany
     {
         return $this->hasMany(Payment::class);
     }
 
-    public function whatsappOptOuts()
+    /** @return HasMany<WhatsAppOptOut, $this> */
+    public function whatsappOptOuts(): HasMany
     {
         return $this->hasMany(WhatsAppOptOut::class);
     }

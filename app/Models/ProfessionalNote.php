@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Traits\LogsActivity;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ProfessionalNote extends Model
 {
@@ -26,12 +27,14 @@ class ProfessionalNote extends Model
         return 'Nota interna #' . $this->getKey();
     }
 
-    public function professional()
+    /** @return BelongsTo<Professional, $this> */
+    public function professional(): BelongsTo
     {
         return $this->belongsTo(Professional::class);
     }
 
-    public function author()
+    /** @return BelongsTo<User, $this> */
+    public function author(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');
     }

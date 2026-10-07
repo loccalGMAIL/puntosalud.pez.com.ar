@@ -27,12 +27,15 @@ class WhatsAppMessage extends Model
 
     /**
      * Relaciones
+     *
+     * @return BelongsTo<Appointment, $this>
      */
     public function appointment(): BelongsTo
     {
         return $this->belongsTo(Appointment::class);
     }
 
+    /** @return BelongsTo<Patient, $this> */
     public function patient(): BelongsTo
     {
         return $this->belongsTo(Patient::class);

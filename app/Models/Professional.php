@@ -5,6 +5,9 @@ namespace App\Models;
 use App\Traits\LogsActivity;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Professional extends Model
 {
@@ -42,43 +45,52 @@ class Professional extends Model
 
     /**
      * Relaciones
+     *
+     * @return BelongsTo<Specialty, $this>
      */
-    public function specialty()
+    public function specialty(): BelongsTo
     {
         return $this->belongsTo(Specialty::class);
     }
 
-    public function defaultOffice()
+    /** @return BelongsTo<Office, $this> */
+    public function defaultOffice(): BelongsTo
     {
         return $this->belongsTo(Office::class, 'default_office_id');
     }
 
-    public function appointments()
+    /** @return HasMany<Appointment, $this> */
+    public function appointments(): HasMany
     {
         return $this->hasMany(Appointment::class);
     }
 
-    public function schedules()
+    /** @return HasMany<ProfessionalSchedule, $this> */
+    public function schedules(): HasMany
     {
         return $this->hasMany(ProfessionalSchedule::class);
     }
 
-    public function appointmentSettings()
+    /** @return HasOne<AppointmentSetting, $this> */
+    public function appointmentSettings(): HasOne
     {
         return $this->hasOne(AppointmentSetting::class);
     }
 
-    public function liquidations()
+    /** @return HasMany<ProfessionalLiquidation, $this> */
+    public function liquidations(): HasMany
     {
         return $this->hasMany(ProfessionalLiquidation::class);
     }
 
-    public function internalNotes()
+    /** @return HasMany<ProfessionalNote, $this> */
+    public function internalNotes(): HasMany
     {
         return $this->hasMany(ProfessionalNote::class)->latest();
     }
 
-    public function absences()
+    /** @return HasMany<ProfessionalAbsence, $this> */
+    public function absences(): HasMany
     {
         return $this->hasMany(ProfessionalAbsence::class);
     }

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class LiquidationDetail extends Model
 {
@@ -28,27 +29,32 @@ class LiquidationDetail extends Model
         ];
     }
 
-    public function liquidation()
+    /** @return BelongsTo<ProfessionalLiquidation, $this> */
+    public function liquidation(): BelongsTo
     {
         return $this->belongsTo(ProfessionalLiquidation::class, 'liquidation_id');
     }
 
-    public function paymentDetail()
+    /** @return BelongsTo<PaymentDetail, $this> */
+    public function paymentDetail(): BelongsTo
     {
         return $this->belongsTo(PaymentDetail::class);
     }
 
-    public function paymentAppointment()
+    /** @return BelongsTo<PaymentAppointment, $this> */
+    public function paymentAppointment(): BelongsTo
     {
         return $this->belongsTo(PaymentAppointment::class);
     }
 
-    public function payment()
+    /** @return BelongsTo<Payment, $this> */
+    public function payment(): BelongsTo
     {
         return $this->belongsTo(Payment::class);
     }
 
-    public function appointment()
+    /** @return BelongsTo<Appointment, $this> */
+    public function appointment(): BelongsTo
     {
         return $this->belongsTo(Appointment::class);
     }

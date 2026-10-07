@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Traits\LogsActivity;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ProfessionalAbsence extends Model
 {
@@ -32,8 +33,10 @@ class ProfessionalAbsence extends Model
 
     /**
      * Relaciones
+     *
+     * @return BelongsTo<Professional, $this>
      */
-    public function professional()
+    public function professional(): BelongsTo
     {
         return $this->belongsTo(Professional::class);
     }

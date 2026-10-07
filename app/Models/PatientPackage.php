@@ -3,10 +3,10 @@
 namespace App\Models;
 
 use App\Traits\LogsActivity;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Carbon\Carbon;
 
 class PatientPackage extends Model
 {
@@ -53,6 +53,8 @@ class PatientPackage extends Model
 
     /**
      * Relación: Un paquete de paciente pertenece a un paciente
+     *
+     * @return BelongsTo<Patient, $this>
      */
     public function patient(): BelongsTo
     {
@@ -61,6 +63,8 @@ class PatientPackage extends Model
 
     /**
      * Relación: Un paquete de paciente pertenece a un paquete del catálogo
+     *
+     * @return BelongsTo<Package, $this>
      */
     public function package(): BelongsTo
     {
@@ -69,6 +73,8 @@ class PatientPackage extends Model
 
     /**
      * Relación: Un paquete de paciente pertenece a un pago
+     *
+     * @return BelongsTo<Payment, $this>
      */
     public function payment(): BelongsTo
     {

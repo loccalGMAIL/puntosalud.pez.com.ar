@@ -14,11 +14,13 @@ class WhatsAppOptOut extends Model
         'professional_id',
     ];
 
+    /** @return BelongsTo<Patient, $this> */
     public function patient(): BelongsTo
     {
         return $this->belongsTo(Patient::class);
     }
 
+    /** @return BelongsTo<Professional, $this> */
     public function professional(): BelongsTo
     {
         return $this->belongsTo(Professional::class);

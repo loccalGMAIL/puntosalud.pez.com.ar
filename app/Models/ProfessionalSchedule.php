@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Traits\LogsActivity;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ProfessionalSchedule extends Model
 {
@@ -33,12 +34,14 @@ class ProfessionalSchedule extends Model
         ];
     }
 
-    public function professional()
+    /** @return BelongsTo<Professional, $this> */
+    public function professional(): BelongsTo
     {
         return $this->belongsTo(Professional::class);
     }
 
-    public function office()
+    /** @return BelongsTo<Office, $this> */
+    public function office(): BelongsTo
     {
         return $this->belongsTo(Office::class);
     }

@@ -29,6 +29,8 @@ class PaymentDetail extends Model
 
     /**
      * Relación: Un detalle de pago pertenece a un pago
+     *
+     * @return BelongsTo<Payment, $this>
      */
     public function payment(): BelongsTo
     {
@@ -37,6 +39,8 @@ class PaymentDetail extends Model
 
     /**
      * Relación: Un detalle de pago puede estar vinculado a una liquidación
+     *
+     * @return BelongsTo<ProfessionalLiquidation, $this>
      */
     public function liquidation(): BelongsTo
     {

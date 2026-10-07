@@ -5,6 +5,8 @@ namespace App\Models;
 use App\Traits\LogsActivity;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class ProfessionalLiquidation extends Model
 {
@@ -61,17 +63,20 @@ class ProfessionalLiquidation extends Model
         ];
     }
 
-    public function professional()
+    /** @return BelongsTo<Professional, $this> */
+    public function professional(): BelongsTo
     {
         return $this->belongsTo(Professional::class);
     }
 
-    public function paidBy()
+    /** @return BelongsTo<User, $this> */
+    public function paidBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'paid_by');
     }
 
-    public function details()
+    /** @return HasMany<LiquidationDetail, $this> */
+    public function details(): HasMany
     {
         return $this->hasMany(LiquidationDetail::class, 'liquidation_id');
     }

@@ -5,6 +5,8 @@ namespace App\Models;
 use App\Traits\LogsActivity;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class CashMovement extends Model
 {
@@ -50,17 +52,20 @@ class CashMovement extends Model
 
     // Relaciones
 
-    public function user()
+    /** @return BelongsTo<User, $this> */
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
-    public function movementType()
+    /** @return BelongsTo<MovementType, $this> */
+    public function movementType(): BelongsTo
     {
         return $this->belongsTo(MovementType::class);
     }
 
-    public function reference()
+    /** @return MorphTo<Model, $this> */
+    public function reference(): MorphTo
     {
         return $this->morphTo();
     }

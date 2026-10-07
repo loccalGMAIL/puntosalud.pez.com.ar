@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class PaymentAppointment extends Model
 {
@@ -25,22 +27,26 @@ class PaymentAppointment extends Model
         ];
     }
 
-    public function payment()
+    /** @return BelongsTo<Payment, $this> */
+    public function payment(): BelongsTo
     {
         return $this->belongsTo(Payment::class);
     }
 
-    public function appointment()
+    /** @return BelongsTo<Appointment, $this> */
+    public function appointment(): BelongsTo
     {
         return $this->belongsTo(Appointment::class);
     }
 
-    public function professional()
+    /** @return BelongsTo<Professional, $this> */
+    public function professional(): BelongsTo
     {
         return $this->belongsTo(Professional::class);
     }
 
-    public function liquidationDetails()
+    /** @return HasMany<LiquidationDetail, $this> */
+    public function liquidationDetails(): HasMany
     {
         return $this->hasMany(LiquidationDetail::class);
     }

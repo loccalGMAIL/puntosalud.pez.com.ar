@@ -5,6 +5,8 @@ namespace App\Models;
 use App\Traits\LogsActivity;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Appointment extends Model
 {
@@ -51,38 +53,46 @@ class Appointment extends Model
 
     /**
      * Relaciones
+     *
+     * @return BelongsTo<Professional, $this>
      */
-    public function professional()
+    public function professional(): BelongsTo
     {
         return $this->belongsTo(Professional::class);
     }
 
-    public function patient()
+    /** @return BelongsTo<Patient, $this> */
+    public function patient(): BelongsTo
     {
         return $this->belongsTo(Patient::class);
     }
 
-    public function office()
+    /** @return BelongsTo<Office, $this> */
+    public function office(): BelongsTo
     {
         return $this->belongsTo(Office::class);
     }
 
-    public function createdBy()
+    /** @return BelongsTo<User, $this> */
+    public function createdBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
     }
 
-    public function paymentAppointments()
+    /** @return HasMany<PaymentAppointment, $this> */
+    public function paymentAppointments(): HasMany
     {
         return $this->hasMany(PaymentAppointment::class);
     }
 
-    public function liquidationDetails()
+    /** @return HasMany<LiquidationDetail, $this> */
+    public function liquidationDetails(): HasMany
     {
         return $this->hasMany(LiquidationDetail::class);
     }
 
-    public function whatsappMessages()
+    /** @return HasMany<WhatsAppMessage, $this> */
+    public function whatsappMessages(): HasMany
     {
         return $this->hasMany(WhatsAppMessage::class);
     }
