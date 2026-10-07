@@ -7,6 +7,26 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [2.13.0] - 2026-10-07
+
+### ⬆️ Actualización a Laravel 13
+
+**Sin cambios funcionales para el usuario final.** El sistema pasa de Laravel 12 a Laravel 13.
+
+**Cambios**:
+
+- **Laravel 13.35**, `laravel/tinker` 3.0 y PHPUnit 12.5. `composer audit` sigue sin advisories.
+- **Requiere PHP 8.3 o superior** (antes 8.2). Hay que verificarlo en el servidor antes de desplegar.
+- Se revisó la guía de actualización contra el código: no hay cambios de código necesarios. Los prefijos de cache y de cookie de sesión ya estaban definidos en `config/`, `session.serialization` no se define (las sesiones activas se conservan), no se usa `Response::throw`, y no hay anotaciones `@test` que migrar a PHPUnit 12.
+- Las guías de Laravel Boost (`CLAUDE.md`, `AGENTS.md` y skills) se regeneraron para Laravel 13.
+- Documentación (`README.md`, `CLAUDE.md`, `AGENTS.md`) actualizada a Laravel 13 / PHP 8.3.
+
+**Para desplegar**: confirmar PHP ≥ 8.3, luego `composer install --no-dev` y `php artisan optimize:clear`.
+
+**Observación (preexistente, sin corregir)**: el manejo personalizado del error 419 de `bootstrap/app.php` ("Tu sesión ha expirado…") nunca se ejecuta, ni en Laravel 12 ni en 13, porque el framework convierte la excepción antes de llamar a ese callback. Cuando vence el token CSRF se muestra la pantalla 419 estándar.
+
+---
+
 ## [2.12.15] - 2026-10-07
 
 ### 🛠️ Herramientas de desarrollo: análisis estático, Laravel Boost y dependencias al día

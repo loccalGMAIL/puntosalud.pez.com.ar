@@ -5,7 +5,7 @@
 [![Version](https://img.shields.io/badge/Version-2.12.3-green?style=flat)](#changelog)
 [![License](https://img.shields.io/badge/License-MIT-yellow?style=flat)](#license)
 
-Sistema integral de gestión médica para clínicas y consultorios, desarrollado con Laravel 12 y tecnologías modernas.
+Sistema integral de gestión médica para clínicas y consultorios, desarrollado con Laravel 13 y tecnologías modernas.
 
 ## 📋 Tabla de Contenidos
 
@@ -174,8 +174,8 @@ Sistema integral de gestión médica para clínicas y consultorios, desarrollado
 
 ### Backend
 
-* **Laravel 12** - Framework PHP
-* **PHP 8.2** - Lenguaje de programación
+* **Laravel 13** - Framework PHP
+* **PHP 8.3** - Lenguaje de programación
 * **MySQL** - Base de datos
 * **Eloquent ORM** - Manejo de datos
 
