@@ -6,6 +6,7 @@ namespace App\Models;
 use App\Traits\LogsActivity;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
@@ -58,6 +59,8 @@ class User extends Authenticatable
 
     /**
      * Relaciones
+     *
+     * @return BelongsTo<Profile, $this>
      */
     public function profile(): BelongsTo
     {
@@ -66,8 +69,10 @@ class User extends Authenticatable
 
     /**
      * Último login registrado en ActivityLog
+     *
+     * @return HasOne<ActivityLog, $this>
      */
-    public function lastLogin()
+    public function lastLogin(): HasOne
     {
         return $this->hasOne(ActivityLog::class)->ofMany(
             ['created_at' => 'max'],

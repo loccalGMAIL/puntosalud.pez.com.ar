@@ -11,6 +11,7 @@ class ProfilePermission extends Model
 
     protected $fillable = ['profile_id', 'permission'];
 
+    /** @return BelongsTo<Profile, $this> */
     public function profile(): BelongsTo
     {
         return $this->belongsTo(Profile::class);

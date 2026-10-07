@@ -1,0 +1,451 @@
+parameters:
+	ignoreErrors:
+		-
+			message: '#^Cannot call method format\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Console/Commands/CheckClinicSettlements.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>full_name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Console/Commands/SendWhatsAppReminders.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Console/Commands/SendWhatsAppReminders.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Appointment\:\:\$reminder_failed_count\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Console/Commands/WhatsAppRemindersStatus.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>first_name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 2
+			path: app/Console/Commands/WhatsAppRemindersStatus.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>last_name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 2
+			path: app/Console/Commands/WhatsAppRemindersStatus.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Expense\:\:\$expenses\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/AdminDashboardController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Expense\:\:\$month\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/AdminDashboardController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>icon" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Http/Controllers/AdminDashboardController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Http/Controllers/AdminDashboardController.php
+
+		-
+			message: '#^Cannot call method format\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Http/Controllers/AgendaController.php
+
+		-
+			message: '#^Cannot call method format\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 2
+			path: app/Http/Controllers/AppointmentController.php
+
+		-
+			message: '#^Parameter \#1 \$view of function view expects view\-string\|null, string given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Controllers/AppointmentController.php
+
+		-
+			message: '#^Parameter \#1 \$view of function view expects view\-string\|null, string given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Controllers/AuthController.php
+
+		-
+			message: '#^Cannot call method format\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 2
+			path: app/Http/Controllers/CashController.php
+
+		-
+			message: '#^Illuminate\\Support\\Collection\<string, int\> does not accept \(float\|int\)\.$#'
+			identifier: offsetAssign.valueType
+			count: 2
+			path: app/Http/Controllers/CashController.php
+
+		-
+			message: '#^Illuminate\\Support\\Collection\<string, int\> does not accept float\|int\.$#'
+			identifier: offsetAssign.valueType
+			count: 2
+			path: app/Http/Controllers/CashController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<\(int\|string\),Illuminate\\Database\\Eloquent\\Collection\<int, App\\Models\\ProfessionalLiquidation\>\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: app/Http/Controllers/CashController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Models\\ProfessionalLiquidation\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 2
+			path: app/Http/Controllers/CashController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>code" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 3
+			path: app/Http/Controllers/CashController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>icon" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 3
+			path: app/Http/Controllers/CashController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 3
+			path: app/Http/Controllers/CashController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>phone" in empty\(\) is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 2
+			path: app/Http/Controllers/DashboardController.php
+
+		-
+			message: '#^Parameter \#1 \$view of function view expects view\-string\|null, string given\.$#'
+			identifier: argument.type
+			count: 2
+			path: app/Http/Controllers/PatientController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Payment\:\:\$sessions_included\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/PaymentController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Payment\:\:\$sessions_used\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/PaymentController.php
+
+		-
+			message: '#^Cannot call method format\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Http/Controllers/ProfessionalAbsenceController.php
+
+		-
+			message: '#^Parameter \#1 \$view of function view expects view\-string\|null, string given\.$#'
+			identifier: argument.type
+			count: 3
+			path: app/Http/Controllers/ProfessionalController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 2
+			path: app/Http/Controllers/ProfessionalNoteController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Expense\:\:\$expenses\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/ReportController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Expense\:\:\$month\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/ReportController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Patient\:\:\$insurance_company\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/ReportController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\ProfessionalLiquidation\:\:\$billed_total\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/ReportController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\ProfessionalLiquidation\:\:\$clinic_total\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/ReportController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\ProfessionalLiquidation\:\:\$commission_total\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/ReportController.php
+
+		-
+			message: '#^Cannot call method format\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 4
+			path: app/Http/Controllers/ReportController.php
+
+		-
+			message: '#^Instanceof between string and Carbon\\Carbon will always evaluate to false\.$#'
+			identifier: instanceof.alwaysFalse
+			count: 1
+			path: app/Http/Controllers/ReportController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Models\\Professional\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 2
+			path: app/Http/Controllers/ReportController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Support\\Collection\<int,array\<string, mixed\>\>\:\:filter\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 2
+			path: app/Http/Controllers/ReportController.php
+
+		-
+			message: '#^Parameter \#1 \$view of function view expects view\-string\|null, string given\.$#'
+			identifier: argument.type
+			count: 2
+			path: app/Http/Controllers/ReportController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>billed_total" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 2
+			path: app/Http/Controllers/ReportController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>clinic_total" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 2
+			path: app/Http/Controllers/ReportController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>code" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 4
+			path: app/Http/Controllers/ReportController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>commission_total" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 2
+			path: app/Http/Controllers/ReportController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>default_duration_minutes" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Http/Controllers/ReportController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>full_name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Http/Controllers/ReportController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>health_insurance" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 2
+			path: app/Http/Controllers/ReportController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>icon" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 5
+			path: app/Http/Controllers/ReportController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 23
+			path: app/Http/Controllers/ReportController.php
+
+		-
+			message: '#^Variable \$dateFrom might not be defined\.$#'
+			identifier: variable.undefined
+			count: 2
+			path: app/Http/Controllers/ReportController.php
+
+		-
+			message: '#^Variable \$dateTo might not be defined\.$#'
+			identifier: variable.undefined
+			count: 2
+			path: app/Http/Controllers/ReportController.php
+
+		-
+			message: '#^Variable \$globalAbsent might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: app/Http/Controllers/ReportController.php
+
+		-
+			message: '#^Variable \$globalAttended might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: app/Http/Controllers/ReportController.php
+
+		-
+			message: '#^Variable \$globalHours might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: app/Http/Controllers/ReportController.php
+
+		-
+			message: '#^Variable \$globalRate might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: app/Http/Controllers/ReportController.php
+
+		-
+			message: '#^Variable \$globalTotal might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: app/Http/Controllers/ReportController.php
+
+		-
+			message: '#^Variable \$stats might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: app/Http/Controllers/ReportController.php
+
+		-
+			message: '#^Parameter \#1 \$view of function view expects view\-string\|null, string given\.$#'
+			identifier: argument.type
+			count: 2
+			path: app/Http/Controllers/UserController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Appointment\:\:\$dispatch_label\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/WhatsAppController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Appointment\:\:\$dispatch_status\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/WhatsAppController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Appointment\:\:\$dispatch_time\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/WhatsAppController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Appointment\:\:\$ideal_time\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/WhatsAppController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Appointment\:\:\$reminder_failed_count\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/WhatsAppController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>phone" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Jobs/SendWhatsAppReminder.php
+
+		-
+			message: '#^Offset ''absent''\|''attended''\|''cancelled''\|''scheduled'' on array\{scheduled\: ''Programado'', attended\: ''Atendido'', absent\: ''Ausente'', cancelled\: ''Cancelado''\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Models/Appointment.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>full_name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 2
+			path: app/Models/CashMovement.php
+
+		-
+			message: '#^Variable \$attendedAppointments on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.variable
+			count: 1
+			path: app/Models/Patient.php
+
+		-
+			message: '#^Match arm comparison between ''profesional'' and ''profesional'' is always true\.$#'
+			identifier: match.alwaysTrue
+			count: 1
+			path: app/Models/PaymentDetail.php
+
+		-
+			message: '#^Cannot call method format\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Models/ProfessionalLiquidation.php
+
+		-
+			message: '#^Cannot call method format\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Models/ScheduleException.php
+
+		-
+			message: '#^Using nullsafe method call on non\-nullable type string\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Models/ScheduleException.php
+
+		-
+			message: '#^Match arm comparison between ''manual_income'' and ''manual_income'' is always true\.$#'
+			identifier: match.alwaysTrue
+			count: 1
+			path: app/Services/CashMovementService.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>value" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Services/SettingService.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>full_name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 2
+			path: app/Services/WhatsAppService.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 2
+			path: app/Services/WhatsAppService.php

@@ -53,17 +53,21 @@ class Profile extends Model
 
     /**
      * Relaciones
+     *
+     * @return HasMany<ProfileModule, $this>
      */
     public function modules(): HasMany
     {
         return $this->hasMany(ProfileModule::class);
     }
 
+    /** @return HasMany<ProfilePermission, $this> */
     public function permissions(): HasMany
     {
         return $this->hasMany(ProfilePermission::class);
     }
 
+    /** @return HasMany<User, $this> */
     public function users(): HasMany
     {
         return $this->hasMany(User::class);

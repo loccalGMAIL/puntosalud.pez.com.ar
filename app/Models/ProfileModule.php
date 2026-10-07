@@ -16,6 +16,8 @@ class ProfileModule extends Model
 
     /**
      * Relaciones
+     *
+     * @return BelongsTo<Profile, $this>
      */
     public function profile(): BelongsTo
     {

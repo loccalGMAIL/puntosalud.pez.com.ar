@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Traits\LogsActivity;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Office extends Model
 {
@@ -26,13 +27,16 @@ class Office extends Model
 
     /**
      * Relaciones
+     *
+     * @return HasMany<Appointment, $this>
      */
-    public function appointments()
+    public function appointments(): HasMany
     {
         return $this->hasMany(Appointment::class);
     }
 
-    public function professionalSchedules()
+    /** @return HasMany<ProfessionalSchedule, $this> */
+    public function professionalSchedules(): HasMany
     {
         return $this->hasMany(ProfessionalSchedule::class);
     }

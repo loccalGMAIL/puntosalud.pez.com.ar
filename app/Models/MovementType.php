@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Traits\LogsActivity;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class MovementType extends Model
 {
@@ -40,8 +41,10 @@ class MovementType extends Model
 
     /**
      * Movimientos de caja que usan este tipo
+     *
+     * @return HasMany<CashMovement, $this>
      */
-    public function cashMovements()
+    public function cashMovements(): HasMany
     {
         return $this->hasMany(CashMovement::class, 'movement_type_id');
     }

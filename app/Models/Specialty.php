@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Traits\LogsActivity;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Specialty extends Model
 {
@@ -22,8 +23,10 @@ class Specialty extends Model
 
     /**
      * Relaciones
+     *
+     * @return HasMany<Professional, $this>
      */
-    public function professionals()
+    public function professionals(): HasMany
     {
         return $this->hasMany(Professional::class);
     }

@@ -7,6 +7,24 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [2.12.15] - 2026-10-07
+
+### 🛠️ Herramientas de desarrollo: análisis estático, Laravel Boost y dependencias al día
+
+**Sin cambios funcionales para el usuario final.** Esta versión mejora las herramientas de desarrollo y cierra las vulnerabilidades conocidas de las dependencias.
+
+**Cambios**:
+
+- **Larastan (PHPStan nivel 5)** sobre `app/`. Se ejecuta con `composer analyse`. Los errores históricos (141) quedan registrados en `phpstan-baseline.neon`; los errores nuevos deben corregirse en lugar de agregarse a la baseline.
+- **Modelos**: todas las relaciones Eloquent declaran su tipo de retorno y `@return` con genéricos (por ejemplo `BelongsTo<Professional, $this>`). Sin cambios de lógica.
+- **Laravel Boost** (servidor MCP y guías para agentes de código) configurado para Claude Code y Cursor: `.mcp.json`, `boost.json`, skills y un bloque de guías en `CLAUDE.md` / `AGENTS.md`.
+- **Seguridad**: `composer update` dentro de las restricciones actuales. Laravel 12.69.3, Guzzle 7.15, commonmark 2.10, Symfony 7.4, DomPDF 3.1.6, PHPUnit 11.5.57, entre otras. `composer audit` pasó de 52 advisories a 0. El `composer.lock` estaba desactualizado respecto de lo instalado (12.25.0 en el lock contra 12.62 en `vendor/`).
+- **Corrección menor**: los días hasta el vencimiento de un paquete de paciente (`PatientPackage::days_until_expiration`) devolvían un número decimal con Carbon 3 pese a declararse entero, lo que genera un aviso de PHP 8.3. Ahora devuelve el entero truncado, igual que antes.
+
+**Para desplegar**: `composer install` y `php artisan optimize:clear`. Las dependencias de desarrollo (Larastan, Boost) no se instalan en producción con `--no-dev`.
+
+---
+
 ## [2.12.14] - 2026-08-27
 
 ### 🏥 Agenda: el consultorio del turno vuelve a mostrarse (y deja de borrarse)

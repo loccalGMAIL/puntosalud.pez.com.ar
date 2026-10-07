@@ -5,6 +5,10 @@ namespace App\Models;
 use App\Traits\LogsActivity;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
@@ -56,40 +60,48 @@ class Payment extends Model
 
     /**
      * Relaciones
+     *
+     * @return BelongsTo<Patient, $this>
      */
-    public function patient()
+    public function patient(): BelongsTo
     {
         return $this->belongsTo(Patient::class);
     }
 
-    public function createdBy()
+    /** @return BelongsTo<User, $this> */
+    public function createdBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
     }
 
-    public function paymentAppointments()
+    /** @return HasMany<PaymentAppointment, $this> */
+    public function paymentAppointments(): HasMany
     {
         return $this->hasMany(PaymentAppointment::class);
     }
 
-    public function appointments()
+    /** @return BelongsToMany<Appointment, $this> */
+    public function appointments(): BelongsToMany
     {
         return $this->belongsToMany(Appointment::class, 'payment_appointments')
             ->withPivot('allocated_amount', 'is_liquidation_trigger')
             ->withTimestamps();
     }
 
-    public function liquidationDetails()
+    /** @return HasMany<LiquidationDetail, $this> */
+    public function liquidationDetails(): HasMany
     {
         return $this->hasMany(LiquidationDetail::class);
     }
 
-    public function paymentDetails()
+    /** @return HasMany<PaymentDetail, $this> */
+    public function paymentDetails(): HasMany
     {
         return $this->hasMany(PaymentDetail::class);
     }
 
-    public function patientPackage()
+    /** @return HasOne<PatientPackage, $this> */
+    public function patientPackage(): HasOne
     {
         return $this->hasOne(PatientPackage::class);
     }

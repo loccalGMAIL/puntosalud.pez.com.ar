@@ -33,6 +33,8 @@ class Package extends Model
 
     /**
      * Relación: Un paquete tiene muchos paquetes de pacientes
+     *
+     * @return HasMany<PatientPackage, $this>
      */
     public function patientPackages(): HasMany
     {
