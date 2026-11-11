@@ -10,21 +10,22 @@ class ActivityLogController extends Controller
 {
     // Mapa de nombres de módulos en español
     private const MODULE_NAMES = [
-        'Patient'                 => 'Paciente',
-        'Appointment'             => 'Turno',
-        'Payment'                 => 'Cobro',
-        'Professional'            => 'Profesional',
-        'User'                    => 'Usuario',
-        'CashMovement'            => 'Movimiento de Caja',
+        'Patient' => 'Paciente',
+        'Appointment' => 'Turno',
+        'Payment' => 'Cobro',
+        'Professional' => 'Profesional',
+        'User' => 'Usuario',
+        'CashMovement' => 'Movimiento de Caja',
         'ProfessionalLiquidation' => 'Liquidación',
-        'Package'                 => 'Paquete',
-        'PatientPackage'          => 'Paquete Paciente',
-        'ProfessionalSchedule'    => 'Agenda',
-        'ScheduleException'       => 'Excepción / Receso',
-        'AppointmentSetting'      => 'Config. Turno',
-        'Office'                  => 'Consultorio',
-        'Specialty'               => 'Especialidad',
-        'MovementType'            => 'Tipo Movimiento',
+        'Package' => 'Paquete',
+        'PatientPackage' => 'Paquete Paciente',
+        'ProfessionalSchedule' => 'Agenda',
+        'ScheduleException' => 'Excepción / Receso',
+        'ProfessionalSlotBlock' => 'Bloqueo de horario',
+        'AppointmentSetting' => 'Config. Turno',
+        'Office' => 'Consultorio',
+        'Specialty' => 'Especialidad',
+        'MovementType' => 'Tipo Movimiento',
     ];
 
     public function index(Request $request)
@@ -38,27 +39,27 @@ class ActivityLogController extends Controller
             ->withQueryString();
 
         // Estadísticas
-        $today         = now()->toDateString();
-        $startOfWeek   = now()->startOfWeek()->toDateString();
-        $startOfMonth  = now()->startOfMonth()->toDateString();
+        $today = now()->toDateString();
+        $startOfWeek = now()->startOfWeek()->toDateString();
+        $startOfMonth = now()->startOfMonth()->toDateString();
 
         $stats = [
-            'today'          => ActivityLog::whereDate('created_at', $today)->count(),
-            'week'           => ActivityLog::whereDate('created_at', '>=', $startOfWeek)->count(),
-            'month'          => ActivityLog::whereDate('created_at', '>=', $startOfMonth)->count(),
-            'active_users'   => ActivityLog::whereDate('created_at', $today)
+            'today' => ActivityLog::whereDate('created_at', $today)->count(),
+            'week' => ActivityLog::whereDate('created_at', '>=', $startOfWeek)->count(),
+            'month' => ActivityLog::whereDate('created_at', '>=', $startOfMonth)->count(),
+            'active_users' => ActivityLog::whereDate('created_at', $today)
                 ->whereNotNull('user_id')
                 ->distinct('user_id')
                 ->count('user_id'),
         ];
 
-        $users       = User::orderBy('name')->get(['id', 'name']);
+        $users = User::orderBy('name')->get(['id', 'name']);
         $moduleNames = self::MODULE_NAMES;
 
         if ($request->wantsJson()) {
             return response()->json([
-                'logs'        => $logs,
-                'stats'       => $stats,
+                'logs' => $logs,
+                'stats' => $stats,
                 'moduleNames' => $moduleNames,
             ]);
         }

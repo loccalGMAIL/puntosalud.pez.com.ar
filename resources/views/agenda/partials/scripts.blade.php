@@ -56,6 +56,10 @@ document.addEventListener('alpine:init', () => {
         patients: @json($patients),
         offices: @json($offices),
         allAppointments: @json($appointments),
+        allSlotBlocks: @json($slotBlocks ?? []),
+        blockFormOpen: false,
+        blockForm: { start_time: '', end_time: '', reason: '' },
+        blockLoading: false,
         schedules: @json($schedulesForJs ?? []),
         daySchedule: null,
         pxPerMin: 3,
@@ -204,8 +208,110 @@ document.addEventListener('alpine:init', () => {
                     nextApt = apt;
                 }
             }
-            if (!nextApt) return null;
-            return { maxMins: nextMins - currentMins, time: this.formatTime(nextApt.appointment_date) };
+            let nextTime = nextApt ? this.formatTime(nextApt.appointment_date) : null;
+            // Los horarios bloqueados también limitan la duración
+            const dayBlocks = this.allSlotBlocks[this.form.appointment_date] || [];
+            for (const block of dayBlocks) {
+                const bMins = this.timeToMins(block.start);
+                if (bMins > currentMins && bMins < nextMins) {
+                    nextMins = bMins;
+                    nextTime = block.start;
+                }
+            }
+            if (nextMins === Infinity) return null;
+            return { maxMins: nextMins - currentMins, time: nextTime };
+        },
+
+        timeToMins(hhmm) {
+            const [h, m] = hhmm.split(':').map(Number);
+            return h * 60 + m;
+        },
+
+        minsToTime(mins) {
+            return String(Math.floor(mins / 60)).padStart(2, '0') + ':' + String(mins % 60).padStart(2, '0');
+        },
+
+        get daySlotBlocks() {
+            return this.allSlotBlocks[this.selectedDayDate] || [];
+        },
+
+        // Abre el formulario de bloqueo (opcionalmente con un turno precargado)
+        openBlockForm(startMins = null) {
+            const slot = this.daySchedule?.slotMins ?? 30;
+            const start = startMins ?? (this.daySchedule?.startMins ?? 480);
+            this.blockForm = {
+                start_time: this.minsToTime(start),
+                end_time: this.minsToTime(Math.min(start + slot, this.daySchedule?.endMins ?? start + slot)),
+                reason: '',
+            };
+            this.blockFormOpen = true;
+        },
+
+        async submitBlock() {
+            this.blockLoading = true;
+            try {
+                const response = await fetch('{{ route('agenda.slot-blocks.store') }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                    },
+                    body: JSON.stringify({
+                        professional_id: this.selectedProfessionalId,
+                        date: this.selectedDayDate,
+                        ...this.blockForm,
+                    }),
+                });
+                const result = await response.json();
+                if (response.ok && result.success) {
+                    this.blockFormOpen = false;
+                    this.showNotification(
+                        result.created + ' horario(s) bloqueado(s)' + (result.skipped ? ' (' + result.skipped + ' omitido(s) por estar ocupados)' : ''),
+                        'success'
+                    );
+                    setTimeout(() => this.reloadKeepingDay(), 700);
+                } else {
+                    const firstError = result.errors ? Object.values(result.errors)[0][0] : null;
+                    this.showNotification(firstError || result.message || 'No se pudo bloquear el horario', 'error');
+                }
+            } catch (error) {
+                this.showNotification('No se pudo bloquear el horario', 'error');
+            } finally {
+                this.blockLoading = false;
+            }
+        },
+
+        async unblockSlot(block) {
+            this.blockLoading = true;
+            try {
+                const response = await fetch('/agenda/slot-blocks/' + block.id, {
+                    method: 'DELETE',
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                    },
+                });
+                const result = await response.json();
+                if (response.ok && result.success) {
+                    this.showNotification('Horario desbloqueado', 'success');
+                    setTimeout(() => this.reloadKeepingDay(), 500);
+                } else {
+                    this.showNotification(result.message || 'No se pudo desbloquear el horario', 'error');
+                }
+            } catch (error) {
+                this.showNotification('No se pudo desbloquear el horario', 'error');
+            } finally {
+                this.blockLoading = false;
+            }
+        },
+
+        reloadKeepingDay() {
+            const url = new URL(window.location.href);
+            if (this.selectedDayDate) url.searchParams.set('date', this.selectedDayDate);
+            window.location.href = url.toString();
         },
 
         validateDateTime() {
@@ -451,11 +557,26 @@ document.addEventListener('alpine:init', () => {
                 });
             }
 
+            // Horarios bloqueados
+            const blockIntervals = this.daySlotBlocks.map(block => {
+                const s = this.timeToMins(block.start);
+                const e = this.timeToMins(block.end);
+                items.push({
+                    type: 'blocked',
+                    topPx: px(s - startMins),
+                    heightPx: Math.max(px(e - s), 20),
+                    block,
+                });
+                return [s, e];
+            });
+
             // Slots libres: tiempo real → mismas coordenadas que el grid
             if (!isPast) {
                 // Fusionar intervalos ocupados
                 const busy = sortedApts
                     .map(({ sMins, dur }) => [sMins, sMins + dur])
+                    .concat(blockIntervals)
+                    .sort((a, b) => a[0] - b[0])
                     .reduce((acc, [s, e]) => {
                         if (acc.length && s <= acc[acc.length - 1][1]) {
                             acc[acc.length - 1][1] = Math.max(acc[acc.length - 1][1], e);
