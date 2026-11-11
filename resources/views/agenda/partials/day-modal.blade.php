@@ -34,6 +34,14 @@
                     </svg>
                     Nuevo Turno
                 </button>
+                <button x-show="!isDayInPast() && daySchedule"
+                        @click="blockFormOpen ? blockFormOpen = false : openBlockForm()"
+                        class="inline-flex items-center px-3 py-1.5 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 text-sm font-medium rounded-lg shadow-sm transition-colors">
+                    <svg class="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+                    </svg>
+                    Bloquear horarios
+                </button>
                 <div x-show="isDayInPast()" class="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />
@@ -66,6 +74,36 @@
             <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-red-500 inline-block"></span> Urgencia</span>
             <span x-show="!isDayInPast()" class="flex items-center gap-1"><span class="w-3 h-2 rounded border border-dashed border-emerald-500 inline-block bg-emerald-50 dark:bg-emerald-900/20"></span> Disponible</span>
         </div> --}}
+
+        <!-- Formulario de bloqueo -->
+        <form x-show="blockFormOpen && daySchedule" x-cloak @submit.prevent="submitBlock()"
+              class="flex-shrink-0 mb-3 p-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/40 flex flex-wrap items-end gap-3">
+            <div>
+                <label class="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">Desde</label>
+                <input type="time" x-model="blockForm.start_time" required
+                       class="rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white text-sm">
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">Hasta</label>
+                <input type="time" x-model="blockForm.end_time" required
+                       class="rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white text-sm">
+            </div>
+            <div class="flex-1 min-w-[160px]">
+                <label class="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">Motivo (opcional)</label>
+                <input type="text" x-model="blockForm.reason" maxlength="255" placeholder="Ej: pedido del profesional"
+                       class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white text-sm">
+            </div>
+            <div class="flex gap-2">
+                <button type="submit" :disabled="blockLoading"
+                        class="px-3 py-2 bg-gray-800 hover:bg-gray-900 dark:bg-gray-600 dark:hover:bg-gray-500 text-white text-sm font-medium rounded-lg disabled:opacity-50">
+                    Bloquear
+                </button>
+                <button type="button" @click="blockFormOpen = false"
+                        class="px-3 py-2 text-sm text-gray-600 dark:text-gray-300 hover:underline">
+                    Cancelar
+                </button>
+            </div>
+        </form>
 
         <!-- Timeline -->
         <div x-show="daySchedule" class="flex-1 min-h-0 overflow-y-auto rounded-lg border border-gray-200 dark:border-gray-700">
@@ -114,6 +152,42 @@
                         </svg>
                         <span class="opacity-70 group-hover:opacity-100 transition-opacity" x-text="item.label"></span>
                     </button>
+                </template>
+
+                <!-- Candado para bloquear un slot libre — z-10 -->
+                <template x-for="item in timelineLayout.items.filter(i => i.type === 'free')" :key="'lock-' + item.startMins">
+                    <button type="button" title="Bloquear este horario"
+                            class="absolute right-4 flex items-center justify-center w-5 h-5 rounded
+                                   text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-white/70 dark:hover:bg-gray-700 z-10"
+                            :style="`top: ${item.topPx + Math.max((item.heightPx - 20) / 2, 0) + 1}px`"
+                            @click.stop="openBlockForm(item.startMins)">
+                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+                        </svg>
+                    </button>
+                </template>
+
+                <!-- Horarios bloqueados — z-10 -->
+                <template x-for="item in timelineLayout.items.filter(i => i.type === 'blocked')" :key="'blocked-' + item.block.id">
+                    <div class="absolute left-[58px] right-2 rounded-sm z-10 select-none
+                                border border-gray-400 dark:border-gray-500
+                                bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200"
+                         style="background-image: repeating-linear-gradient(45deg, transparent, transparent 6px, rgba(107,114,128,0.15) 6px, rgba(107,114,128,0.15) 12px)"
+                         :style="`top: ${item.topPx + 1}px; height: ${item.heightPx - 2}px`"
+                         :title="'Bloqueado' + (item.block.reason ? ': ' + item.block.reason : '') + (item.block.created_by ? ' (' + item.block.created_by + ')' : '')">
+                        <div class="px-2 h-full flex items-center gap-2 overflow-hidden text-[13px]">
+                            <svg class="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+                            </svg>
+                            <span class="font-bold tabular-nums whitespace-nowrap" x-text="item.block.start + ' – ' + item.block.end"></span>
+                            <span class="flex-1 truncate" x-text="'Bloqueado' + (item.block.reason ? ' · ' + item.block.reason : '')"></span>
+                            <button type="button" x-show="!isDayInPast()" :disabled="blockLoading"
+                                    @click.stop="unblockSlot(item.block)"
+                                    class="flex-shrink-0 px-2 py-0.5 rounded bg-white dark:bg-gray-800 border border-gray-400 dark:border-gray-500 text-[12px] font-medium hover:bg-gray-100 dark:hover:bg-gray-600 disabled:opacity-50">
+                                Desbloquear
+                            </button>
+                        </div>
+                    </div>
                 </template>
 
                 <!-- Bloques de turnos — z-10 -->

@@ -10,6 +10,7 @@ use App\Models\Patient;
 use App\Models\Professional;
 use App\Models\ProfessionalAbsence;
 use App\Models\ProfessionalSchedule;
+use App\Models\ProfessionalSlotBlock;
 use App\Models\ScheduleException;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -29,7 +30,7 @@ class AgendaController extends Controller
 
         // Crear fecha con día 1 para evitar overflow en meses con menos días
         // Bug: Si hoy es 31 y navegas a un mes con 30 días, Carbon hace overflow
-        $date = Carbon::createFromFormat('Y-m-d', $currentMonth . '-01');
+        $date = Carbon::createFromFormat('Y-m-d', $currentMonth.'-01');
         $startOfCalendar = $date->copy()->startOfWeek();
         $endOfCalendar = $date->copy()->endOfMonth()->endOfWeek();
 
@@ -53,6 +54,7 @@ class AgendaController extends Controller
         $appointments = [];
         $professionalSchedules = [];
         $professionalAbsences = collect();
+        $slotBlocks = collect();
         $professionalDefaultDuration = 30;
 
         if ($selectedProfessional) {
@@ -75,6 +77,20 @@ class AgendaController extends Controller
                 ->betweenDates($startOfCalendar, $endOfCalendar)
                 ->get()
                 ->keyBy(fn ($a) => $a->absence_date->format('Y-m-d'));
+
+            $slotBlocks = ProfessionalSlotBlock::forProfessional($selectedProfessional)
+                ->betweenDates($startOfCalendar, $endOfCalendar)
+                ->with('creator:id,name')
+                ->orderBy('start_time')
+                ->get()
+                ->groupBy(fn ($b) => $b->block_date->format('Y-m-d'))
+                ->map(fn ($day) => $day->map(fn ($b) => [
+                    'id' => $b->id,
+                    'start' => substr($b->start_time, 0, 5),
+                    'end' => substr($b->end_time, 0, 5),
+                    'reason' => $b->reason,
+                    'created_by' => $b->creator?->name,
+                ])->values());
         }
 
         // Obtener feriados activos del rango de fechas del calendario
@@ -82,15 +98,17 @@ class AgendaController extends Controller
             ->active()
             ->whereBetween('exception_date', [$startOfCalendar, $endOfCalendar])
             ->get()
-            ->keyBy(fn($holiday) => $holiday->exception_date->format('Y-m-d'));
+            ->keyBy(fn ($holiday) => $holiday->exception_date->format('Y-m-d'));
 
         // Obtener cumpleaños de profesionales activos
         $birthdays = Professional::active()
             ->whereNotNull('birthday')
             ->with('specialty')
             ->get()
-            ->groupBy(function($prof) use ($startOfCalendar) {
-                if (!$prof->birthday) return null;
+            ->groupBy(function ($prof) use ($startOfCalendar) {
+                if (! $prof->birthday) {
+                    return null;
+                }
 
                 // Obtener mes-día del cumpleaños
                 $birthMonth = $prof->birthday->format('m');
@@ -109,8 +127,8 @@ class AgendaController extends Controller
                 return $birthdayThisYear->format('Y-m-d');
             })
             ->filter()
-            ->map(function($professionals, $date) {
-                return $professionals->map(function($prof) use ($date) {
+            ->map(function ($professionals, $date) {
+                return $professionals->map(function ($prof) use ($date) {
                     // Calcular la edad que cumple en esta fecha
                     $birthdayYear = Carbon::parse($date)->year;
                     $birthYear = $prof->birthday->year;
@@ -120,7 +138,7 @@ class AgendaController extends Controller
                         'id' => $prof->id,
                         'name' => $prof->full_name,
                         'specialty' => $prof->specialty->name,
-                        'age' => $age
+                        'age' => $age,
                     ];
                 });
             });
@@ -140,6 +158,7 @@ class AgendaController extends Controller
             'appointments',
             'professionalSchedules',
             'professionalAbsences',
+            'slotBlocks',
             'startOfCalendar',
             'endOfCalendar',
             'holidays',

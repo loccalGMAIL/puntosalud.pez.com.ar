@@ -7,8 +7,12 @@ use App\Models\Appointment;
 use App\Models\CashMovement;
 use App\Models\Expense;
 use App\Models\MovementType;
+use App\Models\Office;
+use App\Models\Payment;
+use App\Models\PaymentDetail;
 use App\Models\Professional;
 use App\Models\ProfessionalLiquidation;
+use App\Models\ProfessionalSlotBlock;
 use App\Models\ScheduleException;
 use App\Services\WhatsAppService;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -40,7 +44,7 @@ class ReportController extends Controller
 
         $query = CashMovement::with(['user', 'movementType', 'reference' => function ($morphTo) {
             $morphTo->morphWith([
-                \App\Models\Payment::class => ['patient', 'paymentDetails', 'paymentAppointments.appointment.professional'],
+                Payment::class => ['patient', 'paymentDetails', 'paymentAppointments.appointment.professional'],
                 ProfessionalLiquidation::class => ['professional'],
             ]);
         }])
@@ -129,7 +133,7 @@ class ReportController extends Controller
         $movements = CashMovement::with(['user', 'movementType'])
             ->with(['reference' => function ($morphTo) {
                 $morphTo->morphWith([
-                    \App\Models\Payment::class => ['patient', 'paymentDetails', 'paymentAppointments.appointment.professional'],
+                    Payment::class => ['patient', 'paymentDetails', 'paymentAppointments.appointment.professional'],
                     ProfessionalLiquidation::class => ['professional'],
                 ]);
             }])
@@ -375,6 +379,10 @@ class ReportController extends Controller
         $consumedIds = [];
         $blocks = collect();
 
+        $slotBlocks = ProfessionalSlotBlock::forProfessional($professional->id)
+            ->forDate($selectedDate->toDateString())
+            ->get();
+
         foreach ($schedules as $schedule) {
             [$startH, $startM] = explode(':', Carbon::parse($schedule->getRawOriginal('start_time'))->format('H:i'));
             [$endH, $endM] = explode(':', Carbon::parse($schedule->getRawOriginal('end_time'))->format('H:i'));
@@ -420,11 +428,18 @@ class ReportController extends Controller
                     $cursor = $dayStart->copy()->addMinutes($roundedEndOffset);
                     $consumedIds[] = $appointment->id;
                 } else {
+                    $slotBlock = $slotBlocks->first(
+                        fn ($candidate) => substr($candidate->start_time, 0, 5) < $nextGrid->format('H:i')
+                            && substr($candidate->end_time, 0, 5) > $cursor->format('H:i')
+                    );
+
                     $blocks->push([
                         'type' => 'available',
                         'start' => $cursor->copy(),
                         'end' => $nextGrid->copy(),
-                        'label' => 'Disponible',
+                        'label' => $slotBlock ? 'Bloqueado' : 'Disponible',
+                        'blocked' => (bool) $slotBlock,
+                        'reason' => $slotBlock?->reason,
                     ]);
                     $cursor = $nextGrid;
                 }
@@ -529,7 +544,7 @@ class ReportController extends Controller
                 $attendedAppointmentIds = $professional->appointments->pluck('id');
 
                 // Obtener payment_details recibidos por el centro (solo pendientes de liquidar)
-                $centroPaymentDetails = \App\Models\PaymentDetail::whereHas('payment.paymentAppointments', function ($q) use ($attendedAppointmentIds) {
+                $centroPaymentDetails = PaymentDetail::whereHas('payment.paymentAppointments', function ($q) use ($attendedAppointmentIds) {
                     $q->whereIn('appointment_id', $attendedAppointmentIds);
                 })
                     ->where('received_by', 'centro')
@@ -537,7 +552,7 @@ class ReportController extends Controller
                     ->get();
 
                 // Obtener payment_details recibidos directamente por el profesional (solo pendientes de liquidar)
-                $professionalPaymentDetails = \App\Models\PaymentDetail::whereHas('payment.paymentAppointments', function ($q) use ($attendedAppointmentIds) {
+                $professionalPaymentDetails = PaymentDetail::whereHas('payment.paymentAppointments', function ($q) use ($attendedAppointmentIds) {
                     $q->whereIn('appointment_id', $attendedAppointmentIds);
                 })
                     ->where('received_by', 'profesional')
@@ -555,7 +570,7 @@ class ReportController extends Controller
                 $clinicAmountFromDirect = $professional->getClinicAmount($totalCollectedByProfessional);
 
                 // Obtener reintegros del día para este profesional (usando referencias polimórficas)
-                $refunds = \App\Models\CashMovement::byType('expense')
+                $refunds = CashMovement::byType('expense')
                     ->where('reference_type', 'App\Models\Professional')
                     ->where('reference_id', $professional->id)
                     ->whereDate('created_at', $selectedDate)
@@ -596,7 +611,7 @@ class ReportController extends Controller
             ->get();
 
         // Obtener liquidaciones ya realizadas en el día
-        $completedLiquidations = \App\Models\ProfessionalLiquidation::with(['professional.specialty', 'details'])
+        $completedLiquidations = ProfessionalLiquidation::with(['professional.specialty', 'details'])
             ->whereDate('liquidation_date', $selectedDate)
             ->orderBy('professional_id')
             ->orderBy('created_at')
@@ -719,14 +734,14 @@ class ReportController extends Controller
         $attendedAppointmentIds = $attendedAppointments->pluck('id');
 
         // Obtener payment_details recibidos por el CENTRO
-        $centroPaymentDetails = \App\Models\PaymentDetail::whereHas('payment.paymentAppointments', function ($q) use ($attendedAppointmentIds) {
+        $centroPaymentDetails = PaymentDetail::whereHas('payment.paymentAppointments', function ($q) use ($attendedAppointmentIds) {
             $q->whereIn('appointment_id', $attendedAppointmentIds);
         })
             ->where('received_by', 'centro')
             ->get();
 
         // Obtener payment_details recibidos DIRECTAMENTE por el profesional
-        $professionalPaymentDetails = \App\Models\PaymentDetail::whereHas('payment.paymentAppointments', function ($q) use ($attendedAppointmentIds) {
+        $professionalPaymentDetails = PaymentDetail::whereHas('payment.paymentAppointments', function ($q) use ($attendedAppointmentIds) {
             $q->whereIn('appointment_id', $attendedAppointmentIds);
         })
             ->where('received_by', 'profesional')
@@ -745,7 +760,7 @@ class ReportController extends Controller
         $clinicAmountFromDirect = $professional->getClinicAmount($totalCollectedByProfessional);
 
         // Obtener reintegros del día para este profesional (usando referencias polimórficas)
-        $refunds = \App\Models\CashMovement::byType('expense')
+        $refunds = CashMovement::byType('expense')
             ->where('reference_type', 'App\Models\Professional')
             ->where('reference_id', $professionalId)
             ->whereDate('created_at', $selectedDate)
@@ -766,12 +781,12 @@ class ReportController extends Controller
         $unpaidAppointments = $attendedAppointments->where('is_paid', false);
 
         // Calcular número de liquidación del día (para preview)
-        $liquidationNumber = \App\Models\ProfessionalLiquidation::where('professional_id', $professionalId)
+        $liquidationNumber = ProfessionalLiquidation::where('professional_id', $professionalId)
             ->whereDate('liquidation_date', $selectedDate)
             ->count() + 1;
 
         // Obtener liquidaciones realizadas en el día y agrupar turnos
-        $liquidationsGrouped = \App\Models\ProfessionalLiquidation::with(['details.appointment.patient', 'details.appointment.paymentAppointments.payment.paymentDetails'])
+        $liquidationsGrouped = ProfessionalLiquidation::with(['details.appointment.patient', 'details.appointment.paymentAppointments.payment.paymentDetails'])
             ->where('professional_id', $professionalId)
             ->whereDate('liquidation_date', $selectedDate)
             ->orderBy('created_at')
@@ -2681,12 +2696,12 @@ class ReportController extends Controller
      * explícitamente; suma los gastos externos si corresponde.
      */
     private function buildCashAnalysisMovements(
-        \Illuminate\Support\Collection $movements,
+        Collection $movements,
         $startDate,
         $endDate,
         bool $includeExternal,
         bool $includeCompensations
-    ): \Illuminate\Support\Collection {
+    ): Collection {
         $excludedCodes = ['cash_opening', 'cash_closing'];
 
         if (! $includeCompensations) {
@@ -2709,14 +2724,14 @@ class ReportController extends Controller
     /**
      * Helper: convierte Expense externos a objetos compatibles con generateCashAnalysisData
      */
-    private function buildExternalExpensesAsMovements($startDate, $endDate): \Illuminate\Support\Collection
+    private function buildExternalExpensesAsMovements($startDate, $endDate): Collection
     {
-        return \App\Models\Expense::with('movementType')
+        return Expense::with('movementType')
             ->forDateRange($startDate, $endDate)
             ->get()
             ->map(function ($expense) {
                 $obj = new \stdClass;
-                $obj->created_at = \Carbon\Carbon::parse($expense->expense_date)->startOfDay();
+                $obj->created_at = Carbon::parse($expense->expense_date)->startOfDay();
                 $obj->amount = -abs((float) $expense->amount);
                 $obj->movementType = $expense->movementType;
 
@@ -2869,7 +2884,7 @@ class ReportController extends Controller
         $globalHours = round($appointments->sum('duration') / 60, 1);
         $topOffice = $stats->first()['office_name'] ?? '—';
 
-        $allOffices = \App\Models\Office::active()->orderBy('name')->get();
+        $allOffices = Office::active()->orderBy('name')->get();
 
         return compact(
             'stats', 'dateFrom', 'dateTo', 'officeId',

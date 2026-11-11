@@ -9,9 +9,12 @@ use App\Models\Appointment;
 use App\Models\CashMovement;
 use App\Models\Office;
 use App\Models\Patient;
+use App\Models\PatientPackage;
 use App\Models\Payment;
+use App\Models\PaymentDetail;
 use App\Models\Professional;
 use App\Models\ProfessionalSchedule;
+use App\Models\ProfessionalSlotBlock;
 use App\Models\ScheduleException;
 use App\Services\CashMovementService;
 use App\Services\PaymentAllocationService;
@@ -20,6 +23,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class AppointmentController extends Controller
 {
@@ -279,7 +283,7 @@ class AppointmentController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
 
-            if ($e instanceof \Illuminate\Validation\ValidationException) {
+            if ($e instanceof ValidationException) {
                 if ($request->ajax()) {
                     return response()->json([
                         'success' => false,
@@ -495,7 +499,7 @@ class AppointmentController extends Controller
 
             return redirect()->back()->with('success', 'Turno actualizado exitosamente.');
 
-        } catch (\Illuminate\Validation\ValidationException $e) {
+        } catch (ValidationException $e) {
             if ($request->ajax()) {
                 return response()->json([
                     'success' => false,
@@ -612,7 +616,7 @@ class AppointmentController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
 
-            if ($e instanceof \Illuminate\Validation\ValidationException) {
+            if ($e instanceof ValidationException) {
                 if ($request->ajax()) {
                     return response()->json([
                         'success' => false,
@@ -671,6 +675,10 @@ class AppointmentController extends Controller
 
         $duration = (int) $validated['duration'];
 
+        $slotBlocks = ProfessionalSlotBlock::forProfessional($validated['professional_id'])
+            ->forDate($date->toDateString())
+            ->get();
+
         // Usar horario del profesional para ese día; si no tiene, usar 8:00-21:00 por defecto
         $jsDay = $date->dayOfWeek; // 0=Dom, 1=Lun..6=Sab
         $dayKey = $jsDay === 0 ? 7 : $jsDay; // 1=Lun..7=Dom (igual a Laravel)
@@ -705,6 +713,15 @@ class AppointmentController extends Controller
             }
 
             if ($isAvailable) {
+                foreach ($slotBlocks as $block) {
+                    if (substr($block->start_time, 0, 5) < $slotEnd->format('H:i') && substr($block->end_time, 0, 5) > $currentTime->format('H:i')) {
+                        $isAvailable = false;
+                        break;
+                    }
+                }
+            }
+
+            if ($isAvailable) {
                 $slots[] = $currentTime->format('H:i');
             }
 
@@ -733,7 +750,7 @@ class AppointmentController extends Controller
         ]);
 
         // Crear payment_detail (nueva estructura v2.6.0)
-        \App\Models\PaymentDetail::create([
+        PaymentDetail::create([
             'payment_id' => $payment->id,
             'payment_method' => $validated['payment_method'],
             'amount' => $validated['payment_amount'],
@@ -741,7 +758,7 @@ class AppointmentController extends Controller
         ]);
 
         // Crear patient_package (nueva estructura v2.6.0)
-        \App\Models\PatientPackage::create([
+        PatientPackage::create([
             'patient_id' => $appointment->patient_id,
             'package_id' => null,
             'payment_id' => $payment->id,
@@ -781,7 +798,7 @@ class AppointmentController extends Controller
         ]);
 
         // Crear payment_detail (nueva estructura v2.6.0)
-        \App\Models\PaymentDetail::create([
+        PaymentDetail::create([
             'payment_id' => $payment->id,
             'payment_method' => $validated['payment_method'],
             'amount' => $validated['payment_amount'],
@@ -857,6 +874,19 @@ class AppointmentController extends Controller
             ];
         }
 
+        // 5.b Verificar bloqueos de horario
+        $isBlocked = ProfessionalSlotBlock::forProfessional($professionalId)
+            ->forDate($appointmentDateTime->toDateString())
+            ->overlapping($appointmentTime.':00', $appointmentEndTime.':00')
+            ->exists();
+
+        if ($isBlocked) {
+            return [
+                'available' => false,
+                'reason' => 'El horario está bloqueado. Desbloquealo desde la agenda para asignar el turno.',
+            ];
+        }
+
         // 6. Verificar conflictos con turnos existentes
         $query = Appointment::where('professional_id', $professionalId)
             ->where('status', 'scheduled')
@@ -894,7 +924,7 @@ class AppointmentController extends Controller
      * Determina quién recibe el pago según el método de pago y la configuración del profesional
      *
      * @param  string  $paymentMethod  Método de pago (cash, transfer, debit_card, credit_card, other)
-     * @param  \App\Models\Professional  $professional  Profesional del turno
+     * @param  Professional  $professional  Profesional del turno
      * @return string 'centro' o 'profesional'
      */
     private function determineReceivedBy(string $paymentMethod, $professional): string

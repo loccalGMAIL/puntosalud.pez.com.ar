@@ -176,8 +176,13 @@
                                     {{ $block['start']->format('H:i') }}
                                 </td>
                                 <td class="py-[1px] px-1 text-gray-400 dark:text-gray-500 print:text-gray-500" style="background-color: #f9fafb;" colspan="2">
-                                    &nbsp;<br>
-                                    <span class="text-[9px]">&nbsp;</span>
+                                    @if(! empty($block['blocked']))
+                                        <span class="font-semibold text-[10px]">Bloqueado</span><br>
+                                        <span class="text-[9px]">{{ $block['reason'] }}</span>
+                                    @else
+                                        &nbsp;<br>
+                                        <span class="text-[9px]">&nbsp;</span>
+                                    @endif
                                 </td>
                                 <td class="py-[1px] px-1 text-[9px] text-gray-400 dark:text-gray-500 print:text-gray-500" style="background-color: #f9fafb;">&nbsp;</td>
                             </tr>

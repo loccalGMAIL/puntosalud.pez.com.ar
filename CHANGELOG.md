@@ -7,6 +7,30 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [2.14.0] - 2026-11-11
+
+### 🔒 Bloqueo y desbloqueo de horarios en la agenda
+
+Las secretarias pueden bloquear horarios puntuales de un profesional (por ejemplo, cuando el profesional pide que no se entregue ese horario) y desbloquearlos cuando llega, para cargar al paciente que está en el consultorio.
+
+**Nuevo**:
+
+- **Bloquear horarios**: en el panel del día de la agenda, botón **Bloquear horarios** (desde / hasta / motivo opcional) o el candado de cada turno libre, que precarga ese turno. Un rango se divide en un bloqueo por turno, según la duración configurada del profesional. Los turnos que ya tienen un paciente asignado o que ya estaban bloqueados se omiten.
+- **Desbloquear**: cada horario bloqueado se ve en gris con candado y tiene un botón **Desbloquear**. Al desbloquear queda como turno libre normal.
+- **Un horario bloqueado no se puede asignar**: al crear o editar un turno en ese horario se muestra "El horario está bloqueado. Desbloquealo desde la agenda para asignar el turno." La duración máxima de un turno también se corta en el próximo bloqueo.
+- **Listado diario**: en el listado de pacientes del día (impreso / PDF) los horarios bloqueados figuran como "Bloqueado" con su motivo, en lugar de "Disponible".
+- **Auditoría**: cada bloqueo y desbloqueo queda en el registro de actividad ("Bloqueo de horario") con el usuario que lo hizo.
+
+**Técnico**:
+
+- Nueva tabla `professional_slot_blocks` (modelo `ProfessionalSlotBlock`, con factory) y `SlotBlockController` (`POST /agenda/slot-blocks`, `DELETE /agenda/slot-blocks/{slotBlock}`), protegidos por el módulo `agenda`.
+- El chequeo de bloqueo está en `AppointmentController::checkProfessionalAvailability()` y en `availableSlots()`. Las urgencias (`storeUrgency`) no se ven afectadas.
+- Tests en `tests/Feature/Agenda/SlotBlockTest.php`.
+
+**Para desplegar**: `php artisan migrate`.
+
+---
+
 ## [2.13.0] - 2026-10-07
 
 ### ⬆️ Actualización a Laravel 13

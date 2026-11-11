@@ -3,21 +3,27 @@
 use App\Http\Controllers\ActivityLogController;
 use App\Http\Controllers\AdminDashboardController;
 use App\Http\Controllers\AgendaController;
-use App\Http\Controllers\WhatsAppController;
 use App\Http\Controllers\AppointmentController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\CashController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\ExpenseController;
+use App\Http\Controllers\LiquidationController;
 use App\Http\Controllers\MovementTypeController;
 use App\Http\Controllers\PatientController;
 use App\Http\Controllers\PaymentController;
-use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\ProfessionalController;
 use App\Http\Controllers\ProfessionalAbsenceController;
+use App\Http\Controllers\ProfessionalController;
 use App\Http\Controllers\ProfessionalNoteController;
 use App\Http\Controllers\ProfessionalScheduleController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\RecessController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\SettingsCenterController;
+use App\Http\Controllers\SlotBlockController;
 use App\Http\Controllers\SpecialtyController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\WhatsAppController;
 use Illuminate\Support\Facades\Route;
 
 // Authentication routes
@@ -86,6 +92,8 @@ Route::middleware(['auth'])->group(function () {
     // Rutas de Agenda (módulo: agenda)
     Route::middleware(['module:agenda'])->group(function () {
         Route::get('/agenda', [AgendaController::class, 'index'])->name('agenda.index');
+        Route::post('/agenda/slot-blocks', [SlotBlockController::class, 'store'])->name('agenda.slot-blocks.store');
+        Route::delete('/agenda/slot-blocks/{slotBlock}', [SlotBlockController::class, 'destroy'])->name('agenda.slot-blocks.destroy');
     });
 
     // Rutas de Pagos (módulo: payments)
@@ -128,87 +136,87 @@ Route::middleware(['auth'])->group(function () {
 
     // Analytics Reports (v2.10.0) — bajo módulo 'reports'
     Route::middleware(['module:reports'])->group(function () {
-        Route::get('/reports/liquidaciones-historicas',        [ReportController::class, 'liquidacionesHistoricas'])->name('reports.liquidaciones-historicas');
-        Route::get('/reports/liquidaciones-historicas/print',  [ReportController::class, 'printLiquidacionesHistoricas'])->name('reports.liquidaciones-historicas.print');
+        Route::get('/reports/liquidaciones-historicas', [ReportController::class, 'liquidacionesHistoricas'])->name('reports.liquidaciones-historicas');
+        Route::get('/reports/liquidaciones-historicas/print', [ReportController::class, 'printLiquidacionesHistoricas'])->name('reports.liquidaciones-historicas.print');
 
-        Route::get('/reports/profesionales/ingresos',          [ReportController::class, 'profesionalesIngresos'])->name('reports.profesionales.ingresos');
-        Route::get('/reports/profesionales/ingresos/print',    [ReportController::class, 'printProfesionalesIngresos'])->name('reports.profesionales.ingresos.print');
+        Route::get('/reports/profesionales/ingresos', [ReportController::class, 'profesionalesIngresos'])->name('reports.profesionales.ingresos');
+        Route::get('/reports/profesionales/ingresos/print', [ReportController::class, 'printProfesionalesIngresos'])->name('reports.profesionales.ingresos.print');
 
-        Route::get('/reports/profesionales/consultas',         [ReportController::class, 'profesionalesConsultas'])->name('reports.profesionales.consultas');
-        Route::get('/reports/profesionales/consultas/print',  [ReportController::class, 'printProfesionalesConsultas'])->name('reports.profesionales.consultas.print');
+        Route::get('/reports/profesionales/consultas', [ReportController::class, 'profesionalesConsultas'])->name('reports.profesionales.consultas');
+        Route::get('/reports/profesionales/consultas/print', [ReportController::class, 'printProfesionalesConsultas'])->name('reports.profesionales.consultas.print');
 
-        Route::get('/reports/profesionales/comisiones',        [ReportController::class, 'profesionalesComisiones'])->name('reports.profesionales.comisiones');
-        Route::get('/reports/profesionales/comisiones/print',  [ReportController::class, 'printProfesionalesComisiones'])->name('reports.profesionales.comisiones.print');
+        Route::get('/reports/profesionales/comisiones', [ReportController::class, 'profesionalesComisiones'])->name('reports.profesionales.comisiones');
+        Route::get('/reports/profesionales/comisiones/print', [ReportController::class, 'printProfesionalesComisiones'])->name('reports.profesionales.comisiones.print');
 
-        Route::get('/reports/profesionales/comparativa',       [ReportController::class, 'profesionalesComparativa'])->name('reports.profesionales.comparativa');
+        Route::get('/reports/profesionales/comparativa', [ReportController::class, 'profesionalesComparativa'])->name('reports.profesionales.comparativa');
         Route::get('/reports/profesionales/comparativa/print', [ReportController::class, 'printProfesionalesComparativa'])->name('reports.profesionales.comparativa.print');
 
-        Route::get('/reports/pagos/tendencia',                 [ReportController::class, 'pagosTendencia'])->name('reports.pagos.tendencia');
-        Route::get('/reports/pagos/tendencia/print',           [ReportController::class, 'printPagosTendencia'])->name('reports.pagos.tendencia.print');
+        Route::get('/reports/pagos/tendencia', [ReportController::class, 'pagosTendencia'])->name('reports.pagos.tendencia');
+        Route::get('/reports/pagos/tendencia/print', [ReportController::class, 'printPagosTendencia'])->name('reports.pagos.tendencia.print');
 
-        Route::get('/reports/pacientes/ausentismo',            [ReportController::class, 'pacientesAusentismo'])->name('reports.pacientes.ausentismo');
-        Route::get('/reports/pacientes/ausentismo/print',      [ReportController::class, 'printPacientesAusentismo'])->name('reports.pacientes.ausentismo.print');
-        Route::get('/reports/pacientes/retencion',             [ReportController::class, 'pacientesRetencion'])->name('reports.pacientes.retencion');
-        Route::get('/reports/pacientes/retencion/print',       [ReportController::class, 'printPacientesRetencion'])->name('reports.pacientes.retencion.print');
-        Route::get('/reports/pacientes/frecuencia',            [ReportController::class, 'pacientesFrecuencia'])->name('reports.pacientes.frecuencia');
-        Route::get('/reports/pacientes/frecuencia/print',      [ReportController::class, 'printPacientesFrecuencia'])->name('reports.pacientes.frecuencia.print');
-        Route::get('/reports/pacientes/nuevos-viejos',         [ReportController::class, 'pacientesNuevosViejos'])->name('reports.pacientes.nuevos-viejos');
-        Route::get('/reports/pacientes/nuevos-viejos/print',   [ReportController::class, 'printPacientesNuevosViejos'])->name('reports.pacientes.nuevos-viejos.print');
-        Route::get('/reports/pacientes/consultorios',          [ReportController::class, 'pacientesConsultorios'])->name('reports.pacientes.consultorios');
-        Route::get('/reports/pacientes/consultorios/export',   [ReportController::class, 'exportPacientesConsultoriosCsv'])->name('reports.pacientes.consultorios.export');
-        Route::get('/reports/pacientes/consultorios/print',    [ReportController::class, 'printPacientesConsultorios'])->name('reports.pacientes.consultorios.print');
+        Route::get('/reports/pacientes/ausentismo', [ReportController::class, 'pacientesAusentismo'])->name('reports.pacientes.ausentismo');
+        Route::get('/reports/pacientes/ausentismo/print', [ReportController::class, 'printPacientesAusentismo'])->name('reports.pacientes.ausentismo.print');
+        Route::get('/reports/pacientes/retencion', [ReportController::class, 'pacientesRetencion'])->name('reports.pacientes.retencion');
+        Route::get('/reports/pacientes/retencion/print', [ReportController::class, 'printPacientesRetencion'])->name('reports.pacientes.retencion.print');
+        Route::get('/reports/pacientes/frecuencia', [ReportController::class, 'pacientesFrecuencia'])->name('reports.pacientes.frecuencia');
+        Route::get('/reports/pacientes/frecuencia/print', [ReportController::class, 'printPacientesFrecuencia'])->name('reports.pacientes.frecuencia.print');
+        Route::get('/reports/pacientes/nuevos-viejos', [ReportController::class, 'pacientesNuevosViejos'])->name('reports.pacientes.nuevos-viejos');
+        Route::get('/reports/pacientes/nuevos-viejos/print', [ReportController::class, 'printPacientesNuevosViejos'])->name('reports.pacientes.nuevos-viejos.print');
+        Route::get('/reports/pacientes/consultorios', [ReportController::class, 'pacientesConsultorios'])->name('reports.pacientes.consultorios');
+        Route::get('/reports/pacientes/consultorios/export', [ReportController::class, 'exportPacientesConsultoriosCsv'])->name('reports.pacientes.consultorios.export');
+        Route::get('/reports/pacientes/consultorios/print', [ReportController::class, 'printPacientesConsultorios'])->name('reports.pacientes.consultorios.print');
 
-        Route::get('/reports/ingresos-obra-social',            [ReportController::class, 'ingresosObraSocial'])->name('reports.ingresos-obra-social');
-        Route::get('/reports/ingresos-obra-social/print',      [ReportController::class, 'printIngresosObraSocial'])->name('reports.ingresos-obra-social.print');
-        Route::get('/reports/cobros-pendientes',               [ReportController::class, 'cobrosPendientes'])->name('reports.cobros-pendientes');
-        Route::get('/reports/cobros-pendientes/print',         [ReportController::class, 'printCobrosPendientes'])->name('reports.cobros-pendientes.print');
-        Route::get('/reports/flujo-caja-mensual',              [ReportController::class, 'flujoCajaMensual'])->name('reports.flujo-caja-mensual');
-        Route::get('/reports/flujo-caja-mensual/print',        [ReportController::class, 'printFlujoCajaMensual'])->name('reports.flujo-caja-mensual.print');
+        Route::get('/reports/ingresos-obra-social', [ReportController::class, 'ingresosObraSocial'])->name('reports.ingresos-obra-social');
+        Route::get('/reports/ingresos-obra-social/print', [ReportController::class, 'printIngresosObraSocial'])->name('reports.ingresos-obra-social.print');
+        Route::get('/reports/cobros-pendientes', [ReportController::class, 'cobrosPendientes'])->name('reports.cobros-pendientes');
+        Route::get('/reports/cobros-pendientes/print', [ReportController::class, 'printCobrosPendientes'])->name('reports.cobros-pendientes.print');
+        Route::get('/reports/flujo-caja-mensual', [ReportController::class, 'flujoCajaMensual'])->name('reports.flujo-caja-mensual');
+        Route::get('/reports/flujo-caja-mensual/print', [ReportController::class, 'printFlujoCajaMensual'])->name('reports.flujo-caja-mensual.print');
 
-        Route::get('/reports/cash-analysis',                   [ReportController::class, 'cashAnalysis'])->name('reports.cash-analysis');
-        Route::get('/reports/cash-analysis/export',            [ReportController::class, 'exportCashAnalysisCsv'])->name('reports.cash-analysis.export');
-        Route::get('/reports/cash-analysis/print',             [ReportController::class, 'printCashAnalysis'])->name('reports.cash-analysis.print');
+        Route::get('/reports/cash-analysis', [ReportController::class, 'cashAnalysis'])->name('reports.cash-analysis');
+        Route::get('/reports/cash-analysis/export', [ReportController::class, 'exportCashAnalysisCsv'])->name('reports.cash-analysis.export');
+        Route::get('/reports/cash-analysis/print', [ReportController::class, 'printCashAnalysis'])->name('reports.cash-analysis.print');
     });
 
     // Rutas de Caja (módulo: cash)
     Route::middleware(['module:cash'])->group(function () {
-        Route::get('/cash/daily', [App\Http\Controllers\CashController::class, 'dailyCash'])->name('cash.daily');
-        Route::get('/cash/count', [App\Http\Controllers\CashController::class, 'cashCount'])->name('cash.count');
-        Route::get('/cash/daily-report', [App\Http\Controllers\CashController::class, 'dailyReport'])->name('cash.daily-report');
-        Route::get('/cash/expense', [App\Http\Controllers\CashController::class, 'addExpense'])->name('cash.expense-form');
-        Route::post('/cash/expense', [App\Http\Controllers\CashController::class, 'addExpense'])->name('cash.expense.store');
-        Route::get('/cash/withdrawal', [App\Http\Controllers\CashController::class, 'withdrawalForm'])->name('cash.withdrawal-form');
-        Route::post('/cash/withdrawal', [App\Http\Controllers\CashController::class, 'withdrawalForm'])->name('cash.withdrawal.store');
-        Route::get('/cash/manual-income', [App\Http\Controllers\CashController::class, 'manualIncomeForm'])->name('cash.manual-income-form');
-        Route::post('/cash/manual-income', [App\Http\Controllers\CashController::class, 'manualIncomeForm'])->name('cash.manual-income.store');
-        Route::get('/cash/income/{payment}', [App\Http\Controllers\CashController::class, 'showIncome'])->name('cash.income.show');
-        Route::get('/cash/income-receipt/{payment}', [App\Http\Controllers\CashController::class, 'printIncomeReceipt'])->name('cash.income-receipt');
-        Route::get('/cash/movements/{cashMovement}', [App\Http\Controllers\CashController::class, 'getCashMovementDetails'])->name('cash.movement-details');
+        Route::get('/cash/daily', [CashController::class, 'dailyCash'])->name('cash.daily');
+        Route::get('/cash/count', [CashController::class, 'cashCount'])->name('cash.count');
+        Route::get('/cash/daily-report', [CashController::class, 'dailyReport'])->name('cash.daily-report');
+        Route::get('/cash/expense', [CashController::class, 'addExpense'])->name('cash.expense-form');
+        Route::post('/cash/expense', [CashController::class, 'addExpense'])->name('cash.expense.store');
+        Route::get('/cash/withdrawal', [CashController::class, 'withdrawalForm'])->name('cash.withdrawal-form');
+        Route::post('/cash/withdrawal', [CashController::class, 'withdrawalForm'])->name('cash.withdrawal.store');
+        Route::get('/cash/manual-income', [CashController::class, 'manualIncomeForm'])->name('cash.manual-income-form');
+        Route::post('/cash/manual-income', [CashController::class, 'manualIncomeForm'])->name('cash.manual-income.store');
+        Route::get('/cash/income/{payment}', [CashController::class, 'showIncome'])->name('cash.income.show');
+        Route::get('/cash/income-receipt/{payment}', [CashController::class, 'printIncomeReceipt'])->name('cash.income-receipt');
+        Route::get('/cash/movements/{cashMovement}', [CashController::class, 'getCashMovementDetails'])->name('cash.movement-details');
 
         // Cash opening/closing routes
-        Route::get('/cash/status', [App\Http\Controllers\CashController::class, 'getCashStatus'])->name('cash.status');
-        Route::post('/cash/open', [App\Http\Controllers\CashController::class, 'openCash'])->name('cash.open');
-        Route::post('/cash/close', [App\Http\Controllers\CashController::class, 'closeCash'])->name('cash.close');
+        Route::get('/cash/status', [CashController::class, 'getCashStatus'])->name('cash.status');
+        Route::post('/cash/open', [CashController::class, 'openCash'])->name('cash.open');
+        Route::post('/cash/close', [CashController::class, 'closeCash'])->name('cash.close');
 
         // Professional liquidation processing
-        Route::post('/liquidation/process', [App\Http\Controllers\LiquidationController::class, 'processLiquidation'])->name('liquidation.process');
+        Route::post('/liquidation/process', [LiquidationController::class, 'processLiquidation'])->name('liquidation.process');
     });
 
     // Rutas de WhatsApp (módulo: whatsapp)
     Route::middleware(['module:whatsapp'])->prefix('whatsapp')->name('whatsapp.')->group(function () {
-        Route::get('/',           [WhatsAppController::class, 'index'])->name('index');
-        Route::get('/qr-code',    [WhatsAppController::class, 'qrCode'])->name('qr-code');
-        Route::get('/status',     [WhatsAppController::class, 'connectionStatus'])->name('status');
-        Route::post('/disconnect',[WhatsAppController::class, 'disconnect'])->name('disconnect');
-        Route::get('/settings',   [WhatsAppController::class, 'settings'])->name('settings');
-        Route::post('/settings',  [WhatsAppController::class, 'saveSettings'])->name('settings.save');
-        Route::post('/features',  [WhatsAppController::class, 'saveFeatures'])->name('features.save');
-        Route::post('/feature',   [WhatsAppController::class, 'toggleFeature'])->name('feature.toggle');
-        Route::get('/api',        [WhatsAppController::class, 'apiSettings'])->name('api');
-        Route::post('/api',       [WhatsAppController::class, 'saveApiSettings'])->name('api.save');
-        Route::get('/messages',         [WhatsAppController::class, 'messages'])->name('messages');
+        Route::get('/', [WhatsAppController::class, 'index'])->name('index');
+        Route::get('/qr-code', [WhatsAppController::class, 'qrCode'])->name('qr-code');
+        Route::get('/status', [WhatsAppController::class, 'connectionStatus'])->name('status');
+        Route::post('/disconnect', [WhatsAppController::class, 'disconnect'])->name('disconnect');
+        Route::get('/settings', [WhatsAppController::class, 'settings'])->name('settings');
+        Route::post('/settings', [WhatsAppController::class, 'saveSettings'])->name('settings.save');
+        Route::post('/features', [WhatsAppController::class, 'saveFeatures'])->name('features.save');
+        Route::post('/feature', [WhatsAppController::class, 'toggleFeature'])->name('feature.toggle');
+        Route::get('/api', [WhatsAppController::class, 'apiSettings'])->name('api');
+        Route::post('/api', [WhatsAppController::class, 'saveApiSettings'])->name('api.save');
+        Route::get('/messages', [WhatsAppController::class, 'messages'])->name('messages');
         Route::get('/reminders-status', [WhatsAppController::class, 'remindersStatus'])->name('reminders-status');
-        Route::post('/test-message',    [WhatsAppController::class, 'testMessage'])->name('test-message');
+        Route::post('/test-message', [WhatsAppController::class, 'testMessage'])->name('test-message');
     });
 
     // Rutas de Configuración (módulo: configuration)
@@ -218,22 +226,22 @@ Route::middleware(['auth'])->group(function () {
         Route::patch('/users/{user}/toggle-status', [UserController::class, 'toggleStatus'])->name('users.toggle-status');
 
         // Recesos (Holidays) management
-        Route::resource('recesos', App\Http\Controllers\RecessController::class)->except(['show', 'create', 'edit']);
-        Route::patch('/recesos/{receso}/toggle-status', [App\Http\Controllers\RecessController::class, 'toggleStatus'])->name('recesos.toggle-status');
+        Route::resource('recesos', RecessController::class)->except(['show', 'create', 'edit']);
+        Route::patch('/recesos/{receso}/toggle-status', [RecessController::class, 'toggleStatus'])->name('recesos.toggle-status');
     });
 
     // Gastos externos (módulo: expenses)
     Route::middleware(['module:expenses'])->group(function () {
-        Route::resource('expenses', App\Http\Controllers\ExpenseController::class)
+        Route::resource('expenses', ExpenseController::class)
             ->except(['create', 'edit', 'show']);
     });
 
     // Rutas de Sistema (módulo: system)
     Route::middleware(['module:system'])->group(function () {
         // Configuración del centro
-        Route::get('/settings/center', [App\Http\Controllers\SettingsCenterController::class, 'index'])->name('settings.center');
-        Route::post('/settings/center', [App\Http\Controllers\SettingsCenterController::class, 'update'])->name('settings.center.update');
-        Route::post('/settings/center/toggle', [App\Http\Controllers\SettingsCenterController::class, 'toggle'])->name('settings.center.toggle');
+        Route::get('/settings/center', [SettingsCenterController::class, 'index'])->name('settings.center');
+        Route::post('/settings/center', [SettingsCenterController::class, 'update'])->name('settings.center.update');
+        Route::post('/settings/center/toggle', [SettingsCenterController::class, 'toggle'])->name('settings.center.toggle');
 
         // Gestión de perfiles
         Route::resource('profiles', ProfileController::class)->except(['create', 'edit', 'show']);
