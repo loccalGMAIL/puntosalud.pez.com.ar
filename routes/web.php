@@ -41,6 +41,7 @@ Route::middleware(['auth'])->group(function () {
     // Rutas del dashboard actualizadas para nuevas ubicaciones de vistas
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/dashboard/appointments', [DashboardController::class, 'appointments'])->name('dashboard.appointments');
+    Route::get('/dashboard/fingerprint', [DashboardController::class, 'fingerprint'])->name('dashboard.fingerprint');
     Route::get('/dashboard/admin', [AdminDashboardController::class, 'index'])
         ->middleware(['module:admin_dashboard'])
         ->name('dashboard.admin');

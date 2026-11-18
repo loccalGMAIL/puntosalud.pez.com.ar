@@ -884,6 +884,78 @@ function urgencyModalDashboard() {
         }
     };
 
+    // Auto-refresco: detecta cambios hechos desde otra PC (polling cada 10 s)
+    (function () {
+        const POLL_MS = 10000;
+        const SCROLL_KEY = 'dashboard_scroll_y';
+        const url = "{{ route('dashboard.fingerprint') }}";
+        let currentFingerprint = @json($dashboardData['fingerprint']);
+        let pendingReload = false;
+        let checking = false;
+
+        try {
+            const savedScroll = sessionStorage.getItem(SCROLL_KEY);
+            if (savedScroll !== null) {
+                sessionStorage.removeItem(SCROLL_KEY);
+                window.addEventListener('load', () => window.scrollTo(0, parseInt(savedScroll, 10) || 0));
+            }
+        } catch (e) {}
+
+        function isUserBusy() {
+            const active = document.activeElement;
+            if (active && ['INPUT', 'TEXTAREA', 'SELECT'].includes(active.tagName)) {
+                return true;
+            }
+            return Array.from(document.querySelectorAll('.fixed.inset-0')).some((el) => {
+                const style = window.getComputedStyle(el);
+                return style.display !== 'none' && style.visibility !== 'hidden' && el.offsetParent !== null;
+            });
+        }
+
+        function safeReload() {
+            if (isUserBusy()) {
+                pendingReload = true;
+                return;
+            }
+            try {
+                sessionStorage.setItem(SCROLL_KEY, String(window.scrollY));
+            } catch (e) {}
+            location.reload();
+        }
+
+        async function check() {
+            if (document.hidden || checking) {
+                return;
+            }
+            if (pendingReload) {
+                safeReload();
+                return;
+            }
+            checking = true;
+            try {
+                const res = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' } });
+                if (!res.ok) {
+                    return;
+                }
+                const data = await res.json();
+                if (data.fingerprint && data.fingerprint !== currentFingerprint) {
+                    safeReload();
+                }
+            } catch (e) {
+                // Error de red: se reintenta en el próximo ciclo
+            } finally {
+                checking = false;
+            }
+        }
+
+        setInterval(check, POLL_MS);
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) {
+                check();
+            }
+        });
+    })();
+
     // Función para abrir el modal de múltiples formas de pago
     function openMultiPaymentModal(appointmentId, estimatedAmount = 0, hasPhone = true) {
         const modalElement = document.querySelector('[x-data*="multiPaymentModal"]');
