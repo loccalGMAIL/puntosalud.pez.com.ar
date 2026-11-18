@@ -7,6 +7,30 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [2.15.0] - 2026-11-18
+
+### 🔄 Actualización automática del dashboard
+
+Cuando se trabaja en dos PC al mismo tiempo, el dashboard de recepción ya no queda desactualizado: si en otra PC se modifica un paciente, un turno, un cobro o la caja, el dashboard se actualiza solo en pocos segundos, sin tener que recargar a mano.
+
+**Nuevo**:
+
+- **Refresco automático**: el dashboard (`/dashboard`) consulta cada 10 segundos si hubo cambios y, si los hay, se recarga manteniendo la posición del scroll. No consulta mientras la pestaña está en segundo plano y chequea apenas se vuelve a ella.
+- **No interrumpe al usuario**: si hay un modal abierto (por ejemplo el cobro de un turno) o se está escribiendo en un campo, la recarga espera hasta que termine.
+- **Qué detecta**: altas, cambios y bajas de turnos del día, cambios en datos de pacientes y profesionales, cobros y movimientos de caja (apertura / cierre).
+
+**Técnico**:
+
+- Nuevo `DashboardFingerprintService`: calcula una huella (`md5`) a partir de consultas agregadas (`COUNT` / `MAX(id)` / `MAX(updated_at)`) sobre `appointments` (del día), `patients`, `payment_appointments`, `cash_movements` y `professionals`. No carga modelos.
+- Nuevo endpoint `GET /dashboard/fingerprint` (`dashboard.fingerprint`, protegido por `auth`) en `DashboardController`; `index()` entrega la huella inicial en `$dashboardData['fingerprint']`.
+- Polling en `resources/views/dashboard/dashboard.blade.php`. Solo aplica al dashboard de recepción (no a `/dashboard/appointments` ni al dashboard admin).
+- Limitación: `updated_at` tiene resolución de 1 segundo, por lo que un cambio en el mismo segundo exacto en que se renderizó la página podría no detectarse hasta el próximo cambio.
+- Tests en `tests/Feature/DashboardFingerprintTest.php`.
+
+**Para desplegar**: sin migraciones. Si se usa `npm run build`, no hay cambios de assets (el script está en la vista Blade).
+
+---
+
 ## [2.14.0] - 2026-11-11
 
 ### 🔒 Bloqueo y desbloqueo de horarios en la agenda

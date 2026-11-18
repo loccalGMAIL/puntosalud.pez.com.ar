@@ -7,8 +7,10 @@ use App\Enums\PaymentMethod;
 use App\Models\Appointment;
 use App\Models\CashMovement;
 use App\Models\Payment;
+use App\Models\PaymentDetail;
 use App\Models\Professional;
 use App\Services\CashMovementService;
+use App\Services\DashboardFingerprintService;
 use App\Services\PaymentAllocationService;
 use App\Services\WhatsAppService;
 use Carbon\Carbon;
@@ -29,7 +31,14 @@ class DashboardController extends Controller
         $this->cashMovementService = $cashMovementService;
     }
 
-    public function index()
+    public function fingerprint(DashboardFingerprintService $fingerprintService): JsonResponse
+    {
+        return response()->json([
+            'fingerprint' => $fingerprintService->forDate(Carbon::today()),
+        ]);
+    }
+
+    public function index(DashboardFingerprintService $fingerprintService)
     {
         $user = Auth::user();
         if ($user && $user->profile?->default_dashboard === 'admin' && $user->canAccessModule('admin_dashboard')) {
@@ -221,6 +230,7 @@ class DashboardController extends Controller
             'resumenCaja' => $resumenCaja,
             'fecha' => $today->format('d/m/Y'),
             'cashStatus' => $cashStatus,
+            'fingerprint' => $fingerprintService->forDate($today),
         ];
 
         return view('dashboard.dashboard', compact('dashboardData'));
@@ -417,7 +427,7 @@ class DashboardController extends Controller
             // Crear payment_details (puede haber múltiples formas de pago)
             // Si no hay payment_details (pago en $0), crear un registro con método 'cash' y monto 0
             if (empty($paymentDetails)) {
-                \App\Models\PaymentDetail::create([
+                PaymentDetail::create([
                     'payment_id' => $payment->id,
                     'payment_method' => 'cash',
                     'amount' => 0,
@@ -426,7 +436,7 @@ class DashboardController extends Controller
                 ]);
             } else {
                 foreach ($paymentDetails as $detail) {
-                    \App\Models\PaymentDetail::create([
+                    PaymentDetail::create([
                         'payment_id' => $payment->id,
                         'payment_method' => $detail['payment_method'],
                         'amount' => $detail['amount'],
@@ -549,7 +559,7 @@ class DashboardController extends Controller
      * Determina quién recibe el pago según el método de pago y la configuración del profesional
      *
      * @param  string  $paymentMethod  Método de pago (cash, transfer, debit_card, credit_card, other)
-     * @param  \App\Models\Professional  $professional  Profesional del turno
+     * @param  Professional  $professional  Profesional del turno
      * @return string 'centro' o 'profesional'
      */
     private function determineReceivedBy(string $paymentMethod, $professional): string
